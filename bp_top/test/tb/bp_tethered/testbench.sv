@@ -19,6 +19,7 @@ module testbench
  import bp_be_pkg::*;
  import bp_me_pkg::*;
  import bsg_noc_pkg::*;
+ import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
@@ -139,13 +140,13 @@ module testbench
   logic [bedrock_fill_width_p-1:0] proc_rev_data_lo;
   logic proc_rev_v_lo, proc_rev_ready_and_li;
 
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
-  bsg_cache_dma_pkt_s [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_lo;
-  logic [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
-  logic [num_cce_p-1:0][l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
-  logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
-  logic [num_cce_p-1:0][l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p, dma_mask_width_p);
+  bsg_cache_dma_pkt_s [num_cce_p-1:0][dma_els_p-1:0] dma_pkt_lo;
+  logic [num_cce_p-1:0][dma_els_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [num_cce_p-1:0][dma_els_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
+  logic [num_cce_p-1:0][dma_els_p-1:0] dma_data_v_lo, dma_data_yumi_li;
+  logic [num_cce_p-1:0][dma_els_p-1:0][l2_fill_width_p-1:0] dma_data_li;
+  logic [num_cce_p-1:0][dma_els_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
   wire [mem_noc_did_width_p-1:0] proc_did_li = 1;
   wire [mem_noc_did_width_p-1:0] host_did_li = '1;
@@ -194,7 +195,7 @@ module testbench
 
   bp_nonsynth_dram
    #(.bp_params_p(bp_params_p)
-     ,.num_dma_p(num_cce_p*l2_banks_p)
+     ,.num_dma_p(num_cce_p*dma_els_p)
      ,.preload_mem_p(preload_mem_p)
      ,.dram_type_p(dram_type_p)
      ,.mem_bytes_p(2**29)
@@ -768,7 +769,7 @@ module testbench
    if_verif
     ();
 
-  if (dram_type_p == "axi" && (num_cce_p*l2_banks_p) > 16)
+  if (dram_type_p == "axi" && (num_cce_p*dma_els_p) > 16)
     $error("AXI memory does not support >16 caches without increasing bsg_round_robin_arb size");
 
   `ifndef VERILATOR

@@ -19,10 +19,9 @@ module bp_me_cache_slice
  import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, dma_mask_width_p)
    )
   (input                                                 clk_i
    , input                                               reset_i
@@ -38,77 +37,78 @@ module bp_me_cache_slice
    , input                                               mem_rev_ready_and_i
 
    // DRAM interface
-   , output logic [l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
-   , output logic [l2_banks_p-1:0]                       dma_pkt_v_o
-   , input [l2_banks_p-1:0]                              dma_pkt_ready_and_i
+   , output logic [dma_els_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic [dma_els_p-1:0]                       dma_pkt_v_o
+   , input [dma_els_p-1:0]                              dma_pkt_ready_and_i
 
-   , input [l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
-   , input [l2_banks_p-1:0]                              dma_data_v_i
-   , output logic [l2_banks_p-1:0]                       dma_data_ready_and_o
+   , input [dma_els_p-1:0][l2_fill_width_p-1:0]         dma_data_i
+   , input [dma_els_p-1:0]                              dma_data_v_i
+   , output logic [dma_els_p-1:0]                       dma_data_ready_and_o
 
-   , output logic [l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
-   , output logic [l2_banks_p-1:0]                       dma_data_v_o
-   , input [l2_banks_p-1:0]                              dma_data_ready_and_i
+   , output logic [dma_els_p-1:0][l2_fill_width_p-1:0]  dma_data_o
+   , output logic [dma_els_p-1:0]                       dma_data_v_o
+   , input [dma_els_p-1:0]                              dma_data_ready_and_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
-  `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
-  bsg_cache_pkt_s [l2_banks_p-1:0] cache_pkt_li;
-  logic [l2_banks_p-1:0] cache_pkt_v_li, cache_pkt_yumi_lo;
-  logic [l2_banks_p-1:0][l2_data_width_p-1:0] cache_data_lo;
-  logic [l2_banks_p-1:0] cache_data_v_lo, cache_data_yumi_li;
-
-  // TODO: Buffering can be reduced by only saving headers per stream
-  bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
-  logic [bedrock_fill_width_p-1:0] mem_fwd_data_li;
-  logic mem_fwd_v_li, mem_fwd_ready_and_lo;
-  bsg_fifo_1r1w_small
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bedrock_fill_width_p)
-     // Buffer 1 full cache line to prevent writeback deadlock
-     ,.els_p(`BSG_MAX(2, bedrock_block_width_p/bedrock_fill_width_p))
-     )
-   fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i({mem_fwd_data_i, mem_fwd_header_i})
-     ,.v_i(mem_fwd_v_i)
-     ,.ready_o(mem_fwd_ready_and_o)
-
-     ,.data_o({mem_fwd_data_li, mem_fwd_header_li})
-     ,.v_o(mem_fwd_v_li)
-     ,.yumi_i(mem_fwd_ready_and_lo & mem_fwd_v_li)
-     );
-
-  bp_me_cce_to_cache
-   #(.bp_params_p(bp_params_p))
-   cce_to_cache
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.mem_fwd_header_i(mem_fwd_header_li)
-     ,.mem_fwd_data_i(mem_fwd_data_li)
-     ,.mem_fwd_v_i(mem_fwd_v_li)
-     ,.mem_fwd_ready_and_o(mem_fwd_ready_and_lo)
-
-     ,.mem_rev_header_o(mem_rev_header_o)
-     ,.mem_rev_data_o(mem_rev_data_o)
-     ,.mem_rev_v_o(mem_rev_v_o)
-     ,.mem_rev_ready_and_i(mem_rev_ready_and_i)
-
-     ,.cache_pkt_o(cache_pkt_li)
-     ,.cache_pkt_v_o(cache_pkt_v_li)
-     ,.cache_pkt_yumi_i(cache_pkt_yumi_lo)
-
-     ,.cache_data_i(cache_data_lo)
-     ,.cache_data_v_i(cache_data_v_lo)
-     ,.cache_data_yumi_o(cache_data_yumi_li)
-     );
-
-  for (genvar i = 0; i < l2_banks_p; i++)
-    begin : bank
+  if(l2_en_p) begin: l2
+    `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
+    bsg_cache_pkt_s [l2_banks_p-1:0] cache_pkt_li;
+    logic [l2_banks_p-1:0] cache_pkt_v_li, cache_pkt_yumi_lo;
+    logic [l2_banks_p-1:0][l2_data_width_p-1:0] cache_data_lo;
+    logic [l2_banks_p-1:0] cache_data_v_lo, cache_data_yumi_li;
+  
+    // TODO: Buffering can be reduced by only saving headers per stream
+    bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
+    logic [bedrock_fill_width_p-1:0] mem_fwd_data_li;
+    logic mem_fwd_v_li, mem_fwd_ready_and_lo;
+    bsg_fifo_1r1w_small
+     #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bedrock_fill_width_p)
+       // Buffer 1 full cache line to prevent writeback deadlock
+       ,.els_p(`BSG_MAX(2, bedrock_block_width_p/bedrock_fill_width_p))
+       )
+     fifo
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+  
+       ,.data_i({mem_fwd_data_i, mem_fwd_header_i})
+       ,.v_i(mem_fwd_v_i)
+       ,.ready_o(mem_fwd_ready_and_o)
+  
+       ,.data_o({mem_fwd_data_li, mem_fwd_header_li})
+       ,.v_o(mem_fwd_v_li)
+       ,.yumi_i(mem_fwd_ready_and_lo & mem_fwd_v_li)
+       );
+  
+    bp_me_cce_to_cache
+     #(.bp_params_p(bp_params_p))
+     cce_to_cache
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+  
+       ,.mem_fwd_header_i(mem_fwd_header_li)
+       ,.mem_fwd_data_i(mem_fwd_data_li)
+       ,.mem_fwd_v_i(mem_fwd_v_li)
+       ,.mem_fwd_ready_and_o(mem_fwd_ready_and_lo)
+  
+       ,.mem_rev_header_o(mem_rev_header_o)
+       ,.mem_rev_data_o(mem_rev_data_o)
+       ,.mem_rev_v_o(mem_rev_v_o)
+       ,.mem_rev_ready_and_i(mem_rev_ready_and_i)
+  
+       ,.cache_pkt_o(cache_pkt_li)
+       ,.cache_pkt_v_o(cache_pkt_v_li)
+       ,.cache_pkt_yumi_i(cache_pkt_yumi_lo)
+  
+       ,.cache_data_i(cache_data_lo)
+       ,.cache_data_v_i(cache_data_v_lo)
+       ,.cache_data_yumi_o(cache_data_yumi_li)
+       );
+  
+    for (genvar i = 0; i < l2_banks_p; i++)
+      begin : bank
       bsg_cache
        #(.addr_width_p(daddr_width_p)
          ,.data_width_p(l2_data_width_p)
@@ -155,6 +155,37 @@ module bp_me_cache_slice
          ,.v_we_o()
          );
     end
+  end
+  else begin: nol2
+    bp_me_cce_to_cache_dma
+     #(.bp_params_p(bp_params_p))
+     cce_to_cache_dma
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+
+       ,.mem_fwd_header_i(mem_fwd_header_i)
+       ,.mem_fwd_data_i(mem_fwd_data_i)
+       ,.mem_fwd_v_i(mem_fwd_v_i)
+       ,.mem_fwd_ready_and_o(mem_fwd_ready_and_o)
+
+       ,.mem_rev_header_o(mem_rev_header_o)
+       ,.mem_rev_data_o(mem_rev_data_o)
+       ,.mem_rev_v_o(mem_rev_v_o)
+       ,.mem_rev_ready_and_i(mem_rev_ready_and_i)
+
+       ,.dma_pkt_o(dma_pkt_o)
+       ,.dma_pkt_v_o(dma_pkt_v_o)
+       ,.dma_pkt_yumi_i(dma_pkt_ready_and_i & dma_pkt_v_o)
+
+       ,.dma_data_i(dma_data_i)
+       ,.dma_data_v_i(dma_data_v_i)
+       ,.dma_data_ready_o(dma_data_ready_and_o)
+
+       ,.dma_data_o(dma_data_o)
+       ,.dma_data_v_o(dma_data_v_o)
+       ,.dma_data_yumi_i(dma_data_ready_and_i & dma_data_v_o)
+       );
+  end
 
 endmodule
 

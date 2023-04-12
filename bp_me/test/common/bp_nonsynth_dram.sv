@@ -11,6 +11,7 @@
 module bp_nonsynth_dram
  import bp_common_pkg::*;
  import bp_me_pkg::*;
+ import bsg_cache_pkg::*;
  import bsg_axi_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -20,7 +21,7 @@ module bp_nonsynth_dram
    , parameter preload_mem_p = 0
    , parameter mem_bytes_p = 0
    , parameter dram_type_p = ""
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, dma_mask_width_p)
    )
   (input                                                    clk_i
    , input                                                  reset_i
@@ -41,7 +42,7 @@ module bp_nonsynth_dram
    , input                                                  dram_reset_i
    );
 
-  `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
+  `declare_bsg_cache_dma_pkt_s(daddr_width_p, dma_mask_width_p);
   bsg_cache_dma_pkt_s [num_dma_p-1:0] dma_pkt_li, dma_pkt;
   assign dma_pkt_li = dma_pkt_i;
   // Unswizzle the dram
@@ -235,7 +236,6 @@ module bp_nonsynth_dram
       logic [axi_id_width_p-1:0] axi_awid;
       logic [caddr_width_p-1:0] axi_awaddr_addr;
       logic axi_awaddr_addr_unused;
-      logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_awaddr_cache_id;
       logic [7:0] axi_awlen;
       logic [2:0] axi_awsize;
       logic [1:0] axi_awburst;
@@ -254,7 +254,6 @@ module bp_nonsynth_dram
       logic [axi_id_width_p-1:0] axi_arid;
       logic [caddr_width_p-1:0] axi_araddr_addr;
       logic axi_araddr_addr_unused;
-      logic [`BSG_SAFE_CLOG2(num_dma_p)-1:0] axi_araddr_cache_id;
       logic [7:0] axi_arlen;
       logic [2:0] axi_arsize;
       logic [1:0] axi_arburst;
@@ -267,14 +266,17 @@ module bp_nonsynth_dram
       logic [1:0] axi_rresp;
       logic axi_rlast, axi_rvalid, axi_rready;
 
+      assign axi_awaddr = axi_awaddr_addr ^ 32'h8000_0000;
+      assign axi_araddr = axi_araddr_addr ^ 32'h8000_0000;
+
       bsg_cache_to_axi
        #(.addr_width_p(daddr_width_p)
          ,.data_width_p(l2_fill_width_p)
-         ,.mask_width_p(l2_block_size_in_words_p)
+         ,.mask_width_p(dma_mask_width_p)
          ,.block_size_in_words_p(l2_block_size_in_fill_p)
          ,.num_cache_p(num_dma_p)
-         ,.axi_id_width_p(axi_id_width_p)
          ,.axi_data_width_p(axi_data_width_p)
+         ,.axi_id_width_p(axi_id_width_p)
          ,.axi_burst_len_p(axi_burst_len_p)
          ,.axi_burst_type_p(e_axi_burst_wrap)
          )
@@ -296,7 +298,7 @@ module bp_nonsynth_dram
 
          ,.axi_awid_o(axi_awid)
          ,.axi_awaddr_addr_o({axi_awaddr_addr_unused, axi_awaddr_addr})
-         ,.axi_awaddr_cache_id_o(axi_awaddr_cache_id)
+         ,.axi_awaddr_cache_id_o()
          ,.axi_awlen_o(axi_awlen)
          ,.axi_awsize_o(axi_awsize)
          ,.axi_awburst_o(axi_awburst)
@@ -316,9 +318,10 @@ module bp_nonsynth_dram
          ,.axi_bresp_i(axi_bresp)
          ,.axi_bvalid_i(axi_bvalid)
          ,.axi_bready_o(axi_bready)
+
          ,.axi_arid_o(axi_arid)
          ,.axi_araddr_addr_o({axi_araddr_addr_unused, axi_araddr_addr})
-         ,.axi_araddr_cache_id_o(axi_araddr_cache_id)
+         ,.axi_araddr_cache_id_o()
          ,.axi_arlen_o(axi_arlen)
          ,.axi_arsize_o(axi_arsize)
          ,.axi_arburst_o(axi_arburst)
@@ -334,14 +337,15 @@ module bp_nonsynth_dram
          ,.axi_rlast_i(axi_rlast)
          ,.axi_rvalid_i(axi_rvalid)
          ,.axi_rready_o(axi_rready)
-         );
 
-      wire [axi_addr_width_p-1:0] axi_araddr = {axi_araddr_cache_id, (axi_araddr_addr-dram_base_addr_gp)};
-      wire [axi_addr_width_p-1:0] axi_awaddr = {axi_awaddr_cache_id, (axi_awaddr_addr-dram_base_addr_gp)};
+         // Unused
+         ,.axi_awaddr_cache_id_o()
+         ,.axi_araddr_cache_id_o()
+         );
 
       bsg_nonsynth_axi_mem
        #(.axi_id_width_p(axi_id_width_p)
-         ,.axi_addr_width_p(axi_addr_width_p)
+         ,.axi_addr_width_p(daddr_width_p)
          ,.axi_data_width_p(axi_data_width_p)
          ,.axi_len_width_p(8)
          ,.mem_els_p(mem_els_lp)
@@ -353,6 +357,8 @@ module bp_nonsynth_dram
 
          ,.axi_awid_i(axi_awid)
          ,.axi_awaddr_i(axi_awaddr)
+         ,.axi_awlen_i(axi_awlen)
+         ,.axi_awburst_i(axi_awburst)
          ,.axi_awvalid_i(axi_awvalid)
          ,.axi_awready_o(axi_awready)
          ,.axi_awburst_i(axi_awburst)
@@ -371,6 +377,8 @@ module bp_nonsynth_dram
 
          ,.axi_arid_i(axi_arid)
          ,.axi_araddr_i(axi_araddr)
+         ,.axi_arlen_i(axi_arlen)
+         ,.axi_arburst_i(axi_arburst)
          ,.axi_arvalid_i(axi_arvalid)
          ,.axi_arready_o(axi_arready)
          ,.axi_arburst_i(axi_arburst)

@@ -46,8 +46,8 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma_to_wormhole.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_miss.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_decode.v
-$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_tbuf.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_buffer_queue.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_wormhole_to_cache_dma_fanout.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel.v
@@ -247,6 +247,7 @@ $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 # Cache
 $BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
 $BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
+$BP_ME_DIR/src/v/dev/bp_me_cce_to_cache_dma.sv
 $BP_ME_DIR/src/v/dev/bp_me_dram_hash_decode.sv
 $BP_ME_DIR/src/v/dev/bp_me_dram_hash_encode.sv
 $BP_ME_DIR/src/v/dev/bp_me_cache_slice.sv

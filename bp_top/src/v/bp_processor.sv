@@ -19,7 +19,7 @@ module bp_processor
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, dma_mask_width_p)
    )
   (input                                                                clk_i
    , input                                                              rt_clk_i
@@ -51,17 +51,17 @@ module bp_processor
    , input                                                              mem_rev_ready_and_i
 
    // DRAM interface
-   , output logic [num_cce_p-1:0][l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
-   , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_pkt_v_o
-   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_pkt_ready_and_i
+   , output logic [num_cce_p-1:0][dma_els_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic [num_cce_p-1:0][dma_els_p-1:0]                       dma_pkt_v_o
+   , input [num_cce_p-1:0][dma_els_p-1:0]                              dma_pkt_ready_and_i
 
-   , input [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
-   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_data_v_i
-   , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_data_ready_and_o
+   , input [num_cce_p-1:0][dma_els_p-1:0][l2_fill_width_p-1:0]         dma_data_i
+   , input [num_cce_p-1:0][dma_els_p-1:0]                              dma_data_v_i
+   , output logic [num_cce_p-1:0][dma_els_p-1:0]                       dma_data_ready_and_o
 
-   , output logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
-   , output logic [num_cce_p-1:0][l2_banks_p-1:0]                       dma_data_v_o
-   , input [num_cce_p-1:0][l2_banks_p-1:0]                              dma_data_ready_and_i
+   , output logic [num_cce_p-1:0][dma_els_p-1:0][l2_fill_width_p-1:0]  dma_data_o
+   , output logic [num_cce_p-1:0][dma_els_p-1:0]                       dma_data_v_o
+   , input [num_cce_p-1:0][dma_els_p-1:0]                              dma_data_ready_and_i
    );
 
   if (cce_type_p != e_cce_uce)
@@ -226,7 +226,7 @@ module bp_processor
 
       import bsg_cache_pkg::*;
       `declare_bsg_cache_wh_header_flit_s(dma_noc_flit_width_p, dma_noc_cord_width_p, dma_noc_len_width_p, dma_noc_cid_width_p);
-      localparam dma_per_col_lp = num_cce_p/mc_x_dim_p*l2_banks_p;
+      localparam dma_per_col_lp = num_cce_p/mc_x_dim_p*dma_els_p;
       logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0][dma_pkt_width_lp-1:0] dma_pkt_lo;
       logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
       logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0][l2_fill_width_p-1:0] dma_data_lo;
@@ -238,7 +238,7 @@ module bp_processor
           bsg_cache_wh_header_flit_s header_flit;
           assign header_flit = dma_link_lo[S][i].data;
           wire [`BSG_SAFE_CLOG2(dma_per_col_lp)-1:0] dma_id_li =
-            l2_banks_p*(header_flit.src_cord-1)+header_flit.src_cid;
+            dma_els_p*(header_flit.src_cord-1)+header_flit.src_cid;
           bsg_wormhole_to_cache_dma_fanout
            #(.wh_flit_width_p(dma_noc_flit_width_p)
              ,.wh_cid_width_p(dma_noc_cid_width_p)
@@ -275,10 +275,10 @@ module bp_processor
       // Transpose the DMA IDs
       for (genvar i = 0; i < num_cce_p; i++)
         begin : rof1
-          for (genvar j = 0; j < l2_banks_p; j++)
+          for (genvar j = 0; j < dma_els_p; j++)
             begin : rof2
               localparam col_lp     = i%mc_x_dim_p;
-              localparam col_pos_lp = (i/mc_x_dim_p)*l2_banks_p+j;
+              localparam col_pos_lp = (i/mc_x_dim_p)*dma_els_p+j;
 
               assign dma_pkt_o[i][j] = dma_pkt_lo[col_lp][col_pos_lp];
               assign dma_pkt_v_o[i][j] = dma_pkt_v_lo[col_lp][col_pos_lp];
