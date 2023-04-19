@@ -756,15 +756,21 @@ module testbench
               // CCE-MEM Interface
               // BedRock Stream protocol: ready&valid
               ,.mem_rev_header_i(mem_rev_header_i)
+              ,.mem_rev_header_v_i(mem_rev_header_v_i)
+              ,.mem_rev_header_ready_and_i(mem_rev_header_ready_and_o)
+              ,.mem_rev_has_data_i(mem_rev_has_data_i)
               ,.mem_rev_data_i(mem_rev_data_i)
-              ,.mem_rev_v_i(mem_rev_v_i)
-              ,.mem_rev_ready_and_i(mem_rev_ready_and_o)
+              ,.mem_rev_data_v_i(mem_rev_data_v_i)
+              ,.mem_rev_data_ready_and_i(mem_rev_data_ready_and_o)
               ,.mem_rev_last_i(mem_rev_last_i)
 
               ,.mem_fwd_header_i(mem_fwd_header_o)
+              ,.mem_fwd_header_v_i(mem_fwd_header_v_o)
+              ,.mem_fwd_header_ready_and_i(mem_fwd_header_ready_and_i)
+              ,.mem_fwd_has_data_i(mem_fwd_has_data_o)
               ,.mem_fwd_data_i(mem_fwd_data_o)
-              ,.mem_fwd_v_i(mem_fwd_v_o)
-              ,.mem_fwd_ready_and_i(mem_fwd_ready_and_i)
+              ,.mem_fwd_data_v_i(mem_fwd_data_v_o)
+              ,.mem_fwd_data_ready_and_i(mem_fwd_data_ready_and_i)
               ,.mem_fwd_last_i(mem_fwd_last_o)
               );
 

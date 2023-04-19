@@ -556,10 +556,12 @@ module bp_core_tile
 
   bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
   logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
-  logic mem_fwd_v_lo, mem_fwd_last_lo, mem_fwd_ready_and_li;
+  logic mem_fwd_header_v_lo, mem_fwd_has_data_lo, mem_fwd_header_ready_and_li;
+  logic mem_fwd_data_v_lo, mem_fwd_last_lo, mem_fwd_data_ready_and_li;
   bp_bedrock_mem_rev_header_s mem_rev_header_li;
   logic [bedrock_data_width_p-1:0] mem_rev_data_li;
-  logic mem_rev_v_li, mem_rev_ready_and_lo, mem_rev_last_li;
+  logic mem_rev_header_v_li, mem_rev_header_ready_and_lo, mem_rev_has_data_li;
+  logic mem_rev_data_v_li, mem_rev_data_ready_and_lo, mem_rev_last_li;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
   bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
@@ -632,15 +634,21 @@ module bp_core_tile
      ,.lce_fill_last_o(lce_fill_last_lo)
 
      ,.mem_fwd_header_i(mem_fwd_header_lo)
+     ,.mem_fwd_header_v_i(mem_fwd_header_v_lo)
+     ,.mem_fwd_header_ready_and_o(mem_fwd_header_ready_and_li)
+     ,.mem_fwd_has_data_i(mem_fwd_has_data_lo)
      ,.mem_fwd_data_i(mem_fwd_data_lo)
-     ,.mem_fwd_v_i(mem_fwd_v_lo)
-     ,.mem_fwd_ready_and_o(mem_fwd_ready_and_li)
+     ,.mem_fwd_data_v_i(mem_fwd_data_v_lo)
+     ,.mem_fwd_data_ready_and_o(mem_fwd_data_ready_and_li)
      ,.mem_fwd_last_i(mem_fwd_last_lo)
 
      ,.mem_rev_header_o(mem_rev_header_li)
+     ,.mem_rev_header_v_o(mem_rev_header_v_li)
+     ,.mem_rev_header_ready_and_i(mem_rev_header_ready_and_lo)
+     ,.mem_rev_has_data_o(mem_rev_has_data_li)
      ,.mem_rev_data_o(mem_rev_data_li)
-     ,.mem_rev_v_o(mem_rev_v_li)
-     ,.mem_rev_ready_and_i(mem_rev_ready_and_lo)
+     ,.mem_rev_data_v_o(mem_rev_data_v_li)
+     ,.mem_rev_data_ready_and_i(mem_rev_data_ready_and_lo)
      ,.mem_rev_last_o(mem_rev_last_li)
 
      ,.dma_pkt_o(dma_pkt_lo)
@@ -703,15 +711,21 @@ module bp_core_tile
      // CCE-MEM Interface
      // BedRock Burst protocol: ready&valid
      ,.mem_rev_header_i(mem_rev_header_li)
+     ,.mem_rev_header_v_i(mem_rev_header_v_li)
+     ,.mem_rev_header_ready_and_o(mem_rev_header_ready_and_lo)
+     ,.mem_rev_has_data_i(mem_rev_has_data_li)
      ,.mem_rev_data_i(mem_rev_data_li)
-     ,.mem_rev_v_i(mem_rev_v_li)
-     ,.mem_rev_ready_and_o(mem_rev_ready_and_lo)
+     ,.mem_rev_data_v_i(mem_rev_data_v_li)
+     ,.mem_rev_data_ready_and_o(mem_rev_data_ready_and_lo)
      ,.mem_rev_last_i(mem_rev_last_li)
 
      ,.mem_fwd_header_o(mem_fwd_header_lo)
+     ,.mem_fwd_header_v_o(mem_fwd_header_v_lo)
+     ,.mem_fwd_header_ready_and_i(mem_fwd_header_ready_and_li)
+     ,.mem_fwd_has_data_o(mem_fwd_has_data_lo)
      ,.mem_fwd_data_o(mem_fwd_data_lo)
-     ,.mem_fwd_v_o(mem_fwd_v_lo)
-     ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
+     ,.mem_fwd_data_v_o(mem_fwd_data_v_lo)
+     ,.mem_fwd_data_ready_and_i(mem_fwd_data_ready_and_li)
      ,.mem_fwd_last_o(mem_fwd_last_lo)
      );
 
