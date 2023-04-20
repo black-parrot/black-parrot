@@ -108,7 +108,7 @@ module bp_fe_top
   logic [vaddr_width_p-1:0] fetch_pc_lo;
   logic [instr_width_gp-1:0] fetch_instr_lo;
   bp_fe_instr_scan_s fetch_instr_scan_lo;
-  logic fetch_partial_lo, fetch_linear_lo;
+  logic fetch_partial_lo, fetch_linear_lo, fetch_eager_lo, fetch_scan_lo, fetch_rebase_lo;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
    pc_gen
@@ -146,6 +146,8 @@ module bp_fe_top
      ,.fetch_pc_i(fetch_pc_lo)
      ,.fetch_instr_scan_i(fetch_instr_scan_lo)
      ,.fetch_linear_i(fetch_linear_lo)
+     ,.fetch_scan_i(fetch_scan_lo)
+     ,.fetch_rebase_i(fetch_rebase_lo)
      );
 
   wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
@@ -317,18 +319,23 @@ module bp_fe_top
          ,.fetch_instr_o(fetch_instr_lo)
          ,.fetch_partial_o(fetch_partial_lo)
          ,.fetch_linear_o(fetch_linear_lo)
+         ,.fetch_eager_o(fetch_eager_lo)
+         ,.fetch_scan_o(fetch_scan_lo)
+         ,.fetch_rebase_o(fetch_rebase_lo)
          );
     end
   else
     begin : realigner
       assign if2_yumi_lo = if2_instr_v | if2_exception_v;
-
       assign fetch_instr_v_lo = if2_instr_v;
       assign fetch_exception_v_lo = if2_exception_v;
       assign fetch_pc_lo = if2_pc_lo;
       assign fetch_instr_lo = icache_data_lo;
       assign fetch_partial_lo = '0;
       assign fetch_linear_lo = '0;
+      assign fetch_eager_lo = '0;
+      assign fetch_scan_lo = '0;
+      assign fetch_rebase_lo = '0;
     end
   
   bp_fe_instr_scan
@@ -355,7 +362,7 @@ module bp_fe_top
                                          : e_instr_fetch;
       fe_queue_cast_o.instr = fetch_instr_lo;
       fe_queue_cast_o.branch_metadata_fwd = if2_br_metadata_fwd_lo;
-      fe_queue_cast_o.partial = fetch_partial_lo;
+      fe_queue_cast_o.partial = fetch_instr_v_lo ? fetch_eager_lo : fetch_partial_lo;
     end
 
   bp_fe_controller

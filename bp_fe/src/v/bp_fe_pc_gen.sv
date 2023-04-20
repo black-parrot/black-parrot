@@ -52,6 +52,8 @@ module bp_fe_pc_gen
    , input [instr_scan_width_lp-1:0]                 fetch_instr_scan_i
    , input [vaddr_width_p-1:0]                       fetch_pc_i
    , input                                           fetch_linear_i
+   , input                                           fetch_scan_i
+   , input                                           fetch_rebase_i
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -75,7 +77,7 @@ module bp_fe_pc_gen
   ///////////////////////////
   bp_fe_branch_metadata_fwd_s next_metadata, ovr_metadata;
   logic next_pred, next_taken;
-  logic ovr_ret, ovr_btaken, ovr_jmp, ovr_ntaken, btb_taken;
+  logic ovr_ret, ovr_btaken, ovr_jmp, ovr_ntaken, ovr_dbranch, btb_taken;
   logic [vaddr_width_p-1:0] pc_plus4;
   logic [vaddr_width_p-1:0] ras_tgt_lo, br_tgt_lo, linear_tgt_lo;
   logic [ras_idx_width_p-1:0] ras_idx;
@@ -88,7 +90,7 @@ module bp_fe_pc_gen
   always_comb begin
     if (redirect_v_i)
       begin
-        next_pred  = redirect_br_taken_i;
+        next_pred  = 1'b0;
         next_taken = redirect_br_taken_i;
         next_pc    = redirect_pc_i;
 
@@ -106,7 +108,7 @@ module bp_fe_pc_gen
       begin
         next_pred  = bht_pred_lo;
         next_taken = btb_taken;
-        next_pc    = btb_taken ? btb_br_tgt_lo : pc_plus4;
+        next_pc    = btb_taken ? btb_br_tgt_lo : {pc_plus4[vaddr_width_p-1:2], 2'b00};
 
         next_metadata = '0;
         next_metadata.src_btb = btb_br_tgt_v_lo;
@@ -248,27 +250,27 @@ module bp_fe_pc_gen
   // IF2
   /////////////////////////////////////////////////////////////////////////////////////
   bp_fe_branch_metadata_fwd_s metadata_if2_n, metadata_if2_r;
-  assign metadata_if2_n = metadata_if1;
+  assign metadata_if2_n = (fetch_linear_i & ~fetch_instr_v_i) ? metadata_if2_r : metadata_if1;
   bsg_dff_reset_en
    #(.width_p(branch_metadata_fwd_width_p))
    if2_stage_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(if2_we_i)
+     ,.en_i(if2_we_i | fetch_scan_i)
 
      ,.data_i(metadata_if2_n)
      ,.data_o(metadata_if2_r)
      );
 
-  logic [vaddr_width_p-1:0] pc_if2_r;
+  logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
+  assign pc_if2_n = fetch_scan_i ? {pc_if2_r[vaddr_width_p-1:2], 2'b10} : pc_if1_r;
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p))
    pc_if2_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(if2_we_i)
-
-     ,.data_i(pc_if1_r)
+     ,.en_i(if2_we_i | fetch_scan_i)
+     ,.data_i(pc_if2_n)
      ,.data_o(pc_if2_r)
      );
 
@@ -298,7 +300,7 @@ module bp_fe_pc_gen
 
   assign ras_call_li = fetch_instr_v_i & fetch_instr_scan.call;
   assign ras_return_li = fetch_instr_v_i & fetch_instr_scan._return;
-  assign ras_addr_li = fetch_pc_i + 3'd4;
+  assign ras_addr_li = fetch_pc_i + (fetch_instr_scan.full ? 3'd4 : 3'd2);
 
   // Override calculations
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
@@ -308,17 +310,19 @@ module bp_fe_pc_gen
   wire taken_br_if2  = fetch_instr_v_i & btb_miss_br  & fetch_instr_scan.branch & pred_if1_r;
   wire taken_jmp_if2 = fetch_instr_v_i & btb_miss_br  & fetch_instr_scan.jal;
 
-  assign ovr_ret    = taken_ret_if2;
-  assign ovr_btaken = taken_br_if2;
-  assign ovr_jmp    = taken_jmp_if2;
-  assign ovr_ntaken = fetch_linear_i & taken_if1_r;
-  assign ovr_o      = ovr_btaken | ovr_jmp | ovr_ret | ovr_ntaken;
+  assign ovr_ret     = taken_ret_if2;
+  assign ovr_btaken  = taken_br_if2;
+  assign ovr_jmp     = taken_jmp_if2;
+  assign ovr_dbranch = fetch_rebase_i & ~taken_if1_r;
+  assign ovr_ntaken  = fetch_linear_i &  taken_if1_r;
+  assign ovr_o       = ovr_btaken | ovr_jmp | ovr_ret | ovr_dbranch | ovr_ntaken;
 
   assign br_tgt_lo     = fetch_pc_i + `BSG_SIGN_EXTEND(fetch_instr_scan.imm20, vaddr_width_p);
   assign linear_tgt_lo = pc_if2_r + 3'd2;
 
   assign if2_br_metadata_fwd_o = metadata_if2_r;
   assign if2_pc_o = pc_if2_r;
+
   assign if2_taken_branch_site_o = taken_if1_r || taken_ret_if2 || taken_br_if2 || taken_jmp_if2;
 
   ///////////////////////////

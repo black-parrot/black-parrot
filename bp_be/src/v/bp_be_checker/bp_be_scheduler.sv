@@ -169,9 +169,9 @@ module bp_be_scheduler
   //   3) unfreeze request
   //   2) interrupt request
   //   4) finally, fe queue
-  assign fe_instr_not_exc_li = fe_queue_read_li &  issue_pkt_cast_o.instr_v;
-  assign fe_exc_not_instr_li = fe_queue_read_li & !issue_pkt_cast_o.instr_v;
-  assign be_exc_not_instr_li = fe_queue_inject_li;
+  wire fe_instr_not_exc_li = fe_queue_read_li &  issue_pkt_cast_o.instr_v;
+  wire fe_exc_not_instr_li = fe_queue_read_li & !issue_pkt_cast_o.instr_v;
+  wire be_exc_not_instr_li = fe_queue_inject_li;
 
   wire [vaddr_width_p-1:0] fe_exc_pc_li = issue_pkt_cast_o.pc;
   wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_exc_pc_li + (issue_pkt_cast_o.partial ? 2'b10 : 2'b00);
