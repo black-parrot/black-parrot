@@ -108,6 +108,7 @@ module bp_me_nonsynth_cache
   // Clear register when TR response sends
   // do not accept new TR packets if LCE busy signal asserted
   wire tr_pkt_v_li = tr_pkt_v_i & ~cache_req_busy_i;
+  logic tr_pkt_v;
   bp_me_nonsynth_tr_pkt_s tr_pkt_r;
   bsg_dff_reset_en
     #(.width_p($bits(bp_me_nonsynth_tr_pkt_s)+1))

@@ -21,15 +21,21 @@ module bp_nonsynth_mem_tracer
 
    // BP side
    , input [mem_fwd_header_width_lp-1:0]        mem_fwd_header_i
+   , input                                      mem_fwd_header_v_i
+   , input                                      mem_fwd_header_ready_and_i
+   , input                                      mem_fwd_has_data_i
    , input [l2_data_width_p-1:0]                mem_fwd_data_i
-   , input                                      mem_fwd_v_i
-   , input                                      mem_fwd_ready_and_i
+   , input                                      mem_fwd_data_v_i
+   , input                                      mem_fwd_data_ready_and_i
    , input                                      mem_fwd_last_i
 
    , input [mem_rev_header_width_lp-1:0]        mem_rev_header_i
+   , input                                      mem_rev_header_v_i
+   , input                                      mem_rev_header_ready_and_i
+   , input                                      mem_rev_has_data_i
    , input [l2_data_width_p-1:0]                mem_rev_data_i
-   , input                                      mem_rev_v_i
-   , input                                      mem_rev_ready_and_i
+   , input                                      mem_rev_data_v_i
+   , input                                      mem_rev_data_ready_and_i
    , input                                      mem_rev_last_i
    );
 
@@ -42,28 +48,28 @@ module bp_nonsynth_mem_tracer
     file = $fopen(trace_file_p, "w");
 
   always_ff @(posedge clk_i) begin
-    if (mem_fwd_v_i & mem_fwd_ready_and_i)
+    if (mem_fwd_header_v_i & mem_fwd_header_ready_and_i)
       case (mem_fwd_header_cast_i.msg_type.fwd)
         e_bedrock_mem_rd:
           $fwrite(file, "%12t | FWD  RD  : (%x) %b\n", $time, mem_fwd_header_cast_i.addr, mem_fwd_header_cast_i.size);
         e_bedrock_mem_wr:
-          $fwrite(file, "%12t | FWD  WR  : (%x) %b %x\n", $time, mem_fwd_header_cast_i.addr, mem_fwd_header_cast_i.size, mem_fwd_data_i);
+          $fwrite(file, "%12t | FWD  WR  : (%x) %b\n", $time, mem_fwd_header_cast_i.addr, mem_fwd_header_cast_i.size);
         e_bedrock_mem_uc_rd:
           $fwrite(file, "%12t | FWD  UCRD: (%x) %b\n", $time, mem_fwd_header_cast_i.addr, mem_fwd_header_cast_i.size);
         e_bedrock_mem_uc_wr:
-          $fwrite(file, "%12t | FWD  UCWR: (%x) %b %x\n", $time, mem_fwd_header_cast_i.addr, mem_fwd_header_cast_i.size, mem_fwd_data_i);
+          $fwrite(file, "%12t | FWD  UCWR: (%x) %b\n", $time, mem_fwd_header_cast_i.addr, mem_fwd_header_cast_i.size);
         default:
           $fwrite(file, "%12t | FWD  ERROR: unknown cmd_type %x received!", $time, mem_rev_header_cast_i.msg_type.fwd);
       endcase
 
-    if (mem_rev_v_i & mem_rev_ready_and_i)
+    if (mem_rev_header_v_i & mem_rev_header_ready_and_i)
       case (mem_rev_header_cast_i.msg_type.fwd)
         e_bedrock_mem_rd:
-          $fwrite(file, "%12t | REV  RD  : (%x) %b %x\n", $time, mem_rev_header_cast_i.addr, mem_rev_header_cast_i.size, mem_rev_data_i);
+          $fwrite(file, "%12t | REV  RD  : (%x) %b\n", $time, mem_rev_header_cast_i.addr, mem_rev_header_cast_i.size);
         e_bedrock_mem_wr:
           $fwrite(file, "%12t | REV  WR  : (%x) %b\n", $time, mem_rev_header_cast_i.addr, mem_rev_header_cast_i.size);
         e_bedrock_mem_uc_rd:
-          $fwrite(file, "%12t | REV  UCRD: (%x) %b %x\n", $time, mem_rev_header_cast_i.addr, mem_rev_header_cast_i.size, mem_rev_data_i);
+          $fwrite(file, "%12t | REV  UCRD: (%x) %b\n", $time, mem_rev_header_cast_i.addr, mem_rev_header_cast_i.size);
         e_bedrock_mem_uc_wr:
           $fwrite(file, "%12t | REV  UCWR: (%x) %b\n", $time, mem_rev_header_cast_i.addr, mem_rev_header_cast_i.size);
         default:

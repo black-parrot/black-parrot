@@ -23,15 +23,21 @@ module bp_nonsynth_mem
    , input                                          reset_i
 
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
+   , input                                          mem_fwd_header_v_i
+   , output logic                                   mem_fwd_header_ready_and_o
+   , input                                          mem_fwd_has_data_i
    , input [l2_data_width_p-1:0]                    mem_fwd_data_i
-   , input                                          mem_fwd_v_i
-   , output logic                                   mem_fwd_ready_and_o
+   , input                                          mem_fwd_data_v_i
+   , output logic                                   mem_fwd_data_ready_and_o
    , input                                          mem_fwd_last_i
 
    , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
+   , output logic                                   mem_rev_header_v_o
+   , input                                          mem_rev_header_ready_and_i
+   , output logic                                   mem_rev_has_data_o
    , output logic [l2_data_width_p-1:0]             mem_rev_data_o
-   , output logic                                   mem_rev_v_o
-   , input                                          mem_rev_ready_and_i
+   , output logic                                   mem_rev_data_v_o
+   , input                                          mem_rev_data_ready_and_i
    , output logic                                   mem_rev_last_o
 
    , input                                          dram_clk_i
@@ -51,18 +57,6 @@ module bp_nonsynth_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_fwd_header_i(mem_fwd_header_i)
-     ,.mem_fwd_data_i(mem_fwd_data_i)
-     ,.mem_fwd_v_i(mem_fwd_v_i)
-     ,.mem_fwd_ready_and_o(mem_fwd_ready_and_o)
-     ,.mem_fwd_last_i(mem_fwd_last_i)
-
-     ,.mem_rev_header_o(mem_rev_header_o)
-     ,.mem_rev_data_o(mem_rev_data_o)
-     ,.mem_rev_v_o(mem_rev_v_o)
-     ,.mem_rev_ready_and_i(mem_rev_ready_and_i)
-     ,.mem_rev_last_o(mem_rev_last_o)
-
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
      ,.dma_pkt_ready_and_i(dma_pkt_yumi_li)
@@ -74,6 +68,8 @@ module bp_nonsynth_mem
      ,.dma_data_o(dma_data_lo)
      ,.dma_data_v_o(dma_data_v_lo)
      ,.dma_data_ready_and_i(dma_data_yumi_li)
+
+     ,.*
      );
 
   bp_nonsynth_dram

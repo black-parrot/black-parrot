@@ -39,33 +39,38 @@ module bp_me_nonsynth_cfg_loader
 
    , input [lce_id_width_p-1:0]                      lce_id_i
 
-   // BedRock Stream
-   // TODO: convert yumi_i to ready_and_i
+   // BedRock Burst
    , output logic [mem_fwd_header_width_lp-1:0]      io_fwd_header_o
+   , output logic                                    io_fwd_header_v_o
+   , input                                           io_fwd_header_ready_and_i
+   , output logic                                    io_fwd_has_data_o
    , output logic [dword_width_gp-1:0]               io_fwd_data_o
-   , output logic                                    io_fwd_v_o
-   , input                                           io_fwd_yumi_i
+   , output logic                                    io_fwd_data_v_o
+   , input                                           io_fwd_data_ready_and_i
    , output logic                                    io_fwd_last_o
 
-   // BedRock Stream
+   // BedRock Burst
    , input [mem_rev_header_width_lp-1:0]             io_rev_header_i
+   , input                                           io_rev_header_v_i
+   , output logic                                    io_rev_header_ready_and_o
+   , input                                           io_rev_has_data_i
    , input [dword_width_gp-1:0]                      io_rev_data_i
-   , input                                           io_rev_v_i
-   , output logic                                    io_rev_ready_and_o
+   , input                                           io_rev_data_v_i
+   , output logic                                    io_rev_data_ready_and_o
    , input                                           io_rev_last_i
 
    , output logic                                    done_o
    );
 
-  wire unused0 = &{io_rev_header_i, io_rev_data_i, io_rev_last_i};
-  assign io_rev_ready_and_o = 1'b1;
+  wire unused0 = &{io_rev_header_i, io_rev_data_i, io_rev_last_i, io_rev_has_data_i, io_rev_data_v_i};
+  assign io_rev_header_ready_and_o = 1'b1;
+  assign io_rev_data_ready_and_o = 1'b1;
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_bedrock_mem_fwd_header_s io_fwd_cast_o;
   bp_bedrock_mem_rev_header_s io_rev_cast_i;
-  bp_bedrock_mem_fwd_payload_s io_fwd_payload;
 
   assign io_fwd_header_o = io_fwd_cast_o;
   assign io_rev_cast_i = io_rev_header_i;
@@ -100,6 +105,39 @@ module bp_me_nonsynth_cfg_loader
     ,DONE
   } state_n, state_r;
 
+  bp_bedrock_mem_fwd_header_s fsm_header;
+  bp_bedrock_mem_fwd_payload_s fsm_payload;
+  logic[dword_width_gp-1:0] fsm_data;
+  logic fsm_v, fsm_yumi;
+  bp_me_burst_pump_out
+    #(.bp_params_p(bp_params_p)
+      ,.stream_data_width_p(dword_width_gp)
+      ,.block_width_p(cce_block_width_p)
+      ,.payload_width_p(mem_fwd_payload_width_lp)
+      ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
+      ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp)
+      )
+    fwd_pump
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.msg_header_o(io_fwd_cast_o)
+      ,.msg_header_v_o(io_fwd_header_v_o)
+      ,.msg_has_data_o(io_fwd_has_data_o)
+      ,.msg_header_ready_and_i(io_fwd_header_ready_and_i)
+      ,.msg_data_o(io_fwd_data_o)
+      ,.msg_data_v_o(io_fwd_data_v_o)
+      ,.msg_data_ready_and_i(io_fwd_data_ready_and_i)
+      ,.msg_last_o(io_fwd_last_o)
+      ,.fsm_header_i(fsm_header)
+      ,.fsm_addr_o()
+      ,.fsm_data_i(fsm_data)
+      ,.fsm_v_i(fsm_v)
+      ,.fsm_yumi_o(fsm_yumi)
+      ,.fsm_cnt_o()
+      ,.fsm_new_o()
+      ,.fsm_last_o()
+      );
+
   logic [`BSG_WIDTH(io_noc_max_credits_p)-1:0] credit_count_lo;
   bsg_flow_counter
    #(.els_p(io_noc_max_credits_p))
@@ -107,10 +145,10 @@ module bp_me_nonsynth_cfg_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.v_i(io_fwd_yumi_i)
+     ,.v_i(fsm_yumi)
      ,.ready_i(1'b1)
 
-     ,.yumi_i(io_rev_v_i)
+     ,.yumi_i(io_rev_header_v_i)
      ,.count_o(credit_count_lo)
      );
   wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
@@ -142,8 +180,8 @@ module bp_me_nonsynth_cfg_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.clear_i(ucode_cnt_clr & io_fwd_yumi_i)
-     ,.up_i(ucode_cnt_inc & io_fwd_yumi_i)
+     ,.clear_i(ucode_cnt_clr & fsm_yumi)
+     ,.up_i(ucode_cnt_inc & fsm_yumi)
 
      ,.count_o(ucode_cnt_r)
      );
@@ -158,8 +196,8 @@ module bp_me_nonsynth_cfg_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.clear_i(core_cnt_clr & io_fwd_yumi_i)
-     ,.up_i(core_cnt_inc & io_fwd_yumi_i)
+     ,.clear_i(core_cnt_clr & fsm_yumi)
+     ,.up_i(core_cnt_inc & fsm_yumi)
 
      ,.count_o(core_cnt_r)
      );
@@ -174,24 +212,23 @@ module bp_me_nonsynth_cfg_loader
     begin
       if (reset_i)
         state_r <= RESET;
-      else if (io_fwd_yumi_i || (state_r == RESET) || (state_r == WAIT_FOR_SYNC) || (state_r == WAIT_FOR_CREDITS))
+      else if (fsm_yumi || (state_r == RESET) || (state_r == WAIT_FOR_SYNC) || (state_r == WAIT_FOR_CREDITS))
         state_r <= state_n;
     end
 
   always_comb
     begin
-      io_fwd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
+      fsm_v = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
 
       // uncached store
-      io_fwd_cast_o.msg_type             = cfg_w_v_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
-      io_fwd_cast_o.subop                = e_bedrock_store;
-      io_fwd_cast_o.addr                 = local_addr_lo;
-      io_fwd_payload                     = '0;
-      io_fwd_payload.lce_id              = lce_id_i;
-      io_fwd_cast_o.size                 = e_bedrock_msg_size_8;
-      io_fwd_data_o                      = cfg_data_lo;
-      io_fwd_last_o                      = 1'b1;
-      io_fwd_cast_o.payload              = io_fwd_payload;
+      fsm_header.msg_type             = cfg_w_v_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
+      fsm_header.subop                = e_bedrock_store;
+      fsm_header.addr                 = local_addr_lo;
+      fsm_payload                     = '0;
+      fsm_payload.lce_id              = lce_id_i;
+      fsm_header.size                 = e_bedrock_msg_size_8;
+      fsm_data                        = cfg_data_lo;
+      fsm_header.payload              = fsm_payload;
     end
 
   always_comb
