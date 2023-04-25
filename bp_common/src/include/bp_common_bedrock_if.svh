@@ -55,12 +55,14 @@
    * size indicates the size in bytes of the message using the bp_bedrock_msg_size_e enum
    * payload is an opaque field to the network, that is network specific (Req, Cmd, Fill, Resp, Mem)
    *   and each endpoint will interpret the field as appropriate
+   * critical_data is a 64-bit data field
    *
    */
   // placed here for search: this macro defines types like bp_bedrock_mem_fwd_header_s
   `define declare_bp_bedrock_header_s(addr_width_mp, payload_mp, name_mp) \
     typedef struct packed                                                                   \
     {                                                                                       \
+      logic [dword_width_gp-1:0]                   critical_data;                           \
       payload_mp                                   payload;                                 \
       bp_bedrock_msg_size_e                        size;                                    \
       logic [addr_width_mp-1:0]                    addr;                                    \
@@ -168,7 +170,7 @@
    */
 
   `define bp_bedrock_header_width(addr_width_mp, payload_width_mp) \
-    ($bits(bp_bedrock_msg_u)+$bits(bp_bedrock_wr_subop_e)+addr_width_mp+$bits(bp_bedrock_msg_size_e)+payload_width_mp)
+    ($bits(bp_bedrock_msg_u)+$bits(bp_bedrock_wr_subop_e)+addr_width_mp+$bits(bp_bedrock_msg_size_e)+payload_width_mp+dword_width_gp)
 
   `define declare_bp_bedrock_header_width(addr_width_mp, payload_width_mp, name_mp) \
     , localparam ``name_mp``_header_width_lp = `bp_bedrock_header_width(addr_width_mp, payload_width_mp)
