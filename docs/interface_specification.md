@@ -246,25 +246,163 @@ transactions may be sent to the network.
 
 ## BedRock Interface
 
-The BlackParrot memory and cache coherence networks rely on a common message format that can
-is easily specialized for the specific network interface. A BedRock message includes a
-header and zero or more bytes of data.
+The BlackParrot on-chip network (NoC) rely on a common message protocol and interface called BedRock.
+A BedRock message includes a header and zero or more bytes of data. The specific implementation
+of BedRock is sometimes referred to as BlackParrot BedRock (BP-BedRock).
 
 The BlackParrot BedRock Interfaces are defined in the following files:
 - [bp\_common\_bedrock\_if.svh](../bp_common/src/include/bp_common_bedrock_if.svh)
 - [bp\_common\_bedrock\_pkgdef.svh](../bp_common/src/include/bp_common_bedrock_pkgdef.svh)
 - [bp\_common\_bedrock\_wormhole_defines.svh](../bp_common/src/include/bp_common_bedrock_wormhole_defines.svh)
 
-A BedRock message header is composed of:
-- Message type (available types depend on the specific network)
-- Subop type (store, amolr, amosc, amoswap, amoadd, amoxor, amoand, amoor, amomin, amomax, amominu, amomaxu)
-- Physical address
-- Message Size (1 to 128 bytes, in powers of two; specifies request size or size of attached data)
-- Payload (a black-box to the command receiver, this is returned as-is along with the memory response)
+BedRock defines a common message format with a unified header and parameterizable payload.
+The header includes message type, operation sub-type, address, and size fields, as well as
+a parameterizable payload and critical data word. The payload is network-specific and carries
+metadata required to process messages on the selected network. The current implementation defines
+message formats for the four BedRock coherence protocol networks and a memory command/response network
+(discussed in the [interface\_specification](interface_specification.md)). The critical data word
+is always 64-bits in size and is used to provide higher throughput short messages and high performance
+critical word first behavior that is decoupled from the data channel throughput.
 
-A BedRock message may also include data. The amount of data is specified by the message size field
-in the message header. Alignment of the message address and data is specific to the network
-implementation.
+The files above are the authoritative definitions for the BP-BedRock interface implementation.
+In the event that the code differs from any documentation on or referenced by this page, the code
+shall be considered as the current and authoritative specification.
+
+### BedRock Burst Interface Protocol
+
+The BedRock Burst interface protocol is used by all endpoints within the on-chip network to exchange
+BedRock messages between modules. BedRock Burst has independent header and data channels with\
+ready-and-valid handshaking on each channel. The BedRock Burst protocol comprises the following
+signals divided into the header and data channels:
+
+Header channel:
+- header (including critical\_data)
+- header\_valid
+- has\_data
+- header\_ready\_and
+
+Data channel:
+- data
+- data\_valid
+- last
+- data\_ready\_and
+
+The has\_data signal is raised with header\_valid when the message being sent has more than 64-bits
+of data. The last signal is raised with data\_valid when the last data beat of the message
+is being sent. The width of the data channel must be a power-of-two number of bits, in the inclusive
+range of 64- to 1024-bits.
+
+The sender contract is:
+* Header and data channels must conform to ready&valid handshaking
+* Data may be sent before, with, or after header
+* header\_valid must not depend on data\_ready\_and (must eventually raise both header\_valid and data\_valid)
+* All data beast for the current message must send before any data beats of future messages are sent
+
+The receiver contract is:
+* Header and data channels must conform to ready&valid handshaking
+* May consume data before, with, or after header
+* header\_ready\_and may depend on data\_valid (may wait for both header\_valid and data\_valid)
+* has\_data must not be used in the header channel handshake
+* last must not be used in the data channel handshake
+
+Sophisticated implementations of BedRock Burst may support overlapping transactions where
+the sender may send a second header prior to sending all data associated with the first header.
+The receiver must also support this behavior. If either the sender or receiver does not support
+overlapping transactions, then transactions will necessarily be non-overlapping.
+
+### Address Alignment, Request Sizes, and Data Alignment
+
+All BedRock transactions specify a byte-addressable address, which is transmitted
+unmodified across all messages that are generated from processing the first message in the
+transaction. All transactions are initiated with a legal size as defined by the `e_bedrock_msg_size_e`
+enum. Legal sizes are the powers of two from 1B to 128B, inclusive.
+
+Transactions with size less than or equal to 64-bits transfer exactly one 64-bit data word using the
+critical\_data field in the message header. Transactions with size greater than 64-bits also send
+data on the data channel. The number of data channel transfers is equal to the ceiling of the
+transaction size divided by the data channel width. For example, a transaction with size 64B using
+a 64-bit data channel requires 8 data channel transfers. The data alignment and transaction behavior
+is similar, but not identical, to AXI transactions with a Burst Type of WRAP.
+
+If the transaction size is less than or equal to 64-bits (8B), the data transferred within the
+64-bit critical\_data field is naturally-aligned and replicated as determined by the size and
+address. In other words, the requested data is found both at the naturally-aligned offset given
+by the address and at the least signficant bytes of the critical\_data field. This behavior
+enables easier conversion between BedRock and external protocols, which commonly match one of these
+behaviors.
+The address must be naturally aligned to the size for transactions with size less than
+or equal to 64-bits. Examples are shown below, where bN means byte at address N in memory.
+
+- address: 3, size: 1B -> critical data = [b3, b3, b3, b3, b3, b3, b3, b3]
+- address: 2, size: 2B -> critical data = [b3, b2, b3, b2, b3, b2, b3, b2]
+- address: 6, size: 2B -> critical data = [b7, b6, b7, b6, b7, b6, b7, b6]
+- address: 4, size: 4B -> critical data = [b7, b6, b5, b4, b7, b6, b5, b4]
+
+Transactions with size greater than 64-bits use both the critical\_data field in the header and
+the data channel of the protocol. Data is always transferred aligned to the data channel width.
+The data transferred is the naturally-aligned block of memory with size equal to the transaction
+size that includes the transaction address. The critical\_data field of the header carries
+the naturally-aligned 64-bit data word the includes the byte specified in the transaction address.
+The first data channel transfer also includes the critical data word from the header. The following
+examples show transactions with an address that falls within byte addresses 56 through 63, or
+equivalently, within 64-bit word 7, and a transaction size of 512-bits (64B).
+
+- 128-bit network data transfers (left first): [7 | 6] [1 | 0] [3 | 2] [5 | 4] with critical 64-bit word == 7
+- 64-bit network data transfers (left first): [7] [0] [1] [2] [3] [4] [5] [6] with critical 64-bit word == 7
+
+The behavior of the above example remains unchanged if the byte address were any valid address found
+in word 7 (i.e., byte address 56 through 63).
+
+If the data channel width is larger than the transaction size, the returned data is replicated to
+fill the data channel width. This behavior is similar to the replication and packing of data
+into the critical\_data field for transactions with size less than 64-bits. For example, with a
+transaction size of 16B (128-bits) and a data channel width of 256-bits, a request for byte address
+8 (64-bit word 1) has the following behavior:
+
+- critical data is bytes [15 | 14 | 13 | 12 | 11 | 10 | 9 | 8]
+- data channel transfers (left first, 64-bit word addresses): [1 | 0 | 1 | 0]
+
+### Gearboxing
+
+BedRock Burst messages are carried over networks with a single data channel width. However, two
+networks can be connected using gearboxes that will preserve protocol correctness. The gearbox
+may require internal storage (e.g., store-and-forward behavior) to convert between the two newtork
+data channel widths. The key principle for gearboxing is that the transaction address is always
+preserved and data is realigend such that the critical data word is always found in the first
+data channel transfer and at the offset indicated by the transaction address.
+
+Gearboxing from a wider to narrower data channel requires only enough narrow channel data transfers
+to send the number of bytes equal to the transaction size. For example, when converting from a 256-bit
+to 128-bit data channel, a transaction with size 128-bit (16B) will send only one 128-bit data
+transfer that contains the data indicated by the address while the remaining 128-bits of the
+wider data channel transfer can be dropped.
+
+Gearboxing from a narrower to wider data channel will always reduce the number of data channel
+transfers by a factor of (wide width / narrow width), but may require realigning (store-and-forwarding)
+of the transaction data.
+
+### BedRock over X (e.g., wormhole)
+
+A BedRock network can be tunneled over any other network type that preserves the BedRock semantics
+at each end of the network, so long as the BedRock interface on each side of the X network has
+a common data channel width. If one side of the tunnel desires a different data channel width,
+the BedRock network must be gearboxed on one side of the tunnel.
+
+### BedRock Burst-Lite
+
+Endpoints requiring no more than 64-bits of data for all transactions may implement only the
+header channel and tie off the data channel (data\_ready\_and is always raised at the receiver or
+data\_valid is never raised at the sender). The system implementation must guarantee that the data
+channel is never activated at the endpoint. Violating this condition results in undefined behavior.
+
+### Minimal BedRock Burst Implementations
+
+Minimal implementations of BedRock Burst producers and consumers may further restrict
+the producer and consumer contracts above. For example, implementations commonly require the header
+handshake to occur prior to any data channel handshake for the current message, or disallow
+an additional header handshake from occurring until the all data beats from the current message
+have been transmitted.
+
 
 ### Memory and I/O Interface
 
@@ -272,7 +410,7 @@ The BlackParrot Memory Interface is a simple command / response interface used f
 with memory or I/O devices. The goal is to provide a simple and understandable way to access any
 type of memory system, be it a shared bus or a more sophisticated network-on-chip scheme.
 The Memory Interface can easily be transduced to standard protocols such as AXI, AXI-lite or WishBone,
-and is implemented using the BedRock network interfaces.
+and is implemented using the BedRock Burst network interfaces.
 
 A memory command or response packet is composed of:
 - Message type
@@ -291,14 +429,12 @@ A memory command or response packet is composed of:
   - Requesting way id
   - Coherence state
   - Whether this is a speculative request
-- Data (for memory write or uncached write operations)
+- Critical Data Word
+- Data (for memory write or uncached write operations larger than 64-bits)
 
 Uncached accesses must be naturally aligned with the request size. Cached accesses are block-based
 and return the cache block containing the requested address. Cached accesses return the critical
-data word first (at LSB of data) and wrap around the requested block as follows:
-
-- Request: 0x00, size=32B [D C B A]
-- Request: 0x10, size=32B [B A D C]
+data word in both the critical\_data field of the header and in the first data channel transfer.
 
 ### LCE-CCE Interface
 

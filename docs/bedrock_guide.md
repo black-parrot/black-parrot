@@ -24,24 +24,6 @@ coherent accelerators in a multicore BlackParrot system. This system is called B
 (BP-BedRock). BP-BedRock also defines a BedRock compatible memory interface. The text below
 provides a brief overview of BP-Bedrock.
 
-### BP-BedRock Network Interface Specifications
-
-The BlackParrot BedRock Interfaces are defined in the following files:
-- [bp\_common\_bedrock\_if.svh](../bp_common/src/include/bp_common_bedrock_if.svh)
-- [bp\_common\_bedrock\_pkgdef.svh](../bp_common/src/include/bp_common_bedrock_pkgdef.svh)
-- [bp\_common\_bedrock\_wormhole_defines.svh](../bp_common/src/include/bp_common_bedrock_wormhole_defines.svh)
-
-BP-BedRock defines a common message format with a unified header and parameterizable payload.
-The header includes message type, operation sub-type, address, and size fields, as well as
-the parameterizable payload. The payload is network-specific and carries metadata required to
-process messages on the selected network. The current implementation defines message formats
-for the four BedRock coherence protocol networks and a memory command/response network
-(discussed in the [interface\_specification](interface_specification.md)).
-
-The files above are the authoritative definitions for the BP-BedRock interface implementation.
-In the event that the code differs from any documentation on or referenced by this page, the code
-shall be considered as the current and authoritative specification.
-
 ### BP-BedRock Coherence Interface
 
 The BP-BedRock coherence interface (also called the LCE-CCE interface) carries messages between the
@@ -85,10 +67,10 @@ The Command network has the following message types and payload fields:
   - Target cache, state, and way ID for cache to cache transfer
 
 The Fill network is a special network which comprises a subset of the Command network messages.
-Fills can be casted safely to Cmds. 
+Fills can be casted safely to Cmds.
 - Message type
   - Data (cache to cache block transfer)
-- Payload 
+- Payload
   - Destination LCE
   - CCE sending command
   - Cache Way ID
@@ -110,63 +92,13 @@ The Response network has the following message types and payload fields:
 
 All four LCE-CCE networks have the same address and data alignment properties. Uncached accesses are
 naturally aligned to the size of the request, and behavior of a misaligned request is undefined.
-
-Cacheable accesses are block-based and support critical word first behavior. Data is returned
-to the cache beginning with the byte at the LCE Request address, then wrapping around at the natural
-cache block boundary. In other words, data is returned as found in the cache block, from LSB to MSB,
-but left rotated to place the requested byte at the LSB of the message data field. This
-behavior naturally supports networks that serialize the cache block data and send the block in
-multiple data beats, as well as conversion between different serialization widths without requiring
-re-alignment of message data.
+Cacheable accesses are block-based and support critical word first behavior as defined by the
+BedRock Burst protocol. The 64-bit data word that includes the request address is returned in the
+critical\_data field of the response header while the entire cache block is returned over the data
+channel in one or more transfers with the critical data word found in the first data transfer.
 
 The BlackParrot LCEs and CCEs expect that cacheable requests are issued aligned to the BedRock
 network data channel width (which is currently the same as the cache fill width) at the LCE.
-
-### BedRock Burst Network Protocol
-
-BP-BedRock defines the BedRock Burst network protocol to exchange BedRock messages between
-modules. BedRock Burst has independent header and data channels with ready-and-valid handshaking
-on each channel. The BedRock Burst protocol comprises the following signals:
-
-- header
-- header\_valid
-- has\_data
-- header\_ready\_and
-- data
-- data\_valid
-- last
-- data\_ready\_and
-
-The has\_data signal is raised with header\_valid when the message being sent includes at least
-one data beat. The last signal is raised with data\_valid when the last data beat of the message
-is being sent. The width of the data channel must be a power-of-two number of bits, in the inclusive
-range of 64- to 1024-bits. The data channel should not be wider than the size of a cache block.
-
-The sender contract is:
-* Header and data channels must conform to ready&valid handshaking
-* Data may be sent before, with, or after header
-* header\_valid must not depend on data\_ready\_and
-* All data beast for the current message must send before any data beats of future messages are sent
-
-The receiver contract is:
-* Header and data channels must conform to ready&valid handshaking
-* May consume data before, with, or after header
-* header\_ready\_and must not depend on data\_valid
-* has\_data must not be used in the header channel handshake
-* last must not be used in the data channel handshake
-
-Sophisticated implementations of BedRock Burst channels may support overlapping transactions where
-the sender may send a second header prior to sending all data associated with the first header.
-The receiver must also support this behavior. If either send or receiver does not support overlapping
-transactions, then transactions will necessarily be non-overlapping.
-
-#### Minimal BedRock Burst Implementations
-
-Minimal implementations of BedRock Burst producers and consumers may further restrict
-the producer and consumer contracts above. For example, implementations commonly require the header
-handshake to occur prior to any data channel handshake for the current message, or disallow
-an additional header handshake from occurring until the all data beats from the current message
-have been transmitted.
 
 ### BP-BedRock Local Cache Engine (LCE) Microarchitecture
 
