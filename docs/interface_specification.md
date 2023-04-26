@@ -295,13 +295,15 @@ range of 64- to 1024-bits.
 The sender contract is:
 * Header and data channels must conform to ready&valid handshaking
 * Data may be sent before, with, or after header
-* header\_valid must not depend on data\_ready\_and (must eventually raise both header\_valid and data\_valid)
-* All data beast for the current message must send before any data beats of future messages are sent
+* header\_valid must not depend on data\_ready\_and
+* must eventually raise both header\_valid and data\_valid
+* All data transfers for the current message must send before any data beats of future messages are sent
 
 The receiver contract is:
 * Header and data channels must conform to ready&valid handshaking
 * May consume data before, with, or after header
-* header\_ready\_and may depend on data\_valid (may wait for both header\_valid and data\_valid)
+* header\_ready\_and may depend on data\_valid
+* may wait for both header\_valid and data\_valid
 * has\_data must not be used in the header channel handshake
 * last must not be used in the data channel handshake
 
@@ -312,64 +314,45 @@ overlapping transactions, then transactions will necessarily be non-overlapping.
 
 ### Address Alignment, Request Sizes, and Data Alignment
 
-All BedRock transactions specify a byte-addressable address, which is transmitted
-unmodified across all messages that are generated from processing the first message in the
-transaction. All transactions are initiated with a legal size as defined by the `e_bedrock_msg_size_e`
-enum. Legal sizes are the powers of two from 1B to 128B, inclusive.
+All BedRock transactions are defined by a byte address and transaction size. These fields are
+transmitted unmodified across all messages in the transaction. Every transaction has a power-of-two
+size defined by the `e_bedrock_msg_size_e` enum that ranges from 1B to 128B, inclusive. Data and
+address alignment is determined by the transaction size.
 
-Transactions with size less than or equal to 64-bits transfer exactly one 64-bit data word using the
-critical\_data field in the message header. Transactions with size greater than 64-bits also send
-data on the data channel. The number of data channel transfers is equal to the ceiling of the
-transaction size divided by the data channel width. For example, a transaction with size 64B using
-a 64-bit data channel requires 8 data channel transfers. The data alignment and transaction behavior
-is similar, but not identical, to AXI transactions with a Burst Type of WRAP.
-
-If the transaction size is less than or equal to 64-bits (8B), the data transferred within the
-64-bit critical\_data field is naturally-aligned and replicated as determined by the size and
-address. In other words, the requested data is found both at the naturally-aligned offset given
-by the address and at the least signficant bytes of the critical\_data field. This behavior
-enables easier conversion between BedRock and external protocols, which commonly match one of these
-behaviors.
-The address must be naturally aligned to the size for transactions with size less than
-or equal to 64-bits. Examples are shown below, where bN means byte at address N in memory.
+Transactions with size of 64-bits (8B) or less transmit data using only the critical\_data field
+in the message header and the address must be naturally aligned to the transaction size. The
+requested bytes are replicated to fill the 64-bit critical\_data field. This places the requested
+bytes at both the least significant byte and the expected offset as given in the address within
+the critical\_data field. Examples are shown below, where bN means byte at address N in memory.
 
 - address: 3, size: 1B -> critical data = [b3, b3, b3, b3, b3, b3, b3, b3]
 - address: 2, size: 2B -> critical data = [b3, b2, b3, b2, b3, b2, b3, b2]
 - address: 6, size: 2B -> critical data = [b7, b6, b7, b6, b7, b6, b7, b6]
 - address: 4, size: 4B -> critical data = [b7, b6, b5, b4, b7, b6, b5, b4]
 
-Transactions with size greater than 64-bits use both the critical\_data field in the header and
-the data channel of the protocol. Data is always transferred aligned to the data channel width.
-The data transferred is the naturally-aligned block of memory with size equal to the transaction
-size that includes the transaction address. The critical\_data field of the header carries
-the naturally-aligned 64-bit data word the includes the byte specified in the transaction address.
-The first data channel transfer also includes the critical data word from the header. The following
-examples show transactions with an address that falls within byte addresses 56 through 63, or
-equivalently, within 64-bit word 7, and a transaction size of 512-bits (64B).
+Transactions with size greater than 64-bits return the naturally-aligned, transaction size data
+block containing the transaction address across the data channel and the naturally aligned 64-bit
+data word containing the transaction address in the critical\_data field. Example transfers
+are illustrated below where "word X" means the 64-bit naturally aligned word starting at byte
+8*X. These examples assume a 512b (64B) transaction size.
 
-- 128-bit network data transfers (left first): [7 | 6] [1 | 0] [3 | 2] [5 | 4] with critical 64-bit word == 7
-- 64-bit network data transfers (left first): [7] [0] [1] [2] [3] [4] [5] [6] with critical 64-bit word == 7
-
-The behavior of the above example remains unchanged if the byte address were any valid address found
-in word 7 (i.e., byte address 56 through 63).
+- 64-bit data channel, address in word 6 (left first): [0] [1] [2] [3] [4] [5] [6] [7] with critical data = word 6
+- 128-bit data channel, address in word 7 (left first): [1 | 0] [3 | 2] [5 | 4] [7 | 6] with critical data = word  7
+- 256-bit data channel, address in word 3 (left first): [3 | 2 | 1 | 0] [7 | 6 | 5 | 4] with critical data = word  3
 
 If the data channel width is larger than the transaction size, the returned data is replicated to
-fill the data channel width. This behavior is similar to the replication and packing of data
-into the critical\_data field for transactions with size less than 64-bits. For example, with a
-transaction size of 16B (128-bits) and a data channel width of 256-bits, a request for byte address
-8 (64-bit word 1) has the following behavior:
+fill the data channel width. For example, with a transaction size of 16B (128-bits) and data
+channel width of 256-bits:
 
-- critical data is bytes [15 | 14 | 13 | 12 | 11 | 10 | 9 | 8]
-- data channel transfers (left first, 64-bit word addresses): [1 | 0 | 1 | 0]
+- address in word 3 (left first): [3 | 2 | 3 | 2] with critical data = word 3
 
 ### Gearboxing
 
 BedRock Burst messages are carried over networks with a single data channel width. However, two
-networks can be connected using gearboxes that will preserve protocol correctness. The gearbox
-may require internal storage (e.g., store-and-forward behavior) to convert between the two newtork
-data channel widths. The key principle for gearboxing is that the transaction address is always
-preserved and data is realigend such that the critical data word is always found in the first
-data channel transfer and at the offset indicated by the transaction address.
+networks can be connected using gearboxes that preserve protocol correctness. Gearboxing is
+straightforward due to the data alignment described above, as the LSB of the data block is
+always transferred in the first data channel transfer of the transaction and the critical\_data
+field size is always 64-bits.
 
 Gearboxing from a wider to narrower data channel requires only enough narrow channel data transfers
 to send the number of bytes equal to the transaction size. For example, when converting from a 256-bit
@@ -378,8 +361,8 @@ transfer that contains the data indicated by the address while the remaining 128
 wider data channel transfer can be dropped.
 
 Gearboxing from a narrower to wider data channel will always reduce the number of data channel
-transfers by a factor of (wide width / narrow width), but may require realigning (store-and-forwarding)
-of the transaction data.
+transfers by a factor of (wide width / narrow width), except when the narrow channel is a single
+transfer.
 
 ### BedRock over X (e.g., wormhole)
 
