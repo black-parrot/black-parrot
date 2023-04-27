@@ -87,6 +87,7 @@ module bp_io_cce
     io_fwd_header_cast_o.payload.lce_id   = lce_req_header_cast_i.payload.src_id;
     io_fwd_header_cast_o.payload.did      = did_i;
     io_fwd_header_cast_o.payload.uncached = 1'b1;
+    io_fwd_header_cast_o.critical_data    = lce_req_header_cast_i.critical_data;
     io_fwd_has_data_o                     = lce_req_has_data_i;
     // data
     lce_req_data_ready_and_o              = io_fwd_data_ready_and_i;
@@ -107,6 +108,7 @@ module bp_io_cce
     lce_cmd_header_cast_o.size           = io_rev_header_cast_i.size;
     lce_cmd_header_cast_o.payload.dst_id = io_rev_header_cast_i.payload.lce_id;
     lce_cmd_header_cast_o.payload.src_id = cce_id_i;
+    lce_cmd_header_cast_o.critical_data  = io_rev_header_cast_i.critical_data;
     lce_cmd_has_data_o                   = io_rev_has_data_i;
     // data
     io_rev_data_ready_and_o              = lce_cmd_data_ready_and_i;
