@@ -16,37 +16,70 @@ module bp_fe_instr_scan
 
    , localparam instr_scan_width_lp = $bits(bp_fe_instr_scan_s)
    )
-  (input                                    instr_v_i
-   , input [instr_width_gp-1:0]             instr_i
-
+  (input [instr_width_gp-1:0]               instr_i
    , output logic [instr_scan_width_lp-1:0] scan_o
    );
 
   `bp_cast_i(rv64_instr_rtype_s, instr);
   `bp_cast_o(bp_fe_instr_scan_s, scan);
-  
-  wire dest_link   = (instr_cast_i.rd_addr inside {32'h1, 32'h5});
-  wire src_link    = (instr_cast_i.rs1_addr inside {32'h1, 32'h5});
-  wire dest_src_eq = (instr_cast_i.rd_addr == instr_cast_i.rs1_addr);
-  
+
+  rv64_cinstr_s cinstr_low_li, cinstr_high_li;
+  assign cinstr_low_li = instr_i[0+:cinstr_width_gp];
+  assign cinstr_high_li = instr_i[cinstr_width_gp+:cinstr_width_gp];
+
+  logic scan_full, scan_clow, scan_chigh;
+  logic dest_link, src_link, dest_src_eq;
+  rv64_instr_s selected_instr;
   always_comb
     begin
-      scan_cast_o = '0;
+      dest_link   = (instr_cast_i.rd_addr inside {32'h1, 32'h5});
+      src_link    = (instr_cast_i.rs1_addr inside {32'h1, 32'h5});
+      dest_src_eq = (instr_cast_i.rd_addr == instr_cast_i.rs1_addr);
 
-      if (instr_v_i)
+      scan_full = &instr_i[0+:2];
+      scan_clow = cinstr_low_li inside {`RV64_CBEQZ, `RV64_CBNEZ, `RV64_CJ, `RV64_CJR, `RV64_CJALR};
+      scan_chigh = cinstr_high_li inside {`RV64_CBEQZ, `RV64_CBNEZ, `RV64_CJ, `RV64_CJR, `RV64_CJALR};
+
+      dest_link   = (instr_cast_i.rd_addr inside {32'h1, 32'h5});
+      src_link    = (instr_cast_i.rs1_addr inside {32'h1, 32'h5});
+      dest_src_eq = dest_link & src_link & (instr_cast_i.rd_addr == instr_cast_i.rs1_addr);
+      selected_instr = instr_i;
+
+      if (compressed_support_p & ~scan_full & scan_clow)
         begin
-          scan_cast_o.branch  = (instr_cast_i.opcode == `RV64_BRANCH_OP);
-          scan_cast_o.jal     = (instr_cast_i.opcode == `RV64_JAL_OP);
-          scan_cast_o.jalr    = (instr_cast_i.opcode == `RV64_JALR_OP);
-          scan_cast_o.call    = (instr_cast_i.opcode inside {`RV64_JAL_OP, `RV64_JALR_OP}) && dest_link;
-          scan_cast_o._return = (instr_cast_i.opcode == `RV64_JALR_OP) && src_link && !dest_src_eq;
-  
-          unique casez (instr_cast_i.opcode)
-            `RV64_BRANCH_OP: scan_cast_o.imm20 = `rv64_signext_b_imm(instr_i);
-            `RV64_JAL_OP   : scan_cast_o.imm20 = `rv64_signext_j_imm(instr_i);
-            default : begin end
-          endcase
+          dest_link   = cinstr_low_li inside {`RV64_CJALR};
+          src_link    = (cinstr_low_li.t.crtype.rdrs1_addr inside {32'h1, 32'h5});
+          dest_src_eq = dest_link & src_link & (cinstr_low_li.t.crtype.rdrs1_addr == 5'h1);
+          selected_instr = cinstr_low_li;
         end
+
+      if (compressed_support_p & ~scan_full & ~scan_clow & scan_chigh)
+        begin
+          dest_link   = cinstr_high_li inside {`RV64_CJALR};
+          src_link    = (cinstr_high_li.t.crtype.rdrs1_addr inside {32'h1, 32'h5});
+          dest_src_eq = dest_link & src_link & (cinstr_high_li.t.crtype.rdrs1_addr == 5'h1);
+          selected_instr = cinstr_high_li;
+        end
+
+      scan_cast_o.branch  = (selected_instr inside {`RV64_BRANCH, `RV64_CBEQZ, `RV64_CBNEZ});
+      scan_cast_o.jal     = (selected_instr inside {`RV64_JAL, `RV64_CJ});
+      scan_cast_o.jalr    = (selected_instr inside {`RV64_JALR, `RV64_CJR, `RV64_CJALR});
+      scan_cast_o.call    = (selected_instr inside {`RV64_JAL, `RV64_JALR, `RV64_CJALR}) && dest_link;
+      scan_cast_o._return = (selected_instr inside {`RV64_JALR, `RV64_CJR, `RV64_CJALR}) && src_link && !dest_src_eq;
+      scan_cast_o.full    =  scan_full;
+      scan_cast_o.clow    = ~scan_full &  scan_clow;
+      scan_cast_o.chigh   = ~scan_full & ~scan_clow & scan_chigh;
+
+      unique casez (selected_instr)
+        `RV64_BRANCH            : scan_cast_o.imm20 = `rv64_signext_b_imm(selected_instr);
+        `RV64_JAL               : scan_cast_o.imm20 = `rv64_signext_j_imm(selected_instr);
+        `RV64_CJ                : scan_cast_o.imm20 = `rv64_signext_cj_imm(selected_instr);
+        //`RV64_CBEQZ, `RV64_CBNEZ:
+        default: scan_cast_o.imm20 = `rv64_signext_cb_imm(selected_instr);
+      endcase
+      // This is safe because the compressed imm is never more than 12b
+      if (scan_cast_o.chigh)
+        scan_cast_o.imm20 += 2'b10;
     end
 
 endmodule

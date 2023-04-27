@@ -140,6 +140,7 @@ module bp_be_pipe_sys
   logic [vaddr_width_p-1:0] retire_nvaddr_r, retire_vaddr_r;
   logic [instr_width_gp-1:0] retire_ninstr_r, retire_instr_r;
   logic retire_npartial_r, retire_partial_r;
+  logic retire_ncompressed_r, retire_compressed_r;
   always_ff @(posedge clk_i)
     begin
       retire_npc_r <= reservation.pc;
@@ -153,21 +154,25 @@ module bp_be_pipe_sys
 
       retire_npartial_r <= reservation.partial;
       retire_partial_r  <= retire_npartial_r;
+
+      retire_ncompressed_r <= reservation.compressed;
+      retire_compressed_r  <= retire_ncompressed_r;
     end
 
   wire instret_li = retire_v_i & ~|retire_exception_i;
   assign retire_pkt =
-    '{v          : retire_v_i
-      ,queue_v   : retire_queue_v_i
-      ,instret   : instret_li
-      ,npc       : retire_npc_r
-      ,vaddr     : retire_vaddr_r
-      ,data      : retire_data_i
-      ,instr     : retire_instr_r
-      ,partial   : retire_v_i & retire_partial_r
+    '{v           : retire_v_i
+      ,queue_v    : retire_queue_v_i
+      ,instret    : instret_li
+      ,npc        : retire_npc_r
+      ,vaddr      : retire_vaddr_r
+      ,data       : retire_data_i
+      ,instr      : retire_instr_r
+      ,partial    : retire_partial_r
+      ,compressed : retire_compressed_r
       // Could do a preemptive onehot decode here
-      ,exception : retire_v_i ? retire_exception_i : '0
-      ,special   : instret_li ? retire_special_i   : '0
+      ,exception  : retire_v_i ? retire_exception_i : '0
+      ,special    : instret_li ? retire_special_i   : '0
       };
 
 endmodule

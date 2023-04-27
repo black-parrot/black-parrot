@@ -219,6 +219,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_reg_to_fp.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_cmd_queue.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.sv
+$BP_BE_DIR/src/v/bp_be_checker/bp_be_expander.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_instr_decoder.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_issue_queue.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_regfile.sv

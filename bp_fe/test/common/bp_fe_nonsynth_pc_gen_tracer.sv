@@ -175,7 +175,7 @@ module bp_fe_nonsynth_pc_gen_tracer
       return $sformatf("(%x)", addr);
   endfunction
 
-  function string render_half_instr_with_validity(logic [hinstr_width_gp-1:0] instr, logic valid);
+  function string render_half_instr_with_validity(logic [cinstr_width_gp-1:0] instr, logic valid);
     if (valid)
       return $sformatf("     %x ", instr);
     else

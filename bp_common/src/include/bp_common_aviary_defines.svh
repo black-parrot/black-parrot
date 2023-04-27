@@ -45,12 +45,14 @@
     , localparam hio_width_p     = paddr_width_p - daddr_width_p                                   \
                                                                                                    \
     , localparam branch_metadata_fwd_width_p = proc_param_lp.branch_metadata_fwd_width             \
+    , localparam ras_idx_width_p             = proc_param_lp.ras_idx_width                         \
     , localparam btb_tag_width_p             = proc_param_lp.btb_tag_width                         \
     , localparam btb_idx_width_p             = proc_param_lp.btb_idx_width                         \
     , localparam bht_idx_width_p             = proc_param_lp.bht_idx_width                         \
     , localparam bht_row_els_p               = proc_param_lp.bht_row_els                           \
     , localparam ghist_width_p               = proc_param_lp.ghist_width                           \
     , localparam bht_row_width_p             = 2*bht_row_els_p                                     \
+    , localparam bht_offset_width_p          = `BSG_SAFE_CLOG2(bht_row_els_p)                      \
                                                                                                    \
     , localparam itlb_els_4k_p              = proc_param_lp.itlb_els_4k                            \
     , localparam itlb_els_1g_p              = proc_param_lp.itlb_els_1g                            \
@@ -210,6 +212,7 @@
           ,`bp_aviary_parameter_override(compressed_support, override_cfg_mp, default_cfg_mp)      \
                                                                                                    \
           ,`bp_aviary_parameter_override(branch_metadata_fwd_width, override_cfg_mp, default_cfg_mp) \
+          ,`bp_aviary_parameter_override(ras_idx_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(btb_tag_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(btb_idx_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(bht_idx_width, override_cfg_mp, default_cfg_mp)           \

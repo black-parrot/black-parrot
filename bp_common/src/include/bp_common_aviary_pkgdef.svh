@@ -12,7 +12,8 @@
       ,daddr_width: 55
       ,caddr_width: 54
 
-      ,branch_metadata_fwd_width: 42
+      ,branch_metadata_fwd_width: 45
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 9
       ,btb_idx_width            : 8
       ,bht_idx_width            : 8
@@ -47,7 +48,8 @@
   localparam bp_proc_param_s bp_unicore_tinyparrot_override_p =
     '{paddr_width         : 34
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 6
       ,btb_idx_width            : 4
       ,bht_idx_width            : 5
@@ -78,7 +80,8 @@
   localparam bp_proc_param_s bp_unicore_miniparrot_override_p =
     '{paddr_width         : 34
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 6
       ,btb_idx_width            : 4
       ,bht_idx_width            : 5
@@ -135,7 +138,8 @@
       ,daddr_width: 55
       ,caddr_width: 54
 
-      ,branch_metadata_fwd_width: 42
+      ,branch_metadata_fwd_width: 45
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 9
       ,btb_idx_width            : 8
       ,bht_idx_width            : 8
@@ -186,7 +190,8 @@
       ,daddr_width: 33
       ,caddr_width: 32
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 6
       ,btb_idx_width            : 4
       ,bht_idx_width            : 5

@@ -18,14 +18,16 @@ module bp_fe_controller
   (input                                              clk_i
    , input                                            reset_i
 
+   , input                                            pc_gen_init_done_i
+
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
    , output logic                                     fe_cmd_yumi_o
 
    , output logic                                     redirect_v_o
    , output logic [vaddr_width_p-1:0]                 redirect_pc_o
-   , output logic [hinstr_width_gp-1:0]               redirect_instr_o
-   , output logic                                     redirect_resume_v_o
+   , output logic [cinstr_width_gp-1:0]               redirect_instr_o
+   , output logic                                     redirect_resume_o
    , output logic                                     redirect_br_v_o
    , output logic                                     redirect_br_taken_o
    , output logic                                     redirect_br_ntaken_o
@@ -39,16 +41,19 @@ module bp_fe_controller
    , output logic                                     attaboy_v_o
    , input                                            attaboy_yumi_i
 
-   , input                                            pc_gen_init_done_i
    , input [vaddr_width_p-1:0]                        next_pc_i
+
    , input                                            ovr_i
-   , input                                            icache_tv_we_i
-   , output logic                                     if1_we_o
-   , output logic                                     if2_we_o
    , output logic                                     poison_if1_o
+   , output logic                                     if1_we_o
+
+   , input                                            icache_tv_we_i
    , output logic                                     poison_if2_o
+   , output logic                                     if2_we_o
+
+   , input                                            if2_instr_v_i
+   , input                                            if2_exception_v_i
    , output logic                                     poison_isd_o
-   , input                                            fetch_exception_yumi_i
 
    , output logic                                     itlb_r_v_o
    , output logic                                     itlb_w_v_o
@@ -140,15 +145,15 @@ module bp_fe_controller
       ,op  : is_fence ? e_icache_fencei : e_icache_fetch
       ,spec: !icache_fill_response_v && !is_fence
       };
-  assign icache_force_o = cmd_nonattaboy_v;
-  assign poison_if1_o = fetch_exception_yumi_i;
-  assign poison_if2_o = fetch_exception_yumi_i
+  assign icache_force_o = cmd_nonattaboy_v | ovr_i;
+  assign poison_if1_o = if2_exception_v_i;
+  assign poison_if2_o = if2_exception_v_i
     | ovr_i
     | cmd_immediate_v
     | (~is_resume & cmd_complex_v);
   assign poison_isd_o = cmd_immediate_v | (~is_resume & cmd_complex_v);
 
-  assign redirect_resume_v_o = itlb_fill_resume_v | icache_fill_resume_v;
+  assign redirect_resume_o = itlb_fill_resume_v | icache_fill_resume_v;
   assign redirect_instr_o = itlb_fill_response_v ? fe_cmd_cast_i.operands.itlb_fill_response.instr : fe_cmd_cast_i.operands.icache_fill_response.instr;
 
   always_comb
@@ -181,7 +186,7 @@ module bp_fe_controller
                           ? e_resume
                           : cmd_immediate_v
                             ? e_run
-                            : fetch_exception_yumi_i
+                            : if2_exception_v_i
                               ? e_wait
                               : if1_we_o
                                 ? e_run
