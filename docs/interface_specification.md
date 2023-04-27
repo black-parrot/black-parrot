@@ -246,7 +246,7 @@ transactions may be sent to the network.
 
 ## BedRock Interface
 
-The BlackParrot on-chip network (NoC) rely on a common message protocol and interface called BedRock.
+The BlackParrot on-chip networks (NoC) rely on a common message protocol and interface called BedRock.
 A BedRock message includes a header and zero or more bytes of data. The specific implementation
 of BedRock is sometimes referred to as BlackParrot BedRock (BP-BedRock).
 
@@ -257,12 +257,11 @@ The BlackParrot BedRock Interfaces are defined in the following files:
 
 BedRock defines a common message format with a unified header and parameterizable payload.
 The header includes message type, operation sub-type, address, and size fields, as well as
-a parameterizable payload and critical data word. The payload is network-specific and carries
+a parameterizable payload and a 64-bit critical data word. The payload is network-specific and carries
 metadata required to process messages on the selected network. The current implementation defines
-message formats for the four BedRock coherence protocol networks and a memory command/response network
-(discussed in the [interface\_specification](interface_specification.md)). The critical data word
-is always 64-bits in size and is used to provide higher throughput short messages and high performance
-critical word first behavior that is decoupled from the data channel throughput.
+message formats for the four BedRock coherence protocol networks and a memory command/response network.
+The critical data word is always 64-bits in size and is used to provide high performance short
+messages (e.g., uncached I/O transactions) and critical word first data return for block accesses.
 
 The files above are the authoritative definitions for the BP-BedRock interface implementation.
 In the event that the code differs from any documentation on or referenced by this page, the code
@@ -289,7 +288,7 @@ Data channel:
 
 The has\_data signal is raised with header\_valid when the message being sent has more than 64-bits
 of data. The last signal is raised with data\_valid when the last data beat of the message
-is being sent. The width of the data channel must be a power-of-two number of bits, in the inclusive
+is being sent. The width of the data channel must be a power-of-two in the inclusive
 range of 64- to 1024-bits.
 
 The sender contract is:
@@ -314,7 +313,7 @@ overlapping transactions, then transactions will necessarily be non-overlapping.
 
 ### Address Alignment, Request Sizes, and Data Alignment
 
-All BedRock transactions are defined by a byte address and transaction size. These fields are
+All BedRock transactions are defined by an address and transaction size. These fields are
 transmitted unmodified across all messages in the transaction. Every transaction has a power-of-two
 size defined by the `e_bedrock_msg_size_e` enum that ranges from 1B to 128B, inclusive. Data and
 address alignment is determined by the transaction size.
@@ -344,7 +343,8 @@ If the data channel width is larger than the transaction size, the returned data
 fill the data channel width. For example, with a transaction size of 16B (128-bits) and data
 channel width of 256-bits:
 
-- address in word 3 (left first): [3 | 2 | 3 | 2] with critical data = word 3
+- address in word 1 (left first): [1 | 0 | 1 | 0] with critical data = word 1
+- address in word 2 (left first): [3 | 2 | 3 | 2] with critical data = word 2
 
 ### Gearboxing
 
@@ -366,17 +366,20 @@ transfer.
 
 ### BedRock over X (e.g., wormhole)
 
-A BedRock network can be tunneled over any other network type that preserves the BedRock semantics
-at each end of the network, so long as the BedRock interface on each side of the X network has
-a common data channel width. If one side of the tunnel desires a different data channel width,
-the BedRock network must be gearboxed on one side of the tunnel.
+A BedRock network can be tunneled over any other network type so long as the BedRock protocol
+semantics are preserved after conversion back to BedRock. The requirement for tunneling is that
+the inbound and outbound BedRock connections must use the same data channel width and be of the
+same network type (e.g., memory command or LCE Request). If one side of the tunnel requires a
+BedRock network with a different data channel width, the BedRock protocol must be gearboxed either
+before entering the tunnel or after leaving the tunnel.
 
 ### BedRock Burst-Lite
 
 Endpoints requiring no more than 64-bits of data for all transactions may implement only the
 header channel and tie off the data channel (data\_ready\_and is always raised at the receiver or
 data\_valid is never raised at the sender). The system implementation must guarantee that the data
-channel is never activated at the endpoint. Violating this condition results in undefined behavior.
+channel is never activated for endpoints using Burst-Lite. Violating this condition results in
+undefined behavior.
 
 ### Minimal BedRock Burst Implementations
 
@@ -385,7 +388,6 @@ the producer and consumer contracts above. For example, implementations commonly
 handshake to occur prior to any data channel handshake for the current message, or disallow
 an additional header handshake from occurring until the all data beats from the current message
 have been transmitted.
-
 
 ### Memory and I/O Interface
 
@@ -417,7 +419,7 @@ A memory command or response packet is composed of:
 
 Uncached accesses must be naturally aligned with the request size. Cached accesses are block-based
 and return the cache block containing the requested address. Cached accesses return the critical
-data word in both the critical\_data field of the header and in the first data channel transfer.
+data word in the critical\_data field of the header.
 
 ### LCE-CCE Interface
 
