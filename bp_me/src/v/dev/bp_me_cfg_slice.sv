@@ -24,14 +24,14 @@ module bp_me_cfg_slice
 
    // BedRock Lite
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input                                          mem_fwd_v_i
+   , input                                          mem_fwd_header_v_i
+   , output logic                                   mem_fwd_header_ready_and_o
    , input                                          mem_fwd_has_data_i
-   , output logic                                   mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
-   , output logic                                   mem_rev_v_o
+   , output logic                                   mem_rev_header_v_o
+   , input                                          mem_rev_header_ready_and_i
    , output logic                                   mem_rev_has_data_o
-   , input                                          mem_rev_ready_and_i
 
    , output logic [cfg_bus_width_lp-1:0]            cfg_bus_o
    , input [did_width_p-1:0]                        did_i

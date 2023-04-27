@@ -25,20 +25,21 @@ module bp_nonsynth_nbf_loader
    , input [did_width_p-1:0]                        did_i
 
    , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
-   , output logic [io_data_width_p-1:0]             mem_fwd_data_o
-   , output logic                                   mem_fwd_v_o
-   , input                                          mem_fwd_ready_and_i
+   , output logic                                   mem_fwd_header_v_o
+   , input                                          mem_fwd_header_ready_and_i
+   , output logic                                   mem_fwd_has_data_o
 
    , input  [mem_rev_header_width_lp-1:0]           mem_rev_header_i
-   , input  [io_data_width_p-1:0]                   mem_rev_data_i
-   , input                                          mem_rev_v_i
-   , output logic                                   mem_rev_ready_and_o
+   , input                                          mem_rev_header_v_i
+   , output logic                                   mem_rev_header_ready_and_o
+   , input                                          mem_rev_has_data_i
 
    , output logic                                   done_o
    );
 
-  // all messages are single beat
-  wire unused = &{mem_rev_data_i};
+  // sink mem_rev
+  wire unused = &{mem_rev_header_i, mem_rev_header_v_i, mem_rev_has_data_i};
+  assign mem_rev_header_ready_and_o = 1'b1;
 
   enum logic [2:0] { e_reset, e_send, e_fence, e_read, e_done} state_n, state_r;
   wire is_reset    = (state_r == e_reset);
@@ -72,7 +73,7 @@ module bp_nonsynth_nbf_loader
   wire is_read_packet   = (curr_nbf.opcode[5] == 1'b1) & ~is_fence_packet & ~is_finish_packet;
   wire is_store_packet  = (curr_nbf.opcode[5] == 1'b0) & ~is_fence_packet & ~is_finish_packet;
 
-  wire next_nbf = (is_send_nbf && ((mem_fwd_ready_and_i & mem_fwd_v_o) || is_fence_packet || is_finish_packet));
+  wire next_nbf = (is_send_nbf && ((mem_fwd_header_ready_and_i & mem_fwd_header_v_o) || is_fence_packet || is_finish_packet));
   bsg_counter_clear_up
    #(.max_val_p(max_nbf_index_lp-1), .init_val_p(0))
    nbf_counter
@@ -117,26 +118,25 @@ module bp_nonsynth_nbf_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.v_i(mem_fwd_v_o)
-     ,.ready_i(mem_fwd_ready_and_i)
+     ,.v_i(mem_fwd_header_v_o)
+     ,.ready_i(mem_fwd_header_ready_and_i)
 
-     ,.yumi_i(mem_rev_v_i)
+     ,.yumi_i(mem_rev_header_v_i)
      ,.count_o(credit_count_lo)
      );
   wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
   wire credits_empty_lo = (credit_count_lo == '0);
-  assign mem_rev_ready_and_o = 1'b1;
 
   localparam sel_width_lp = `BSG_SAFE_CLOG2(nbf_data_width_lp>>3);
   localparam size_width_lp = `BSG_SAFE_CLOG2(sel_width_lp);
-  logic [io_data_width_p-1:0] test;
+  logic [dword_width_gp-1:0] mem_fwd_data;
   bsg_bus_pack
    #(.in_width_p(nbf_data_width_lp), .out_width_p(io_data_width_p))
    fwd_bus_pack
     (.data_i(curr_nbf.data)
      ,.sel_i('0) // We are aligned
      ,.size_i(mem_fwd_header_cast_o.size[0+:size_width_lp])
-     ,.data_o(mem_fwd_data_o)
+     ,.data_o(mem_fwd_data)
      );
 
   always_comb
@@ -154,11 +154,12 @@ module bp_nonsynth_nbf_loader
         2'b11: mem_fwd_header_cast_o.size = e_bedrock_msg_size_8;
         default: mem_fwd_header_cast_o.size = e_bedrock_msg_size_4;
       endcase
+      mem_fwd_header_cast_o.critical_data = mem_fwd_data;
     end
 
-  assign mem_fwd_v_o = ~credits_full_lo & is_send_nbf & ~is_fence_packet & ~is_finish_packet;
+  assign mem_fwd_header_v_o = ~credits_full_lo & is_send_nbf & ~is_fence_packet & ~is_finish_packet;
 
-  wire read_return = is_read & mem_rev_v_i & (mem_rev_header_cast_i.msg_type == e_bedrock_mem_uc_rd);
+  wire read_return = is_read & mem_rev_header_v_i & (mem_rev_header_cast_i.msg_type == e_bedrock_mem_uc_rd);
   always_comb
     unique casez (state_r)
       e_reset       : state_n = reset_i ? e_reset : e_send;
@@ -166,7 +167,7 @@ module bp_nonsynth_nbf_loader
                                 ? e_fence
                                 : is_finish_packet
                                   ? e_done
-                                  : (is_read_packet & mem_fwd_ready_and_i & mem_fwd_v_o)
+                                  : (is_read_packet & mem_fwd_header_ready_and_i & mem_fwd_header_v_o)
                                     ? e_read
                                     : e_send;
       e_read        : state_n = read_return ? e_send : e_read;

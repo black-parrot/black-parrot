@@ -46,14 +46,14 @@ module bp_me_bedrock_register
 
    // BedRock Lite
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input                                          mem_fwd_v_i
+   , input                                          mem_fwd_header_v_i
+   , output logic                                   mem_fwd_header_ready_and_o
    , input                                          mem_fwd_has_data_i
-   , output logic                                   mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
-   , output logic                                   mem_rev_v_o
+   , output logic                                   mem_rev_header_v_o
+   , input                                          mem_rev_header_ready_and_i
    , output logic                                   mem_rev_has_data_o
-   , input                                          mem_rev_ready_and_i
 
 
    // Synchronous register read/write interface.
@@ -82,8 +82,8 @@ module bp_me_bedrock_register
      ,.reset_i(reset_i)
 
      ,.data_i(mem_fwd_header_i)
-     ,.v_i(mem_fwd_v_i)
-     ,.ready_o(mem_fwd_ready_and_o)
+     ,.v_i(mem_fwd_header_v_i)
+     ,.ready_o(mem_fwd_header_ready_and_o)
 
      ,.data_o(mem_fwd_header_li)
      ,.v_o(mem_fwd_v_li)
@@ -132,9 +132,9 @@ module bp_me_bedrock_register
     mem_rev_header_lo = mem_fwd_header_li;
     mem_rev_header_lo = rdata_lo;
   end
-  assign mem_rev_v_o = v_r;
+  assign mem_rev_header_v_o = v_r;
   assign mem_rev_has_data_o = 1'b0;
-  assign mem_fwd_yumi_li = mem_rev_ready_and_i & mem_rev_v_o;
+  assign mem_fwd_yumi_li = mem_rev_header_ready_and_i & mem_rev_header_v_o;
 
   // synopsys translate_off
   always_ff @(negedge clk_i)

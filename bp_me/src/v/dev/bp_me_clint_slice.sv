@@ -29,14 +29,14 @@ module bp_me_clint_slice
 
    // BedRock Lite
    , input [mem_fwd_header_width_lp-1:0]                mem_fwd_header_i
-   , input                                              mem_fwd_v_i
+   , input                                              mem_fwd_header_v_i
+   , output logic                                       mem_fwd_header_ready_and_o
    , input                                              mem_fwd_has_data_i
-   , output logic                                       mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]         mem_rev_header_o
-   , output logic                                       mem_rev_v_o
+   , output logic                                       mem_rev_header_v_o
+   , input                                              mem_rev_header_ready_and_i
    , output logic                                       mem_rev_has_data_o
-   , input                                              mem_rev_ready_and_i
 
    // Local interrupts
    , output logic                                       debug_irq_o

@@ -288,55 +288,8 @@ module bp_unicore
      ,.msg_last_o(proc_rev_last_li)
      );
 
-  // TODO: data width must be dword_width_gp for device, but network may be larger
-  // need proper gearbox?
-  bp_bedrock_mem_fwd_header_s cfg_header_li;
-  bp_bedrock_mem_rev_header_s cfg_header_lo;
-  logic [dword_width_gp-1:0] cfg_data_lo, cfg_data_li;
-  logic cfg_v_li, cfg_ready_and_lo;
-  logic cfg_v_lo, cfg_ready_and_li;
-
-  bp_me_burst_bidi_lite
-    #(.bp_params_p(bp_params_p)
-      ,.data_width_p(uce_fill_width_p)
-      ,.payload_width_p(mem_fwd_payload_width_lp)
-      // TODO: what should block width be?
-      ,.block_width_p(cce_block_width_p)
-      ,.burst_payload_mask_p(mem_fwd_payload_mask_gp)
-      ,.lite_payload_mask_p(mem_rev_payload_mask_gp)
-      )
-    cfg_burst_bidi_lite
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-
-      ,.burst_header_i(dev_fwd_header_li[0])
-      ,.burst_header_v_i(dev_fwd_header_v_li[0])
-      ,.burst_header_ready_and_o(dev_fwd_header_ready_and_lo[0])
-      ,.burst_has_data_i(dev_fwd_has_data_li[0])
-      ,.burst_data_i(dev_fwd_data_li[0])
-      ,.burst_data_v_i(dev_fwd_data_v_li[0])
-      ,.burst_data_ready_and_o(dev_fwd_data_ready_and_lo[0])
-      ,.burst_last_i(dev_fwd_last_li[0])
-
-      ,.burst_header_o(dev_rev_header_lo[0])
-      ,.burst_header_v_o(dev_rev_header_v_lo[0])
-      ,.burst_header_ready_and_i(dev_rev_header_ready_and_li[0])
-      ,.burst_has_data_o(dev_rev_has_data_lo[0])
-      ,.burst_data_o(dev_rev_data_lo[0])
-      ,.burst_data_v_o(dev_rev_data_v_lo[0])
-      ,.burst_data_ready_and_i(dev_rev_data_ready_and_li[0])
-      ,.burst_last_o(dev_rev_last_lo[0])
-
-      ,.lite_header_i(cfg_header_lo)
-      ,.lite_data_i(cfg_data_lo)
-      ,.lite_v_i(cfg_v_lo)
-      ,.lite_ready_and_o(cfg_ready_and_li)
-
-      ,.lite_header_o(cfg_header_li)
-      ,.lite_data_o(cfg_data_li)
-      ,.lite_v_o(cfg_v_li)
-      ,.lite_ready_and_i(cfg_ready_and_lo)
-      );
+  assign dev_fwd_data_ready_and_lo[0] = 1'b1;
+  assign dev_rev_data_v_lo[0] = 1'b0;
 
   bp_me_cfg_slice
    #(.bp_params_p(bp_params_p))
@@ -344,15 +297,15 @@ module bp_unicore
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.mem_fwd_header_i(cfg_header_li)
-     ,.mem_fwd_data_i(cfg_data_li)
-     ,.mem_fwd_v_i(cfg_v_li)
-     ,.mem_fwd_ready_and_o(cfg_ready_and_lo)
+     ,.mem_fwd_header_i(dev_fwd_header_li[0])
+     ,.mem_fwd_header_v_i(dev_fwd_header_v_li[0])
+     ,.mem_fwd_header_ready_and_o(dev_fwd_header_ready_and_lo[0])
+     ,.mem_fwd_has_data_i(dev_fwd_has_data_li[0])
 
-     ,.mem_rev_header_o(cfg_header_lo)
-     ,.mem_rev_data_o(cfg_data_lo)
-     ,.mem_rev_v_o(cfg_v_lo)
-     ,.mem_rev_ready_and_i(cfg_ready_and_li)
+     ,.mem_rev_header_o(dev_rev_header_lo[0])
+     ,.mem_rev_header_v_o(dev_rev_header_v_lo[0])
+     ,.mem_rev_header_ready_and_i(dev_rev_header_ready_and_li[0])
+     ,.mem_rev_has_data_o(dev_rev_has_data_lo[0])
 
      ,.cfg_bus_o(cfg_bus_lo)
      ,.did_i(my_did_i)
@@ -366,55 +319,8 @@ module bp_unicore
      ,.cce_ucode_data_i('0)
      );
 
-  // TODO: data width must be dword_width_gp for device, but network may be larger
-  // need proper gearbox?
-  bp_bedrock_mem_fwd_header_s clint_header_li;
-  bp_bedrock_mem_rev_header_s clint_header_lo;
-  logic [dword_width_gp-1:0] clint_data_lo, clint_data_li;
-  logic clint_v_li, clint_ready_and_lo;
-  logic clint_v_lo, clint_ready_and_li;
-
-  bp_me_burst_bidi_lite
-    #(.bp_params_p(bp_params_p)
-      ,.data_width_p(uce_fill_width_p)
-      ,.payload_width_p(mem_fwd_payload_width_lp)
-      // TODO: what should block width be?
-      ,.block_width_p(cce_block_width_p)
-      ,.burst_payload_mask_p(mem_fwd_payload_mask_gp)
-      ,.lite_payload_mask_p(mem_rev_payload_mask_gp)
-      )
-    clint_burst_bidi_lite
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-
-      ,.burst_header_i(dev_fwd_header_li[1])
-      ,.burst_header_v_i(dev_fwd_header_v_li[1])
-      ,.burst_header_ready_and_o(dev_fwd_header_ready_and_lo[1])
-      ,.burst_has_data_i(dev_fwd_has_data_li[1])
-      ,.burst_data_i(dev_fwd_data_li[1])
-      ,.burst_data_v_i(dev_fwd_data_v_li[1])
-      ,.burst_data_ready_and_o(dev_fwd_data_ready_and_lo[1])
-      ,.burst_last_i(dev_fwd_last_li[1])
-
-      ,.burst_header_o(dev_rev_header_lo[1])
-      ,.burst_header_v_o(dev_rev_header_v_lo[1])
-      ,.burst_header_ready_and_i(dev_rev_header_ready_and_li[1])
-      ,.burst_has_data_o(dev_rev_has_data_lo[1])
-      ,.burst_data_o(dev_rev_data_lo[1])
-      ,.burst_data_v_o(dev_rev_data_v_lo[1])
-      ,.burst_data_ready_and_i(dev_rev_data_ready_and_li[1])
-      ,.burst_last_o(dev_rev_last_lo[1])
-
-      ,.lite_header_i(clint_header_lo)
-      ,.lite_data_i(clint_data_lo)
-      ,.lite_v_i(clint_v_lo)
-      ,.lite_ready_and_o(clint_ready_and_li)
-
-      ,.lite_header_o(clint_header_li)
-      ,.lite_data_o(clint_data_li)
-      ,.lite_v_o(clint_v_li)
-      ,.lite_ready_and_i(clint_ready_and_lo)
-      );
+  assign dev_fwd_data_ready_and_lo[1] = 1'b1;
+  assign dev_rev_data_v_lo[1] = 1'b0;
 
   bp_me_clint_slice
    #(.bp_params_p(bp_params_p))
@@ -424,15 +330,15 @@ module bp_unicore
      ,.reset_i(reset_r)
      ,.cfg_bus_i(cfg_bus_lo)
 
-     ,.mem_fwd_header_i(clint_header_li)
-     ,.mem_fwd_data_i(clint_data_li)
-     ,.mem_fwd_v_i(clint_v_li)
-     ,.mem_fwd_ready_and_o(clint_ready_and_lo)
+     ,.mem_fwd_header_i(dev_fwd_header_li[1])
+     ,.mem_fwd_header_v_i(dev_fwd_header_v_li[1])
+     ,.mem_fwd_header_ready_and_o(dev_fwd_header_ready_and_lo[1])
+     ,.mem_fwd_has_data_i(dev_fwd_has_data_li[1])
 
-     ,.mem_rev_header_o(clint_header_lo)
-     ,.mem_rev_data_o(clint_data_lo)
-     ,.mem_rev_v_o(clint_v_lo)
-     ,.mem_rev_ready_and_i(clint_ready_and_li)
+     ,.mem_rev_header_o(dev_rev_header_lo[1])
+     ,.mem_rev_header_v_o(dev_rev_header_v_lo[1])
+     ,.mem_rev_header_ready_and_i(dev_rev_header_ready_and_li[1])
+     ,.mem_rev_has_data_o(dev_rev_has_data_lo[1])
 
      ,.debug_irq_o(debug_irq_li)
      ,.timer_irq_o(timer_irq_li)
