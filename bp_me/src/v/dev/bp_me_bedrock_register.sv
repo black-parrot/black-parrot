@@ -46,13 +46,13 @@ module bp_me_bedrock_register
 
    // BedRock Lite
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input [dword_width_gp-1:0]                     mem_fwd_data_i
    , input                                          mem_fwd_v_i
+   , input                                          mem_fwd_has_data_i
    , output logic                                   mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
-   , output logic [dword_width_gp-1:0]              mem_rev_data_o
    , output logic                                   mem_rev_v_o
+   , output logic                                   mem_rev_has_data_o
    , input                                          mem_rev_ready_and_i
 
 
@@ -69,24 +69,23 @@ module bp_me_bedrock_register
    , input [els_p-1:0][reg_width_p-1:0]             data_i
    );
 
-  if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
+  wire unused = mem_fwd_has_data_i;
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
-  logic [dword_width_gp-1:0] mem_fwd_data_li;
   logic mem_fwd_v_li, mem_fwd_yumi_li;
   bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+dword_width_gp))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)))
    fwd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({mem_fwd_data_i, mem_fwd_header_i})
+     ,.data_i(mem_fwd_header_i)
      ,.v_i(mem_fwd_v_i)
      ,.ready_o(mem_fwd_ready_and_o)
 
-     ,.data_o({mem_fwd_data_li, mem_fwd_header_li})
+     ,.data_o(mem_fwd_header_li)
      ,.v_o(mem_fwd_v_li)
      ,.yumi_i(mem_fwd_yumi_li)
      );
@@ -125,11 +124,16 @@ module bp_me_bedrock_register
 
   assign addr_o = mem_fwd_header_li.addr[0+:reg_addr_width_p];
   assign size_o = mem_fwd_header_li.size;
-  assign data_o = mem_fwd_data_li;
+  assign data_o = mem_fwd_header_li.critical_data;
 
-  assign mem_rev_header_o = mem_fwd_header_li;
-  assign mem_rev_data_o = rdata_lo;
+  bp_bedrock_mem_rev_header_s mem_rev_header_lo;
+  assign mem_rev_header_o = mem_rev_header_lo;
+  always_comb begin
+    mem_rev_header_lo = mem_fwd_header_li;
+    mem_rev_header_lo = rdata_lo;
+  end
   assign mem_rev_v_o = v_r;
+  assign mem_rev_has_data_o = 1'b0;
   assign mem_fwd_yumi_li = mem_rev_ready_and_i & mem_rev_v_o;
 
   // synopsys translate_off

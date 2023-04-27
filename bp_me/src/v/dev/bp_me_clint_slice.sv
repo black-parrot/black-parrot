@@ -29,13 +29,13 @@ module bp_me_clint_slice
 
    // BedRock Lite
    , input [mem_fwd_header_width_lp-1:0]                mem_fwd_header_i
-   , input [dword_width_gp-1:0]                         mem_fwd_data_i
    , input                                              mem_fwd_v_i
+   , input                                              mem_fwd_has_data_i
    , output logic                                       mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]         mem_rev_header_o
-   , output logic [dword_width_gp-1:0]                  mem_rev_data_o
    , output logic                                       mem_rev_v_o
+   , output logic                                       mem_rev_has_data_o
    , input                                              mem_rev_ready_and_i
 
    // Local interrupts
@@ -45,8 +45,6 @@ module bp_me_clint_slice
    , output logic                                       m_external_irq_o
    , output logic                                       s_external_irq_o
    );
-
-  if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);

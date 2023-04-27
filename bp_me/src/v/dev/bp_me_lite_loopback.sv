@@ -25,18 +25,18 @@ module bp_me_lite_loopback
     , input                                          reset_i
 
     , input [msg_header_width_lp-1:0]                in_msg_header_i
-    , input [data_width_p-1:0]                       in_msg_data_i
     , input                                          in_msg_v_i
+    , input                                          in_msg_has_data_i
     , output logic                                   in_msg_ready_and_o
 
     , output logic [msg_header_width_lp-1:0]         out_msg_header_o
-    , output logic [data_width_p-1:0]                out_msg_data_o
     , output logic                                   out_msg_v_o
+    , output logic                                   out_msg_has_data_o
     , input                                          out_msg_ready_and_i
     );
 
-  wire unused = &{in_msg_data_i};
-  assign out_msg_data_o = '0;
+  wire unused = &{in_msg_has_data_i};
+  assign out_msg_has_data_o = '0;
 
   bsg_one_fifo
    #(.width_p(msg_header_width_lp))
