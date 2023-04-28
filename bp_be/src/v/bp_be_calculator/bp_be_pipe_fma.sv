@@ -176,6 +176,7 @@ module bp_be_pipe_fma
     (.clock(clk_i),
      .control(control_li)
      ,.op(fma_op_li)
+     ,.mul_not_fma(is_fmul_li)
      ,.a(fma_a_li)
      ,.b(fma_b_li)
      ,.c(fma_c_li)
