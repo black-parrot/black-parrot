@@ -124,7 +124,11 @@ module bp_be_pipe_fma
 
   wire [dp_rec_width_gp-1:0] fma_a_li = is_imul_li ? rs1 : frs1.rec;
   wire [dp_rec_width_gp-1:0] fma_b_li = is_imul_li ? rs2 : is_faddsub_li ? dp_rec_1_0 : frs2.rec;
-  wire [dp_rec_width_gp-1:0] fma_c_li = is_faddsub_li ? frs2.rec : is_fmul_li ? dp_rec_0_0 : frs3.rec;
+  wire [dp_rec_width_gp-1:0] fma_c_li = is_faddsub_li
+                                          ? frs2.rec
+                                          : is_fmul_li // correct for influence by unintentional sign of C
+                                            ? (frm_li == e_rdn) ? dp_rec_0_0 : dp_rec_neg_0_0
+                                            : frs3.rec;
 
   // Here, we switch the implementation based on synthesizing for Vivado or not. If this is
   //   a knob you'd like to turn, consider modifying the define yourself.
@@ -176,7 +180,6 @@ module bp_be_pipe_fma
     (.clock(clk_i),
      .control(control_li)
      ,.op(fma_op_li)
-     ,.mul_not_fma(is_fmul_li)
      ,.a(fma_a_li)
      ,.b(fma_b_li)
      ,.c(fma_c_li)
