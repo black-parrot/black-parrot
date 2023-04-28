@@ -20,6 +20,7 @@ package bp_be_pkg;
 
   localparam [dp_rec_width_gp-1:0] dp_rec_1_0 = 65'h0_80000000_00000000;
   localparam [dp_rec_width_gp-1:0] dp_rec_0_0 = 65'h0_00000000_00000000;
+  localparam [dp_rec_width_gp-1:0] dp_rec_neg_0_0 = 65'h1_00000000_00000000;
 
   localparam [dp_rec_width_gp-1:0] dp_canonical_rec = 65'h0_e0080000_00000000;
 
