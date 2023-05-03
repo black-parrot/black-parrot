@@ -29,14 +29,12 @@ module bp_me_nonsynth_dev_tracer
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input [dword_width_gp-1:0]                     mem_fwd_data_i
-   , input                                          mem_fwd_v_i
-   , input                                          mem_fwd_ready_and_i
+   , input                                          mem_fwd_header_v_i
+   , input                                          mem_fwd_header_ready_and_i
 
    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
-   , input [dword_width_gp-1:0]                     mem_rev_data_i
-   , input                                          mem_rev_v_i
-   , input                                          mem_rev_ready_and_i
+   , input                                          mem_rev_header_v_i
+   , input                                          mem_rev_header_ready_and_i
   );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
@@ -57,7 +55,7 @@ module bp_me_nonsynth_dev_tracer
   // Tracer
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
-      if (mem_fwd_v_i & mem_fwd_ready_and_i) begin
+      if (mem_fwd_header_v_i & mem_fwd_header_ready_and_i) begin
         $fdisplay(file, "%12t |: MEM FWD addr[%H] msg[%b] size[%b]"
                  , $time
                  , mem_fwd_header_cast_i.addr
@@ -67,11 +65,11 @@ module bp_me_nonsynth_dev_tracer
         if (mem_fwd_header_cast_i.msg_type.fwd inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr}) begin
           $fdisplay(file, "%12t |: MEM FWD DATA %H"
                    , $time
-                   , mem_fwd_data_i
+                   , mem_fwd_header_cast_i.critical_data
                    );
         end
       end
-      if (mem_rev_v_i & mem_rev_ready_and_i) begin
+      if (mem_rev_header_v_i & mem_rev_header_ready_and_i) begin
         $fdisplay(file, "%12t |: MEM REV addr[%H] msg[%b] size[%b]"
                  , $time
                  , mem_rev_header_cast_i.addr
@@ -81,7 +79,7 @@ module bp_me_nonsynth_dev_tracer
         if (mem_rev_header_cast_i.msg_type.rev inside {e_bedrock_mem_uc_rd, e_bedrock_mem_rd}) begin
           $fdisplay(file, "%12t |: MEM REV DATA %H"
                    , $time
-                   , mem_rev_data_i
+                   , mem_rev_header_cast_i.critical_data
                    );
         end
       end

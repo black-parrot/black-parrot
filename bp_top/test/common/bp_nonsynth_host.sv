@@ -30,14 +30,14 @@ module bp_nonsynth_host
    , input                                          reset_i
 
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input [dword_width_gp-1:0]                     mem_fwd_data_i
-   , input                                          mem_fwd_v_i
-   , output logic                                   mem_fwd_ready_and_o
+   , input                                          mem_fwd_header_v_i
+   , output logic                                   mem_fwd_header_ready_and_o
+   , input                                          mem_fwd_has_data_i
 
    , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
-   , output logic [dword_width_gp-1:0]              mem_rev_data_o
-   , output logic                                   mem_rev_v_o
-   , input                                          mem_rev_ready_and_i
+   , output logic                                   mem_rev_header_v_o
+   , input                                          mem_rev_header_ready_and_i
+   , output logic                                   mem_rev_has_data_o
 
    , output logic                                   icache_trace_en_o
    , output logic                                   dcache_trace_en_o
@@ -119,7 +119,7 @@ module bp_nonsynth_host
   assign mem_fwd_header_li = mem_fwd_header_i;
   wire [hio_width_p-1:0] hio_id = mem_fwd_header_li.addr[paddr_width_p-1-:hio_width_p];
   always_comb
-    if (mem_fwd_v_i & (hio_id != '0))
+    if (mem_fwd_header_v_i & (hio_id != '0))
       $display("Warning: Accessing hio %0h. Sending loopback message!", hio_id);
 
   // for some reason, VCS doesn't like finish_w_v_li << addr_core_enc
@@ -155,7 +155,7 @@ module bp_nonsynth_host
       if (getchar_r_v_li)
         pop();
 
-      if (mem_fwd_ready_and_o & mem_fwd_v_i & (hio_id != '0))
+      if (mem_fwd_header_ready_and_o & mem_fwd_header_v_i & (hio_id != '0))
         $error("Warning: Accesing illegal hio %0h. Sending loopback message!", hio_id);
       for (integer i = 0; i < num_core_p; i++)
         begin
