@@ -130,7 +130,7 @@ module bp_me_bedrock_register
   assign mem_rev_header_o = mem_rev_header_lo;
   always_comb begin
     mem_rev_header_lo = mem_fwd_header_li;
-    mem_rev_header_lo = rdata_lo;
+    mem_rev_header_lo.critical_data = rdata_lo;
   end
   assign mem_rev_header_v_o = v_r;
   assign mem_rev_has_data_o = 1'b0;
