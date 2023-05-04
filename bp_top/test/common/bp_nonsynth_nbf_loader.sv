@@ -158,7 +158,7 @@ module bp_nonsynth_nbf_loader
     end
 
   assign mem_fwd_header_v_o = ~credits_full_lo & is_send_nbf & ~is_fence_packet & ~is_finish_packet;
-  assign mem_fwd_has_data_o = 1'b1;
+  assign mem_fwd_has_data_o = 1'b0;
 
   wire read_return = is_read & mem_rev_header_v_i & (mem_rev_header_cast_i.msg_type == e_bedrock_mem_uc_rd);
   always_comb
