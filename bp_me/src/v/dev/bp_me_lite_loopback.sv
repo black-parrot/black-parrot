@@ -25,14 +25,14 @@ module bp_me_lite_loopback
     , input                                          reset_i
 
     , input [msg_header_width_lp-1:0]                in_msg_header_i
-    , input                                          in_msg_v_i
+    , input                                          in_msg_header_v_i
     , input                                          in_msg_has_data_i
-    , output logic                                   in_msg_ready_and_o
+    , output logic                                   in_msg_header_ready_and_o
 
     , output logic [msg_header_width_lp-1:0]         out_msg_header_o
-    , output logic                                   out_msg_v_o
+    , output logic                                   out_msg_header_v_o
     , output logic                                   out_msg_has_data_o
-    , input                                          out_msg_ready_and_i
+    , input                                          out_msg_header_ready_and_i
     );
 
   wire unused = &{in_msg_has_data_i};
@@ -45,12 +45,12 @@ module bp_me_lite_loopback
      ,.reset_i(reset_i)
 
      ,.data_i(in_msg_header_i)
-     ,.v_i(in_msg_v_i)
-     ,.ready_o(in_msg_ready_and_o)
+     ,.v_i(in_msg_header_v_i)
+     ,.ready_o(in_msg_header_ready_and_o)
 
      ,.data_o(out_msg_header_o)
-     ,.v_o(out_msg_v_o)
-     ,.yumi_i(out_msg_ready_and_i & out_msg_v_o)
+     ,.v_o(out_msg_header_v_o)
+     ,.yumi_i(out_msg_header_ready_and_i & out_msg_header_v_o)
      );
 
 endmodule
