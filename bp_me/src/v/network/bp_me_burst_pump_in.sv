@@ -152,7 +152,7 @@ module bp_me_burst_pump_in
       // keep the address to be the critical word address
       // TODO: line not needed since fsm_header_cast_o already driven by msg_header_li?
       fsm_header_cast_o.addr[0+:block_offset_width_lp] = msg_header_li.addr[0+:block_offset_width_lp];
-      fsm_data_o = msg_data_li;
+      fsm_data_o = msg_has_data_li ? msg_data_li : {stream_data_width_p/dword_width_gp{msg_header_li.critical_data}};
 
       if (~msg_stream & fsm_stream & nz_stream)
         begin
