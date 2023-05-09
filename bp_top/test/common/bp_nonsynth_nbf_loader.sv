@@ -13,7 +13,6 @@ module bp_nonsynth_nbf_loader
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
-   , parameter io_data_width_p = dword_width_gp
 
    , parameter nbf_filename_p = "prog.nbf"
    , parameter verbose_p = 1
@@ -25,13 +24,13 @@ module bp_nonsynth_nbf_loader
    , input [did_width_p-1:0]                        did_i
 
    , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
-   , output logic [io_data_width_p-1:0]             mem_fwd_data_o
+   , output logic [dword_width_gp-1:0]              mem_fwd_data_o
    , output logic                                   mem_fwd_v_o
    , input                                          mem_fwd_ready_and_i
    , output logic                                   mem_fwd_last_o
 
-   , input  [mem_rev_header_width_lp-1:0]           mem_rev_header_i
-   , input  [io_data_width_p-1:0]                   mem_rev_data_i
+   , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
+   , input [dword_width_gp-1:0]                     mem_rev_data_i
    , input                                          mem_rev_v_i
    , output logic                                   mem_rev_ready_and_o
    , input                                          mem_rev_last_i
@@ -131,9 +130,8 @@ module bp_nonsynth_nbf_loader
 
   localparam sel_width_lp = `BSG_SAFE_CLOG2(nbf_data_width_lp>>3);
   localparam size_width_lp = `BSG_SAFE_CLOG2(sel_width_lp);
-  logic [io_data_width_p-1:0] test;
   bsg_bus_pack
-   #(.in_width_p(nbf_data_width_lp), .out_width_p(io_data_width_p))
+   #(.in_width_p(nbf_data_width_lp), .out_width_p(dword_width_gp))
    fwd_bus_pack
     (.data_i(curr_nbf.data)
      ,.sel_i('0) // We are aligned
@@ -203,7 +201,7 @@ module bp_nonsynth_nbf_loader
 
   if (nbf_data_width_lp != dword_width_gp)
     $error("NBF data width must be same as dword_width_gp");
-  if (io_data_width_p < nbf_data_width_lp)
+  if (dword_width_gp < nbf_data_width_lp)
     $error("NBF IO data width must be as large as NBF data width");
 
 endmodule

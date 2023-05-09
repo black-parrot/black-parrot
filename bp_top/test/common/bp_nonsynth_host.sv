@@ -9,7 +9,6 @@ module bp_nonsynth_host
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter io_data_width_p = dword_width_gp
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter icache_trace_p         = 0

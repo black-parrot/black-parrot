@@ -8,6 +8,8 @@
   localparam dev_id_width_gp   = 4;
   localparam dev_addr_width_gp = 20;
 
+  localparam core_offset_width_gp = dev_addr_width_gp + dev_id_width_gp;
+
   localparam host_dev_gp  = 1;
   localparam cfg_dev_gp   = 2;
   localparam clint_dev_gp = 3;
