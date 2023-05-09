@@ -72,7 +72,7 @@ module bp_be_pipe_ctl
   wire [vaddr_width_p-1:0] baddr = decode.baddr_sel ? rs1 : pc;
   wire [vaddr_width_p-1:0] taken_raw = baddr + imm;
   wire [vaddr_width_p-1:0] taken_tgt = {taken_raw[vaddr_width_p-1:1], 1'b0};
-  wire [vaddr_width_p-1:0] ntaken_tgt = pc + 4'd4;
+  wire [vaddr_width_p-1:0] ntaken_tgt = pc + (reservation.compressed ? 4'd2 : 4'd4);
 
   assign data_o   = vaddr_width_p'($signed(ntaken_tgt));
   assign v_o      = reservation.v & reservation.decode.pipe_ctl_v;

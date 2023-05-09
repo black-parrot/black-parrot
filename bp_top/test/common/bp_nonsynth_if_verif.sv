@@ -26,7 +26,7 @@ module bp_nonsynth_if_verif
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p);
+  `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
 
   initial
     begin
@@ -68,6 +68,10 @@ module bp_nonsynth_if_verif
     $error("Error: Must have <= 1 column of coherent accelerators");
   if (dword_width_gp != 64)
     $error("Error: BlackParrot is only tested with 64-bit dword width");
+
+  // Front End
+  if (ras_idx_width_p > 1)
+    $error("Error: RAS > 1 is not supported");
 
   // Core or Features
   if (!muldiv_support_p[e_mul])

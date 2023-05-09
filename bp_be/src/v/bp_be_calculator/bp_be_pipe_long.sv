@@ -107,20 +107,20 @@ module bp_be_pipe_long
 
   bp_be_fp_reg_s frs1, frs2;
   bp_be_nan_unbox
-    #(.bp_params_p(bp_params_p))
-    frs1_unbox
-     (.reg_i(reservation.rs1)
-      ,.unbox_i(decode.ops_v)
-      ,.reg_o(frs1)
-      );
+   #(.bp_params_p(bp_params_p))
+   frs1_unbox
+    (.reg_i(reservation.rs1)
+     ,.unbox_i(decode.ops_v)
+     ,.reg_o(frs1)
+     );
 
   bp_be_nan_unbox
-    #(.bp_params_p(bp_params_p))
-    frs2_unbox
-     (.reg_i(reservation.rs2)
-      ,.unbox_i(decode.ops_v)
-      ,.reg_o(frs2)
-      );
+   #(.bp_params_p(bp_params_p))
+   frs2_unbox
+    (.reg_i(reservation.rs2)
+     ,.unbox_i(decode.ops_v)
+     ,.reg_o(frs2)
+     );
 
   //
   // Control bits for the FPU

@@ -1,7 +1,8 @@
 /*
  * bp_fe_ras.sv
  *
- * TODO: Implement repair of stack
+ * TODO: Add restore capability
+ * TODO: Expand to multiple return addresses
  */
 
 `include "bp_common_defines.svh"
@@ -17,11 +18,12 @@ module bp_fe_ras
    , input                            reset_i
 
    , input                            call_i
-   , input                            return_i
    , input [vaddr_width_p-1:0]        addr_i
 
-   , output logic [vaddr_width_p-1:0] tgt_o
    , output logic                     v_o
+   , output logic                     idx_o
+   , output logic [vaddr_width_p-1:0] tgt_o
+   , input                            return_i
    );
 
   logic [vaddr_width_p-1:0] addr_r;
@@ -48,6 +50,7 @@ module bp_fe_ras
      ,.data_o(v_r)
      );
   assign v_o = v_r;
+  assign idx_o = v_r;
 
 endmodule
 
