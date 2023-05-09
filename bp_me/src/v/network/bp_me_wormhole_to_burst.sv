@@ -171,8 +171,9 @@ module bp_me_wormhole_to_burst
       //assign pr_last_o = is_data & wh_last_data & (~|count_r || |{count_r & piso_v_lo});
       assign pr_last_o = is_data & wh_last_data & |{count_r & piso_v_lo};
       assign pr_data_v_o = |piso_v_lo;
+      $error("flit_width_p > pr_data_width_p");
     end
-  else
+  else if (flit_width_p < pr_data_width_p)
     begin : wide
       localparam flit_beats_lp = flit_width_p/pr_data_width_p;
       logic [(flit_width_p/pr_data_width_p)-1:0] sipo_v_lo;
@@ -194,6 +195,13 @@ module bp_me_wormhole_to_burst
       // WH data is valid if we've filled the SIPO or if it's the last beat
       assign pr_data_v_o = (|sipo_v_lo & wh_last_data) || sipo_v_lo[flit_beats_lp-1];
       assign pr_last_o = is_data & wh_last_data;
+      $error("flit_width_p < pr_data_width_p");
+    end
+  else
+    begin
+      assign pr_data_o = link_data_i;
+      assign pr_data_v_o = link_v_i;
+      assign link_ready_and_o = pr_data_ready_and_i;
     end
 
   // Identifies which flits are header vs data flits

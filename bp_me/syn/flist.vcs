@@ -192,7 +192,6 @@ $BP_ME_DIR/src/v/dev/bp_me_cfg_slice.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_wrap_counter.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_fifo.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv
 

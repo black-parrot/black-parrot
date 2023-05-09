@@ -251,7 +251,6 @@ $BP_ME_DIR/src/v/dev/bp_me_cache_slice.sv
 $BP_ME_DIR/src/v/dev/bp_me_cfg_slice.sv
 $BP_ME_DIR/src/v/dev/bp_me_clint_slice.sv
 $BP_ME_DIR/src/v/dev/bp_me_burst_loopback.sv
-$BP_ME_DIR/src/v/dev/bp_me_lite_loopback.sv
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.sv
 $BP_ME_DIR/src/v/cce/bp_cce_alu.sv
@@ -287,7 +286,6 @@ $BP_ME_DIR/src/v/network/bp_me_wormhole_header_encode.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_to_burst.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_to_wormhole.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_fifo.sv
 $BP_ME_DIR/src/v/network/bp_me_wrap_counter.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_burst_pump_out.sv
