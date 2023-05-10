@@ -71,30 +71,21 @@ module bp_lce_cmd
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-    , input                                          lce_cmd_header_v_i
-    , output logic                                   lce_cmd_header_ready_and_o
-    , input                                          lce_cmd_has_data_i
     , input [fill_width_p-1:0]                       lce_cmd_data_i
-    , input                                          lce_cmd_data_v_i
-    , output logic                                   lce_cmd_data_ready_and_o
+    , input                                          lce_cmd_v_i
+    , output logic                                   lce_cmd_ready_and_o
     , input                                          lce_cmd_last_i
 
     , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
-    , output logic                                   lce_fill_header_v_o
-    , input                                          lce_fill_header_ready_and_i
-    , output logic                                   lce_fill_has_data_o
     , output logic [fill_width_p-1:0]                lce_fill_data_o
-    , output logic                                   lce_fill_data_v_o
-    , input                                          lce_fill_data_ready_and_i
+    , output logic                                   lce_fill_v_o
+    , input                                          lce_fill_ready_and_i
     , output logic                                   lce_fill_last_o
 
     , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
-    , output logic                                   lce_resp_header_v_o
-    , input                                          lce_resp_header_ready_and_i
-    , output logic                                   lce_resp_has_data_o
     , output logic [fill_width_p-1:0]                lce_resp_data_o
-    , output logic                                   lce_resp_data_v_o
-    , input                                          lce_resp_data_ready_and_i
+    , output logic                                   lce_resp_v_o
+    , input                                          lce_resp_ready_and_i
     , output logic                                   lce_resp_last_o
   );
 
@@ -146,7 +137,7 @@ module bp_lce_cmd
   logic fsm_cmd_v_li, fsm_cmd_yumi_lo;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt_li;
   logic fsm_cmd_new_li, fsm_cmd_last_li;
-  bp_me_burst_pump_in
+  bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
@@ -161,12 +152,9 @@ module bp_lce_cmd
      ,.reset_i(reset_i)
 
      ,.msg_header_i(lce_cmd_header_cast_i)
-     ,.msg_header_v_i(lce_cmd_header_v_i)
-     ,.msg_header_ready_and_o(lce_cmd_header_ready_and_o)
-     ,.msg_has_data_i(lce_cmd_has_data_i)
      ,.msg_data_i(lce_cmd_data_i)
-     ,.msg_data_v_i(lce_cmd_data_v_i)
-     ,.msg_data_ready_and_o(lce_cmd_data_ready_and_o)
+     ,.msg_v_i(lce_cmd_v_i)
+     ,.msg_ready_and_o(lce_cmd_ready_and_o)
      ,.msg_last_i(lce_cmd_last_i)
 
      ,.fsm_header_o(fsm_cmd_header_li)
@@ -195,7 +183,7 @@ module bp_lce_cmd
   logic fsm_fill_v_lo, fsm_fill_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_fill_cnt_lo;
   logic fsm_fill_new_lo, fsm_fill_last_lo;
-  bp_me_burst_pump_out
+  bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
@@ -208,12 +196,9 @@ module bp_lce_cmd
      ,.reset_i(reset_i)
 
      ,.msg_header_o(lce_fill_header_cast_o)
-     ,.msg_header_v_o(lce_fill_header_v_o)
-     ,.msg_header_ready_and_i(lce_fill_header_ready_and_i)
-     ,.msg_has_data_o(lce_fill_has_data_o)
      ,.msg_data_o(lce_fill_data_o)
-     ,.msg_data_v_o(lce_fill_data_v_o)
-     ,.msg_data_ready_and_i(lce_fill_data_ready_and_i)
+     ,.msg_v_o(lce_fill_v_o)
+     ,.msg_ready_and_i(lce_fill_ready_and_i)
      ,.msg_last_o(lce_fill_last_o)
 
      ,.fsm_header_i(fsm_fill_header_lo)
@@ -231,7 +216,7 @@ module bp_lce_cmd
   logic fsm_resp_v_lo, fsm_resp_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_resp_cnt_lo;
   logic fsm_resp_new_lo, fsm_resp_last_lo;
-  bp_me_burst_pump_out
+  bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
@@ -244,12 +229,9 @@ module bp_lce_cmd
      ,.reset_i(reset_i)
 
      ,.msg_header_o(lce_resp_header_cast_o)
-     ,.msg_header_v_o(lce_resp_header_v_o)
-     ,.msg_header_ready_and_i(lce_resp_header_ready_and_i)
-     ,.msg_has_data_o(lce_resp_has_data_o)
      ,.msg_data_o(lce_resp_data_o)
-     ,.msg_data_v_o(lce_resp_data_v_o)
-     ,.msg_data_ready_and_i(lce_resp_data_ready_and_i)
+     ,.msg_v_o(lce_resp_v_o)
+     ,.msg_ready_and_i(lce_resp_ready_and_i)
      ,.msg_last_o(lce_resp_last_o)
 
      ,.fsm_header_i(fsm_resp_header_lo)

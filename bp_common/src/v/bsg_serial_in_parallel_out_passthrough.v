@@ -65,18 +65,10 @@ module bsg_serial_in_parallel_out_passthrough
     end
   assign data_lo[els_p-1] = data_i;
 
- // for (genvar i = 0; i < els_p; i++)
- //   if (i == 0)
- //     assign v_o[0] = v_i;
- //   else
- //     assign v_o[i] = v_i & count_r[i];
-
-  // TODO: We want
   for (genvar i = 0; i < els_p; i++)
     if (i == els_p-1)
       assign v_o[i] = (v_i & count_r[i]);
     else
-      //assign v_o[i] = (v_i & count_r[i]) | count_r[i+1];
       assign v_o[i] = (v_i & count_r[i]) | (~v_i & count_r[i+1]);
 
   // If send hi_to_lo, reverse the output data array

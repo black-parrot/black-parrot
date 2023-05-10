@@ -99,35 +99,26 @@ module wrapper
   // LCE-CCE connections - to/from LCE and xbars
   bp_bedrock_lce_req_header_s [num_caches_p-1:0] lce_req_header_lo;
   logic [num_caches_p-1:0][fill_width_p-1:0] lce_req_data_lo;
-  logic [num_caches_p-1:0] lce_req_header_v_lo, lce_req_header_ready_and_li;
-  logic [num_caches_p-1:0] lce_req_data_v_lo, lce_req_data_ready_and_li;
-  logic [num_caches_p-1:0] lce_req_has_data_lo, lce_req_last_lo;
+  logic [num_caches_p-1:0] lce_req_v_lo, lce_req_ready_and_li, lce_req_last_lo;
   wire [num_lce_p-1:0] lce_req_dst = '0;
 
   bp_bedrock_lce_resp_header_s [num_caches_p-1:0] lce_resp_header_lo;
   logic [num_caches_p-1:0][fill_width_p-1:0] lce_resp_data_lo;
-  logic [num_caches_p-1:0] lce_resp_header_v_lo, lce_resp_header_ready_and_li;
-  logic [num_caches_p-1:0] lce_resp_data_v_lo, lce_resp_data_ready_and_li;
-  logic [num_caches_p-1:0] lce_resp_has_data_lo, lce_resp_last_lo;
+  logic [num_caches_p-1:0] lce_resp_v_lo, lce_resp_ready_and_li, lce_req_last_lo;
   wire [num_lce_p-1:0] lce_resp_dst = '0;
 
   bp_bedrock_lce_cmd_header_s [num_caches_p-1:0] lce_cmd_header_li;
   logic [num_caches_p-1:0][fill_width_p-1:0] lce_cmd_data_li;
   logic [num_caches_p-1:0] lce_cmd_header_v_li, lce_cmd_header_ready_and_lo;
-  logic [num_caches_p-1:0] lce_cmd_data_v_li, lce_cmd_data_ready_and_lo;
-  logic [num_caches_p-1:0] lce_cmd_has_data_li, lce_cmd_last_li;
+  logic [num_caches_p-1:0] lce_cmd_v_li, lce_cmd_ready_and_lo, lce_cmd_last_li;
 
   bp_bedrock_lce_fill_header_s [num_caches_p-1:0] lce_fill_header_li;
   logic [num_caches_p-1:0][fill_width_p-1:0] lce_fill_data_li;
-  logic [num_caches_p-1:0] lce_fill_header_v_li, lce_fill_header_ready_and_lo;
-  logic [num_caches_p-1:0] lce_fill_data_v_li, lce_fill_data_ready_and_lo;
-  logic [num_caches_p-1:0] lce_fill_has_data_li, lce_fill_last_li;
+  logic [num_caches_p-1:0] lce_fill_v_li, lce_fill_ready_and_lo, lce_fill_last_li;
 
   bp_bedrock_lce_fill_header_s [num_caches_p-1:0] lce_fill_header_lo;
   logic [num_caches_p-1:0][fill_width_p-1:0] lce_fill_data_lo;
-  logic [num_caches_p-1:0] lce_fill_header_v_lo, lce_fill_header_ready_and_li;
-  logic [num_caches_p-1:0] lce_fill_data_v_lo, lce_fill_data_ready_and_li;
-  logic [num_caches_p-1:0] lce_fill_has_data_lo, lce_fill_last_lo;
+  logic [num_caches_p-1:0] lce_fill_v_lo, lce_fill_ready_and_li, lce_fill_last_lo;
   logic [num_caches_p-1:0][lg_num_lce_lp-1:0] lce_fill_dst;
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -295,48 +286,33 @@ module wrapper
              ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_lo[i])
 
              ,.lce_req_header_o(lce_req_header_lo[i])
-             ,.lce_req_header_v_o(lce_req_header_v_lo[i])
-             ,.lce_req_header_ready_and_i(lce_req_header_ready_and_li[i])
-             ,.lce_req_has_data_o(lce_req_has_data_lo[i])
              ,.lce_req_data_o(lce_req_data_lo[i])
-             ,.lce_req_data_v_o(lce_req_data_v_lo[i])
-             ,.lce_req_data_ready_and_i(lce_req_data_ready_and_li[i])
+             ,.lce_req_v_o(lce_req_v_lo[i])
+             ,.lce_req_ready_and_i(lce_req_ready_and_li[i])
              ,.lce_req_last_o(lce_req_last_lo[i])
 
              ,.lce_cmd_header_i(lce_cmd_header_li[i])
-             ,.lce_cmd_header_v_i(lce_cmd_header_v_li[i])
-             ,.lce_cmd_header_ready_and_o(lce_cmd_header_ready_and_lo[i])
-             ,.lce_cmd_has_data_i(lce_cmd_has_data_li[i])
              ,.lce_cmd_data_i(lce_cmd_data_li[i])
-             ,.lce_cmd_data_v_i(lce_cmd_data_v_li[i])
-             ,.lce_cmd_data_ready_and_o(lce_cmd_data_ready_and_lo[i])
+             ,.lce_cmd_v_i(lce_cmd_v_li[i])
+             ,.lce_cmd_ready_and_o(lce_cmd_ready_and_lo[i])
              ,.lce_cmd_last_i(lce_cmd_last_li[i])
 
              ,.lce_resp_header_o(lce_resp_header_lo[i])
-             ,.lce_resp_header_v_o(lce_resp_header_v_lo[i])
-             ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_li[i])
-             ,.lce_resp_has_data_o(lce_resp_has_data_lo[i])
              ,.lce_resp_data_o(lce_resp_data_lo[i])
-             ,.lce_resp_data_v_o(lce_resp_data_v_lo[i])
-             ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_li[i])
+             ,.lce_resp_v_o(lce_resp_v_lo[i])
+             ,.lce_resp_ready_and_i(lce_resp_ready_and_li[i])
              ,.lce_resp_last_o(lce_resp_last_lo[i])
 
              ,.lce_fill_header_i(lce_fill_header_li[i])
-             ,.lce_fill_header_v_i(lce_fill_header_v_li[i])
-             ,.lce_fill_header_ready_and_o(lce_fill_header_ready_and_lo[i])
-             ,.lce_fill_has_data_i(lce_fill_has_data_li[i])
              ,.lce_fill_data_i(lce_fill_data_li[i])
-             ,.lce_fill_data_v_i(lce_fill_data_v_li[i])
-             ,.lce_fill_data_ready_and_o(lce_fill_data_ready_and_lo[i])
+             ,.lce_fill_v_i(lce_fill_v_li[i])
+             ,.lce_fill_ready_and_o(lce_fill_ready_and_lo[i])
              ,.lce_fill_last_i(lce_fill_last_li[i])
 
              ,.lce_fill_header_o(lce_fill_header_lo[i])
-             ,.lce_fill_header_v_o(lce_fill_header_v_lo[i])
-             ,.lce_fill_header_ready_and_i(lce_fill_header_ready_and_li[i])
-             ,.lce_fill_has_data_o(lce_fill_has_data_lo[i])
              ,.lce_fill_data_o(lce_fill_data_lo[i])
-             ,.lce_fill_data_v_o(lce_fill_data_v_lo[i])
-             ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_li[i])
+             ,.lce_fill_v_o(lce_fill_v_lo[i])
+             ,.lce_fill_ready_and_i(lce_fill_ready_and_li[i])
              ,.lce_fill_last_o(lce_fill_last_lo[i])
              );
 
@@ -408,25 +384,22 @@ module wrapper
 
       // LCE-CCE request interface (from xbar to CCE)
       bp_bedrock_lce_req_header_s cce_lce_req_header_li;
-      logic cce_lce_req_header_v_li, cce_lce_req_header_ready_and_lo, cce_lce_req_has_data_li;
       logic [fill_width_p-1:0] cce_lce_req_data_li;
-      logic cce_lce_req_data_v_li, cce_lce_req_data_ready_and_lo, cce_lce_req_last_li;
+      logic cce_lce_req_v_li, cce_lce_req_ready_and_lo, cce_lce_req_last_li;
 
       // LCE-CCE response interface (from xbar to CCE)
       bp_bedrock_lce_resp_header_s cce_lce_resp_header_li;
-      logic cce_lce_resp_header_v_li, cce_lce_resp_header_ready_and_lo, cce_lce_resp_has_data_li;
       logic [fill_width_p-1:0] cce_lce_resp_data_li;
-      logic cce_lce_resp_data_v_li, cce_lce_resp_data_ready_and_lo, cce_lce_resp_last_li;
+      logic cce_lce_resp_v_li, cce_lce_resp_ready_and_lo, cce_lce_resp_last_li;
 
       // LCE-CCE command interface (from CCE to xbar)
       bp_bedrock_lce_cmd_header_s cce_lce_cmd_header_lo;
-      logic cce_lce_cmd_header_v_lo, cce_lce_cmd_header_ready_and_li, cce_lce_cmd_has_data_lo;
       logic [fill_width_p-1:0] cce_lce_cmd_data_lo;
-      logic cce_lce_cmd_data_v_lo, cce_lce_cmd_data_ready_and_li, cce_lce_cmd_last_lo;
+      logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_and_li, cce_lce_cmd_last_lo;
       wire [lg_num_lce_lp-1:0] cce_lce_cmd_dst = cce_lce_cmd_header_lo.payload.dst_id[0+:lg_num_lce_lp];
 
       // Req Crossbar
-      bp_me_xbar_burst
+      bp_me_xbar_stream
        #(.bp_params_p(bp_params_p)
          ,.data_width_p(fill_width_p)
          ,.payload_width_p(lce_req_payload_width_lp)
@@ -438,27 +411,21 @@ module wrapper
          ,.reset_i(reset_i)
 
          ,.msg_header_i(lce_req_header_lo)
-         ,.msg_header_v_i(lce_req_header_v_lo)
-         ,.msg_header_ready_and_o(lce_req_header_ready_and_li)
-         ,.msg_has_data_i(lce_req_has_data_lo)
          ,.msg_data_i(lce_req_data_lo)
-         ,.msg_data_v_i(lce_req_data_v_lo)
-         ,.msg_data_ready_and_o(lce_req_data_ready_and_li)
+         ,.msg_v_i(lce_req_v_lo)
+         ,.msg_ready_and_o(lce_req_ready_and_li)
          ,.msg_last_i(lce_req_last_lo)
          ,.msg_dst_i(lce_req_dst)
 
          ,.msg_header_o(cce_lce_req_header_li)
-         ,.msg_header_v_o(cce_lce_req_header_v_li)
-         ,.msg_header_ready_and_i(cce_lce_req_header_ready_and_lo)
-         ,.msg_has_data_o(cce_lce_req_has_data_li)
          ,.msg_data_o(cce_lce_req_data_li)
-         ,.msg_data_v_o(cce_lce_req_data_v_li)
-         ,.msg_data_ready_and_i(cce_lce_req_data_ready_and_lo)
+         ,.msg_v_o(cce_lce_req_v_li)
+         ,.msg_ready_and_i(cce_lce_req_ready_and_lo)
          ,.msg_last_o(cce_lce_req_last_li)
          );
 
       // Resp Crossbar
-      bp_me_xbar_burst
+      bp_me_xbar_stream
        #(.bp_params_p(bp_params_p)
          ,.data_width_p(fill_width_p)
          ,.payload_width_p(lce_resp_payload_width_lp)
@@ -470,28 +437,22 @@ module wrapper
          ,.reset_i(reset_i)
 
          ,.msg_header_i(lce_resp_header_lo)
-         ,.msg_header_v_i(lce_resp_header_v_lo)
-         ,.msg_header_ready_and_o(lce_resp_header_ready_and_li)
-         ,.msg_has_data_i(lce_resp_has_data_lo)
          ,.msg_data_i(lce_resp_data_lo)
-         ,.msg_data_v_i(lce_resp_data_v_lo)
-         ,.msg_data_ready_and_o(lce_resp_data_ready_and_li)
+         ,.msg_v_i(lce_resp_v_lo)
+         ,.msg_ready_and_o(lce_resp_ready_and_li)
          ,.msg_last_i(lce_resp_last_lo)
          ,.msg_dst_i(lce_resp_dst)
 
          ,.msg_header_o(cce_lce_resp_header_li)
-         ,.msg_header_v_o(cce_lce_resp_header_v_li)
-         ,.msg_header_ready_and_i(cce_lce_resp_header_ready_and_lo)
-         ,.msg_has_data_o(cce_lce_resp_has_data_li)
          ,.msg_data_o(cce_lce_resp_data_li)
-         ,.msg_data_v_o(cce_lce_resp_data_v_li)
-         ,.msg_data_ready_and_i(cce_lce_resp_data_ready_and_lo)
+         ,.msg_v_o(cce_lce_resp_v_li)
+         ,.msg_ready_and_i(cce_lce_resp_ready_and_lo)
          ,.msg_last_o(cce_lce_resp_last_li)
          );
 
       // Fill Crossbar
       // from CCE and LCE cmd out to LCE cmd in
-      bp_me_xbar_burst
+      bp_me_xbar_stream
        #(.bp_params_p(bp_params_p)
          ,.data_width_p(fill_width_p)
          ,.payload_width_p(lce_fill_payload_width_lp)
@@ -503,28 +464,22 @@ module wrapper
          ,.reset_i(reset_i)
 
          ,.msg_header_i(lce_fill_header_lo)
-         ,.msg_header_v_i(lce_fill_header_v_lo)
-         ,.msg_header_ready_and_o(lce_fill_header_ready_and_li)
-         ,.msg_has_data_i(lce_fill_has_data_lo)
          ,.msg_data_i(lce_fill_data_lo)
-         ,.msg_data_v_i(lce_fill_data_v_lo)
-         ,.msg_data_ready_and_o(lce_fill_data_ready_and_li)
+         ,.msg_v_i(lce_fill_v_lo)
+         ,.msg_ready_and_o(lce_fill_ready_and_li)
          ,.msg_last_i(lce_fill_last_lo)
          ,.msg_dst_i(lce_fill_dst)
 
          ,.msg_header_o(lce_fill_header_li)
-         ,.msg_header_v_o(lce_fill_header_v_li)
-         ,.msg_header_ready_and_i(lce_fill_header_ready_and_lo)
-         ,.msg_has_data_o(lce_fill_has_data_li)
          ,.msg_data_o(lce_fill_data_li)
-         ,.msg_data_v_o(lce_fill_data_v_li)
-         ,.msg_data_ready_and_i(lce_fill_data_ready_and_lo)
+         ,.msg_v_o(lce_fill_v_li)
+         ,.msg_ready_and_i(lce_fill_ready_and_lo)
          ,.msg_last_o(lce_fill_last_li)
          );
 
       // Cmd Crossbar
       // from CCE to LCE cmd in
-      bp_me_xbar_burst
+      bp_me_xbar_stream
        #(.bp_params_p(bp_params_p)
          ,.data_width_p(fill_width_p)
          ,.payload_width_p(lce_cmd_payload_width_lp)
@@ -536,22 +491,16 @@ module wrapper
          ,.reset_i(reset_i)
 
          ,.msg_header_i(cce_lce_cmd_header_lo)
-         ,.msg_header_v_i(cce_lce_cmd_header_v_lo)
-         ,.msg_header_ready_and_o(cce_lce_cmd_header_ready_and_li)
-         ,.msg_has_data_i(cce_lce_cmd_has_data_lo)
          ,.msg_data_i(cce_lce_cmd_data_lo)
-         ,.msg_data_v_i(cce_lce_cmd_data_v_lo)
-         ,.msg_data_ready_and_o(cce_lce_cmd_data_ready_and_li)
+         ,.msg_v_i(cce_lce_cmd_v_lo)
+         ,.msg_ready_and_o(cce_lce_cmd_ready_and_li)
          ,.msg_last_i(cce_lce_cmd_last_lo)
          ,.msg_dst_i(cce_lce_cmd_dst)
 
          ,.msg_header_o(lce_cmd_header_li)
-         ,.msg_header_v_o(lce_cmd_header_v_li)
-         ,.msg_header_ready_and_i(lce_cmd_header_ready_and_lo)
-         ,.msg_has_data_o(lce_cmd_has_data_li)
          ,.msg_data_o(lce_cmd_data_li)
-         ,.msg_data_v_o(lce_cmd_data_v_li)
-         ,.msg_data_ready_and_i(lce_cmd_data_ready_and_lo)
+         ,.msg_v_o(lce_cmd_v_li)
+         ,.msg_ready_and_i(lce_cmd_ready_and_lo)
          ,.msg_last_o(lce_cmd_last_li)
          );
 
@@ -566,30 +515,21 @@ module wrapper
           // LCE-CCE Interface
           // BedRock Burst protocol: ready&valid
           ,.lce_req_header_i(cce_lce_req_header_li)
-          ,.lce_req_header_v_i(cce_lce_req_header_v_li)
-          ,.lce_req_header_ready_and_o(cce_lce_req_header_ready_and_lo)
-          ,.lce_req_has_data_i(cce_lce_req_has_data_li)
           ,.lce_req_data_i(cce_lce_req_data_li)
-          ,.lce_req_data_v_i(cce_lce_req_data_v_li)
-          ,.lce_req_data_ready_and_o(cce_lce_req_data_ready_and_lo)
+          ,.lce_req_v_i(cce_lce_req_v_li)
+          ,.lce_req_ready_and_o(cce_lce_req_ready_and_lo)
           ,.lce_req_last_i(cce_lce_req_last_li)
 
           ,.lce_resp_header_i(cce_lce_resp_header_li)
-          ,.lce_resp_header_v_i(cce_lce_resp_header_v_li)
-          ,.lce_resp_header_ready_and_o(cce_lce_resp_header_ready_and_lo)
-          ,.lce_resp_has_data_i(cce_lce_resp_has_data_li)
           ,.lce_resp_data_i(cce_lce_resp_data_li)
-          ,.lce_resp_data_v_i(cce_lce_resp_data_v_li)
-          ,.lce_resp_data_ready_and_o(cce_lce_resp_data_ready_and_lo)
+          ,.lce_resp_v_i(cce_lce_resp_v_li)
+          ,.lce_resp_ready_and_o(cce_lce_resp_ready_and_lo)
           ,.lce_resp_last_i(cce_lce_resp_last_li)
 
           ,.lce_cmd_header_o(cce_lce_cmd_header_lo)
-          ,.lce_cmd_header_v_o(cce_lce_cmd_header_v_lo)
-          ,.lce_cmd_header_ready_and_i(cce_lce_cmd_header_ready_and_li)
-          ,.lce_cmd_has_data_o(cce_lce_cmd_has_data_lo)
           ,.lce_cmd_data_o(cce_lce_cmd_data_lo)
-          ,.lce_cmd_data_v_o(cce_lce_cmd_data_v_lo)
-          ,.lce_cmd_data_ready_and_i(cce_lce_cmd_data_ready_and_li)
+          ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
+          ,.lce_cmd_ready_and_i(cce_lce_cmd_ready_and_li)
           ,.lce_cmd_last_o(cce_lce_cmd_last_lo)
 
           // CCE-MEM Interface

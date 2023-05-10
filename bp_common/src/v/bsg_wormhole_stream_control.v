@@ -37,6 +37,7 @@ module bsg_wormhole_stream_control
    , input                   link_accept_i
 
    , output logic            is_hdr_o
+   , output logic            last_hdr_o
    , output logic            has_data_o
    , output logic            is_data_o
    , output logic            last_data_o
@@ -65,6 +66,7 @@ module bsg_wormhole_stream_control
   wire data_flit_done = (data_flit_cnt == '0);
 
   assign last_data_o = is_data & data_flit_last;
+  assign last_hdr_o = is_hdr & hdr_flit_last;
 
   // Set counter value when new packet hdr arrives
   // and all hdr flits are sent

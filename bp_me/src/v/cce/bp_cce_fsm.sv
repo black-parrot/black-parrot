@@ -59,30 +59,21 @@ module bp_cce_fsm
    // LCE-CCE Interface
    // BedRock Burst protocol: ready&valid
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
-   , input                                          lce_req_header_v_i
-   , output logic                                   lce_req_header_ready_and_o
-   , input                                          lce_req_has_data_i
    , input [bedrock_data_width_p-1:0]               lce_req_data_i
-   , input                                          lce_req_data_v_i
-   , output logic                                   lce_req_data_ready_and_o
+   , input                                          lce_req_v_i
+   , output logic                                   lce_req_ready_and_o
    , input                                          lce_req_last_i
 
    , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
-   , input                                          lce_resp_header_v_i
-   , output logic                                   lce_resp_header_ready_and_o
-   , input                                          lce_resp_has_data_i
    , input [bedrock_data_width_p-1:0]               lce_resp_data_i
-   , input                                          lce_resp_data_v_i
-   , output logic                                   lce_resp_data_ready_and_o
+   , input                                          lce_resp_v_i
+   , output logic                                   lce_resp_ready_and_o
    , input                                          lce_resp_last_i
 
    , output logic [lce_cmd_header_width_lp-1:0]     lce_cmd_header_o
-   , output logic                                   lce_cmd_header_v_o
-   , input                                          lce_cmd_header_ready_and_i
-   , output logic                                   lce_cmd_has_data_o
    , output logic [bedrock_data_width_p-1:0]        lce_cmd_data_o
-   , output logic                                   lce_cmd_data_v_o
-   , input                                          lce_cmd_data_ready_and_i
+   , output logic                                   lce_cmd_v_o
+   , input                                          lce_cmd_ready_and_i
    , output logic                                   lce_cmd_last_o
 
    // CCE-MEM Interface
@@ -100,7 +91,7 @@ module bp_cce_fsm
    , output logic                                   mem_fwd_last_o
    );
 
-  wire unused = &{lce_req_has_data_i, lce_req_last_i, lce_resp_has_data_i, lce_resp_last_i};
+  wire unused = &{lce_req_last_i, lce_resp_last_i};
 
   // parameter checks
   if (counter_max_lp < num_way_groups_lp) $error("Counter max value not large enough");
@@ -120,7 +111,7 @@ module bp_cce_fsm
   logic [bedrock_data_width_p-1:0] fsm_req_data_li;
   logic fsm_req_v_li, fsm_req_yumi_lo;
   logic fsm_req_new_li, fsm_req_last_li;
-  bp_me_burst_pump_in
+  bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(bedrock_data_width_p)
      ,.block_width_p(cce_block_width_p)
@@ -133,12 +124,9 @@ module bp_cce_fsm
      ,.reset_i(reset_i)
 
      ,.msg_header_i(lce_req_header_cast_i)
-     ,.msg_header_v_i(lce_req_header_v_i)
-     ,.msg_header_ready_and_o(lce_req_header_ready_and_o)
-     ,.msg_has_data_i(lce_req_has_data_i)
      ,.msg_data_i(lce_req_data_i)
-     ,.msg_data_v_i(lce_req_data_v_i)
-     ,.msg_data_ready_and_o(lce_req_data_ready_and_o)
+     ,.msg_v_i(lce_req_v_i)
+     ,.msg_ready_and_o(lce_req_ready_and_o)
      ,.msg_last_i(lce_req_last_i)
 
      ,.fsm_header_o(fsm_req_header_li)
@@ -158,7 +146,7 @@ module bp_cce_fsm
   logic fsm_cmd_v_lo, fsm_cmd_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt_lo;
   logic fsm_cmd_new_lo, fsm_cmd_last_lo;
-  bp_me_burst_pump_out
+  bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(bedrock_data_width_p)
      ,.block_width_p(cce_block_width_p)
@@ -171,12 +159,9 @@ module bp_cce_fsm
      ,.reset_i(reset_i)
 
      ,.msg_header_o(lce_cmd_header_cast_o)
-     ,.msg_header_v_o(lce_cmd_header_v_o)
-     ,.msg_header_ready_and_i(lce_cmd_header_ready_and_i)
-     ,.msg_has_data_o(lce_cmd_has_data_o)
      ,.msg_data_o(lce_cmd_data_o)
-     ,.msg_data_v_o(lce_cmd_data_v_o)
-     ,.msg_data_ready_and_i(lce_cmd_data_ready_and_i)
+     ,.msg_v_o(lce_cmd_v_o)
+     ,.msg_ready_and_i(lce_cmd_ready_and_i)
      ,.msg_last_o(lce_cmd_last_o)
 
      ,.fsm_header_i(fsm_cmd_header_lo)
@@ -194,7 +179,7 @@ module bp_cce_fsm
   logic [bedrock_data_width_p-1:0] fsm_resp_data_li;
   logic fsm_resp_v_li, fsm_resp_yumi_lo;
   logic fsm_resp_new_li, fsm_resp_last_li;
-  bp_me_burst_pump_in
+  bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(bedrock_data_width_p)
      ,.block_width_p(cce_block_width_p)
@@ -207,12 +192,9 @@ module bp_cce_fsm
      ,.reset_i(reset_i)
 
      ,.msg_header_i(lce_resp_header_cast_i)
-     ,.msg_header_v_i(lce_resp_header_v_i)
-     ,.msg_header_ready_and_o(lce_resp_header_ready_and_o)
-     ,.msg_has_data_i(lce_resp_has_data_i)
      ,.msg_data_i(lce_resp_data_i)
-     ,.msg_data_v_i(lce_resp_data_v_i)
-     ,.msg_data_ready_and_o(lce_resp_data_ready_and_o)
+     ,.msg_v_i(lce_resp_v_i)
+     ,.msg_ready_and_o(lce_resp_ready_and_o)
      ,.msg_last_i(lce_resp_last_i)
 
      ,.fsm_header_o(fsm_resp_header_li)
@@ -1551,8 +1533,8 @@ module bp_cce_fsm
             fsm_cmd_header_lo.payload.way_id = sharers_ways_r[pe_lce_id];
 
             // message sent, increment count, write directory, clear bit for the destination LCE
-            cnt_inc = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
-            dir_w_v = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
+            cnt_inc = lce_cmd_v_o & lce_cmd_ready_and_i;
+            dir_w_v = lce_cmd_v_o & lce_cmd_ready_and_i;
             dir_cmd = e_wds_op;
             dir_addr_li = paddr_aligned;
             dir_lce_li = '0;
@@ -1561,7 +1543,7 @@ module bp_cce_fsm
             dir_coh_state_li = e_COH_I;
 
             // update sharers hit vector to feed back to priority encode module
-            pe_sharers_n = (lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
+            pe_sharers_n = (lce_cmd_v_o & lce_cmd_ready_and_i)
                            ? pe_sharers_r & ~pe_lce_id_one_hot
                            : pe_sharers_r;
 

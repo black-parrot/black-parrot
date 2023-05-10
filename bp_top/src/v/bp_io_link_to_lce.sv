@@ -33,39 +33,27 @@ module bp_io_link_to_lce
 
    // Bedrock Burst: ready&valid
    , input [mem_fwd_header_width_lp-1:0]            io_fwd_header_i
-   , input                                          io_fwd_header_v_i
-   , output logic                                   io_fwd_header_ready_and_o
-   , input                                          io_fwd_has_data_i
    , input [bedrock_data_width_p-1:0]               io_fwd_data_i
-   , input                                          io_fwd_data_v_i
-   , output logic                                   io_fwd_data_ready_and_o
+   , input                                          io_fwd_v_i
+   , output logic                                   io_fwd_ready_and_o
    , input                                          io_fwd_last_i
 
    , output logic [mem_rev_header_width_lp-1:0]     io_rev_header_o
-   , output logic                                   io_rev_header_v_o
-   , input                                          io_rev_header_ready_and_i
-   , output logic                                   io_rev_has_data_o
    , output logic [bedrock_data_width_p-1:0]        io_rev_data_o
-   , output logic                                   io_rev_data_v_o
-   , input                                          io_rev_data_ready_and_i
+   , output logic                                   io_rev_v_o
+   , input                                          io_rev_ready_and_i
    , output logic                                   io_rev_last_o
 
    , output logic [lce_req_header_width_lp-1:0]     lce_req_header_o
-   , output logic                                   lce_req_header_v_o
-   , input                                          lce_req_header_ready_and_i
-   , output logic                                   lce_req_has_data_o
    , output logic [bedrock_data_width_p-1:0]        lce_req_data_o
-   , output logic                                   lce_req_data_v_o
-   , input                                          lce_req_data_ready_and_i
+   , output logic                                   lce_req_v_o
+   , input                                          lce_req_ready_and_i
    , output logic                                   lce_req_last_o
 
    , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-   , input                                          lce_cmd_header_v_i
-   , output logic                                   lce_cmd_header_ready_and_o
-   , input                                          lce_cmd_has_data_i
    , input [bedrock_data_width_p-1:0]               lce_cmd_data_i
-   , input                                          lce_cmd_data_v_i
-   , output logic                                   lce_cmd_data_ready_and_o
+   , input                                          lce_cmd_v_i
+   , output logic                                   lce_cmd_ready_and_o
    , input                                          lce_cmd_last_i
    );
 
@@ -101,21 +89,15 @@ module bp_io_link_to_lce
 
   // IO Cmd to LCE Req and payload buffer input
   // header transaction only occurs if buffer has space for a payload
-  assign lce_req_header_v_o        = io_fwd_header_v_i & payload_ready_lo;
-  assign io_fwd_header_ready_and_o = lce_req_header_ready_and_i & payload_ready_lo;
-  assign payload_v_li              = lce_req_header_v_o & io_fwd_header_ready_and_o;
-  // data connected directly
-  assign lce_req_data_v_o          = io_fwd_data_v_i;
-  assign io_fwd_data_ready_and_o   = lce_req_data_ready_and_i;
+  assign lce_req_v_o        = io_fwd_v_i & payload_ready_lo;
+  assign io_fwd_ready_and_o = lce_req_ready_and_i & payload_ready_lo;
+  assign payload_v_li       = lce_req_v_o & io_fwd_ready_and_o;
 
   // LCE cmd to IO Resp and payload buffer output
   // header handshake consumes payload from buffer
-  assign io_rev_header_v_o          = lce_cmd_header_v_i & payload_v_lo;
-  assign lce_cmd_header_ready_and_o  = io_rev_header_ready_and_i & payload_v_lo;
-  assign payload_yumi_li             = io_rev_header_v_o & io_rev_header_ready_and_i;
-  // data connected directly
-  assign io_rev_data_v_o            = lce_cmd_data_v_i;
-  assign lce_cmd_data_ready_and_o    = io_rev_data_ready_and_i;
+  assign io_rev_v_o           = lce_cmd_v_i & payload_v_lo;
+  assign lce_cmd_ready_and_o  = io_rev_ready_and_i & payload_v_lo;
+  assign payload_yumi_li      = io_rev_v_o & io_rev_ready_and_i & io_rev_last_o;
 
   logic [cce_id_width_p-1:0] cce_id_lo;
   bp_me_addr_to_cce_id
@@ -135,7 +117,6 @@ module bp_io_link_to_lce
       lce_req_header_cast_o.msg_type       = io_fwd_wr_not_rd ? e_bedrock_req_uc_wr : e_bedrock_req_uc_rd;
       lce_req_header_cast_o.payload.src_id = lce_id_i;
       lce_req_header_cast_o.payload.dst_id = cce_id_lo;
-      lce_req_has_data_o                   = io_fwd_has_data_i;
       lce_req_data_o                       = io_fwd_data_i;
       lce_req_last_o                       = io_fwd_last_i;
 
@@ -144,7 +125,6 @@ module bp_io_link_to_lce
       io_rev_header_cast_o.addr     = lce_cmd_header_cast_i.addr;
       io_rev_header_cast_o.msg_type = lce_cmd_wr_not_rd ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
       io_rev_header_cast_o.payload  = io_rev_payload;
-      io_rev_has_data_o             = lce_cmd_has_data_i;
       io_rev_data_o                 = lce_cmd_data_i;
       io_rev_last_o                 = lce_cmd_last_i;
     end

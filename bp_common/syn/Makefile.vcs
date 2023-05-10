@@ -22,7 +22,7 @@ LINT_VCS_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 VCS_OPTIONS  = +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait              # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
-#VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
+VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
 
 VCS_BUILD_OPTS  = -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -notice

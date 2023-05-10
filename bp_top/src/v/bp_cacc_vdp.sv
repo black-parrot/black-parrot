@@ -23,48 +23,33 @@ module bp_cacc_vdp
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , output logic [lce_req_header_width_lp-1:0]  lce_req_header_o
-    , output logic                                lce_req_header_v_o
-    , input                                       lce_req_header_ready_and_i
-    , output logic                                lce_req_has_data_o
     , output logic [acache_fill_width_p-1:0]      lce_req_data_o
-    , output logic                                lce_req_data_v_o
-    , input                                       lce_req_data_ready_and_i
+    , output logic                                lce_req_v_o
+    , input                                       lce_req_ready_and_i
     , output logic                                lce_req_last_o
 
     , input [lce_cmd_header_width_lp-1:0]         lce_cmd_header_i
-    , input                                       lce_cmd_header_v_i
-    , output logic                                lce_cmd_header_ready_and_o
-    , input                                       lce_cmd_has_data_i
     , input [acache_fill_width_p-1:0]             lce_cmd_data_i
-    , input                                       lce_cmd_data_v_i
-    , output logic                                lce_cmd_data_ready_and_o
+    , input                                       lce_cmd_v_i
+    , output logic                                lce_cmd_ready_and_o
     , input                                       lce_cmd_last_i
 
     , input [lce_fill_header_width_lp-1:0]        lce_fill_header_i
-    , input                                       lce_fill_header_v_i
-    , output logic                                lce_fill_header_ready_and_o
-    , input                                       lce_fill_has_data_i
     , input [acache_fill_width_p-1:0]             lce_fill_data_i
-    , input                                       lce_fill_data_v_i
-    , output logic                                lce_fill_data_ready_and_o
+    , input                                       lce_fill_v_i
+    , output logic                                lce_fill_ready_and_o
     , input                                       lce_fill_last_i
 
     , output logic [lce_fill_header_width_lp-1:0] lce_fill_header_o
-    , output logic                                lce_fill_header_v_o
-    , input                                       lce_fill_header_ready_and_i
-    , output logic                                lce_fill_has_data_o
     , output logic [acache_fill_width_p-1:0]      lce_fill_data_o
-    , output logic                                lce_fill_data_v_o
-    , input                                       lce_fill_data_ready_and_i
+    , output logic                                lce_fill_v_o
+    , input                                       lce_fill_ready_and_i
     , output logic                                lce_fill_last_o
 
     , output logic [lce_resp_header_width_lp-1:0] lce_resp_header_o
-    , output logic                                lce_resp_header_v_o
-    , input                                       lce_resp_header_ready_and_i
-    , output logic                                lce_resp_has_data_o
     , output logic [acache_fill_width_p-1:0]      lce_resp_data_o
-    , output logic                                lce_resp_data_v_o
-    , input                                       lce_resp_data_ready_and_i
+    , output logic                                lce_resp_v_o
+    , input                                       lce_resp_ready_and_i
     , output logic                                lce_resp_last_o
 
     // BedRock Stream
@@ -422,7 +407,7 @@ module bp_cacc_vdp
         e_wait_dcache_c2: begin
           //if load: load both input vectors
           //if store: go to e_done after store
-          state_n = ~(lce_cmd_header_v_i | lce_fill_header_v_i) ? e_wait_dcache_c2 : e_wait_fetch;
+          state_n = ~(lce_cmd_v_i | lce_fill_v_i) ? e_wait_dcache_c2 : e_wait_fetch;
         end
         e_check_vec1_len: begin
           state_n = (len_a_cnt == input_len) ? e_fetch_vec2 : e_wait_fetch;

@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_me_burst_to_wormhole.sv
+ *   bp_me_stream_to_wormhole.sv
  *
  * Description:
  *   Converts BedRock Burst protocol to wormhole router stream.
@@ -36,7 +36,7 @@
 `include "bsg_defines.v"
 `include "bp_common_defines.svh"
 
-module bp_me_burst_to_wormhole
+module bp_me_stream_to_wormhole
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -78,16 +78,12 @@ module bp_me_burst_to_wormhole
    // BedRock Burst input channel
    // ready&valid
    , input [pr_hdr_width_p-1:0]      pr_hdr_i
-   , input                           pr_hdr_v_i
-   , output logic                    pr_hdr_ready_and_o
-   , input                           pr_has_data_i
+   , input [pr_data_width_p-1:0]     pr_data_i
+   , input                           pr_v_i
+   , output logic                    pr_ready_and_o
+   , input                           pr_last_i
    , input [cord_width_p-1:0]        dst_cord_i
    , input [cid_width_p-1:0]         dst_cid_i
-
-   , input [pr_data_width_p-1:0]     pr_data_i
-   , input                           pr_data_v_i
-   , output logic                    pr_data_ready_and_o
-   , input                           pr_last_i
 
    // Wormhole output
    // ready&valid
@@ -104,11 +100,11 @@ module bp_me_burst_to_wormhole
   `bp_cast_i(bp_bedrock_msg_header_s, pr_hdr);
 
   // WH control signals
-  logic is_hdr, is_data;
+  logic is_hdr, is_data, wh_last_hdr, wh_has_data, wh_last_data;
 
   `declare_bp_bedrock_wormhole_header_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_msg_header_s, bedrock);
   bp_bedrock_wormhole_header_s pr_wh_hdr_lo;
-  logic wh_has_data;
+  
   bp_me_wormhole_header_encode
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)
@@ -124,100 +120,59 @@ module bp_me_burst_to_wormhole
      ,.dst_cid_i(dst_cid_i)
      ,.wh_header_o(pr_wh_hdr_lo)
      );
-
-  // Header PISO
-  // Header is input all at once and streamed out 1 flit at a time
-  logic [flit_width_p-1:0] wh_hdr_lo;
-  logic wh_hdr_v_lo;
-  logic [hdr_len_lp-1:0] piso_v_lo;
   wire [(flit_width_p*hdr_len_lp)-1:0] pr_wh_hdr_padded_li = pr_wh_hdr_lo;
+
+  // Header is input all at once and streamed out 1 flit at a time
+  logic piso_ready_and_lo, piso_v_li;
+  logic [flit_width_p-1:0] wh_hdr_lo;
+  logic [hdr_len_lp-1:0] wh_hdr_v_lo;
+  logic wh_hdr_ready_and_li;
   bsg_parallel_in_serial_out_passthrough
-   #(.width_p(flit_width_p)
-     ,.els_p(hdr_len_lp)
-     )
+   #(.width_p(flit_width_p), .els_p(hdr_len_lp))
    hdr_piso
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.data_i(pr_wh_hdr_padded_li)
-     ,.v_i(is_hdr & pr_hdr_v_i)
-     ,.ready_and_o(pr_hdr_ready_and_o)
+     ,.v_i(piso_v_li)
+     ,.ready_and_o(piso_ready_and_lo)
 
      ,.data_o(wh_hdr_lo)
-     ,.v_o(piso_v_lo)
-     ,.ready_and_i(is_hdr & link_ready_and_i)
+     ,.v_o(wh_hdr_v_lo)
+     ,.ready_and_i(wh_hdr_ready_and_li)
      );
-  assign wh_hdr_v_lo = |piso_v_lo;
+  assign piso_v_li = is_hdr & pr_v_i;
+  assign wh_hdr_ready_and_li = is_hdr & link_ready_and_i;
 
-  logic [flit_width_p-1:0] wh_data_lo;
-  logic wh_data_v_lo, wh_last_data;
-  wire wh_data_ready_and_li = is_data & link_ready_and_i;
-  if (pr_data_width_p > flit_width_p)
-    begin : narrow
-      logic [flit_width_p/pr_data_width_p-1:0] piso_v_lo;
-      logic piso_ready_and_lo;
-      wire early_ack = is_data & link_ready_and_i & link_v_o & wh_last_data;
-      bsg_parallel_in_serial_out_passthrough
-       #(.width_p(flit_width_p), .els_p(pr_data_width_p/flit_width_p))
-       pisop
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i | early_ack)
-         ,.data_i(pr_data_i)
-         ,.v_i(pr_data_v_i)
-         ,.ready_and_o(piso_ready_and_lo)
+  wire wh_data_v_lo = is_data & pr_v_i;
+  wire [flit_width_p-1:0] wh_data_lo = pr_data_i;
 
-         ,.data_o(wh_data_lo)
-         ,.v_o(piso_v_lo)
-         ,.ready_and_i(wh_data_ready_and_li)
-         );
-      assign pr_data_ready_and_o = piso_ready_and_lo | early_ack;
-      assign wh_data_v_lo = |piso_v_lo;
-    end
-  else
-    begin : wide
-      localparam flit_beats_lp = flit_width_p/pr_data_width_p;
-      logic [(flit_width_p/pr_data_width_p)-1:0] sipo_v_lo;
-      wire early_ack = is_data & link_ready_and_i & link_v_o;
-      bsg_serial_in_parallel_out_passthrough
-       #(.width_p(pr_data_width_p), .els_p(flit_width_p/pr_data_width_p))
-       sipop
-        (.clk_i(clk_i)
-         // Reset for less than flit size packets
-         ,.reset_i(reset_i | early_ack)
-         ,.data_i(pr_data_i)
-         ,.v_i(pr_data_v_i)
-         ,.ready_and_o(pr_data_ready_and_o)
-
-         ,.data_o(wh_data_lo)
-         ,.v_o(sipo_v_lo)
-         ,.ready_and_i(wh_data_ready_and_li)
-         );
-      // WH data is valid if we've filled the SIPO or if it's the last beat
-      assign wh_data_v_lo = (pr_data_v_i & pr_last_i) || sipo_v_lo[flit_beats_lp-1];
-    end
+  assign pr_ready_and_o = (is_hdr & ~wh_has_data & piso_ready_and_lo) | (is_data & link_ready_and_i);
 
   // Identifies which flits are header vs data flits
   bsg_wormhole_stream_control
-   #(.len_width_p(len_width_p)
-     ,.hdr_len_p(hdr_len_lp)
-     )
+   #(.len_width_p(len_width_p), .hdr_len_p(hdr_len_lp))
    stream_control
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.len_i(wh_hdr_lo[wh_len_offset_p+:len_width_p])
+     ,.len_i(pr_wh_hdr_lo[wh_len_offset_p+:len_width_p])
      ,.link_accept_i(link_ready_and_i & link_v_o)
 
      ,.is_hdr_o(is_hdr)
+     ,.last_hdr_o(wh_last_hdr)
      ,.has_data_o(wh_has_data)
      ,.is_data_o(is_data)
      ,.last_data_o(wh_last_data)
      );
 
   // patch header or data flits to link
-  assign link_data_o = is_hdr ? wh_hdr_lo   : wh_data_lo;
-  assign link_v_o    = is_hdr ? wh_hdr_v_lo : wh_data_v_lo;
+  assign link_data_o = is_hdr ?  wh_hdr_lo   : wh_data_lo;
+  assign link_v_o    = is_hdr ? |wh_hdr_v_lo : wh_data_v_lo;
+
+  if (flit_width_p != pr_data_width_p)
+    $error("flit_width_p %d != pr_data_width_p %d", flit_width_p, pr_data_width_p);
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bp_me_burst_to_wormhole)
+`BSG_ABSTRACT_MODULE(bp_me_stream_to_wormhole)
 

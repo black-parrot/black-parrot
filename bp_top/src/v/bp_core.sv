@@ -45,48 +45,33 @@ module bp_core
    , input [coh_noc_cord_width_p-1:0]                    my_cord_i
 
    , output logic [1:0][lce_req_header_width_lp-1:0]     lce_req_header_o
-   , output logic [1:0]                                  lce_req_header_v_o
-   , input [1:0]                                         lce_req_header_ready_and_i
-   , output logic [1:0]                                  lce_req_has_data_o
    , output logic [1:0][icache_fill_width_p-1:0]         lce_req_data_o
-   , output logic [1:0]                                  lce_req_data_v_o
-   , input [1:0]                                         lce_req_data_ready_and_i
+   , output logic [1:0]                                  lce_req_v_o
+   , input [1:0]                                         lce_req_ready_and_i
    , output logic [1:0]                                  lce_req_last_o
 
    , input [1:0][lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-   , input [1:0]                                         lce_cmd_header_v_i
-   , output logic [1:0]                                  lce_cmd_header_ready_and_o
-   , input [1:0]                                         lce_cmd_has_data_i
    , input [1:0][icache_fill_width_p-1:0]                lce_cmd_data_i
-   , input [1:0]                                         lce_cmd_data_v_i
-   , output logic [1:0]                                  lce_cmd_data_ready_and_o
+   , input [1:0]                                         lce_cmd_v_i
+   , output logic [1:0]                                  lce_cmd_ready_and_o
    , input [1:0]                                         lce_cmd_last_i
 
    , input [1:0][lce_fill_header_width_lp-1:0]           lce_fill_header_i
-   , input [1:0]                                         lce_fill_header_v_i
-   , output logic [1:0]                                  lce_fill_header_ready_and_o
-   , input [1:0]                                         lce_fill_has_data_i
    , input [1:0][icache_fill_width_p-1:0]                lce_fill_data_i
-   , input [1:0]                                         lce_fill_data_v_i
-   , output logic [1:0]                                  lce_fill_data_ready_and_o
+   , input [1:0]                                         lce_fill_v_i
+   , output logic [1:0]                                  lce_fill_ready_and_o
    , input [1:0]                                         lce_fill_last_i
 
    , output logic [1:0][lce_fill_header_width_lp-1:0]    lce_fill_header_o
-   , output logic [1:0]                                  lce_fill_header_v_o
-   , input [1:0]                                         lce_fill_header_ready_and_i
-   , output logic [1:0]                                  lce_fill_has_data_o
    , output logic [1:0][icache_fill_width_p-1:0]         lce_fill_data_o
-   , output logic [1:0]                                  lce_fill_data_v_o
-   , input [1:0]                                         lce_fill_data_ready_and_i
+   , output logic [1:0]                                  lce_fill_v_o
+   , input [1:0]                                         lce_fill_ready_and_i
    , output logic [1:0]                                  lce_fill_last_o
 
    , output logic [1:0][lce_resp_header_width_lp-1:0]    lce_resp_header_o
-   , output logic [1:0]                                  lce_resp_header_v_o
-   , input [1:0]                                         lce_resp_header_ready_and_i
-   , output logic [1:0]                                  lce_resp_has_data_o
    , output logic [1:0][icache_fill_width_p-1:0]         lce_resp_data_o
-   , output logic [1:0]                                  lce_resp_data_v_o
-   , input [1:0]                                         lce_resp_data_ready_and_i
+   , output logic [1:0]                                  lce_resp_v_o
+   , input [1:0]                                         lce_resp_ready_and_i
    , output logic [1:0]                                  lce_resp_last_o
 
    , input [mem_fwd_header_width_lp-1:0]                 mem_fwd_header_i
@@ -131,48 +116,33 @@ module bp_core
      ,.cfg_bus_i(cfg_bus_lo)
 
      ,.lce_req_header_o(lce_req_header_o)
-     ,.lce_req_header_v_o(lce_req_header_v_o)
-     ,.lce_req_header_ready_and_i(lce_req_header_ready_and_i)
-     ,.lce_req_has_data_o(lce_req_has_data_o)
      ,.lce_req_data_o(lce_req_data_o)
-     ,.lce_req_data_v_o(lce_req_data_v_o)
-     ,.lce_req_data_ready_and_i(lce_req_data_ready_and_i)
+     ,.lce_req_v_o(lce_req_v_o)
+     ,.lce_req_ready_and_i(lce_req_ready_and_i)
      ,.lce_req_last_o(lce_req_last_o)
 
      ,.lce_cmd_header_i(lce_cmd_header_i)
-     ,.lce_cmd_header_v_i(lce_cmd_header_v_i)
-     ,.lce_cmd_header_ready_and_o(lce_cmd_header_ready_and_o)
-     ,.lce_cmd_has_data_i(lce_cmd_has_data_i)
      ,.lce_cmd_data_i(lce_cmd_data_i)
-     ,.lce_cmd_data_v_i(lce_cmd_data_v_i)
-     ,.lce_cmd_data_ready_and_o(lce_cmd_data_ready_and_o)
+     ,.lce_cmd_v_i(lce_cmd_v_i)
+     ,.lce_cmd_ready_and_o(lce_cmd_ready_and_o)
      ,.lce_cmd_last_i(lce_cmd_last_i)
 
      ,.lce_resp_header_o(lce_resp_header_o)
-     ,.lce_resp_header_v_o(lce_resp_header_v_o)
-     ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_i)
-     ,.lce_resp_has_data_o(lce_resp_has_data_o)
      ,.lce_resp_data_o(lce_resp_data_o)
-     ,.lce_resp_data_v_o(lce_resp_data_v_o)
-     ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_i)
+     ,.lce_resp_v_o(lce_resp_v_o)
+     ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
      ,.lce_resp_last_o(lce_resp_last_o)
 
      ,.lce_fill_header_i(lce_fill_header_i)
-     ,.lce_fill_header_v_i(lce_fill_header_v_i)
-     ,.lce_fill_header_ready_and_o(lce_fill_header_ready_and_o)
-     ,.lce_fill_has_data_i(lce_fill_has_data_i)
      ,.lce_fill_data_i(lce_fill_data_i)
-     ,.lce_fill_data_v_i(lce_fill_data_v_i)
-     ,.lce_fill_data_ready_and_o(lce_fill_data_ready_and_o)
+     ,.lce_fill_v_i(lce_fill_v_i)
+     ,.lce_fill_ready_and_o(lce_fill_ready_and_o)
      ,.lce_fill_last_i(lce_fill_last_i)
 
      ,.lce_fill_header_o(lce_fill_header_o)
-     ,.lce_fill_header_v_o(lce_fill_header_v_o)
-     ,.lce_fill_header_ready_and_i(lce_fill_header_ready_and_i)
-     ,.lce_fill_has_data_o(lce_fill_has_data_o)
      ,.lce_fill_data_o(lce_fill_data_o)
-     ,.lce_fill_data_v_o(lce_fill_data_v_o)
-     ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_i)
+     ,.lce_fill_v_o(lce_fill_v_o)
+     ,.lce_fill_ready_and_i(lce_fill_ready_and_i)
      ,.lce_fill_last_o(lce_fill_last_o)
 
      ,.debug_irq_i(debug_irq_li)
