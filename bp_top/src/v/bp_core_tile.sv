@@ -79,42 +79,42 @@ module bp_core_tile
   // Core-side LCE-CCE network connections
   bp_bedrock_lce_req_header_s [1:0] lce_req_header_lo;
   logic [1:0][icache_fill_width_p-1:0] lce_req_data_lo;
-  logic [1:0] lce_req_v_lo, lce_req_ready_and_li, lce_req_last_lo;
+  logic [1:0] lce_req_v_lo, lce_req_ready_and_li;
   logic [1:0][coh_noc_cord_width_p-1:0] lce_req_dst_cord_lo;
   logic [1:0][coh_noc_cid_width_p-1:0] lce_req_dst_cid_lo;
 
   bp_bedrock_lce_cmd_header_s [1:0] lce_cmd_header_li;
   logic [1:0][icache_fill_width_p-1:0] lce_cmd_data_li;
-  logic [1:0] lce_cmd_v_li, lce_cmd_ready_and_lo, lce_cmd_last_li;
+  logic [1:0] lce_cmd_v_li, lce_cmd_ready_and_lo;
 
   bp_bedrock_lce_fill_header_s [1:0] lce_fill_header_li;
   logic [1:0][icache_fill_width_p-1:0] lce_fill_data_li;
-  logic [1:0] lce_fill_v_li, lce_fill_ready_and_lo, lce_fill_last_li;
+  logic [1:0] lce_fill_v_li, lce_fill_ready_and_lo;
 
   bp_bedrock_lce_fill_header_s [1:0] lce_fill_header_lo;
   logic [1:0][icache_fill_width_p-1:0] lce_fill_data_lo;
-  logic [1:0] lce_fill_v_lo, lce_fill_ready_and_li, lce_fill_last_lo;
+  logic [1:0] lce_fill_v_lo, lce_fill_ready_and_li;
   logic [1:0][coh_noc_cord_width_p-1:0] lce_fill_dst_cord_lo;
   logic [1:0][coh_noc_cid_width_p-1:0] lce_fill_dst_cid_lo;
 
   bp_bedrock_lce_resp_header_s [1:0] lce_resp_header_lo;
   logic [1:0][icache_fill_width_p-1:0] lce_resp_data_lo;
-  logic [1:0] lce_resp_v_lo, lce_resp_ready_and_li, lce_resp_last_lo;
+  logic [1:0] lce_resp_v_lo, lce_resp_ready_and_li;
   logic [1:0][coh_noc_cord_width_p-1:0] lce_resp_dst_cord_lo;
   logic [1:0][coh_noc_cid_width_p-1:0] lce_resp_dst_cid_lo;
 
   // CCE-side LCE-CCE BedRock network
   bp_bedrock_lce_req_header_s lce_req_header_li;
   logic [bedrock_data_width_p-1:0] lce_req_data_li;
-  logic lce_req_v_li, lce_req_ready_and_lo, lce_req_last_li;
+  logic lce_req_v_li, lce_req_ready_and_lo;
 
   bp_bedrock_lce_resp_header_s lce_resp_header_li;
   logic [bedrock_data_width_p-1:0] lce_resp_data_li;
-  logic lce_resp_data_v_li, lce_resp_data_ready_and_lo, lce_resp_last_li;
+  logic lce_resp_data_v_li, lce_resp_data_ready_and_lo;
 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_lo;
   logic [bedrock_data_width_p-1:0] lce_cmd_data_lo;
-  logic lce_cmd_v_lo, lce_cmd_ready_and_li, lce_cmd_last_lo;
+  logic lce_cmd_v_lo, lce_cmd_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_cmd_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_cmd_dst_cid_lo;
 
@@ -165,7 +165,6 @@ module bp_core_tile
       ,.pr_data_i(lce_req_data_lo[i])
       ,.pr_v_i(lce_req_v_lo[i])
       ,.pr_ready_and_o(lce_req_ready_and_li[i])
-      ,.pr_last_i(lce_req_last_lo[i])
       ,.dst_cord_i(lce_req_dst_cord_lo[i])
       ,.dst_cid_i(lce_req_dst_cid_lo[i])
 
@@ -199,7 +198,6 @@ module bp_core_tile
       ,.pr_data_o(lce_cmd_data_li[i])
       ,.pr_v_o(lce_cmd_v_li[i])
       ,.pr_ready_and_i(lce_cmd_ready_and_lo[i])
-      ,.pr_last_o(lce_cmd_last_li[i])
       );
     // LCE does not send commands
     assign lce_cmd_link_lo[i].v = '0;
@@ -228,7 +226,6 @@ module bp_core_tile
       ,.pr_data_o(lce_fill_data_li[i])
       ,.pr_v_o(lce_fill_v_li[i])
       ,.pr_ready_and_i(lce_fill_ready_and_lo[i])
-      ,.pr_last_o(lce_fill_last_li[i])
       );
 
     // LCE fill from LCE
@@ -259,7 +256,6 @@ module bp_core_tile
       ,.pr_data_i(lce_fill_data_lo[i])
       ,.pr_v_i(lce_fill_v_lo[i])
       ,.pr_ready_and_o(lce_fill_ready_and_li[i])
-      ,.pr_last_i(lce_fill_last_lo[i])
       ,.dst_cord_i(lce_fill_dst_cord_lo[i])
       ,.dst_cid_i(lce_fill_dst_cid_lo[i])
 
@@ -296,7 +292,6 @@ module bp_core_tile
       ,.pr_data_i(lce_resp_data_lo[i])
       ,.pr_v_i(lce_resp_v_lo[i])
       ,.pr_ready_and_o(lce_resp_ready_and_li[i])
-      ,.pr_last_i(lce_resp_last_lo[i])
       ,.dst_cord_i(lce_resp_dst_cord_lo[i])
       ,.dst_cid_i(lce_resp_dst_cid_lo[i])
 
@@ -332,7 +327,6 @@ module bp_core_tile
     ,.pr_data_o(lce_req_data_li)
     ,.pr_v_o(lce_req_v_li)
     ,.pr_ready_and_i(lce_req_ready_and_lo)
-    ,.pr_last_o(lce_req_last_li)
     );
 
   // CCE to LCE command
@@ -363,7 +357,6 @@ module bp_core_tile
     ,.pr_data_i(lce_cmd_data_lo)
     ,.pr_v_i(lce_cmd_v_lo)
     ,.pr_ready_and_o(lce_cmd_ready_and_li)
-    ,.pr_last_i(lce_cmd_last_lo)
     ,.dst_cord_i(lce_cmd_dst_cord_lo)
     ,.dst_cid_i(lce_cmd_dst_cid_lo)
 
@@ -395,7 +388,6 @@ module bp_core_tile
     ,.pr_data_o(lce_resp_data_li)
     ,.pr_v_o(lce_resp_v_li)
     ,.pr_ready_and_i(lce_resp_ready_and_lo)
-    ,.pr_last_o(lce_resp_last_li)
     );
 
   // LCE-CCE Network Concentrators
@@ -504,10 +496,10 @@ module bp_core_tile
 
   bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
   logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
-  logic mem_fwd_v_lo, mem_fwd_last_lo, mem_fwd_ready_and_li;
+  logic mem_fwd_v_lo, mem_fwd_ready_and_li;
   bp_bedrock_mem_rev_header_s mem_rev_header_li;
   logic [bedrock_data_width_p-1:0] mem_rev_data_li;
-  logic mem_rev_v_li, mem_rev_ready_and_lo, mem_rev_last_li;
+  logic mem_rev_v_li, mem_rev_ready_and_lo;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
   bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
@@ -538,43 +530,36 @@ module bp_core_tile
      ,.lce_req_data_o(lce_req_data_lo)
      ,.lce_req_v_o(lce_req_v_lo)
      ,.lce_req_ready_and_i(lce_req_ready_and_li)
-     ,.lce_req_last_o(lce_req_last_lo)
 
      ,.lce_cmd_header_i(lce_cmd_header_li)
      ,.lce_cmd_data_i(lce_cmd_data_li)
      ,.lce_cmd_v_i(lce_cmd_v_li)
      ,.lce_cmd_ready_and_o(lce_cmd_ready_and_lo)
-     ,.lce_cmd_last_i(lce_cmd_last_li)
 
      ,.lce_resp_header_o(lce_resp_header_lo)
      ,.lce_resp_data_o(lce_resp_data_lo)
      ,.lce_resp_v_o(lce_resp_v_lo)
      ,.lce_resp_ready_and_i(lce_resp_ready_and_li)
-     ,.lce_resp_last_o(lce_resp_last_lo)
 
      ,.lce_fill_header_i(lce_fill_header_li)
      ,.lce_fill_data_i(lce_fill_data_li)
      ,.lce_fill_v_i(lce_fill_v_li)
      ,.lce_fill_ready_and_o(lce_fill_ready_and_lo)
-     ,.lce_fill_last_i(lce_fill_last_li)
 
      ,.lce_fill_header_o(lce_fill_header_lo)
      ,.lce_fill_data_o(lce_fill_data_lo)
      ,.lce_fill_v_o(lce_fill_v_lo)
      ,.lce_fill_ready_and_i(lce_fill_ready_and_li)
-     ,.lce_fill_last_o(lce_fill_last_lo)
 
      ,.mem_fwd_header_i(mem_fwd_header_lo)
      ,.mem_fwd_data_i(mem_fwd_data_lo)
      ,.mem_fwd_v_i(mem_fwd_v_lo)
      ,.mem_fwd_ready_and_o(mem_fwd_ready_and_li)
-     ,.mem_fwd_last_i(mem_fwd_last_lo)
 
      ,.mem_rev_header_o(mem_rev_header_li)
      ,.mem_rev_data_o(mem_rev_data_li)
      ,.mem_rev_v_o(mem_rev_v_li)
      ,.mem_rev_ready_and_i(mem_rev_ready_and_lo)
-     ,.mem_rev_last_o(mem_rev_last_li)
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)
@@ -610,19 +595,16 @@ module bp_core_tile
      ,.lce_req_data_i(lce_req_data_li)
      ,.lce_req_v_i(lce_req_v_li)
      ,.lce_req_ready_and_o(lce_req_ready_and_lo)
-     ,.lce_req_last_i(lce_req_last_li)
 
      ,.lce_resp_header_i(lce_resp_header_li)
      ,.lce_resp_data_i(lce_resp_data_li)
      ,.lce_resp_v_i(lce_resp_v_li)
      ,.lce_resp_ready_and_o(lce_resp_ready_and_lo)
-     ,.lce_resp_last_i(lce_resp_last_li)
 
      ,.lce_cmd_header_o(lce_cmd_header_lo)
      ,.lce_cmd_data_o(lce_cmd_data_lo)
      ,.lce_cmd_v_o(lce_cmd_v_lo)
      ,.lce_cmd_ready_and_i(lce_cmd_ready_and_li)
-     ,.lce_cmd_last_o(lce_cmd_last_lo)
 
      // CCE-MEM Interface
      // BedRock Burst protocol: ready&valid
@@ -630,13 +612,11 @@ module bp_core_tile
      ,.mem_rev_data_i(mem_rev_data_li)
      ,.mem_rev_v_i(mem_rev_v_li)
      ,.mem_rev_ready_and_o(mem_rev_ready_and_lo)
-     ,.mem_rev_last_i(mem_rev_last_li)
 
      ,.mem_fwd_header_o(mem_fwd_header_lo)
      ,.mem_fwd_data_o(mem_fwd_data_lo)
      ,.mem_fwd_v_o(mem_fwd_v_lo)
      ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
-     ,.mem_fwd_last_o(mem_fwd_last_lo)
      );
 
   bp_mem_ready_and_link_s [l2_banks_p-1:0] mem_dma_link_lo, mem_dma_link_li;

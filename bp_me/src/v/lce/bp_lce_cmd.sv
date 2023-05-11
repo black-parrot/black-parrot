@@ -74,20 +74,17 @@ module bp_lce_cmd
     , input [fill_width_p-1:0]                       lce_cmd_data_i
     , input                                          lce_cmd_v_i
     , output logic                                   lce_cmd_ready_and_o
-    , input                                          lce_cmd_last_i
 
     , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
     , output logic [fill_width_p-1:0]                lce_fill_data_o
     , output logic                                   lce_fill_v_o
     , input                                          lce_fill_ready_and_i
-    , output logic                                   lce_fill_last_o
 
     , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
     , output logic [fill_width_p-1:0]                lce_resp_data_o
     , output logic                                   lce_resp_v_o
     , input                                          lce_resp_ready_and_i
-    , output logic                                   lce_resp_last_o
-  );
+    );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
@@ -144,8 +141,6 @@ module bp_lce_cmd
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.msg_stream_mask_p(lce_cmd_payload_mask_gp)
      ,.fsm_stream_mask_p(lce_cmd_payload_mask_gp)
-     ,.header_els_p(2)
-     ,.data_els_p(2)
      )
    cmd_pump_in
     (.clk_i(clk_i)
@@ -155,7 +150,6 @@ module bp_lce_cmd
      ,.msg_data_i(lce_cmd_data_i)
      ,.msg_v_i(lce_cmd_v_i)
      ,.msg_ready_and_o(lce_cmd_ready_and_o)
-     ,.msg_last_i(lce_cmd_last_i)
 
      ,.fsm_header_o(fsm_cmd_header_li)
      ,.fsm_addr_o(fsm_cmd_addr_li)
@@ -199,7 +193,6 @@ module bp_lce_cmd
      ,.msg_data_o(lce_fill_data_o)
      ,.msg_v_o(lce_fill_v_o)
      ,.msg_ready_and_i(lce_fill_ready_and_i)
-     ,.msg_last_o(lce_fill_last_o)
 
      ,.fsm_header_i(fsm_fill_header_lo)
      ,.fsm_addr_o()
@@ -232,7 +225,6 @@ module bp_lce_cmd
      ,.msg_data_o(lce_resp_data_o)
      ,.msg_v_o(lce_resp_v_o)
      ,.msg_ready_and_i(lce_resp_ready_and_i)
-     ,.msg_last_o(lce_resp_last_o)
 
      ,.fsm_header_i(fsm_resp_header_lo)
      ,.fsm_addr_o()

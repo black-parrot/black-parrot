@@ -84,7 +84,6 @@ module bp_lce_req
     , output logic [fill_width_p-1:0]                lce_req_data_o
     , output logic                                   lce_req_v_o
     , input                                          lce_req_ready_and_i
-    , output logic                                   lce_req_last_o
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -153,7 +152,6 @@ module bp_lce_req
      ,.msg_data_o(lce_req_data_o)
      ,.msg_v_o(lce_req_v_o)
      ,.msg_ready_and_i(lce_req_ready_and_i)
-     ,.msg_last_o(lce_req_last_o)
 
      ,.fsm_header_i(fsm_req_header_lo)
      ,.fsm_addr_o()

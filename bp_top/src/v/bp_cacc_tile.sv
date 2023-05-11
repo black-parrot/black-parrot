@@ -60,46 +60,46 @@ module bp_cacc_tile
   //io-cce-side connections
   bp_bedrock_lce_cmd_header_s lce_cmd_header_lo;
   logic [acache_fill_width_p-1:0] lce_cmd_data_lo;
-  logic lce_cmd_v_lo, lce_cmd_ready_and_li, lce_cmd_last_lo;
+  logic lce_cmd_v_lo, lce_cmd_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_cmd_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_cmd_dst_cid_lo;
 
   bp_bedrock_lce_req_header_s lce_req_header_li;
   logic [acache_fill_width_p-1:0] lce_req_data_li;
-  logic lce_req_v_li, lce_req_ready_and_lo, lce_req_last_li;
+  logic lce_req_v_li, lce_req_ready_and_lo;
 
   bp_bedrock_mem_fwd_header_s io_fwd_header_lo;
   logic [acache_fill_width_p-1:0] io_fwd_data_lo;
-  logic io_fwd_data_v_lo, io_fwd_data_ready_and_li, io_fwd_last_lo;
+  logic io_fwd_data_v_lo, io_fwd_data_ready_and_li;
 
   bp_bedrock_mem_rev_header_s io_rev_header_li;
   logic [acache_fill_width_p-1:0] io_rev_data_li;
-  logic io_rev_data_v_li, io_rev_data_ready_and_lo, io_rev_last_li;
+  logic io_rev_data_v_li, io_rev_data_ready_and_lo;
 
   // accelerator-side connections network connections
   bp_bedrock_lce_req_header_s lce_req_header_lo;
   logic [acache_fill_width_p-1:0] lce_req_data_lo;
-  logic lce_req_v_lo, lce_req_ready_and_li, lce_req_last_lo;
+  logic lce_req_v_lo, lce_req_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_req_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_req_dst_cid_lo;
 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_li;
   logic [acache_fill_width_p-1:0] lce_cmd_data_li;
-  logic lce_cmd_data_v_li, lce_cmd_data_ready_and_lo, lce_cmd_last_li;
+  logic lce_cmd_data_v_li, lce_cmd_data_ready_and_lo;
 
   bp_bedrock_lce_fill_header_s lce_fill_header_li;
   logic [acache_fill_width_p-1:0] lce_fill_data_li;
-  logic lce_fill_data_v_li, lce_fill_data_ready_and_lo, lce_fill_last_li;
+  logic lce_fill_data_v_li, lce_fill_data_ready_and_lo;
 
   bp_bedrock_lce_fill_header_s lce_fill_header_lo;
   logic [acache_fill_width_p-1:0] lce_fill_data_lo;
-  logic lce_fill_data_v_lo, lce_fill_data_ready_and_li, lce_fill_last_lo;
+  logic lce_fill_data_v_lo, lce_fill_data_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_fill_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_fill_dst_cid_lo;
 
   bp_bedrock_lce_resp_header_s lce_resp_header_lo;
   logic [acache_fill_width_p-1:0] lce_resp_data_lo;
-  logic lce_resp_data_v_lo, lce_resp_data_ready_and_li, lce_resp_last_lo;
+  logic lce_resp_data_v_lo, lce_resp_data_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_resp_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_resp_dst_cid_lo;
 
@@ -132,25 +132,21 @@ module bp_cacc_tile
      ,.lce_req_data_i(lce_req_data_li)
      ,.lce_req_v_i(lce_req_v_li)
      ,.lce_req_ready_and_o(lce_req_ready_and_lo)
-     ,.lce_req_last_i(lce_req_last_li)
 
      ,.lce_cmd_header_o(lce_cmd_header_lo)
      ,.lce_cmd_data_o(lce_cmd_data_lo)
      ,.lce_cmd_v_o(lce_cmd_v_lo)
      ,.lce_cmd_ready_and_i(lce_cmd_ready_and_li)
-     ,.lce_cmd_last_o(lce_cmd_last_lo)
 
      ,.io_fwd_header_o(io_fwd_header_lo)
      ,.io_fwd_data_o(io_fwd_data_lo)
      ,.io_fwd_v_o(io_fwd_v_lo)
      ,.io_fwd_ready_and_i(io_fwd_ready_and_li)
-     ,.io_fwd_last_o(io_fwd_last_lo)
 
      ,.io_rev_header_i(io_rev_header_li)
      ,.io_rev_data_i(io_rev_data_li)
      ,.io_rev_v_i(io_rev_v_li)
      ,.io_rev_ready_and_o(io_rev_ready_and_lo)
-     ,.io_rev_last_i(io_rev_last_li)
      );
 
   if (cacc_type_p == e_cacc_vdp) begin : cacc_vdp
@@ -165,44 +161,37 @@ module bp_cacc_tile
        ,.io_fwd_header_i(io_fwd_header_lo)
        ,.io_fwd_data_i(io_fwd_data_lo)
        ,.io_fwd_v_i(io_fwd_v_lo)
-       ,.io_fwd_last_i(io_fwd_last_lo)
        ,.io_fwd_ready_and_o(io_fwd_ready_and_li)
 
        ,.io_rev_header_o(io_rev_header_li)
        ,.io_rev_data_o(io_rev_data_li)
        ,.io_rev_v_o(io_rev_v_li)
-       ,.io_rev_last_o(io_rev_last_li)
        ,.io_rev_ready_and_i(io_rev_ready_and_lo)
 
        ,.lce_req_header_o(lce_req_header_lo)
        ,.lce_req_data_o(lce_req_data_lo)
        ,.lce_req_v_o(lce_req_v_lo)
        ,.lce_req_ready_and_i(lce_req_ready_and_li)
-       ,.lce_req_last_o(lce_req_last_lo)
 
        ,.lce_cmd_header_i(lce_cmd_header_li)
        ,.lce_cmd_data_i(lce_cmd_data_li)
        ,.lce_cmd_v_i(lce_cmd_v_li)
        ,.lce_cmd_ready_and_o(lce_cmd_ready_and_lo)
-       ,.lce_cmd_last_i(lce_cmd_last_li)
 
        ,.lce_fill_header_i(lce_fill_header_li)
        ,.lce_fill_data_i(lce_fill_data_li)
        ,.lce_fill_v_i(lce_fill_v_li)
        ,.lce_fill_ready_and_o(lce_fill_ready_and_lo)
-       ,.lce_fill_last_i(lce_fill_last_li)
 
        ,.lce_fill_header_o(lce_fill_header_lo)
        ,.lce_fill_data_o(lce_fill_data_lo)
        ,.lce_fill_v_o(lce_fill_v_lo)
        ,.lce_fill_ready_and_i(lce_fill_ready_and_li)
-       ,.lce_fill_last_o(lce_fill_last_lo)
 
        ,.lce_resp_header_o(lce_resp_header_lo)
        ,.lce_resp_data_o(lce_resp_data_lo)
        ,.lce_resp_v_o(lce_resp_v_lo)
        ,.lce_resp_ready_and_i(lce_resp_ready_and_li)
-       ,.lce_resp_last_o(lce_resp_last_lo)
        );
   end
   else begin : none
@@ -211,26 +200,22 @@ module bp_cacc_tile
     assign io_rev_header_li = '0;
     assign io_rev_data_li = '0;
     assign io_rev_v_li = '0;
-    assign io_rev_last_li = '0;
 
     assign lce_req_header_lo = '0;
     assign lce_req_data_lo = '0;
     assign lce_req_v_lo = '0;
-    assign lce_req_last_lo = '0;
 
     assign lce_cmd_ready_and_lo = '0;
 
     assign lce_fill_header_lo = '0;
     assign lce_fill_data_lo = '0;
     assign lce_fill_v_lo = '0;
-    assign lce_fill_last_lo = '0;
 
     assign lce_fill_ready_and_lo = '0;
 
     assign lce_resp_header_lo = '0;
     assign lce_resp_data_lo = '0;
     assign lce_resp_v_lo = '0;
-    assign lce_resp_last_lo = '0;
   end
 
   // Burst to WH (lce_req_header_lo)
@@ -261,7 +246,6 @@ module bp_cacc_tile
     ,.pr_data_i(lce_req_data_lo)
     ,.pr_v_i(lce_req_v_lo)
     ,.pr_ready_and_o(lce_req_ready_and_li)
-    ,.pr_last_i(lce_req_last_lo)
     ,.dst_cord_i(lce_req_dst_cord_lo)
     ,.dst_cid_i(lce_req_dst_cid_lo)
 
@@ -293,7 +277,6 @@ module bp_cacc_tile
     ,.pr_data_o(lce_cmd_data_li)
     ,.pr_v_o(lce_cmd_v_li)
     ,.pr_ready_and_i(lce_cmd_ready_and_lo)
-    ,.pr_last_o(lce_cmd_last_li)
     );
 
   // WH to Burst (lce_fill_header_li)
@@ -319,7 +302,6 @@ module bp_cacc_tile
     ,.pr_data_o(lce_fill_data_li)
     ,.pr_v_o(lce_fill_v_li)
     ,.pr_ready_and_i(lce_fill_ready_and_lo)
-    ,.pr_last_o(lce_fill_last_li)
     );
 
   // Burst to WH (lce_fill_header_lo)
@@ -350,7 +332,6 @@ module bp_cacc_tile
     ,.pr_data_i(lce_fill_data_lo)
     ,.pr_v_i(lce_fill_v_lo)
     ,.pr_ready_and_o(lce_fill_ready_and_li)
-    ,.pr_last_i(lce_fill_last_lo)
     ,.dst_cord_i(lce_fill_dst_cord_lo)
     ,.dst_cid_i(lce_fill_dst_cid_lo)
 
@@ -387,7 +368,6 @@ module bp_cacc_tile
     ,.pr_data_i(lce_resp_data_lo)
     ,.pr_v_i(lce_resp_v_lo)
     ,.pr_ready_and_o(lce_resp_ready_and_li)
-    ,.pr_last_i(lce_resp_last_lo)
     ,.dst_cord_i(lce_resp_dst_cord_lo)
     ,.dst_cid_i(lce_resp_dst_cid_lo)
 
@@ -420,7 +400,6 @@ module bp_cacc_tile
     ,.pr_data_o(lce_req_data_li)
     ,.pr_data_v_o(lce_req_data_v_li)
     ,.pr_data_ready_and_i(lce_req_data_ready_and_lo)
-    ,.pr_last_o(lce_req_last_li)
     );
 
   // Burst to WH (lce_cmd_header_lo)
@@ -451,7 +430,6 @@ module bp_cacc_tile
     ,.pr_data_i(lce_cmd_data_lo)
     ,.pr_v_i(lce_cmd_v_lo)
     ,.pr_ready_and_o(lce_cmd_ready_and_li)
-    ,.pr_last_i(lce_cmd_last_lo)
     ,.dst_cord_i(lce_cmd_dst_cord_lo)
     ,.dst_cid_i(lce_cmd_dst_cid_lo)
 

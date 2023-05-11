@@ -81,7 +81,6 @@ module bp_me_stream_to_wormhole
    , input [pr_data_width_p-1:0]     pr_data_i
    , input                           pr_v_i
    , output logic                    pr_ready_and_o
-   , input                           pr_last_i
    , input [cord_width_p-1:0]        dst_cord_i
    , input [cid_width_p-1:0]         dst_cid_i
 
@@ -125,8 +124,7 @@ module bp_me_stream_to_wormhole
   // Header is input all at once and streamed out 1 flit at a time
   logic piso_ready_and_lo, piso_v_li;
   logic [flit_width_p-1:0] wh_hdr_lo;
-  logic [hdr_len_lp-1:0] wh_hdr_v_lo;
-  logic wh_hdr_ready_and_li;
+  logic wh_hdr_ready_and_li, wh_hdr_v_lo;
   bsg_parallel_in_serial_out_passthrough
    #(.width_p(flit_width_p), .els_p(hdr_len_lp))
    hdr_piso

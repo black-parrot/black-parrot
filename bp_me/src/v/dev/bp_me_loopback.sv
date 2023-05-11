@@ -26,35 +26,31 @@ module bp_me_loopback
     , input [dword_width_gp-1:0]                     mem_fwd_data_i
     , input                                          mem_fwd_v_i
     , output logic                                   mem_fwd_ready_and_o
-    , input logic                                    mem_fwd_last_i
 
     , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
     , output logic [dword_width_gp-1:0]              mem_rev_data_o
     , output logic                                   mem_rev_v_o
     , input                                          mem_rev_ready_and_i
-    , output logic                                   mem_rev_last_o
     );
 
   wire unused = &{mem_fwd_data_i};
 
   // Used to decouple to help prevent deadlock
-  logic mem_rev_last_lo;
   bsg_one_fifo
-   #(.width_p(1+mem_fwd_header_width_lp))
+   #(.width_p(mem_fwd_header_width_lp))
    loopback_buffer
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({mem_fwd_last_i, mem_fwd_header_i})
+     ,.data_i(mem_fwd_header_i)
      ,.v_i(mem_fwd_v_i)
      ,.ready_o(mem_fwd_ready_and_o)
 
-     ,.data_o({mem_rev_last_lo, mem_rev_header_o})
+     ,.data_o(mem_rev_header_o)
      ,.v_o(mem_rev_v_o)
      ,.yumi_i(mem_rev_ready_and_i & mem_rev_v_o)
      );
   assign mem_rev_data_o = '0;
-  assign mem_rev_last_o = mem_rev_v_o & mem_rev_last_lo;
 
 endmodule
 

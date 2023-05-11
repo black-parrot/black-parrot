@@ -27,19 +27,17 @@ module bp_nonsynth_nbf_loader
    , output logic [dword_width_gp-1:0]              mem_fwd_data_o
    , output logic                                   mem_fwd_v_o
    , input                                          mem_fwd_ready_and_i
-   , output logic                                   mem_fwd_last_o
 
    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
    , input [dword_width_gp-1:0]                     mem_rev_data_i
    , input                                          mem_rev_v_i
    , output logic                                   mem_rev_ready_and_o
-   , input                                          mem_rev_last_i
 
    , output logic                                   done_o
    );
 
   // all messages are single beat
-  wire unused = &{mem_rev_data_i, mem_rev_last_i};
+  wire unused = &{mem_rev_data_i};
 
   enum logic [2:0] { e_reset, e_send, e_fence, e_read, e_done} state_n, state_r;
   wire is_reset    = (state_r == e_reset);
@@ -157,7 +155,6 @@ module bp_nonsynth_nbf_loader
     end
 
   assign mem_fwd_v_o = ~credits_full_lo & is_send_nbf & ~is_fence_packet & ~is_finish_packet;
-  assign mem_fwd_last_o = mem_fwd_v_o;
 
   wire read_return = is_read & mem_rev_v_i & (mem_rev_header_cast_i.msg_type == e_bedrock_mem_uc_rd);
   always_comb
@@ -191,10 +188,6 @@ module bp_nonsynth_nbf_loader
         $display("NBF loader done!");
       assert(reset_i !== '0 || ~read_return || read_data_r == mem_rev_data_i[0+:dword_width_gp])
         else $error("Validation mismatch: addr: %d %d %d", mem_rev_header_cast_i.addr, mem_rev_data_i, read_data_r);
-
-      if (mem_rev_v_i & mem_rev_ready_and_o)
-        assert(reset_i !== '0 || ~(mem_rev_v_i & mem_rev_ready_and_o & ~mem_rev_last_i))
-          else $error("Multi-beat IO response detected");
     end
   // synopsys translate_on
 

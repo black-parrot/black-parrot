@@ -34,25 +34,21 @@ module bp_io_cce
    , input [bedrock_data_width_p-1:0]             lce_req_data_i
    , input                                        lce_req_v_i
    , output logic                                 lce_req_ready_and_o
-   , input                                        lce_req_last_i
 
    , output logic [lce_cmd_header_width_lp-1:0]   lce_cmd_header_o
    , output logic [bedrock_data_width_p-1:0]      lce_cmd_data_o
    , output logic                                 lce_cmd_v_o
    , input                                        lce_cmd_ready_and_i
-   , output logic                                 lce_cmd_last_o
 
    , input [mem_rev_header_width_lp-1:0]          io_rev_header_i
    , input [bedrock_data_width_p-1:0]             io_rev_data_i
    , input                                        io_rev_v_i
    , output logic                                 io_rev_ready_and_o
-   , input                                        io_rev_last_i
 
    , output logic [mem_fwd_header_width_lp-1:0]   io_fwd_header_o
    , output logic [bedrock_data_width_p-1:0]      io_fwd_data_o
    , output logic                                 io_fwd_v_o
    , input                                        io_fwd_ready_and_i
-   , output logic                                 io_fwd_last_o
    );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -76,7 +72,6 @@ module bp_io_cce
     // data
     io_fwd_data_o                         = lce_req_data_i;
     io_fwd_v_o                            = lce_req_v_i;
-    io_fwd_last_o                         = lce_req_last_i;
     lce_req_ready_and_o                   = io_fwd_ready_and_i;
   end
 
@@ -93,7 +88,6 @@ module bp_io_cce
     // data
     lce_cmd_data_o                       = io_rev_data_i;
     lce_cmd_v_o                          = io_rev_v_i;
-    lce_cmd_last_o                       = io_rev_last_i;
     io_rev_ready_and_o                   = lce_cmd_ready_and_i;
   end
 

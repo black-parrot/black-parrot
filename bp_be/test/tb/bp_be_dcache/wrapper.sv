@@ -414,14 +414,12 @@ module wrapper
          ,.msg_data_i(lce_req_data_lo)
          ,.msg_v_i(lce_req_v_lo)
          ,.msg_ready_and_o(lce_req_ready_and_li)
-         ,.msg_last_i(lce_req_last_lo)
          ,.msg_dst_i(lce_req_dst)
 
          ,.msg_header_o(cce_lce_req_header_li)
          ,.msg_data_o(cce_lce_req_data_li)
          ,.msg_v_o(cce_lce_req_v_li)
          ,.msg_ready_and_i(cce_lce_req_ready_and_lo)
-         ,.msg_last_o(cce_lce_req_last_li)
          );
 
       // Resp Crossbar
@@ -440,14 +438,12 @@ module wrapper
          ,.msg_data_i(lce_resp_data_lo)
          ,.msg_v_i(lce_resp_v_lo)
          ,.msg_ready_and_o(lce_resp_ready_and_li)
-         ,.msg_last_i(lce_resp_last_lo)
          ,.msg_dst_i(lce_resp_dst)
 
          ,.msg_header_o(cce_lce_resp_header_li)
          ,.msg_data_o(cce_lce_resp_data_li)
          ,.msg_v_o(cce_lce_resp_v_li)
          ,.msg_ready_and_i(cce_lce_resp_ready_and_lo)
-         ,.msg_last_o(cce_lce_resp_last_li)
          );
 
       // Fill Crossbar
@@ -467,14 +463,12 @@ module wrapper
          ,.msg_data_i(lce_fill_data_lo)
          ,.msg_v_i(lce_fill_v_lo)
          ,.msg_ready_and_o(lce_fill_ready_and_li)
-         ,.msg_last_i(lce_fill_last_lo)
          ,.msg_dst_i(lce_fill_dst)
 
          ,.msg_header_o(lce_fill_header_li)
          ,.msg_data_o(lce_fill_data_li)
          ,.msg_v_o(lce_fill_v_li)
          ,.msg_ready_and_i(lce_fill_ready_and_lo)
-         ,.msg_last_o(lce_fill_last_li)
          );
 
       // Cmd Crossbar
@@ -494,14 +488,12 @@ module wrapper
          ,.msg_data_i(cce_lce_cmd_data_lo)
          ,.msg_v_i(cce_lce_cmd_v_lo)
          ,.msg_ready_and_o(cce_lce_cmd_ready_and_li)
-         ,.msg_last_i(cce_lce_cmd_last_lo)
          ,.msg_dst_i(cce_lce_cmd_dst)
 
          ,.msg_header_o(lce_cmd_header_li)
          ,.msg_data_o(lce_cmd_data_li)
          ,.msg_v_o(lce_cmd_v_li)
          ,.msg_ready_and_i(lce_cmd_ready_and_lo)
-         ,.msg_last_o(lce_cmd_last_li)
          );
 
        bp_cce_fsm

@@ -65,14 +65,14 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_flow_counter.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_dynamic.v
-$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_passthrough.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_1_to_n.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_dynamic.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_full.v
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_passthrough.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_shift_reg.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_two_fifo.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w_replacement.v
@@ -286,7 +286,6 @@ $BP_ME_DIR/src/v/network/bp_me_wormhole_header_encode.sv
 $BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_control.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_to_wormhole.sv
 $BP_ME_DIR/src/v/network/bp_me_wormhole_to_stream.sv

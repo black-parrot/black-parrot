@@ -45,19 +45,17 @@ module bp_me_nonsynth_cfg_loader
    , output logic [dword_width_gp-1:0]               io_fwd_data_o
    , output logic                                    io_fwd_v_o
    , input                                           io_fwd_yumi_i
-   , output logic                                    io_fwd_last_o
 
    // BedRock Stream
    , input [mem_rev_header_width_lp-1:0]             io_rev_header_i
    , input [dword_width_gp-1:0]                      io_rev_data_i
    , input                                           io_rev_v_i
    , output logic                                    io_rev_ready_and_o
-   , input                                           io_rev_last_i
 
    , output logic                                    done_o
    );
 
-  wire unused0 = &{io_rev_header_i, io_rev_data_i, io_rev_last_i};
+  wire unused0 = &{io_rev_header_i, io_rev_data_i};
   assign io_rev_ready_and_o = 1'b1;
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
@@ -190,7 +188,6 @@ module bp_me_nonsynth_cfg_loader
       io_fwd_payload.lce_id              = lce_id_i;
       io_fwd_cast_o.size                 = e_bedrock_msg_size_8;
       io_fwd_data_o                      = cfg_data_lo;
-      io_fwd_last_o                      = 1'b1;
       io_fwd_cast_o.payload              = io_fwd_payload;
     end
 

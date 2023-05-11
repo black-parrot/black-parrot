@@ -80,7 +80,6 @@ module bp_me_wormhole_to_stream
    , output logic [pr_data_width_p-1:0] pr_data_o
    , output logic                       pr_v_o
    , input                              pr_ready_and_i
-   , output logic                       pr_last_o
    );
 
   // parameter checks
@@ -124,8 +123,7 @@ module bp_me_wormhole_to_stream
   assign pr_hdr_o = wh_hdr_lo[wh_pr_hdr_offset_p+:pr_hdr_width_p];
   assign pr_data_o = link_data_i;
   assign pr_v_o = is_hdr ? (pr_hdr_v_lo & ~wh_has_data_r) : link_v_i;
-  assign pr_last_o = is_hdr ? ~wh_has_data_r : wh_last_data;
-  assign pr_hdr_yumi_li = pr_ready_and_i & pr_v_o & pr_last_o;
+  assign pr_hdr_yumi_li = pr_ready_and_i & pr_v_o & (~wh_has_data_r | wh_last_data);
 
   assign link_ready_and_o = is_hdr ? sipo_ready_and_lo : pr_ready_and_i;
 

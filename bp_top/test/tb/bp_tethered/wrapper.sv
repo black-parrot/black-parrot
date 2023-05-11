@@ -36,26 +36,22 @@ module wrapper
    , output logic [io_data_width_p-1:0]                                 mem_fwd_data_o
    , output logic                                                       mem_fwd_v_o
    , input                                                              mem_fwd_ready_and_i
-   , output logic                                                       mem_fwd_last_o
 
    , input [mem_rev_header_width_lp-1:0]                                mem_rev_header_i
    , input [io_data_width_p-1:0]                                        mem_rev_data_i
    , input                                                              mem_rev_v_i
    , output logic                                                       mem_rev_ready_and_o
-   , input                                                              mem_rev_last_i
 
    // Incoming I/O
    , input [mem_fwd_header_width_lp-1:0]                                mem_fwd_header_i
    , input [io_data_width_p-1:0]                                        mem_fwd_data_i
    , input                                                              mem_fwd_v_i
    , output logic                                                       mem_fwd_ready_and_o
-   , input                                                              mem_fwd_last_i
 
    , output logic [mem_rev_header_width_lp-1:0]                         mem_rev_header_o
    , output logic [io_data_width_p-1:0]                                 mem_rev_data_o
    , output logic                                                       mem_rev_v_o
    , input                                                              mem_rev_ready_and_i
-   , output logic                                                       mem_rev_last_o
 
    // DRAM interface
    , output logic [num_cce_p-1:0][l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
@@ -144,7 +140,6 @@ module wrapper
          ,.pr_data_i(mem_fwd_data_i)
          ,.pr_v_i(mem_fwd_v_i)
          ,.pr_ready_and_o(mem_fwd_ready_and_o)
-         ,.pr_last_i(mem_fwd_last_i)
          ,.dst_cord_i(mem_fwd_dst_cord_li)
          ,.dst_cid_i(mem_fwd_dst_cid_li)
 
@@ -175,7 +170,6 @@ module wrapper
          ,.pr_data_i(mem_rev_data_i)
          ,.pr_v_i(mem_rev_v_i)
          ,.pr_ready_and_o(mem_rev_ready_and_o)
-         ,.pr_last_i(mem_rev_last_i)
          ,.dst_cord_i(mem_rev_dst_cord_li)
          ,.dst_cid_i(mem_rev_dst_cid_li)
 
@@ -206,7 +200,6 @@ module wrapper
         ,.pr_data_o(mem_fwd_data_o)
         ,.pr_v_o(mem_fwd_v_o)
         ,.pr_ready_and_i(mem_fwd_ready_and_i)
-        ,.pr_last_o(mem_fwd_last_o)
         );
 
       bp_me_wormhole_to_stream
@@ -231,7 +224,6 @@ module wrapper
         ,.pr_data_o(mem_rev_data_o)
         ,.pr_v_o(mem_rev_v_o)
         ,.pr_ready_and_i(mem_rev_ready_and_i)
-        ,.pr_last_o(mem_rev_last_o)
         );
 
       import bsg_cache_pkg::*;

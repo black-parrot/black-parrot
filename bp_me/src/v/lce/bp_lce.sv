@@ -6,7 +6,6 @@
  *  Description:
  *    Generic Local Cache/Coherence Engine (LCE).
  *
- *  TODO: resolve comments below regarding cache fill interface arbitration
  */
 
 `include "bp_common_defines.svh"
@@ -86,31 +85,26 @@ module bp_lce
     , output logic [fill_width_p-1:0]                lce_req_data_o
     , output logic                                   lce_req_v_o
     , input                                          lce_req_ready_and_i
-    , output logic                                   lce_req_last_o
 
     , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
     , input [fill_width_p-1:0]                       lce_cmd_data_i
     , input                                          lce_cmd_v_i
     , output logic                                   lce_cmd_ready_and_o
-    , input                                          lce_cmd_last_i
 
     , input [lce_fill_header_width_lp-1:0]           lce_fill_header_i
     , input [fill_width_p-1:0]                       lce_fill_data_i
     , input                                          lce_fill_v_i
     , output logic                                   lce_fill_ready_and_o
-    , input                                          lce_fill_last_i
 
     , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
     , output logic [fill_width_p-1:0]                lce_fill_data_o
     , output logic                                   lce_fill_v_o
     , input                                          lce_fill_ready_and_i
-    , output logic                                   lce_fill_last_o
 
     , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
     , output logic [fill_width_p-1:0]                lce_resp_data_o
     , output logic                                   lce_resp_v_o
     , input                                          lce_resp_ready_and_i
-    , output logic                                   lce_resp_last_o
   );
 
   // LCE/Cache Parameter Constraints
@@ -174,7 +168,6 @@ module bp_lce
      ,.lce_req_data_o(lce_req_data_o)
      ,.lce_req_v_o(lce_req_v_o)
      ,.lce_req_ready_and_i(lce_req_ready_and_i)
-     ,.lce_req_last_o(lce_req_last_o)
      );
 
   // To prevent unnecessary arbitration on the critical cache request ports, we multiplex
@@ -185,10 +178,11 @@ module bp_lce
   //   the case that an input cmd is blocked by an output fill 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_li;
   logic [fill_width_p-1:0] lce_cmd_data_li;
-  logic lce_cmd_v_li, lce_cmd_ready_and_lo, lce_cmd_last_li;
+  logic lce_cmd_v_li, lce_cmd_ready_and_lo;
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
+     ,.block_width_p(block_width_p)
      ,.data_width_p(fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.num_source_p(2)
@@ -202,30 +196,28 @@ module bp_lce
      ,.msg_data_i({lce_cmd_data_i, lce_fill_data_i})
      ,.msg_v_i({lce_cmd_v_i, lce_fill_v_i})
      ,.msg_ready_and_o({lce_cmd_ready_and_o, lce_fill_ready_and_o})
-     ,.msg_last_i({lce_cmd_last_i, lce_fill_last_i})
      ,.msg_dst_i('0) // Single destination
 
      ,.msg_header_o(lce_cmd_header_li)
      ,.msg_data_o(lce_cmd_data_li)
      ,.msg_v_o(lce_cmd_v_li)
      ,.msg_ready_and_i(lce_cmd_ready_and_lo)
-     ,.msg_last_o(lce_cmd_last_li)
      );
 
   bp_bedrock_lce_fill_header_s lce_fill_header_lo;
   logic [fill_width_p-1:0] lce_fill_data_lo;
-  logic lce_fill_v_lo, lce_fill_ready_and_li, lce_fill_last_lo;
+  logic lce_fill_v_lo, lce_fill_ready_and_li;
   bsg_two_fifo
-   #(.width_p(1+fill_width_p+$bits(bp_bedrock_lce_fill_header_s)))
+   #(.width_p(fill_width_p+$bits(bp_bedrock_lce_fill_header_s)))
    lce_fill_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({lce_fill_last_lo, lce_fill_data_lo, lce_fill_header_lo})
+     ,.data_i({lce_fill_data_lo, lce_fill_header_lo})
      ,.v_i(lce_fill_v_lo)
      ,.ready_o(lce_fill_ready_and_li)
 
-     ,.data_o({lce_fill_last_o, lce_fill_data_o, lce_fill_header_o})
+     ,.data_o({lce_fill_data_o, lce_fill_header_o})
      ,.v_o(lce_fill_v_o)
      ,.yumi_i(lce_fill_ready_and_i & lce_fill_v_o)
      );
@@ -272,19 +264,16 @@ module bp_lce
      ,.lce_cmd_data_i(lce_cmd_data_li)
      ,.lce_cmd_v_i(lce_cmd_v_li)
      ,.lce_cmd_ready_and_o(lce_cmd_ready_and_lo)
-     ,.lce_cmd_last_i(lce_cmd_last_li)
 
      ,.lce_fill_header_o(lce_fill_header_lo)
      ,.lce_fill_data_o(lce_fill_data_lo)
      ,.lce_fill_v_o(lce_fill_v_lo)
      ,.lce_fill_ready_and_i(lce_fill_ready_and_li)
-     ,.lce_fill_last_o(lce_fill_last_lo)
 
      ,.lce_resp_header_o(lce_resp_header_o)
      ,.lce_resp_data_o(lce_resp_data_o)
      ,.lce_resp_v_o(lce_resp_v_o)
      ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
-     ,.lce_resp_last_o(lce_resp_last_o)
      );
 
   // LCE timeout logic

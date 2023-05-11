@@ -18,22 +18,13 @@ module bp_sacc_scratchpad
    , input [mem_fwd_header_width_lp-1:0]        io_fwd_header_i
    , input [acache_fill_width_p-1:0]            io_fwd_data_i
    , input                                      io_fwd_v_i
-   , input                                      io_fwd_last_i
    , output logic                               io_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0] io_rev_header_o
    , output logic [acache_fill_width_p-1:0]     io_rev_data_o
    , output logic                               io_rev_v_o
-   , output logic                               io_rev_last_o
    , input                                      io_rev_ready_and_i
    );
-
-  // synopsys translate_off
-  always_ff @(negedge clk_i) begin
-    assert(~io_fwd_v_i | (io_fwd_v_i & io_fwd_last_i))
-      else $error("sacc_vdp only supports single beat IO commands");
-  end
-  // synopsys translate_on
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
@@ -58,13 +49,11 @@ module bp_sacc_scratchpad
      ,.mem_fwd_data_i(io_fwd_data_i)
      ,.mem_fwd_v_i(io_fwd_v_i)
      ,.mem_fwd_ready_and_o(io_fwd_ready_and_o)
-     ,.mem_fwd_last_i(io_fwd_last_i)
 
      ,.mem_rev_header_o(io_rev_header_cast_o)
      ,.mem_rev_data_o(io_rev_data_o)
      ,.mem_rev_v_o(io_rev_v_o)
      ,.mem_rev_ready_and_i(io_rev_ready_and_i)
-     ,.mem_rev_last_o(io_rev_last_o)
 
      ,.r_v_o(r_v_li)
      ,.w_v_o(w_v_li)

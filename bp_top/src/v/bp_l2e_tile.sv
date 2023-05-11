@@ -82,17 +82,17 @@ module bp_l2e_tile
   // CCE-side LCE-CCE network connections
   bp_bedrock_lce_req_header_s lce_req_header_li;
   logic [bedrock_data_width_p-1:0] lce_req_data_li;
-  logic lce_req_data_v_li, lce_req_data_ready_and_lo, lce_req_last_li;
+  logic lce_req_data_v_li, lce_req_data_ready_and_lo;
 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_lo;
   logic [bedrock_data_width_p-1:0] lce_cmd_data_lo;
-  logic lce_cmd_data_v_lo, lce_cmd_data_ready_and_li, lce_cmd_last_lo;
+  logic lce_cmd_data_v_lo, lce_cmd_data_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_cmd_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_cmd_dst_cid_lo;
 
   bp_bedrock_lce_resp_header_s lce_resp_header_li;
   logic [bedrock_data_width_p-1:0] lce_resp_data_li;
-  logic lce_resp_data_v_li, lce_resp_data_ready_and_lo, lce_resp_last_li;
+  logic lce_resp_data_v_li, lce_resp_data_ready_and_lo;
 
   // LCE to CCE request
   bp_me_wormhole_to_stream
@@ -117,7 +117,6 @@ module bp_l2e_tile
     ,.pr_data_o(lce_req_data_li)
     ,.pr_v_o(lce_req_v_li)
     ,.pr_ready_and_i(lce_req_ready_and_lo)
-    ,.pr_last_o(lce_req_last_li)
     );
 
   // CCE to LCE command
@@ -149,7 +148,6 @@ module bp_l2e_tile
     ,.pr_data_i(lce_cmd_data_lo)
     ,.pr_v_i(lce_cmd_v_lo)
     ,.pr_ready_and_o(lce_cmd_ready_and_li)
-    ,.pr_last_i(lce_cmd_last_lo)
     ,.dst_cord_i(lce_cmd_dst_cord_lo)
     ,.dst_cid_i(lce_cmd_dst_cid_lo)
 
@@ -181,25 +179,24 @@ module bp_l2e_tile
     ,.pr_data_o(lce_resp_data_li)
     ,.pr_v_o(lce_resp_v_li)
     ,.pr_ready_and_i(lce_resp_ready_and_lo)
-    ,.pr_last_o(lce_resp_last_li)
     );
 
   // CCE-side CCE-Mem network connections
   bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
   logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
-  logic mem_fwd_v_lo, mem_fwd_last_lo, mem_fwd_ready_and_li;
+  logic mem_fwd_v_lo, mem_fwd_ready_and_li;
   bp_bedrock_mem_rev_header_s mem_rev_header_li;
   logic [bedrock_data_width_p-1:0] mem_rev_data_li;
-  logic mem_rev_v_li, mem_rev_ready_and_lo, mem_rev_last_li;
+  logic mem_rev_v_li, mem_rev_ready_and_lo;
 
   // Device-side CCE-Mem network connections
   // dev_fwd[2:0] = {CCE loopback, CFG, memory (cache)}
   bp_bedrock_mem_fwd_header_s [2:0] dev_fwd_header_li;
   logic [2:0][bedrock_data_width_p-1:0] dev_fwd_data_li;
-  logic [2:0] dev_fwd_v_li, dev_fwd_ready_and_lo, dev_fwd_last_li;
+  logic [2:0] dev_fwd_v_li, dev_fwd_ready_and_lo;
   bp_bedrock_mem_rev_header_s [2:0] dev_rev_header_lo;
   logic [2:0][bedrock_data_width_p-1:0] dev_rev_data_lo;
-  logic [2:0] dev_rev_v_lo, dev_rev_ready_and_li, dev_rev_last_lo;
+  logic [2:0] dev_rev_v_lo, dev_rev_ready_and_li;
 
   // Config
   logic cce_ucode_v_lo;
@@ -217,13 +214,11 @@ module bp_l2e_tile
      ,.mem_fwd_data_i(dev_fwd_data_li[1])
      ,.mem_fwd_v_i(dev_fwd_v_li[1])
      ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[1])
-     ,.mem_fwd_last_i(dev_fwd_last_li[1])
 
      ,.mem_rev_header_o(dev_rev_header_lo[1])
      ,.mem_rev_data_o(dev_rev_data_lo[1])
      ,.mem_rev_v_o(dev_rev_v_lo[1])
      ,.mem_rev_ready_and_i(dev_rev_ready_and_li[1])
-     ,.mem_rev_last_o(dev_rev_last_lo[1])
 
      ,.cfg_bus_o(cfg_bus_lo)
      ,.did_i(my_did_i)
@@ -248,13 +243,11 @@ module bp_l2e_tile
      ,.mem_fwd_data_i(dev_fwd_data_li[2])
      ,.mem_fwd_v_i(dev_fwd_v_li[2])
      ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[2])
-     ,.mem_fwd_last_i(dev_fwd_last_li[2])
 
      ,.mem_rev_header_o(dev_rev_header_lo[2])
      ,.mem_rev_data_o(dev_rev_data_lo[2])
      ,.mem_rev_v_o(dev_rev_v_lo[2])
      ,.mem_rev_ready_and_i(dev_rev_ready_and_li[2])
-     ,.mem_rev_last_o(dev_rev_last_lo[2])
      );
 
   // Select destination of CCE-Mem command from CCE
@@ -294,14 +287,12 @@ module bp_l2e_tile
      ,.msg_data_i(mem_fwd_data_lo)
      ,.msg_v_i(mem_fwd_v_lo)
      ,.msg_ready_and_o(mem_fwd_ready_and_li)
-     ,.msg_last_i(mem_fwd_last_lo)
      ,.msg_dst_i(mem_fwd_dst_lo)
 
      ,.msg_header_o(dev_fwd_header_li)
      ,.msg_data_o(dev_fwd_data_li)
      ,.msg_v_o(dev_fwd_v_li)
      ,.msg_ready_and_i(dev_fwd_ready_and_lo)
-     ,.msg_last_o(dev_fwd_last_li)
      );
 
   bp_me_xbar_stream
@@ -319,14 +310,12 @@ module bp_l2e_tile
      ,.msg_data_i(dev_rev_data_lo)
      ,.msg_v_i(dev_rev_v_lo)
      ,.msg_ready_and_o(dev_rev_ready_and_li)
-     ,.msg_last_i(dev_rev_last_lo)
      ,.msg_dst_i(dev_rev_dst_lo)
 
      ,.msg_header_o(mem_rev_header_li)
      ,.msg_data_o(mem_rev_data_li)
      ,.msg_v_o(mem_rev_v_li)
      ,.msg_ready_and_i(mem_rev_ready_and_lo)
-     ,.msg_last_o(mem_rev_last_li)
      );
 
   // CCE: Cache Coherence Engine
@@ -350,19 +339,16 @@ module bp_l2e_tile
      ,.lce_req_data_i(lce_req_data_li)
      ,.lce_req_v_i(lce_req_v_li)
      ,.lce_req_ready_and_o(lce_req_ready_and_lo)
-     ,.lce_req_last_i(lce_req_last_li)
 
      ,.lce_resp_header_i(lce_resp_header_li)
      ,.lce_resp_data_i(lce_resp_data_li)
      ,.lce_resp_v_i(lce_resp_v_li)
      ,.lce_resp_ready_and_o(lce_resp_ready_and_lo)
-     ,.lce_resp_last_i(lce_resp_last_li)
 
      ,.lce_cmd_header_o(lce_cmd_header_lo)
      ,.lce_cmd_data_o(lce_cmd_data_lo)
      ,.lce_cmd_v_o(lce_cmd_v_lo)
      ,.lce_cmd_ready_and_i(lce_cmd_ready_and_li)
-     ,.lce_cmd_last_o(lce_cmd_last_lo)
 
      // CCE-MEM Interface
      // BedRock Burst protocol: ready&valid
@@ -370,13 +356,11 @@ module bp_l2e_tile
      ,.mem_rev_data_i(mem_rev_data_li)
      ,.mem_rev_v_i(mem_rev_v_li)
      ,.mem_rev_ready_and_o(mem_rev_ready_and_lo)
-     ,.mem_rev_last_i(mem_rev_last_li)
 
      ,.mem_fwd_header_o(mem_fwd_header_lo)
      ,.mem_fwd_data_o(mem_fwd_data_lo)
      ,.mem_fwd_v_o(mem_fwd_v_lo)
      ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
-     ,.mem_fwd_last_o(mem_fwd_last_lo)
      );
 
   // CCE-Mem network to L2 Cache adapter
@@ -397,13 +381,11 @@ module bp_l2e_tile
      ,.mem_fwd_data_i(dev_fwd_data_li[0])
      ,.mem_fwd_v_i(dev_fwd_v_li[0])
      ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[0])
-     ,.mem_fwd_last_i(dev_fwd_last_li[0])
 
      ,.mem_rev_header_o(dev_rev_header_lo[0])
      ,.mem_rev_data_o(dev_rev_data_lo[0])
      ,.mem_rev_v_o(dev_rev_v_lo[0])
      ,.mem_rev_ready_and_i(dev_rev_ready_and_li[0])
-     ,.mem_rev_last_o(dev_rev_last_lo[0])
 
      ,.dma_pkt_o(dma_pkt_lo)
      ,.dma_pkt_v_o(dma_pkt_v_lo)

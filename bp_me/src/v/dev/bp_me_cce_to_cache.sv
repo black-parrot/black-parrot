@@ -36,13 +36,11 @@ module bp_me_cce_to_cache
    , input [l2_data_width_p-1:0]                           mem_fwd_data_i
    , input                                                 mem_fwd_v_i
    , output logic                                          mem_fwd_ready_and_o
-   , input                                                 mem_fwd_last_i
 
    , output logic [mem_rev_header_width_lp-1:0]            mem_rev_header_o
    , output logic [l2_data_width_p-1:0]                    mem_rev_data_o
    , output logic                                          mem_rev_v_o
    , input                                                 mem_rev_ready_and_i
-   , output logic                                          mem_rev_last_o
 
    // cache-side
    , output logic [l2_banks_p-1:0][cache_pkt_width_lp-1:0] cache_pkt_o
@@ -91,8 +89,6 @@ module bp_me_cce_to_cache
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)
-     ,.header_els_p(2)
-     ,.data_els_p(`BSG_MAX(2, cce_block_width_p/l2_data_width_p))
      )
    fwd_pump_in
     (.clk_i(clk_i)
@@ -101,7 +97,6 @@ module bp_me_cce_to_cache
      ,.msg_header_i(mem_fwd_header_i)
      ,.msg_data_i(mem_fwd_data_i)
      ,.msg_v_i(mem_fwd_v_i)
-     ,.msg_last_i(mem_fwd_last_i)
      ,.msg_ready_and_o(mem_fwd_ready_and_o)
 
      ,.fsm_header_o(fsm_fwd_header_li)
@@ -239,7 +234,6 @@ module bp_me_cce_to_cache
      ,.msg_header_o(mem_rev_header_o)
      ,.msg_data_o(mem_rev_data_o)
      ,.msg_v_o(mem_rev_v_o)
-     ,.msg_last_o(mem_rev_last_o)
      ,.msg_ready_and_i(mem_rev_ready_and_i)
 
      ,.fsm_header_i(fsm_rev_header_lo)

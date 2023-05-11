@@ -26,44 +26,37 @@ module bp_cacc_vdp
     , output logic [acache_fill_width_p-1:0]      lce_req_data_o
     , output logic                                lce_req_v_o
     , input                                       lce_req_ready_and_i
-    , output logic                                lce_req_last_o
 
     , input [lce_cmd_header_width_lp-1:0]         lce_cmd_header_i
     , input [acache_fill_width_p-1:0]             lce_cmd_data_i
     , input                                       lce_cmd_v_i
     , output logic                                lce_cmd_ready_and_o
-    , input                                       lce_cmd_last_i
 
     , input [lce_fill_header_width_lp-1:0]        lce_fill_header_i
     , input [acache_fill_width_p-1:0]             lce_fill_data_i
     , input                                       lce_fill_v_i
     , output logic                                lce_fill_ready_and_o
-    , input                                       lce_fill_last_i
 
     , output logic [lce_fill_header_width_lp-1:0] lce_fill_header_o
     , output logic [acache_fill_width_p-1:0]      lce_fill_data_o
     , output logic                                lce_fill_v_o
     , input                                       lce_fill_ready_and_i
-    , output logic                                lce_fill_last_o
 
     , output logic [lce_resp_header_width_lp-1:0] lce_resp_header_o
     , output logic [acache_fill_width_p-1:0]      lce_resp_data_o
     , output logic                                lce_resp_v_o
     , input                                       lce_resp_ready_and_i
-    , output logic                                lce_resp_last_o
 
     // BedRock Stream
     // may only support single beat messages
     , input [mem_fwd_header_width_lp-1:0]         io_fwd_header_i
     , input [acache_fill_width_p-1:0]             io_fwd_data_i
     , input                                       io_fwd_v_i
-    , input                                       io_fwd_last_i
     , output logic                                io_fwd_ready_and_o
 
     , output logic [mem_rev_header_width_lp-1:0]  io_rev_header_o
     , output logic [acache_fill_width_p-1:0]      io_rev_data_o
     , output logic                                io_rev_v_o
-    , output logic                                io_rev_last_o
     , input                                       io_rev_ready_and_i
     );
 
@@ -93,13 +86,11 @@ module bp_cacc_vdp
      ,.mem_fwd_data_i(io_fwd_data_i)
      ,.mem_fwd_v_i(io_fwd_v_i)
      ,.mem_fwd_ready_and_o(io_fwd_ready_and_o)
-     ,.mem_fwd_last_i(io_fwd_last_i)
 
      ,.mem_rev_header_o(io_rev_header_cast_o)
      ,.mem_rev_data_o(io_rev_data_o)
      ,.mem_rev_v_o(io_rev_v_o)
      ,.mem_rev_ready_and_i(io_rev_ready_and_i)
-     ,.mem_rev_last_o(io_rev_last_o)
 
      ,.r_v_o(r_v_li)
      ,.w_v_o(w_v_li)

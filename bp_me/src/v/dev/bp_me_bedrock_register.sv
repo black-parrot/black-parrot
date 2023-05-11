@@ -49,13 +49,11 @@ module bp_me_bedrock_register
    , input [dword_width_gp-1:0]                     mem_fwd_data_i
    , input                                          mem_fwd_v_i
    , output logic                                   mem_fwd_ready_and_o
-   , input                                          mem_fwd_last_i
 
    , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
    , output logic [dword_width_gp-1:0]              mem_rev_data_o
    , output logic                                   mem_rev_v_o
    , input                                          mem_rev_ready_and_i
-   , output logic                                   mem_rev_last_o
 
 
    // Synchronous register read/write interface.
@@ -73,7 +71,6 @@ module bp_me_bedrock_register
 
   if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
 
-  wire unused = &{mem_fwd_last_i};
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
@@ -134,7 +131,6 @@ module bp_me_bedrock_register
   assign mem_rev_header_o = mem_fwd_header_li;
   assign mem_rev_data_o = rdata_lo;
   assign mem_rev_v_o = v_r;
-  assign mem_rev_last_o = mem_rev_v_o;
   assign mem_fwd_yumi_li = mem_rev_ready_and_i & mem_rev_v_o;
 
   // synopsys translate_off
@@ -142,9 +138,6 @@ module bp_me_bedrock_register
     begin
       assert(reset_i !== '0 || ~mem_fwd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
         else $error("Command to non-existent register: %x", addr_o);
-
-      assert(reset_i !== '0 || ~(mem_fwd_v_i & mem_fwd_ready_and_o) || mem_fwd_last_i)
-        else $error("Multi-beat memory command detected");
     end
   // synopsys translate_on
 
