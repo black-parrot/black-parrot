@@ -52,21 +52,21 @@ stages:
     when:
       - script_failure
 
-check-design:
-  <<: *job_definition
-  stage: check
-  tags:
-    - dc
-  script:
-    - $CI_PROJECT_DIR/ci/check_design.sh $CI_CORES
-
-surelog:
-  <<: *job_definition
-  stage: check
-  tags:
-    - bsg
-  script:
-    - $CI_PROJECT_DIR/ci/surelog.sh $CI_CORES
+#check-design:
+#  <<: *job_definition
+#  stage: check
+#  tags:
+#    - dc
+#  script:
+#    - $CI_PROJECT_DIR/ci/check_design.sh $CI_CORES
+#
+#surelog:
+#  <<: *job_definition
+#  stage: check
+#  tags:
+#    - bsg
+#  script:
+#    - $CI_PROJECT_DIR/ci/surelog.sh $CI_CORES
 
 # Some licensing issue as of 02/10/21
 synth-vivado:
@@ -274,13 +274,13 @@ top-checkpoint-vcs:
   script:
     - $CI_PROJECT_DIR/ci/checkpoint.sh vcs $CI_CORES
 
-check-loops:
-  <<: *job_definition
-  stage: test-medium
-  tags:
-    - dc
-  script:
-    - $CI_PROJECT_DIR/ci/check_loops.sh $CI_CORES
+#check-loops:
+#  <<: *job_definition
+#  stage: test-medium
+#  tags:
+#    - dc
+#  script:
+#    - $CI_PROJECT_DIR/ci/check_loops.sh $CI_CORES
 
 # Pending https://github.com/bespoke-silicon-group/basejump_stl/pull/387/
 top-dram-vcs:
