@@ -128,7 +128,7 @@ module bp_me_wormhole_to_stream
   assign link_ready_and_o = is_hdr ? sipo_ready_and_lo : pr_ready_and_i;
 
   // Identifies which flits are header vs data flits
-  bsg_wormhole_stream_control
+  bp_me_wormhole_stream_control
    #(.len_width_p(len_width_p)
      ,.hdr_len_p(hdr_len_lp)
      )

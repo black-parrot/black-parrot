@@ -147,7 +147,7 @@ module bp_me_stream_to_wormhole
   assign pr_ready_and_o = (is_hdr & ~wh_has_data & piso_ready_and_lo) | (is_data & link_ready_and_i);
 
   // Identifies which flits are header vs data flits
-  bsg_wormhole_stream_control
+  bp_me_wormhole_stream_control
    #(.len_width_p(len_width_p), .hdr_len_p(hdr_len_lp))
    stream_control
     (.clk_i(clk_i)
@@ -164,8 +164,8 @@ module bp_me_stream_to_wormhole
      );
 
   // patch header or data flits to link
-  assign link_data_o = is_hdr ?  wh_hdr_lo   : wh_data_lo;
-  assign link_v_o    = is_hdr ? |wh_hdr_v_lo : wh_data_v_lo;
+  assign link_data_o = is_hdr ? wh_hdr_lo   : wh_data_lo;
+  assign link_v_o    = is_hdr ? wh_hdr_v_lo : wh_data_v_lo;
 
   if (flit_width_p != pr_data_width_p)
     $error("flit_width_p %d != pr_data_width_p %d", flit_width_p, pr_data_width_p);
