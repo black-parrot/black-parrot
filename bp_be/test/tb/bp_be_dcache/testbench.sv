@@ -265,13 +265,11 @@ module testbench
      ,.mem_fwd_data_o(mem_fwd_data_lo)
      ,.mem_fwd_v_o(mem_fwd_v_lo)
      ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
-     ,.mem_fwd_last_o(mem_fwd_last_lo)
 
      ,.mem_rev_header_i(mem_rev_header_li)
      ,.mem_rev_data_i(mem_rev_data_li)
      ,.mem_rev_v_i(mem_rev_v_li)
      ,.mem_rev_ready_and_o(mem_rev_ready_and_lo)
-     ,.mem_rev_last_i(mem_rev_last_li)
      );
 
   // Memory
@@ -288,13 +286,11 @@ module testbench
      ,.mem_fwd_data_i(mem_fwd_data_lo)
      ,.mem_fwd_v_i(mem_fwd_v_lo)
      ,.mem_fwd_ready_and_o(mem_fwd_ready_and_li)
-     ,.mem_fwd_last_i(mem_fwd_last_lo)
 
      ,.mem_rev_header_o(mem_rev_header_li)
      ,.mem_rev_data_o(mem_rev_data_li)
      ,.mem_rev_v_o(mem_rev_v_li)
      ,.mem_rev_ready_and_i(mem_rev_ready_and_lo)
-     ,.mem_rev_last_o(mem_rev_last_li)
 
      ,.dram_clk_i(dram_clk_i)
      ,.dram_reset_i(dram_reset_i)
@@ -409,13 +405,11 @@ module testbench
           ,.mem_rev_data_i(mem_rev_data_i)
           ,.mem_rev_v_i(mem_rev_v_i)
           ,.mem_rev_ready_and_i(mem_rev_ready_and_o)
-          ,.mem_rev_last_i(mem_rev_last_i)
 
           ,.mem_fwd_header_i(mem_fwd_header_o)
           ,.mem_fwd_data_i(mem_fwd_data_o)
           ,.mem_fwd_v_i(mem_fwd_v_o)
           ,.mem_fwd_ready_and_i(mem_fwd_ready_and_i)
-          ,.mem_fwd_last_i(mem_fwd_last_o)
           );
   end
 
@@ -430,13 +424,11 @@ module testbench
        ,.mem_fwd_data_i(mem_fwd_data_i)
        ,.mem_fwd_v_i(mem_fwd_v_i)
        ,.mem_fwd_ready_and_i(mem_fwd_ready_and_o)
-       ,.mem_fwd_last_i(mem_fwd_last_i)
 
        ,.mem_rev_header_i(mem_rev_header_o)
        ,.mem_rev_data_i(mem_rev_data_o)
        ,.mem_rev_v_i(mem_rev_v_o)
        ,.mem_rev_ready_and_i(mem_rev_ready_and_i)
-       ,.mem_rev_last_i(mem_rev_last_o)
        );
 
   // Parameter Verification

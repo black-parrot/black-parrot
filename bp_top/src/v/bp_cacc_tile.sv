@@ -70,11 +70,11 @@ module bp_cacc_tile
 
   bp_bedrock_mem_fwd_header_s io_fwd_header_lo;
   logic [acache_fill_width_p-1:0] io_fwd_data_lo;
-  logic io_fwd_data_v_lo, io_fwd_data_ready_and_li;
+  logic io_fwd_v_lo, io_fwd_ready_and_li;
 
   bp_bedrock_mem_rev_header_s io_rev_header_li;
   logic [acache_fill_width_p-1:0] io_rev_data_li;
-  logic io_rev_data_v_li, io_rev_data_ready_and_lo;
+  logic io_rev_v_li, io_rev_ready_and_lo;
 
   // accelerator-side connections network connections
   bp_bedrock_lce_req_header_s lce_req_header_lo;
@@ -85,21 +85,21 @@ module bp_cacc_tile
 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_li;
   logic [acache_fill_width_p-1:0] lce_cmd_data_li;
-  logic lce_cmd_data_v_li, lce_cmd_data_ready_and_lo;
+  logic lce_cmd_v_li, lce_cmd_ready_and_lo;
 
   bp_bedrock_lce_fill_header_s lce_fill_header_li;
   logic [acache_fill_width_p-1:0] lce_fill_data_li;
-  logic lce_fill_data_v_li, lce_fill_data_ready_and_lo;
+  logic lce_fill_v_li, lce_fill_ready_and_lo;
 
   bp_bedrock_lce_fill_header_s lce_fill_header_lo;
   logic [acache_fill_width_p-1:0] lce_fill_data_lo;
-  logic lce_fill_data_v_lo, lce_fill_data_ready_and_li;
+  logic lce_fill_v_lo, lce_fill_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_fill_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_fill_dst_cid_lo;
 
   bp_bedrock_lce_resp_header_s lce_resp_header_lo;
   logic [acache_fill_width_p-1:0] lce_resp_data_lo;
-  logic lce_resp_data_v_lo, lce_resp_data_ready_and_li;
+  logic lce_resp_v_lo, lce_resp_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_resp_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_resp_dst_cid_lo;
 
@@ -398,8 +398,8 @@ module bp_cacc_tile
 
     ,.pr_hdr_o(lce_req_header_li)
     ,.pr_data_o(lce_req_data_li)
-    ,.pr_data_v_o(lce_req_data_v_li)
-    ,.pr_data_ready_and_i(lce_req_data_ready_and_lo)
+    ,.pr_v_o(lce_req_v_li)
+    ,.pr_ready_and_i(lce_req_ready_and_lo)
     );
 
   // Burst to WH (lce_cmd_header_lo)

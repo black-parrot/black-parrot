@@ -158,7 +158,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 ## ME files
 # LCE
-$BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce.sv
@@ -189,10 +188,12 @@ $BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
 $BP_ME_DIR/src/v/dev/bp_me_cache_slice.sv
 $BP_ME_DIR/src/v/dev/bp_me_cfg_slice.sv
 # NETWORK
+$BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_control.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
+$BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
