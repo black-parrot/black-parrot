@@ -164,7 +164,7 @@ module bp_sacc_tile
        ,.io_fwd_header_i(io_fwd_header_lo)
        ,.io_fwd_data_i(io_fwd_data_lo)
        ,.io_fwd_v_i(io_fwd_v_lo)
-       ,.io_fwd_ready_and_o(io_fwd_ready_and_lo)
+       ,.io_fwd_ready_and_o(io_fwd_ready_and_li)
 
        ,.io_rev_header_o(io_rev_header_li)
        ,.io_rev_data_o(io_rev_data_li)

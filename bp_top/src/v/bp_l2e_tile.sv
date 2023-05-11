@@ -82,17 +82,17 @@ module bp_l2e_tile
   // CCE-side LCE-CCE network connections
   bp_bedrock_lce_req_header_s lce_req_header_li;
   logic [bedrock_data_width_p-1:0] lce_req_data_li;
-  logic lce_req_data_v_li, lce_req_data_ready_and_lo;
+  logic lce_req_v_li, lce_req_ready_and_lo;
 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_lo;
   logic [bedrock_data_width_p-1:0] lce_cmd_data_lo;
-  logic lce_cmd_data_v_lo, lce_cmd_data_ready_and_li;
+  logic lce_cmd_v_lo, lce_cmd_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_cmd_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_cmd_dst_cid_lo;
 
   bp_bedrock_lce_resp_header_s lce_resp_header_li;
   logic [bedrock_data_width_p-1:0] lce_resp_data_li;
-  logic lce_resp_data_v_li, lce_resp_data_ready_and_lo;
+  logic lce_resp_v_li, lce_resp_ready_and_lo;
 
   // LCE to CCE request
   bp_me_wormhole_to_stream

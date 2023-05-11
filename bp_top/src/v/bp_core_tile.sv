@@ -110,7 +110,7 @@ module bp_core_tile
 
   bp_bedrock_lce_resp_header_s lce_resp_header_li;
   logic [bedrock_data_width_p-1:0] lce_resp_data_li;
-  logic lce_resp_data_v_li, lce_resp_data_ready_and_lo;
+  logic lce_resp_v_li, lce_resp_ready_and_lo;
 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_lo;
   logic [bedrock_data_width_p-1:0] lce_cmd_data_lo;
