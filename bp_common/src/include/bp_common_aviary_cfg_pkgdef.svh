@@ -266,23 +266,23 @@
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
-      ,dcache_fill_width    : 64
+      ,dcache_fill_width    : 128
 
       ,icache_features      : (1 << e_cfg_enabled)
       ,icache_sets          : 64
       ,icache_assoc         : 8
       ,icache_block_width   : 512
-      ,icache_fill_width    : 64
+      ,icache_fill_width    : 128
 
       ,acache_features      : (1 << e_cfg_enabled)
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
-      ,acache_fill_width    : 64
+      ,acache_fill_width    : 128
 
       ,cce_type             : e_cce_uce
       ,cce_pc_width         : 8
-      ,bedrock_data_width   : 64
+      ,bedrock_data_width   : 128
 
       ,l2_features          : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
@@ -291,11 +291,11 @@
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)
       ,l2_banks            : 2
-      ,l2_data_width       : 64
+      ,l2_data_width       : 128
       ,l2_sets             : 128
       ,l2_assoc            : 8
       ,l2_block_width      : 512
-      ,l2_fill_width       : 64
+      ,l2_fill_width       : 128
       ,l2_outstanding_reqs : 6
 
       ,fe_queue_fifo_els : 8
@@ -305,19 +305,19 @@
       ,compressed_support: 1
 
       ,async_coh_clk       : 0
-      ,coh_noc_flit_width  : 64
+      ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 4
       ,coh_noc_max_credits : 32
 
       ,async_mem_clk         : 0
-      ,mem_noc_flit_width    : 64
+      ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
       ,mem_noc_max_credits   : 32
 
       ,async_io_clk         : 0
-      ,io_noc_flit_width    : 64
+      ,io_noc_flit_width    : 128
       ,io_noc_cid_width     : 2
       ,io_noc_did_width     : 3
       ,io_noc_len_width     : 4

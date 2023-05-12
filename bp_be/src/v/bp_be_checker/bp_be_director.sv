@@ -45,6 +45,7 @@ module bp_be_director
    , output logic                       cmd_full_n_o
    , output logic                       cmd_full_r_o
    , input                              drained_i
+   , input                              dispatch_v_i
 
    // FE-BE interface
    , output logic [fe_cmd_width_lp-1:0] fe_cmd_o
@@ -93,8 +94,8 @@ module bp_be_director
      );
   assign expected_npc_o = npc_w_v ? npc_n : npc_r;
 
-  wire npc_mismatch_v = issue_pkt_cast_i.v & (expected_npc_o != issue_pkt_cast_i.pc);
-  wire npc_match_v    = issue_pkt_cast_i.v & (expected_npc_o == issue_pkt_cast_i.pc);
+  wire npc_mismatch_v = dispatch_v_i & (expected_npc_o != issue_pkt_cast_i.pc);
+  wire npc_match_v    = dispatch_v_i & (expected_npc_o == issue_pkt_cast_i.pc);
   assign poison_isd_o = commit_pkt_cast_i.npc_w_v | npc_mismatch_v;
 
   logic btaken_pending, attaboy_pending;
@@ -105,7 +106,7 @@ module bp_be_director
      ,.reset_i(reset_i)
 
      ,.set_i({br_pkt_cast_i.btaken, br_pkt_cast_i.branch})
-     ,.clear_i({2{issue_pkt_cast_i.v}})
+     ,.clear_i({2{dispatch_v_i}})
      ,.data_o({btaken_pending, attaboy_pending})
      );
   wire last_instr_was_branch = attaboy_pending | br_pkt_cast_i.branch;
@@ -142,7 +143,7 @@ module bp_be_director
       end
 
   assign suppress_iss_o = (state_r != e_run);
-  assign clear_iss_o    = (state_r != e_run) & (state_n == e_run);
+  assign clear_iss_o    = (state_r == e_fence) & drained_i;
   assign unfreeze_o     = (state_r == e_freeze) & ~freeze_li;
 
   always_comb
@@ -245,7 +246,7 @@ module bp_be_director
                                                              : e_not_a_branch;
           fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
-          fe_cmd_v_li = ~cmd_full_r_o & is_run;
+          fe_cmd_v_li = is_run;
         end
       // Send an attaboy if there's a correct prediction
       else if (npc_match_v & last_instr_was_branch)
@@ -255,7 +256,7 @@ module bp_be_director
           fe_cmd_li.operands.attaboy.taken               = last_instr_was_btaken;
           fe_cmd_li.operands.attaboy.branch_metadata_fwd = issue_pkt_cast_i.branch_metadata_fwd;
 
-          fe_cmd_v_li = ~cmd_full_r_o & is_run;
+          fe_cmd_v_li = is_run;
         end
     end
 
