@@ -37,7 +37,6 @@ module bp_me_wormhole_stream_control
    , input                   link_accept_i
 
    , output logic            is_hdr_o
-   , output logic            last_hdr_o
    , output logic            has_data_o
    , output logic            is_data_o
    , output logic            last_data_o
@@ -66,7 +65,6 @@ module bp_me_wormhole_stream_control
   wire data_flit_done = (data_flit_cnt == '0);
 
   assign last_data_o = is_data & data_flit_last;
-  assign last_hdr_o = is_hdr & hdr_flit_last;
 
   // Set counter value when new packet hdr arrives
   // and all hdr flits are sent
@@ -114,7 +112,7 @@ module bp_me_wormhole_stream_control
     // (data_flit_done signal takes one cycle to be registered, not useful
     // in this case, extract data_len_li signal directly from hdr)
     assign e_hdr_to_e_data = (link_accept_i & is_hdr & data_len_li != '0);
-    assign has_data_o = is_hdr & (data_len_li != '0);
+    assign has_data_o = (data_len_li != '0);
   // Multiple hdr flits
   end else begin
     // When wormhole link accept flit
@@ -124,7 +122,7 @@ module bp_me_wormhole_stream_control
     // (data_len_li signal only meaningful in first hdr flit, not useful
     // in this case, use registered data_flit_done signal from data_flit_counter)
     assign e_hdr_to_e_data = (link_accept_i & hdr_flit_last & ~data_flit_done);
-    assign has_data_o = is_hdr & ~data_flit_done;
+    assign has_data_o = ~data_flit_done;
   end
 
   // When wormhole link accept flit and sending last data flit

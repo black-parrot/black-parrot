@@ -87,7 +87,7 @@ module bp_me_wormhole_to_stream
     $error("Protocol and Network data widths must be powers of 2");
 
   // WH control signals
-  logic is_hdr, is_data, wh_last_hdr, wh_has_data, wh_last_data;
+  logic is_hdr, is_data, wh_has_data, wh_last_data;
 
   // Header SIPO
   // Aggregate flits until we have a full header-worth of data
@@ -115,7 +115,7 @@ module bp_me_wormhole_to_stream
    #(.width_p(1))
    wh_has_data_reg
     (.clk_i(clk_i)
-     ,.en_i(wh_last_hdr)
+     ,.en_i(is_hdr)
      ,.data_i(wh_has_data)
      ,.data_o(wh_has_data_r)
      );
@@ -140,7 +140,6 @@ module bp_me_wormhole_to_stream
      ,.link_accept_i(link_ready_and_o & link_v_i)
 
      ,.is_hdr_o(is_hdr)
-     ,.last_hdr_o(wh_last_hdr)
      ,.has_data_o(wh_has_data)
      ,.is_data_o(is_data)
      ,.last_data_o(wh_last_data)

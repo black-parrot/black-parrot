@@ -99,7 +99,7 @@ module bp_me_stream_to_wormhole
   `bp_cast_i(bp_bedrock_msg_header_s, pr_hdr);
 
   // WH control signals
-  logic is_hdr, is_data, wh_last_hdr, wh_has_data, wh_last_data;
+  logic is_hdr, is_data, wh_has_data, wh_last_data;
 
   `declare_bp_bedrock_wormhole_header_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_msg_header_s, bedrock);
   bp_bedrock_wormhole_header_s pr_wh_hdr_lo;
@@ -125,6 +125,7 @@ module bp_me_stream_to_wormhole
   logic piso_ready_and_lo, piso_v_li;
   logic [flit_width_p-1:0] wh_hdr_lo;
   logic wh_hdr_ready_and_li, wh_hdr_v_lo;
+  assign piso_v_li = is_hdr & pr_v_i;
   bsg_parallel_in_serial_out_passthrough
    #(.width_p(flit_width_p), .els_p(hdr_len_lp))
    hdr_piso
@@ -138,13 +139,30 @@ module bp_me_stream_to_wormhole
      ,.v_o(wh_hdr_v_lo)
      ,.ready_and_i(wh_hdr_ready_and_li)
      );
-  assign piso_v_li = is_hdr & pr_v_i;
   assign wh_hdr_ready_and_li = is_hdr & link_ready_and_i;
 
-  wire wh_data_v_lo = is_data & pr_v_i;
-  wire [flit_width_p-1:0] wh_data_lo = pr_data_i;
+  logic [pr_data_width_p-1:0] wh_data_r;
+  bsg_dff_en
+   #(.width_p(pr_data_width_p))
+   wh_data_reg
+    (.clk_i(clk_i)
+     ,.en_i(pr_ready_and_o & pr_v_i)
+     ,.data_i(pr_data_i)
+     ,.data_o(wh_data_r)
+     );
 
-  assign pr_ready_and_o = (is_hdr & ~wh_has_data & piso_ready_and_lo) | (is_data & link_ready_and_i);
+  logic wh_data_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   wh_data_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.set_i(pr_ready_and_o & pr_v_i & wh_has_data)
+     ,.clear_i(link_ready_and_i & link_v_o & is_data)
+     ,.data_o(wh_data_v_r)
+     );
+
+  assign pr_ready_and_o = is_hdr ? piso_ready_and_lo : (~wh_last_data & link_ready_and_i);
 
   // Identifies which flits are header vs data flits
   bp_me_wormhole_stream_control
@@ -157,15 +175,14 @@ module bp_me_stream_to_wormhole
      ,.link_accept_i(link_ready_and_i & link_v_o)
 
      ,.is_hdr_o(is_hdr)
-     ,.last_hdr_o(wh_last_hdr)
      ,.has_data_o(wh_has_data)
      ,.is_data_o(is_data)
      ,.last_data_o(wh_last_data)
      );
 
   // patch header or data flits to link
-  assign link_data_o = is_hdr ? wh_hdr_lo   : wh_data_lo;
-  assign link_v_o    = is_hdr ? wh_hdr_v_lo : wh_data_v_lo;
+  assign link_data_o = is_hdr ? wh_hdr_lo   : wh_data_r;
+  assign link_v_o    = is_hdr ? wh_hdr_v_lo : wh_data_v_r;
 
   if (flit_width_p != pr_data_width_p)
     $error("flit_width_p %d != pr_data_width_p %d", flit_width_p, pr_data_width_p);
