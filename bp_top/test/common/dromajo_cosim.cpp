@@ -9,12 +9,12 @@ using namespace std;
 
 dromajo_cosim_state_t* dromajo_pointer;
 vector<bool>* finish;
-char init = 0;
+char dromajo_init_done = 0;
 
 extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory_size, bool checkpoint, bool amo_en) {
   if (!hartid) {
-    if (!init) {
-      init = 1;
+    if (!dromajo_init_done) {
+      dromajo_init_done = 1;
       cout << "Running with Dromajo cosimulation" << endl;
 
       finish = new vector<bool>(ncpus, false);

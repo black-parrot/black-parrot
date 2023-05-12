@@ -228,7 +228,7 @@ module testbench
 
   wire [lce_id_width_p-1:0] io_lce_id_li = num_core_p*2+num_cacc_p+num_l2e_p+num_sacc_p+num_io_p;
   bp_nonsynth_nbf_loader
-   #(.bp_params_p(bp_params_p), .io_data_width_p(io_data_width_p))
+   #(.bp_params_p(bp_params_p))
    nbf_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
