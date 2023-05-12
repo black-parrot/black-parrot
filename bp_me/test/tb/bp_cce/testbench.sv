@@ -875,7 +875,7 @@ module testbench
 
   logic [coh_noc_cord_width_p-1:0] cord_li = {{coh_noc_y_cord_width_p'(1'b1)}, {coh_noc_x_cord_width_p'('0)}};
   bp_me_cfg_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(dword_width_gp))
    cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
