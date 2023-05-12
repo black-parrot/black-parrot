@@ -23,8 +23,10 @@ module bp_me_bedrock_register
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
+   // The bus width, must be greater than or equal to the reg width
+   , parameter bus_data_width_p = dword_width_gp
    // The width of the registers. Currently, must all be the same.
-   , parameter reg_width_p = dword_width_gp
+   , parameter reg_data_width_p = dword_width_gp
    // The address width of the registers. For addresses less than paddr_width_p,
    //   the upper bits of the paddr are ignored for matching purposes
    , parameter reg_addr_width_p = paddr_width_p
@@ -39,19 +41,19 @@ module bp_me_bedrock_register
    //, parameter integer base_addr_p [els_p-1:0] = '{0}
    , parameter [els_p-1:0][reg_addr_width_p-1:0] base_addr_p = '0
 
-   , localparam lg_reg_width_lp = `BSG_WIDTH(`BSG_SAFE_CLOG2(reg_width_p/8))
+   , localparam lg_reg_data_width_lp = `BSG_WIDTH(`BSG_SAFE_CLOG2(reg_data_width_p/8))
    )
   (input                                            clk_i
    , input                                          reset_i
 
    // Network-side BP-Stream interface
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input [dword_width_gp-1:0]                     mem_fwd_data_i
+   , input [bus_data_width_p-1:0]                   mem_fwd_data_i
    , input                                          mem_fwd_v_i
    , output logic                                   mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
-   , output logic [dword_width_gp-1:0]              mem_rev_data_o
+   , output logic [bus_data_width_p-1:0]            mem_rev_data_o
    , output logic                                   mem_rev_v_o
    , input                                          mem_rev_ready_and_i
 
@@ -64,26 +66,26 @@ module bp_me_bedrock_register
    , output logic [els_p-1:0]                       r_v_o
    , output logic [els_p-1:0]                       w_v_o
    , output logic [reg_addr_width_p-1:0]            addr_o
-   , output logic [lg_reg_width_lp-1:0]             size_o
-   , output logic [reg_width_p-1:0]                 data_o
-   , input [els_p-1:0][reg_width_p-1:0]             data_i
+   , output logic [lg_reg_data_width_lp-1:0]             size_o
+   , output logic [reg_data_width_p-1:0]                 data_o
+   , input [els_p-1:0][reg_data_width_p-1:0]             data_i
    );
 
   if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
-
-
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
+  `bp_cast_o(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
   bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
-  logic [dword_width_gp-1:0] mem_fwd_data_li;
+  logic [bus_data_width_p-1:0] mem_fwd_data_li;
   logic mem_fwd_v_li, mem_fwd_yumi_li;
   bsg_one_fifo
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+dword_width_gp))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bus_data_width_p))
    fwd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({mem_fwd_data_i, mem_fwd_header_i})
+     ,.data_i({mem_fwd_data_i, mem_fwd_header_cast_i})
      ,.v_i(mem_fwd_v_i)
      ,.ready_o(mem_fwd_ready_and_o)
 
@@ -108,9 +110,9 @@ module bp_me_bedrock_register
      ,.data_o({v_r, r_v_r})
      );
 
-  logic [reg_width_p-1:0] rdata_lo;
+  logic [reg_data_width_p-1:0] rdata_lo;
   bsg_mux_one_hot
-   #(.width_p(reg_width_p), .els_p(els_p))
+   #(.width_p(reg_data_width_p), .els_p(els_p))
    rmux_oh
     (.data_i(data_i)
      ,.sel_one_hot_i(r_v_r)
@@ -128,10 +130,20 @@ module bp_me_bedrock_register
   assign size_o = mem_fwd_header_li.size;
   assign data_o = mem_fwd_data_li;
 
-  assign mem_rev_header_o = mem_fwd_header_li;
-  assign mem_rev_data_o = rdata_lo;
+  assign mem_rev_header_cast_o = mem_fwd_header_li;
   assign mem_rev_v_o = v_r;
   assign mem_fwd_yumi_li = mem_rev_ready_and_i & mem_rev_v_o;
+
+  localparam sel_width_lp = `BSG_SAFE_CLOG2(dword_width_gp>>3);
+  localparam size_width_lp = `BSG_SAFE_CLOG2(sel_width_lp);
+  bsg_bus_pack
+   #(.in_width_p(dword_width_gp), .out_width_p(bus_data_width_p))
+   fwd_bus_pack
+    (.data_i(rdata_lo)
+     ,.sel_i('0) // We are aligned
+     ,.size_i(mem_rev_header_cast_o.size[0+:size_width_lp])
+     ,.data_o(mem_rev_data_o)
+     );
 
   // synopsys translate_off
   always_ff @(negedge clk_i)

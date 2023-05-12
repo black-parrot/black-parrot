@@ -238,20 +238,19 @@ module bp_unicore
      ,.msg_ready_and_i(proc_rev_ready_and_lo)
      );
 
-  logic [dword_width_gp-1:0] cfg_data_lo, cfg_data_li;
   bp_me_cfg_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(uce_fill_width_p))
    cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
      ,.mem_fwd_header_i(dev_fwd_header_li[0])
-     ,.mem_fwd_data_i(cfg_data_li)
+     ,.mem_fwd_data_i(dev_fwd_data_li[0])
      ,.mem_fwd_v_i(dev_fwd_v_li[0])
      ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[0])
 
      ,.mem_rev_header_o(dev_rev_header_lo[0])
-     ,.mem_rev_data_o(cfg_data_lo)
+     ,.mem_rev_data_o(dev_rev_data_lo[0])
      ,.mem_rev_v_o(dev_rev_v_lo[0])
      ,.mem_rev_ready_and_i(dev_rev_ready_and_li[0])
 
@@ -266,12 +265,9 @@ module bp_unicore
      ,.cce_ucode_data_o()
      ,.cce_ucode_data_i('0)
      );
-  assign cfg_data_li = dev_fwd_data_li[0];
-  assign dev_rev_data_lo[0] = cfg_data_lo;
 
-  logic [dword_width_gp-1:0] clint_data_lo, clint_data_li;
   bp_me_clint_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(uce_fill_width_p))
    clint
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
@@ -279,12 +275,12 @@ module bp_unicore
      ,.cfg_bus_i(cfg_bus_lo)
 
      ,.mem_fwd_header_i(dev_fwd_header_li[1])
-     ,.mem_fwd_data_i(clint_data_li)
+     ,.mem_fwd_data_i(dev_fwd_data_li[1])
      ,.mem_fwd_v_i(dev_fwd_v_li[1])
      ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[1])
 
      ,.mem_rev_header_o(dev_rev_header_lo[1])
-     ,.mem_rev_data_o(clint_data_lo)
+     ,.mem_rev_data_o(dev_rev_data_lo[1])
      ,.mem_rev_v_o(dev_rev_v_lo[1])
      ,.mem_rev_ready_and_i(dev_rev_ready_and_li[1])
 
@@ -294,8 +290,6 @@ module bp_unicore
      ,.m_external_irq_o(m_external_irq_li)
      ,.s_external_irq_o(s_external_irq_li)
      );
-  assign clint_data_li = dev_fwd_data_li[1];
-  assign dev_rev_data_lo[1] = clint_data_lo;
 
   bp_me_cache_slice
    #(.bp_params_p(bp_params_p))
@@ -337,24 +331,21 @@ module bp_unicore
   assign dev_rev_v_lo[3] = mem_rev_v_i;
   assign mem_rev_ready_and_o = dev_rev_ready_and_li[3];
 
-  logic [dword_width_gp-1:0] loopback_data_lo, loopback_data_li;
   bp_me_loopback
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(uce_fill_width_p))
    loopback
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
      ,.mem_fwd_header_i(dev_fwd_header_li[4])
-     ,.mem_fwd_data_i(loopback_data_li)
+     ,.mem_fwd_data_i(dev_fwd_data_li[4])
      ,.mem_fwd_v_i(dev_fwd_v_li[4])
      ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[4])
      ,.mem_rev_header_o(dev_rev_header_lo[4])
-     ,.mem_rev_data_o(loopback_data_lo)
+     ,.mem_rev_data_o(dev_rev_data_lo[4])
      ,.mem_rev_v_o(dev_rev_v_lo[4])
      ,.mem_rev_ready_and_i(dev_rev_ready_and_li[4])
      );
-  assign loopback_data_li = dev_fwd_data_li[4];
-  assign dev_rev_data_lo[4] = loopback_data_lo;
 
 endmodule
 

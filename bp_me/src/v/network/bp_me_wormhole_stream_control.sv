@@ -56,8 +56,8 @@ module bp_me_wormhole_stream_control
   // count from num_flits to zero, count_r_o==1 means last flit
   logic [len_width_p-1:0] hdr_flit_cnt, data_flit_cnt;
 
-  // Sending last hdr flit
-  wire hdr_flit_last  = (hdr_flit_cnt  == (len_width_p)'(1));
+  // Sending last hdr flit (single header packets are always good to go)
+  wire hdr_flit_last  = (hdr_flit_cnt  == (len_width_p)'(1)) || (hdr_len_p == 1);
   // Sending last data flit
   wire data_flit_last = (data_flit_cnt == (len_width_p)'(1));
   // All hdr flits are sent

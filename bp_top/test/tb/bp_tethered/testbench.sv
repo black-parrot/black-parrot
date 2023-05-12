@@ -151,8 +151,7 @@ module testbench
   wire [io_noc_did_width_p-1:0] proc_did_li = 1;
   wire [io_noc_did_width_p-1:0] host_did_li = '1;
   wrapper
-   #(.bp_params_p(bp_params_p)
-     ,.io_data_width_p(io_data_width_p))
+   #(.bp_params_p(bp_params_p), .io_data_width_p(io_data_width_p))
    wrapper
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
@@ -223,7 +222,7 @@ module testbench
 
   wire [lce_id_width_p-1:0] io_lce_id_li = num_core_p*2+num_cacc_p+num_l2e_p+num_sacc_p+num_io_p;
   bp_nonsynth_nbf_loader
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(io_data_width_p))
    nbf_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -261,6 +260,7 @@ module testbench
   logic dev_trace_en_lo;
   bp_nonsynth_host
    #(.bp_params_p(bp_params_p)
+     ,.data_width_p(io_data_width_p)
      ,.icache_trace_p(icache_trace_p)
      ,.dcache_trace_p(dcache_trace_p)
      ,.lce_trace_p(lce_trace_p)
@@ -281,12 +281,12 @@ module testbench
 
      // data width = dword_width_gp on mem_fwd/rev ports
      ,.mem_fwd_header_i(proc_fwd_header_lo)
-     ,.mem_fwd_data_i(proc_fwd_data_lo[0+:dword_width_gp])
+     ,.mem_fwd_data_i(proc_fwd_data_lo)
      ,.mem_fwd_v_i(proc_fwd_v_lo)
      ,.mem_fwd_ready_and_o(proc_fwd_ready_and_li)
 
      ,.mem_rev_header_o(proc_rev_header_li)
-     ,.mem_rev_data_o(proc_rev_data_li[0+:dword_width_gp])
+     ,.mem_rev_data_o(proc_rev_data_li)
      ,.mem_rev_v_o(proc_rev_v_li)
      ,.mem_rev_ready_and_i(proc_rev_ready_and_lo)
 
@@ -583,6 +583,7 @@ module testbench
       bind bp_me_clint_slice
         bp_me_nonsynth_dev_tracer
          #(.bp_params_p(bp_params_p)
+           ,.data_width_p(uce_fill_width_p)
            ,.trace_file_p("clint")
            )
          clint_tracer

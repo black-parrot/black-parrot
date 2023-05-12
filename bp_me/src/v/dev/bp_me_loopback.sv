@@ -18,17 +18,18 @@ module bp_me_loopback
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    , parameter `BSG_INV_PARAM(data_width_p)
     )
    (input                                            clk_i
     , input                                          reset_i
 
     , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-    , input [dword_width_gp-1:0]                     mem_fwd_data_i
+    , input [data_width_p-1:0]                       mem_fwd_data_i
     , input                                          mem_fwd_v_i
     , output logic                                   mem_fwd_ready_and_o
 
     , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
-    , output logic [dword_width_gp-1:0]              mem_rev_data_o
+    , output logic [data_width_p-1:0]                mem_rev_data_o
     , output logic                                   mem_rev_v_o
     , input                                          mem_rev_ready_and_i
     );

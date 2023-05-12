@@ -151,7 +151,7 @@ module bp_core
 
   // Config
   bp_me_cfg_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(uce_fill_width_p))
    cfg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -181,7 +181,7 @@ module bp_core
 
   // CLINT
   bp_me_clint_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(uce_fill_width_p))
    clint
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
@@ -207,7 +207,7 @@ module bp_core
 
   // Loopback
   bp_me_loopback
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(uce_fill_width_p))
    loopback
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
