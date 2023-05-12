@@ -1519,8 +1519,8 @@ module bp_cce_fsm
             fsm_cmd_header_lo.payload.way_id = sharers_ways_r[pe_lce_id];
 
             // message sent, increment count, write directory, clear bit for the destination LCE
-            cnt_inc = lce_cmd_v_o & lce_cmd_ready_and_i;
-            dir_w_v = lce_cmd_v_o & lce_cmd_ready_and_i;
+            cnt_inc = fsm_cmd_yumi_li & fsm_cmd_new_lo;
+            dir_w_v = cnt_inc;
             dir_cmd = e_wds_op;
             dir_addr_li = paddr_aligned;
             dir_lce_li = '0;
@@ -1529,7 +1529,7 @@ module bp_cce_fsm
             dir_coh_state_li = e_COH_I;
 
             // update sharers hit vector to feed back to priority encode module
-            pe_sharers_n = (lce_cmd_v_o & lce_cmd_ready_and_i)
+            pe_sharers_n = dir_w_v
                            ? pe_sharers_r & ~pe_lce_id_one_hot
                            : pe_sharers_r;
 

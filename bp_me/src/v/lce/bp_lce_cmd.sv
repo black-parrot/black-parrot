@@ -113,7 +113,7 @@ module bp_lce_cmd
   // tag offset
   localparam tag_offset_lp = block_byte_offset_lp + (sets_p > 1 ? lg_sets_lp : 0);
   // coherence request size for cached requests
-  localparam bp_bedrock_msg_size_e cmd_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
+  localparam cmd_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
 
   // FSM states
   enum logic [3:0] {
@@ -689,9 +689,9 @@ module bp_lce_cmd
                                                : e_bedrock_resp_null_wb;
         fsm_resp_header_lo.payload.src_id = lce_id_i;
         fsm_resp_header_lo.payload.dst_id = fsm_cmd_header_r.payload.src_id;
-        fsm_resp_header_lo.size = dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]]
-                                      ? bp_bedrock_msg_size_e'(cmd_block_size_lp)
-                                      : e_bedrock_msg_size_1;
+        fsm_resp_header_lo.size = bp_bedrock_msg_size_e'(dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]]
+                                      ? cmd_block_size_lp
+                                      : e_bedrock_msg_size_1);
         dirty_data_select = fsm_resp_cnt_lo;
         fsm_resp_data_lo = dirty_data_selected;
         fsm_resp_v_lo = 1'b1;

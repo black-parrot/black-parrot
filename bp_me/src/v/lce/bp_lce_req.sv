@@ -93,7 +93,6 @@ module bp_lce_req
 
   localparam block_size_in_fill_lp = block_width_p / fill_width_p;
   localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
-  localparam bp_bedrock_msg_size_e req_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
 
   // cache request valid and register
   // set over clear because new request can be captured same cycle existing request sends
