@@ -52,16 +52,6 @@ module bp_me_stream_pump_control
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, msg_header);
 
-  localparam data_bytes_lp = (data_width_p >> 3);
-  localparam offset_width_lp = `BSG_SAFE_CLOG2(data_bytes_lp);
-
-  wire [width_lp-1:0] stream_size =
-    `BSG_MAX((1'b1 << msg_header_cast_i.size) / data_bytes_lp, 1'b1) - 1'b1;
-  wire fsm_stream = fsm_stream_mask_p[msg_header_cast_i.msg_type];
-
-  wire [width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
-  wire [width_lp-1:0] first_cnt = msg_header_cast_i.addr[offset_width_lp+:width_lp];
-
   if (max_val_p == 0)
     begin : z
       assign wrap_o = '0;
@@ -73,6 +63,17 @@ module bp_me_stream_pump_control
       enum logic {e_ready, e_stream} state_n, state_r;
       wire is_ready = (state_r == e_ready);
       wire is_stream = (state_r == e_stream);
+
+      localparam data_bytes_lp = (data_width_p >> 3);
+      localparam offset_width_lp = `BSG_SAFE_CLOG2(data_bytes_lp);
+
+      wire [width_lp-1:0] stream_size =
+        `BSG_MAX((1'b1 << msg_header_cast_i.size) / data_bytes_lp, 1'b1) - 1'b1;
+      wire fsm_stream = fsm_stream_mask_p[msg_header_cast_i.msg_type];
+
+      wire [width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
+      wire [width_lp-1:0] first_cnt = msg_header_cast_i.addr[offset_width_lp+:width_lp];
+
       assign first_o = is_ready;
 
       logic [width_lp-1:0] cnt_r;

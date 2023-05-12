@@ -96,7 +96,8 @@ module bp_me_xbar_stream
     begin : sink_comb
       logic msg_last_lo;
       bp_me_stream_pump_control
-       #(.max_val_p(words_lp-1)
+       #(.bp_params_p(bp_params_p)
+         ,.max_val_p(words_lp-1)
          ,.fsm_stream_mask_p(payload_mask_p)
          ,.data_width_p(data_width_p)
          ,.payload_width_p(payload_width_p)
