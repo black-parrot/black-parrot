@@ -134,6 +134,7 @@ module bp_cce_fsm
   localparam block_size_in_fill_lp = cce_block_width_p / bedrock_data_width_p;
   localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
   bp_bedrock_lce_cmd_header_s fsm_cmd_header_lo;
+  logic [paddr_width_p-1:0] fsm_cmd_addr_lo;
   logic [bedrock_data_width_p-1:0] fsm_cmd_data_lo;
   logic fsm_cmd_v_lo, fsm_cmd_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt_lo;
@@ -156,7 +157,7 @@ module bp_cce_fsm
      ,.msg_ready_and_i(lce_cmd_ready_and_i)
 
      ,.fsm_header_i(fsm_cmd_header_lo)
-     ,.fsm_addr_o()
+     ,.fsm_addr_o(fsm_cmd_addr_lo)
      ,.fsm_data_i(fsm_cmd_data_lo)
      ,.fsm_v_i(fsm_cmd_v_lo)
      ,.fsm_yumi_o(fsm_cmd_yumi_li)
@@ -232,6 +233,7 @@ module bp_cce_fsm
 
   // Memory Fwd Stream Pump
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
+  logic [paddr_width_p-1:0] fsm_fwd_addr_lo;
   logic fsm_fwd_v_lo, fsm_fwd_yumi_li;
   logic fsm_fwd_new_lo, fsm_fwd_last_lo;
   logic [bedrock_data_width_p-1:0] fsm_fwd_data_lo;
@@ -254,7 +256,7 @@ module bp_cce_fsm
      // from FSM CCE
      ,.fsm_header_i(fsm_fwd_header_lo)
      ,.fsm_data_i(fsm_fwd_data_lo)
-     ,.fsm_addr_o()
+     ,.fsm_addr_o(fsm_fwd_addr_lo)
      ,.fsm_v_i(fsm_fwd_v_lo)
      ,.fsm_yumi_o(fsm_fwd_yumi_li)
      ,.fsm_cnt_o()

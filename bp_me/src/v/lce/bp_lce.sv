@@ -185,6 +185,7 @@ module bp_lce
      ,.block_width_p(block_width_p)
      ,.data_width_p(fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
+     ,.payload_mask_p(lce_cmd_payload_mask_gp)
      ,.num_source_p(2)
      ,.num_sink_p(1)
      )
