@@ -103,6 +103,7 @@ module bp_l2e_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_req_header_width_lp)
      ,.pr_payload_width_p(lce_req_payload_width_lp)
+     ,.pr_payload_mask_p(lce_req_payload_mask_gp)
      ,.pr_data_width_p(bedrock_data_width_p)
      )
    lce_req_wh_to_stream
@@ -165,6 +166,7 @@ module bp_l2e_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_resp_header_width_lp)
      ,.pr_payload_width_p(lce_resp_payload_width_lp)
+     ,.pr_payload_mask_p(lce_resp_payload_mask_gp)
      ,.pr_data_width_p(bedrock_data_width_p)
      )
    lce_resp_wh_to_stream

@@ -39,6 +39,7 @@
 module bp_me_wormhole_to_stream
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   `declare_bp_proc_params(bp_params_p)
    // The wormhole router protocol information
    // flit_width_p: number of physical data wires between links
    // cord_width_p: the width of the {y,x} coordinate of the destination
@@ -54,6 +55,7 @@ module bp_me_wormhole_to_stream
    // Higher level protocol information
    , parameter `BSG_INV_PARAM(pr_hdr_width_p)
    , parameter `BSG_INV_PARAM(pr_payload_width_p)
+   , parameter `BSG_INV_PARAM(pr_payload_mask_p)
    , parameter `BSG_INV_PARAM(pr_data_width_p)
 
    // Computed wormhole header parameters. These can be overridden directly if desired.
@@ -82,6 +84,9 @@ module bp_me_wormhole_to_stream
    , input                              pr_ready_and_i
    );
 
+  `declare_bp_bedrock_if(paddr_width_p, pr_payload_width_p, lce_id_width_p, lce_assoc_p, msg);
+  `bp_cast_o(bp_bedrock_msg_header_s, pr_hdr);
+
   // parameter checks
   if (!(`BSG_IS_POW2(pr_data_width_p)) || !(`BSG_IS_POW2(flit_width_p)))
     $error("Protocol and Network data widths must be powers of 2");
@@ -108,22 +113,14 @@ module bp_me_wormhole_to_stream
      ,.v_o(pr_hdr_v_lo)
      ,.yumi_i(pr_hdr_yumi_li)
      );
+  wire pr_has_data_lo = pr_payload_mask_p[pr_hdr_cast_o.msg_type];
+  wire pr_last_data_lo = wh_last_data;
   assign sipo_v_li = is_hdr & link_v_i;
 
-  logic wh_has_data_r;
-  bsg_dff_en
-   #(.width_p(1))
-   wh_has_data_reg
-    (.clk_i(clk_i)
-     ,.en_i(is_hdr)
-     ,.data_i(wh_has_data)
-     ,.data_o(wh_has_data_r)
-     );
-
-  assign pr_hdr_o = wh_hdr_lo[wh_pr_hdr_offset_p+:pr_hdr_width_p];
+  assign pr_hdr_cast_o = wh_hdr_lo[wh_pr_hdr_offset_p+:pr_hdr_width_p];
   assign pr_data_o = link_data_i;
-  assign pr_v_o = is_hdr ? (pr_hdr_v_lo & ~wh_has_data_r) : link_v_i;
-  assign pr_hdr_yumi_li = pr_ready_and_i & pr_v_o & (~wh_has_data_r | wh_last_data);
+  assign pr_v_o = is_hdr ? (pr_hdr_v_lo & ~pr_has_data_lo) : link_v_i;
+  assign pr_hdr_yumi_li = pr_ready_and_i & pr_v_o & (~pr_has_data_lo | pr_last_data_lo);
 
   assign link_ready_and_o = is_hdr ? sipo_ready_and_lo : pr_ready_and_i;
 

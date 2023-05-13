@@ -186,6 +186,7 @@ module wrapper
          ,.cid_width_p(io_noc_cid_width_p)
          ,.pr_hdr_width_p(mem_fwd_header_width_lp)
          ,.pr_payload_width_p(mem_fwd_payload_width_lp)
+         ,.pr_payload_mask_p(mem_fwd_payload_mask_gp)
          ,.pr_data_width_p(bedrock_data_width_p)
          )
        mem_fwd_wormhole_to_stream
@@ -210,6 +211,7 @@ module wrapper
          ,.cid_width_p(io_noc_cid_width_p)
          ,.pr_hdr_width_p(mem_rev_header_width_lp)
          ,.pr_payload_width_p(mem_rev_payload_width_lp)
+         ,.pr_payload_mask_p(mem_rev_payload_mask_gp)
          ,.pr_data_width_p(bedrock_data_width_p)
          )
        mem_rev_wormhole_to_stream
