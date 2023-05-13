@@ -207,7 +207,7 @@ module bp_l2e_tile
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
   logic [bedrock_data_width_p-1:0] cfg_data_lo, cfg_data_li;
   bp_me_cfg_slice
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(bedrock_data_width_p))
    cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
@@ -236,7 +236,7 @@ module bp_l2e_tile
 
   // CCE-Mem Loopback
   bp_me_loopback
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(bedrock_data_width_p))
    loopback
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
@@ -276,6 +276,7 @@ module bp_l2e_tile
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
+     ,.block_width_p(cce_block_width_p)
      ,.data_width_p(bedrock_data_width_p)
      ,.payload_width_p($bits(mem_fwd_header_lo.payload))
      ,.num_source_p(1)
@@ -299,6 +300,7 @@ module bp_l2e_tile
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
+     ,.block_width_p(cce_block_width_p)
      ,.data_width_p(bedrock_data_width_p)
      ,.payload_width_p($bits(mem_rev_header_li.payload))
      ,.num_source_p(3)

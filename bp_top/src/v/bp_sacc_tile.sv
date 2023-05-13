@@ -244,6 +244,7 @@ module bp_sacc_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_cmd_header_width_lp)
      ,.pr_payload_width_p(lce_cmd_payload_width_lp)
+     ,.pr_payload_mask_p(lce_cmd_payload_mask_gp)
      ,.pr_data_width_p(acache_fill_width_p)
      )
    lce_cmd_wh_to_stream
@@ -269,6 +270,7 @@ module bp_sacc_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_req_header_width_lp)
      ,.pr_payload_width_p(lce_req_payload_width_lp)
+     ,.pr_payload_mask_p(lce_req_payload_mask_gp)
      ,.pr_data_width_p(acache_fill_width_p)
      )
    lce_req_wh_to_stream
