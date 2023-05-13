@@ -19,7 +19,7 @@ module bp_me_nonsynth_cce_tracer
     , localparam cce_trace_file_p = "cce"
 
     // Derived parameters
-    , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
+    , localparam block_size_in_bytes_lp    = (bedrock_block_width_p/8)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
     // number of way groups managed by this CCE
@@ -36,29 +36,29 @@ module bp_me_nonsynth_cce_tracer
    // LCE-CCE Interface
    // BedRock Burst protocol: ready&valid
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
-   , input [bedrock_data_width_p-1:0]               lce_req_data_i
+   , input [bedrock_fill_width_p-1:0]               lce_req_data_i
    , input                                          lce_req_v_i
    , input                                          lce_req_ready_and_i
 
    , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
-   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
+   , input [bedrock_fill_width_p-1:0]               lce_resp_data_i
    , input                                          lce_resp_v_i
    , input                                          lce_resp_ready_and_i
 
    , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-   , input [bedrock_data_width_p-1:0]               lce_cmd_data_i
+   , input [bedrock_fill_width_p-1:0]               lce_cmd_data_i
    , input                                          lce_cmd_v_i
    , input                                          lce_cmd_ready_and_i
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
-   , input [bedrock_data_width_p-1:0]               mem_rev_data_i
+   , input [bedrock_fill_width_p-1:0]               mem_rev_data_i
    , input                                          mem_rev_v_i
    , input                                          mem_rev_ready_and_i
 
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input [bedrock_data_width_p-1:0]               mem_fwd_data_i
+   , input [bedrock_fill_width_p-1:0]               mem_fwd_data_i
    , input                                          mem_fwd_v_i
    , input                                          mem_fwd_ready_and_i
 

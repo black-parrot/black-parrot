@@ -31,22 +31,22 @@ module bp_io_cce
    // LCE-CCE Interface
    // BedRock Burst protocol: ready&valid
    , input [lce_req_header_width_lp-1:0]          lce_req_header_i
-   , input [bedrock_data_width_p-1:0]             lce_req_data_i
+   , input [bedrock_fill_width_p-1:0]             lce_req_data_i
    , input                                        lce_req_v_i
    , output logic                                 lce_req_ready_and_o
 
    , output logic [lce_cmd_header_width_lp-1:0]   lce_cmd_header_o
-   , output logic [bedrock_data_width_p-1:0]      lce_cmd_data_o
+   , output logic [bedrock_fill_width_p-1:0]      lce_cmd_data_o
    , output logic                                 lce_cmd_v_o
    , input                                        lce_cmd_ready_and_i
 
    , input [mem_rev_header_width_lp-1:0]          io_rev_header_i
-   , input [bedrock_data_width_p-1:0]             io_rev_data_i
+   , input [bedrock_fill_width_p-1:0]             io_rev_data_i
    , input                                        io_rev_v_i
    , output logic                                 io_rev_ready_and_o
 
    , output logic [mem_fwd_header_width_lp-1:0]   io_fwd_header_o
-   , output logic [bedrock_data_width_p-1:0]      io_fwd_data_o
+   , output logic [bedrock_fill_width_p-1:0]      io_fwd_data_o
    , output logic                                 io_fwd_v_o
    , input                                        io_fwd_ready_and_i
    );

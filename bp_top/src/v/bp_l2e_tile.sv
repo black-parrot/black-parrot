@@ -81,17 +81,17 @@ module bp_l2e_tile
 
   // CCE-side LCE-CCE network connections
   bp_bedrock_lce_req_header_s lce_req_header_li;
-  logic [bedrock_data_width_p-1:0] lce_req_data_li;
+  logic [bedrock_fill_width_p-1:0] lce_req_data_li;
   logic lce_req_v_li, lce_req_ready_and_lo;
 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_lo;
-  logic [bedrock_data_width_p-1:0] lce_cmd_data_lo;
+  logic [bedrock_fill_width_p-1:0] lce_cmd_data_lo;
   logic lce_cmd_v_lo, lce_cmd_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_cmd_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_cmd_dst_cid_lo;
 
   bp_bedrock_lce_resp_header_s lce_resp_header_li;
-  logic [bedrock_data_width_p-1:0] lce_resp_data_li;
+  logic [bedrock_fill_width_p-1:0] lce_resp_data_li;
   logic lce_resp_v_li, lce_resp_ready_and_lo;
 
   // LCE to CCE request
@@ -104,7 +104,7 @@ module bp_l2e_tile
      ,.pr_hdr_width_p(lce_req_header_width_lp)
      ,.pr_payload_width_p(lce_req_payload_width_lp)
      ,.pr_payload_mask_p(lce_req_payload_mask_gp)
-     ,.pr_data_width_p(bedrock_data_width_p)
+     ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_req_wh_to_stream
    (.clk_i(clk_i)
@@ -139,7 +139,7 @@ module bp_l2e_tile
      ,.pr_hdr_width_p(lce_cmd_header_width_lp)
      ,.pr_payload_width_p(lce_cmd_payload_width_lp)
      ,.pr_payload_mask_p(lce_cmd_payload_mask_gp)
-     ,.pr_data_width_p(bedrock_data_width_p)
+     ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_cmd_burst_to_wh
    (.clk_i(clk_i)
@@ -167,7 +167,7 @@ module bp_l2e_tile
      ,.pr_hdr_width_p(lce_resp_header_width_lp)
      ,.pr_payload_width_p(lce_resp_payload_width_lp)
      ,.pr_payload_mask_p(lce_resp_payload_mask_gp)
-     ,.pr_data_width_p(bedrock_data_width_p)
+     ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_resp_wh_to_stream
    (.clk_i(clk_i)
@@ -185,19 +185,19 @@ module bp_l2e_tile
 
   // CCE-side CCE-Mem network connections
   bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
-  logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
+  logic [bedrock_fill_width_p-1:0] mem_fwd_data_lo;
   logic mem_fwd_v_lo, mem_fwd_ready_and_li;
   bp_bedrock_mem_rev_header_s mem_rev_header_li;
-  logic [bedrock_data_width_p-1:0] mem_rev_data_li;
+  logic [bedrock_fill_width_p-1:0] mem_rev_data_li;
   logic mem_rev_v_li, mem_rev_ready_and_lo;
 
   // Device-side CCE-Mem network connections
   // dev_fwd[2:0] = {CCE loopback, CFG, memory (cache)}
   bp_bedrock_mem_fwd_header_s [2:0] dev_fwd_header_li;
-  logic [2:0][bedrock_data_width_p-1:0] dev_fwd_data_li;
+  logic [2:0][bedrock_fill_width_p-1:0] dev_fwd_data_li;
   logic [2:0] dev_fwd_v_li, dev_fwd_ready_and_lo;
   bp_bedrock_mem_rev_header_s [2:0] dev_rev_header_lo;
-  logic [2:0][bedrock_data_width_p-1:0] dev_rev_data_lo;
+  logic [2:0][bedrock_fill_width_p-1:0] dev_rev_data_lo;
   logic [2:0] dev_rev_v_lo, dev_rev_ready_and_li;
 
   // Config
@@ -205,9 +205,9 @@ module bp_l2e_tile
   logic cce_ucode_w_lo;
   logic [cce_pc_width_p-1:0] cce_ucode_addr_lo;
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
-  logic [bedrock_data_width_p-1:0] cfg_data_lo, cfg_data_li;
+  logic [bedrock_fill_width_p-1:0] cfg_data_lo, cfg_data_li;
   bp_me_cfg_slice
-   #(.bp_params_p(bp_params_p), .data_width_p(bedrock_data_width_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(bedrock_fill_width_p))
    cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
@@ -236,7 +236,7 @@ module bp_l2e_tile
 
   // CCE-Mem Loopback
   bp_me_loopback
-   #(.bp_params_p(bp_params_p), .data_width_p(bedrock_data_width_p))
+   #(.bp_params_p(bp_params_p), .data_width_p(bedrock_fill_width_p))
    loopback
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
@@ -276,8 +276,8 @@ module bp_l2e_tile
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(cce_block_width_p)
-     ,.data_width_p(bedrock_data_width_p)
+     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p($bits(mem_fwd_header_lo.payload))
      ,.num_source_p(1)
      ,.num_sink_p(3)
@@ -300,8 +300,8 @@ module bp_l2e_tile
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(cce_block_width_p)
-     ,.data_width_p(bedrock_data_width_p)
+     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p($bits(mem_rev_header_li.payload))
      ,.num_source_p(3)
      ,.num_sink_p(1)

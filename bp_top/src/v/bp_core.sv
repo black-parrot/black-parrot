@@ -70,12 +70,12 @@ module bp_core
    , input [1:0]                                         lce_resp_ready_and_i
 
    , input [mem_fwd_header_width_lp-1:0]                 mem_fwd_header_i
-   , input [bedrock_data_width_p-1:0]                    mem_fwd_data_i
+   , input [bedrock_fill_width_p-1:0]                    mem_fwd_data_i
    , input                                               mem_fwd_v_i
    , output logic                                        mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]          mem_rev_header_o
-   , output logic [bedrock_data_width_p-1:0]             mem_rev_data_o
+   , output logic [bedrock_fill_width_p-1:0]             mem_rev_data_o
    , output logic                                        mem_rev_v_o
    , input                                               mem_rev_ready_and_i
 
@@ -143,10 +143,10 @@ module bp_core
   // Device-side CCE-Mem network connections
   // dev_fwd[3:0] = {CCE loopback, CLINT, CFG, memory (cache)}
   bp_bedrock_mem_fwd_header_s [3:0] dev_fwd_header_li;
-  logic [3:0][bedrock_data_width_p-1:0] dev_fwd_data_li;
+  logic [3:0][bedrock_fill_width_p-1:0] dev_fwd_data_li;
   logic [3:0] dev_fwd_v_li, dev_fwd_ready_and_lo;
   bp_bedrock_mem_rev_header_s [3:0] dev_rev_header_lo;
-  logic [3:0][bedrock_data_width_p-1:0] dev_rev_data_lo;
+  logic [3:0][bedrock_fill_width_p-1:0] dev_rev_data_lo;
   logic [3:0] dev_rev_v_lo, dev_rev_ready_and_li;
 
   // Config
@@ -249,8 +249,8 @@ module bp_core
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(cce_block_width_p)
-     ,.data_width_p(bedrock_data_width_p)
+     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.num_source_p(1)
      ,.num_sink_p(4)
@@ -273,8 +273,8 @@ module bp_core
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(cce_block_width_p)
-     ,.data_width_p(bedrock_data_width_p)
+     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.num_source_p(4)
      ,.num_sink_p(1)

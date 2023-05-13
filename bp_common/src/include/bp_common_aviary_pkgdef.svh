@@ -165,7 +165,7 @@
       ,acache_block_width : 512
       ,acache_fill_width  : 512
 
-      ,bedrock_data_width : 512
+      ,bedrock_fill_width : 512
 
       ,l2_banks            : 8
       ,l2_data_width       : 512
@@ -202,7 +202,7 @@
       ,bht_row_els              : 2
       ,ghist_width              : 2
 
-      ,bedrock_data_width : 64
+      ,bedrock_fill_width : 64
 
       ,icache_sets        : 512
       ,icache_assoc       : 1

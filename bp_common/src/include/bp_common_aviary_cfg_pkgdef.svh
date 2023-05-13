@@ -150,7 +150,7 @@
     // Determines the size of the CCE instruction RAM
     integer unsigned cce_pc_width;
     // The width of the coherence protocol beats
-    integer unsigned bedrock_data_width;
+    integer unsigned bedrock_fill_width;
 
     // L2 slice parameters (per core)
     // L2 cache features
@@ -282,7 +282,7 @@
 
       ,cce_type             : e_cce_uce
       ,cce_pc_width         : 8
-      ,bedrock_data_width   : 128
+      ,bedrock_fill_width   : 128
 
       ,l2_features          : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
@@ -392,7 +392,7 @@
 
       ,`bp_aviary_define_override(cce_type, BP_CCE_TYPE, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(cce_pc_width, BP_CCE_PC_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(bedrock_data_width, BP_BEDROCK_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(bedrock_fill_width, BP_BEDROCK_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(l2_features, BP_L2_FEATURES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_banks, BP_L2_BANKS, `BP_CUSTOM_BASE_CFG)

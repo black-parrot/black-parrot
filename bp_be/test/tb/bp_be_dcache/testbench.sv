@@ -42,15 +42,15 @@ module testbench
    )
   (output bit reset_i);
 
-  if ((uce_p == 0) && (l2_data_width_p != bedrock_data_width_p))
+  if ((uce_p == 0) && (l2_data_width_p != bedrock_fill_width_p))
     $error("CCE requires L2 fill width same as bedrock data width");
-  if ((uce_p == 0) && (dcache_fill_width_p != bedrock_data_width_p))
+  if ((uce_p == 0) && (dcache_fill_width_p != bedrock_fill_width_p))
     $error("CCE requires $ fill width same as bedrock data width");
   if ((uce_p == 1) && (num_caches_p != 1))
     $error("UCE setup supports only 1 cache");
   if ((uce_p == 0) && (wt_p == 1))
     $error("CCE does not support writethrough caches");
-  if (cce_block_width_p != dcache_block_width_p)
+  if (bedrock_block_width_p != dcache_block_width_p)
     $error("Memory fetch block width does not match D$ block width");
   if (num_caches_p == 0)
     $error("Please provide a valid number of caches");

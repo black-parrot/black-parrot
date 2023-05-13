@@ -192,7 +192,7 @@ module bp_unicore
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(cce_block_width_p)
+     ,.block_width_p(bedrock_block_width_p)
      ,.data_width_p(uce_fill_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.num_source_p(num_proc_lp)
@@ -216,7 +216,7 @@ module bp_unicore
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(cce_block_width_p)
+     ,.block_width_p(bedrock_block_width_p)
      ,.data_width_p(uce_fill_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.num_source_p(num_dev_lp)

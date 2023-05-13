@@ -222,7 +222,7 @@ module bp_nonsynth_host
     (.addr_i(paramrom_addr_li)
      ,.data_o(paramrom_data_lo)
      );
-  wire [cce_block_width_p-1:0] paramrom_final_lo = {cce_block_width_p/word_width_gp{paramrom_data_lo}};
+  wire [bedrock_block_width_p-1:0] paramrom_final_lo = {bedrock_block_width_p/word_width_gp{paramrom_data_lo}};
 
   // TODO: Add dynamic enable
   assign icache_trace_en_o   = icache_trace_p;

@@ -44,7 +44,7 @@ module bp_me_loopback
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(data_width_p)
-     ,.block_width_p(cce_block_width_p)
+     ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)
@@ -74,7 +74,7 @@ module bp_me_loopback
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(data_width_p)
-     ,.block_width_p(cce_block_width_p)
+     ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.msg_stream_mask_p(mem_rev_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)

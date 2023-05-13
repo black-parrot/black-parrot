@@ -105,15 +105,15 @@ module bp_core_tile
 
   // CCE-side LCE-CCE BedRock network
   bp_bedrock_lce_req_header_s lce_req_header_li;
-  logic [bedrock_data_width_p-1:0] lce_req_data_li;
+  logic [bedrock_fill_width_p-1:0] lce_req_data_li;
   logic lce_req_v_li, lce_req_ready_and_lo;
 
   bp_bedrock_lce_resp_header_s lce_resp_header_li;
-  logic [bedrock_data_width_p-1:0] lce_resp_data_li;
+  logic [bedrock_fill_width_p-1:0] lce_resp_data_li;
   logic lce_resp_v_li, lce_resp_ready_and_lo;
 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_lo;
-  logic [bedrock_data_width_p-1:0] lce_cmd_data_lo;
+  logic [bedrock_fill_width_p-1:0] lce_cmd_data_lo;
   logic lce_cmd_v_lo, lce_cmd_ready_and_li;
   logic [coh_noc_cord_width_p-1:0] lce_cmd_dst_cord_lo;
   logic [coh_noc_cid_width_p-1:0] lce_cmd_dst_cid_lo;
@@ -316,7 +316,7 @@ module bp_core_tile
      ,.pr_hdr_width_p(lce_req_header_width_lp)
      ,.pr_payload_width_p(lce_req_payload_width_lp)
      ,.pr_payload_mask_p(lce_req_payload_mask_gp)
-     ,.pr_data_width_p(bedrock_data_width_p)
+     ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_req_wh_to_stream
    (.clk_i(clk_i)
@@ -350,7 +350,7 @@ module bp_core_tile
      ,.pr_hdr_width_p(lce_cmd_header_width_lp)
      ,.pr_payload_width_p(lce_cmd_payload_width_lp)
      ,.pr_payload_mask_p(lce_cmd_payload_mask_gp)
-     ,.pr_data_width_p(bedrock_data_width_p)
+     ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_cmd_stream_to_wh
    (.clk_i(clk_i)
@@ -378,7 +378,7 @@ module bp_core_tile
      ,.pr_hdr_width_p(lce_resp_header_width_lp)
      ,.pr_payload_width_p(lce_resp_payload_width_lp)
      ,.pr_payload_mask_p(lce_resp_payload_mask_gp)
-     ,.pr_data_width_p(bedrock_data_width_p)
+     ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_resp_wh_to_stream
    (.clk_i(clk_i)
@@ -499,10 +499,10 @@ module bp_core_tile
   logic [cce_instr_width_gp-1:0] cce_ucode_data_lo, cce_ucode_data_li;
 
   bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
-  logic [bedrock_data_width_p-1:0] mem_fwd_data_lo;
+  logic [bedrock_fill_width_p-1:0] mem_fwd_data_lo;
   logic mem_fwd_v_lo, mem_fwd_ready_and_li;
   bp_bedrock_mem_rev_header_s mem_rev_header_li;
-  logic [bedrock_data_width_p-1:0] mem_rev_data_li;
+  logic [bedrock_fill_width_p-1:0] mem_rev_data_li;
   logic mem_rev_v_li, mem_rev_ready_and_lo;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);

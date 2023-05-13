@@ -31,13 +31,13 @@ module testbench
   )
   (output bit reset_i);
 
-  if ((uce_p == 0) && (l2_data_width_p != bedrock_data_width_p))
+  if ((uce_p == 0) && (l2_data_width_p != bedrock_fill_width_p))
     $error("CCE requires L2 fill width same as bedrock data width for memory networks");
-  if ((uce_p == 0) && (icache_fill_width_p != bedrock_data_width_p))
+  if ((uce_p == 0) && (icache_fill_width_p != bedrock_fill_width_p))
     $error("CCE requires L2 fill width same as bedrock data width for memory networks");
   if ((uce_p == 1) && (l2_data_width_p != icache_fill_width_p))
     $error("UCE requires L2 data width same as I$ fill width");
-  if (cce_block_width_p != icache_block_width_p)
+  if (bedrock_block_width_p != icache_block_width_p)
     $error("Memory fetch block width does not match icache block width");
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
