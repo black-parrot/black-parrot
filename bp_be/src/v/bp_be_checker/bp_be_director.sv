@@ -118,7 +118,7 @@ module bp_be_director
   always_comb
     begin
       unique casez (state_r)
-        e_wait  : state_n = (fe_cmd_nonattaboy_v | irq_waiting_i) ? e_fence : e_wait;
+        e_wait  : state_n = irq_waiting_i ? e_fence : e_wait;
         e_run   : state_n = commit_pkt_cast_i.wfi
                             ? e_wait
                             : fe_cmd_nonattaboy_v
@@ -126,7 +126,7 @@ module bp_be_director
                               : freeze_li
                                 ? e_freeze
                                 : e_run;
-        e_freeze: state_n = (fe_cmd_v_li & commit_pkt_cast_i.unfreeze) ? e_run : e_freeze;
+        e_freeze: state_n = (commit_pkt_cast_i.unfreeze) ? e_run : e_freeze;
         // e_fence:
         default : state_n = (drained_i & cmd_empty_n_o) ? e_run : e_fence;
       endcase
@@ -142,7 +142,7 @@ module bp_be_director
       end
 
   assign suppress_iss_o = (state_r != e_run);
-  assign clear_iss_o    = (state_r != e_run) & (state_n == e_run);
+  assign clear_iss_o    = (state_r == e_fence);
   assign unfreeze_o     = (state_r == e_freeze) & ~freeze_li;
 
   always_comb
