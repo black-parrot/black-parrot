@@ -161,15 +161,15 @@ module bp_sacc_tile
 
        ,.lce_id_i(lce_id_li)
 
-       ,.io_fwd_header_i(io_fwd_header_lo)
-       ,.io_fwd_data_i(io_fwd_data_lo)
-       ,.io_fwd_v_i(io_fwd_v_lo)
-       ,.io_fwd_ready_and_o(io_fwd_ready_and_li)
+       ,.mem_fwd_header_i(io_fwd_header_lo)
+       ,.mem_fwd_data_i(io_fwd_data_lo)
+       ,.mem_fwd_v_i(io_fwd_v_lo)
+       ,.mem_fwd_ready_and_o(io_fwd_ready_and_li)
 
-       ,.io_rev_header_o(io_rev_header_li)
-       ,.io_rev_data_o(io_rev_data_li)
-       ,.io_rev_v_o(io_rev_v_li)
-       ,.io_rev_ready_and_i(io_rev_ready_and_lo)
+       ,.mem_rev_header_o(io_rev_header_li)
+       ,.mem_rev_data_o(io_rev_data_li)
+       ,.mem_rev_v_o(io_rev_v_li)
+       ,.mem_rev_ready_and_i(io_rev_ready_and_lo)
        );
   end
   else if (sacc_type_p == e_sacc_scratchpad) begin : sacc_scratchpad
@@ -181,15 +181,15 @@ module bp_sacc_tile
 
        ,.lce_id_i(lce_id_li)
 
-       ,.io_fwd_header_i(io_fwd_header_lo)
-       ,.io_fwd_data_i(io_fwd_data_lo)
-       ,.io_fwd_v_i(io_fwd_v_lo)
-       ,.io_fwd_ready_and_o(io_fwd_ready_and_li)
+       ,.mem_fwd_header_i(io_fwd_header_lo)
+       ,.mem_fwd_data_i(io_fwd_data_lo)
+       ,.mem_fwd_v_i(io_fwd_v_lo)
+       ,.mem_fwd_ready_and_o(io_fwd_ready_and_li)
 
-       ,.io_rev_header_o(io_rev_header_li)
-       ,.io_rev_data_o(io_rev_data_li)
-       ,.io_rev_v_o(io_rev_v_li)
-       ,.io_rev_ready_and_i(io_rev_ready_and_lo)
+       ,.mem_rev_header_o(io_rev_header_li)
+       ,.mem_rev_data_o(io_rev_data_li)
+       ,.mem_rev_v_o(io_rev_v_li)
+       ,.mem_rev_ready_and_i(io_rev_ready_and_lo)
        );
   end
   else begin : none
