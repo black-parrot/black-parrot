@@ -56,11 +56,11 @@ module bp_nonsynth_cosim
     );
 
   import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint, bit amo_en);
-  import "DPI-C" context function bit  dromajo_step(int hartid,
-                                                    longint pc,
-                                                    int insn,
-                                                    longint wdata,
-                                                    longint mstatus);
+  import "DPI-C" context function int dromajo_step(int hartid,
+                                                   longint pc,
+                                                   int insn,
+                                                   longint wdata,
+                                                   longint mstatus);
   import "DPI-C" context function void dromajo_trap(int hartid, longint cause);
 
   import "DPI-C" context function void set_finish(int hartid);
@@ -276,7 +276,7 @@ module bp_nonsynth_cosim
        end
      else if (ret_code)
        begin
-          $display("COSIM_PASS");
+          $display("COSIM_PASS: %d", ret_code);
           $finish();
        end
 

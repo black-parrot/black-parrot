@@ -13,6 +13,7 @@ module bp_nonsynth_nbf_loader
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   , parameter `BSG_INV_PARAM(data_width_p)
 
    , parameter nbf_filename_p = "prog.nbf"
    , parameter verbose_p = 1
@@ -24,22 +25,20 @@ module bp_nonsynth_nbf_loader
    , input [did_width_p-1:0]                        did_i
 
    , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
-   , output logic [dword_width_gp-1:0]              mem_fwd_data_o
+   , output logic [data_width_p-1:0]                 mem_fwd_data_o
    , output logic                                   mem_fwd_v_o
    , input                                          mem_fwd_ready_and_i
-   , output logic                                   mem_fwd_last_o
 
    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
-   , input [dword_width_gp-1:0]                     mem_rev_data_i
+   , input [data_width_p-1:0]                        mem_rev_data_i
    , input                                          mem_rev_v_i
    , output logic                                   mem_rev_ready_and_o
-   , input                                          mem_rev_last_i
 
    , output logic                                   done_o
    );
 
   // all messages are single beat
-  wire unused = &{mem_rev_data_i, mem_rev_last_i};
+  wire unused = &{mem_rev_data_i};
 
   enum logic [2:0] { e_reset, e_send, e_fence, e_read, e_done} state_n, state_r;
   wire is_reset    = (state_r == e_reset);
@@ -111,9 +110,9 @@ module bp_nonsynth_nbf_loader
   `bp_cast_o(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
   `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
-  logic [`BSG_WIDTH(io_noc_max_credits_p)-1:0] credit_count_lo;
+  logic [`BSG_WIDTH(mem_noc_max_credits_p)-1:0] credit_count_lo;
   bsg_flow_counter
-   #(.els_p(io_noc_max_credits_p))
+   #(.els_p(mem_noc_max_credits_p))
    nbf_fc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -124,14 +123,14 @@ module bp_nonsynth_nbf_loader
      ,.yumi_i(mem_rev_v_i)
      ,.count_o(credit_count_lo)
      );
-  wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
+  wire credits_full_lo = (credit_count_lo == mem_noc_max_credits_p);
   wire credits_empty_lo = (credit_count_lo == '0);
   assign mem_rev_ready_and_o = 1'b1;
 
   localparam sel_width_lp = `BSG_SAFE_CLOG2(nbf_data_width_lp>>3);
   localparam size_width_lp = `BSG_SAFE_CLOG2(sel_width_lp);
   bsg_bus_pack
-   #(.in_width_p(nbf_data_width_lp), .out_width_p(dword_width_gp))
+   #(.in_width_p(nbf_data_width_lp), .out_width_p(data_width_p))
    fwd_bus_pack
     (.data_i(curr_nbf.data)
      ,.sel_i('0) // We are aligned
@@ -157,7 +156,6 @@ module bp_nonsynth_nbf_loader
     end
 
   assign mem_fwd_v_o = ~credits_full_lo & is_send_nbf & ~is_fence_packet & ~is_finish_packet;
-  assign mem_fwd_last_o = mem_fwd_v_o;
 
   wire read_return = is_read & mem_rev_v_i & (mem_rev_header_cast_i.msg_type == e_bedrock_mem_uc_rd);
   always_comb
@@ -191,10 +189,6 @@ module bp_nonsynth_nbf_loader
         $display("NBF loader done!");
       assert(reset_i !== '0 || ~read_return || read_data_r == mem_rev_data_i[0+:dword_width_gp])
         else $error("Validation mismatch: addr: %d %d %d", mem_rev_header_cast_i.addr, mem_rev_data_i, read_data_r);
-
-      if (mem_rev_v_i & mem_rev_ready_and_o)
-        assert(reset_i !== '0 || ~(mem_rev_v_i & mem_rev_ready_and_o & ~mem_rev_last_i))
-          else $error("Multi-beat IO response detected");
     end
   // synopsys translate_on
 

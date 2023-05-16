@@ -10,6 +10,7 @@ module bp_nonsynth_host
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   , parameter `BSG_INV_PARAM(data_width_p)
 
    , parameter icache_trace_p         = 0
    , parameter dcache_trace_p         = 0
@@ -29,16 +30,14 @@ module bp_nonsynth_host
    , input                                          reset_i
 
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input [dword_width_gp-1:0]                     mem_fwd_data_i
+   , input [data_width_p-1:0]                       mem_fwd_data_i
    , input                                          mem_fwd_v_i
    , output logic                                   mem_fwd_ready_and_o
-   , input                                          mem_fwd_last_i
 
    , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
-   , output logic [dword_width_gp-1:0]              mem_rev_data_o
+   , output logic [data_width_p-1:0]                mem_rev_data_o
    , output logic                                   mem_rev_v_o
    , input                                          mem_rev_ready_and_i
-   , output logic                                   mem_rev_last_o
 
    , output logic                                   icache_trace_en_o
    , output logic                                   dcache_trace_en_o
@@ -98,8 +97,10 @@ module bp_nonsynth_host
   logic [bedrock_reg_els_lp-1:0][dword_width_gp-1:0] data_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
-     ,.els_p(bedrock_reg_els_lp)
+     ,.bus_data_width_p(data_width_p)
+     ,.reg_data_width_p(dword_width_gp)
      ,.reg_addr_width_p(dev_addr_width_gp)
+     ,.els_p(bedrock_reg_els_lp)
      ,.base_addr_p({paramrom_match_addr_gp, bootrom_match_addr_gp, finish_match_addr_gp, getchar_match_addr_gp, putchar_match_addr_gp, putch_core_match_addr_gp})
      )
    register
@@ -122,16 +123,6 @@ module bp_nonsynth_host
   always_comb
     if (mem_fwd_v_i & (hio_id != '0))
       $display("Warning: Accessing hio %0h. Sending loopback message!", hio_id);
-
-  always_ff @(negedge clk_i)
-    begin
-      if (~reset_i & mem_fwd_v_i & mem_fwd_ready_and_o)
-        if (~mem_fwd_last_i)
-          $error("Error: multi-beat mem cmd detected in nonsynth host");
-      if (~reset_i & mem_rev_v_o & mem_rev_ready_and_i)
-        if (~mem_rev_last_o)
-          $error("Error: multi-beat mem resp detected in nonsynth host");
-    end
 
   // for some reason, VCS doesn't like finish_w_v_li << addr_core_enc
   wire [num_core_p-1:0] finish_set = finish_w_v_li ? (1'b1 << addr_core_enc) : 1'b0;
@@ -231,7 +222,7 @@ module bp_nonsynth_host
     (.addr_i(paramrom_addr_li)
      ,.data_o(paramrom_data_lo)
      );
-  wire [cce_block_width_p-1:0] paramrom_final_lo = {cce_block_width_p/word_width_gp{paramrom_data_lo}};
+  wire [bedrock_block_width_p-1:0] paramrom_final_lo = {bedrock_block_width_p/word_width_gp{paramrom_data_lo}};
 
   // TODO: Add dynamic enable
   assign icache_trace_en_o   = icache_trace_p;

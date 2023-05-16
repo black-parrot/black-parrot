@@ -81,13 +81,9 @@ module bp_lce_req
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , output logic [lce_req_header_width_lp-1:0]     lce_req_header_o
-    , output logic                                   lce_req_header_v_o
-    , input                                          lce_req_header_ready_and_i
-    , output logic                                   lce_req_has_data_o
     , output logic [fill_width_p-1:0]                lce_req_data_o
-    , output logic                                   lce_req_data_v_o
-    , input                                          lce_req_data_ready_and_i
-    , output logic                                   lce_req_last_o
+    , output logic                                   lce_req_v_o
+    , input                                          lce_req_ready_and_i
   );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -97,7 +93,6 @@ module bp_lce_req
 
   localparam block_size_in_fill_lp = block_width_p / fill_width_p;
   localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
-  localparam bp_bedrock_msg_size_e req_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
 
   // cache request valid and register
   // set over clear because new request can be captured same cycle existing request sends
@@ -140,7 +135,7 @@ module bp_lce_req
   logic fsm_req_v_lo, fsm_req_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_req_cnt_lo;
   logic fsm_req_new_lo, fsm_req_last_lo;
-  bp_me_burst_pump_out
+  bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
@@ -153,13 +148,9 @@ module bp_lce_req
      ,.reset_i(reset_i)
 
      ,.msg_header_o(lce_req_header_cast_o)
-     ,.msg_header_v_o(lce_req_header_v_o)
-     ,.msg_header_ready_and_i(lce_req_header_ready_and_i)
-     ,.msg_has_data_o(lce_req_has_data_o)
      ,.msg_data_o(lce_req_data_o)
-     ,.msg_data_v_o(lce_req_data_v_o)
-     ,.msg_data_ready_and_i(lce_req_data_ready_and_i)
-     ,.msg_last_o(lce_req_last_o)
+     ,.msg_v_o(lce_req_v_o)
+     ,.msg_ready_and_i(lce_req_ready_and_i)
 
      ,.fsm_header_i(fsm_req_header_lo)
      ,.fsm_addr_o()

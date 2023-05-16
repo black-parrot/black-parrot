@@ -12,50 +12,46 @@ module bp_mem_complex
    `declare_bp_proc_params(bp_params_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam dma_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(dma_noc_flit_width_p)
    )
-  (input                                                     core_clk_i
-   , input                                                   core_reset_i
+  (input                                                               core_clk_i
+   , input                                                             core_reset_i
 
-   , input                                                   coh_clk_i
-   , input                                                   coh_reset_i
+   , input                                                             coh_clk_i
+   , input                                                             coh_reset_i
 
-   , input                                                   mem_clk_i
-   , input                                                   mem_reset_i
+   , input                                                             dma_clk_i
+   , input                                                             dma_reset_i
 
-   , input [io_noc_did_width_p-1:0]                          my_did_i
+   , input [mem_noc_did_width_p-1:0]                                    my_did_i
 
-   , input  [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_link_i
-   , output [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_link_o
+   , input [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]             coh_req_link_i
+   , output logic [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_req_link_o
 
-   , input  [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_i
-   , output [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_o
+   , input [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]             coh_cmd_link_i
+   , output logic [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_cmd_link_o
 
-   , input  [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_i
-   , output [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_o
+   , input [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]             coh_resp_link_i
+   , output logic [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_resp_link_o
 
-   , input  [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_fwd_link_i
-   , output [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_rev_link_o
-
-   , output [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_dma_link_o
-   , input [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]   mem_dma_link_i
+   , input [S:N][mc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0]        mem_dma_link_i
+   , output logic [S:N][mc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0] mem_dma_link_o
    );
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_mem_ready_and_link_s);
 
   bp_coh_ready_and_link_s [mc_x_dim_p-1:0][S:W] lce_req_link_li, lce_req_link_lo;
-  bp_coh_ready_and_link_s [E:W]                 lce_req_hor_link_li, lce_req_hor_link_lo;
+  bp_coh_ready_and_link_s [E:W] lce_req_hor_link_li, lce_req_hor_link_lo;
   bp_coh_ready_and_link_s [S:N][mc_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo;
   bp_coh_ready_and_link_s [mc_x_dim_p-1:0][S:W] lce_cmd_link_li, lce_cmd_link_lo;
-  bp_coh_ready_and_link_s [E:W]                 lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
+  bp_coh_ready_and_link_s [E:W] lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
   bp_coh_ready_and_link_s [S:N][mc_x_dim_p-1:0] lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
   bp_coh_ready_and_link_s [mc_x_dim_p-1:0][S:W] lce_resp_link_li, lce_resp_link_lo;
-  bp_coh_ready_and_link_s [E:W]                 lce_resp_hor_link_li, lce_resp_hor_link_lo;
+  bp_coh_ready_and_link_s [E:W] lce_resp_hor_link_li, lce_resp_hor_link_lo;
   bp_coh_ready_and_link_s [S:N][mc_x_dim_p-1:0] lce_resp_ver_link_li, lce_resp_ver_link_lo;
 
-  bp_mem_ready_and_link_s [mc_x_dim_p-1:0] mem_fwd_link_li, mem_fwd_link_lo;
-  bp_mem_ready_and_link_s [mc_x_dim_p-1:0] mem_rev_link_li, mem_rev_link_lo;
+  bp_mem_ready_and_link_s [mc_x_dim_p-1:0] mem_dma_link_li, mem_dma_link_lo;
   bp_mem_ready_and_link_s [S:N][mc_x_dim_p-1:0] mem_ver_link_li, mem_ver_link_lo;
 
   for (genvar i = 0; i < mc_x_dim_p; i++)
@@ -73,8 +69,8 @@ module bp_mem_complex
              ,.coh_clk_i(coh_clk_i)
              ,.coh_reset_i(coh_reset_i)
 
-             ,.mem_clk_i(mem_clk_i)
-             ,.mem_reset_i(mem_reset_i)
+             ,.dma_clk_i(dma_clk_i)
+             ,.dma_reset_i(dma_reset_i)
 
              ,.my_did_i(my_did_i)
              ,.my_cord_i(cord_li)
@@ -88,21 +84,17 @@ module bp_mem_complex
              ,.coh_lce_resp_link_i(lce_resp_link_li[i])
              ,.coh_lce_resp_link_o(lce_resp_link_lo[i])
 
-             ,.mem_fwd_link_i(mem_fwd_link_li[i])
-             ,.mem_fwd_link_o(mem_fwd_link_lo[i])
-
-             ,.mem_rev_link_i(mem_rev_link_li[i])
-             ,.mem_rev_link_o(mem_rev_link_lo[i])
+             ,.mem_dma_link_i(mem_dma_link_li[i])
+             ,.mem_dma_link_o(mem_dma_link_lo[i])
              );
         end
       else
         begin : stub
-          assign lce_req_link_lo[i]  = '0;
-          assign lce_cmd_link_lo[i]  = '0;
+          assign lce_req_link_lo[i] = '0;
+          assign lce_cmd_link_lo[i] = '0;
           assign lce_resp_link_lo[i] = '0;
 
-          assign mem_fwd_link_lo[i]  = '0;
-          assign mem_rev_link_lo[i] = '0;
+          assign mem_dma_link_lo[i] = '0;
         end
     end
 
@@ -168,13 +160,10 @@ module bp_mem_complex
       bp_mem_ready_and_link_s [mc_x_dim_p-1:0][S:W] mem_mesh_lo, mem_mesh_li;
       for (genvar j = 0; j < mc_x_dim_p; j++)
         begin : link
-          assign mem_mesh_lo[j][S] = mem_fwd_link_lo[j];
-          assign mem_mesh_lo[j][N] = mem_rev_link_lo[j];
-
-          assign mem_fwd_link_li[j] = mem_mesh_li[j][N];
-          assign mem_rev_link_li[j] = mem_mesh_li[j][S];
+          assign mem_mesh_lo[j][S:N] = mem_dma_link_lo[j];
+          assign mem_dma_link_li[j] = mem_mesh_li[j][S:N];
         end
-      assign mem_ver_link_li[N] = mem_fwd_link_i;
+      assign mem_ver_link_li[N] = mem_dma_link_i[N];
       bsg_mesh_stitch
        #(.width_p($bits(bp_mem_ready_and_link_s))
          ,.x_max_p(mc_x_dim_p)
@@ -189,7 +178,7 @@ module bp_mem_complex
          ,.ver_i(mem_ver_link_li)
          ,.ver_o(mem_ver_link_lo)
          );
-      assign mem_rev_link_o = mem_ver_link_lo[N];
+      assign mem_dma_link_o[S] = mem_ver_link_lo[N];
     end
   else
     begin : stub
@@ -197,12 +186,12 @@ module bp_mem_complex
       assign coh_cmd_link_o = '0;
       assign coh_resp_link_o = '0;
 
-      assign mem_ver_link_lo[S] = mem_fwd_link_i;
-      assign mem_rev_link_o = mem_ver_link_li[S];
+      assign mem_ver_link_lo[S] = mem_dma_link_i[N];
+      assign mem_dma_link_o[N] = mem_ver_link_li[S];
     end
 
-  assign mem_dma_link_o = mem_ver_link_lo[S];
-  assign mem_ver_link_li[S] = mem_dma_link_i;
+  assign mem_dma_link_o[S] = mem_ver_link_lo[S];
+  assign mem_ver_link_li[S] = mem_dma_link_i[S];
 
 endmodule
 

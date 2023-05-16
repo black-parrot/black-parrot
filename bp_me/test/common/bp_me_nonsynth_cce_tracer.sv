@@ -19,7 +19,7 @@ module bp_me_nonsynth_cce_tracer
     , localparam cce_trace_file_p = "cce"
 
     // Derived parameters
-    , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
+    , localparam block_size_in_bytes_lp    = (bedrock_block_width_p/8)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
     // number of way groups managed by this CCE
@@ -36,39 +36,31 @@ module bp_me_nonsynth_cce_tracer
    // LCE-CCE Interface
    // BedRock Burst protocol: ready&valid
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
-   , input                                          lce_req_header_v_i
-   , input                                          lce_req_header_ready_and_i
-   , input [bedrock_data_width_p-1:0]               lce_req_data_i
-   , input                                          lce_req_data_v_i
-   , input                                          lce_req_data_ready_and_i
+   , input [bedrock_fill_width_p-1:0]               lce_req_data_i
+   , input                                          lce_req_v_i
+   , input                                          lce_req_ready_and_i
 
    , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
-   , input                                          lce_resp_header_v_i
-   , input                                          lce_resp_header_ready_and_i
-   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
-   , input                                          lce_resp_data_v_i
-   , input                                          lce_resp_data_ready_and_i
+   , input [bedrock_fill_width_p-1:0]               lce_resp_data_i
+   , input                                          lce_resp_v_i
+   , input                                          lce_resp_ready_and_i
 
    , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-   , input                                          lce_cmd_header_v_i
-   , input                                          lce_cmd_header_ready_and_i
-   , input [bedrock_data_width_p-1:0]               lce_cmd_data_i
-   , input                                          lce_cmd_data_v_i
-   , input                                          lce_cmd_data_ready_and_i
+   , input [bedrock_fill_width_p-1:0]               lce_cmd_data_i
+   , input                                          lce_cmd_v_i
+   , input                                          lce_cmd_ready_and_i
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
-   , input [bedrock_data_width_p-1:0]               mem_rev_data_i
+   , input [bedrock_fill_width_p-1:0]               mem_rev_data_i
    , input                                          mem_rev_v_i
    , input                                          mem_rev_ready_and_i
-   , input                                          mem_rev_last_i
 
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input [bedrock_data_width_p-1:0]               mem_fwd_data_i
+   , input [bedrock_fill_width_p-1:0]               mem_fwd_data_i
    , input                                          mem_fwd_v_i
    , input                                          mem_fwd_ready_and_i
-   , input                                          mem_fwd_last_i
 
    , input [cce_id_width_p-1:0]                     cce_id_i
   );
@@ -98,7 +90,7 @@ module bp_me_nonsynth_cce_tracer
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
       // inbound messages
-      if (lce_req_header_v_i & lce_req_header_ready_and_i) begin
+      if (lce_req_v_i & lce_req_ready_and_i) begin
         if (lce_req_header_cast_i.msg_type.req == e_bedrock_req_rd_miss
             | lce_req_header_cast_i.msg_type.req == e_bedrock_req_wr_miss) begin
         $fdisplay(file, "%12t |: CCE[%0d] REQ LCE[%0d] addr[%H] wg[%0d] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d]"
@@ -130,12 +122,12 @@ module bp_me_nonsynth_cce_tracer
                  );
         end
       end
-      if (lce_req_data_v_i & lce_req_data_ready_and_i) begin
+      if (lce_req_v_i & lce_req_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE REQ DATA %H"
                   , $time, lce_req_data_i
                   );
       end
-      if (lce_resp_header_v_i & lce_resp_header_ready_and_i) begin
+      if (lce_resp_v_i & lce_resp_ready_and_i) begin
         if ((lce_resp_header_cast_i.msg_type.resp == e_bedrock_resp_sync_ack)
             | (lce_resp_header_cast_i.msg_type.resp == e_bedrock_resp_inv_ack)
             | (lce_resp_header_cast_i.msg_type.resp == e_bedrock_resp_coh_ack)) begin
@@ -156,7 +148,7 @@ module bp_me_nonsynth_cce_tracer
                  );
         end
       end
-      if (lce_resp_data_v_i & lce_resp_data_ready_and_i) begin
+      if (lce_resp_v_i & lce_resp_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE RESP DATA %H"
                   , $time, lce_resp_data_i
                   );
@@ -174,20 +166,19 @@ module bp_me_nonsynth_cce_tracer
         end
         if (mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_rd
             | mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_uc_rd) begin
-        $fdisplay(file, "%12t |: CCE[%0d] MEM DATA RESP addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] spec[%0b] uc[%0b] last[%0b] %H"
+        $fdisplay(file, "%12t |: CCE[%0d] MEM DATA RESP addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] spec[%0b] uc[%0b] %H"
                  , $time, cce_id_i, mem_rev_header_cast_i.addr
                  , mem_rev_header_cast_i.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_rev_header_cast_i.payload.lce_id, mem_rev_header_cast_i.payload.way_id
                  , mem_rev_header_cast_i.payload.state
                  , mem_rev_header_cast_i.payload.speculative
                  , (mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_uc_rd)
-                 , mem_rev_last_i
                  , mem_rev_data_i
                  );
         end
       end
       // outbound messages
-      if (lce_cmd_header_v_i & lce_cmd_header_ready_and_i) begin
+      if (lce_cmd_v_i & lce_cmd_ready_and_i) begin
         $fdisplay(file, "%12t |: CCE[%0d] CMD LCE[%0d] addr[%H] wg[%0d] cmd[%4b] way[%0d] state[%3b] tgt[%0d] tgtWay[%0d] tgtSt[%3b]"
                  , $time, lce_cmd_header_cast_i.payload.src_id, lce_cmd_header_cast_i.payload.dst_id
                  , lce_cmd_header_cast_i.addr
@@ -198,7 +189,7 @@ module bp_me_nonsynth_cce_tracer
                  , lce_cmd_header_cast_i.payload.target_state
                  );
       end
-      if (lce_cmd_data_v_i & lce_cmd_data_ready_and_i) begin
+      if (lce_cmd_v_i & lce_cmd_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE CMD DATA %H"
                   , $time, lce_cmd_data_i
                   );
@@ -216,14 +207,13 @@ module bp_me_nonsynth_cce_tracer
         end
         if (mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_uc_wr
             | mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_wr) begin
-        $fdisplay(file, "%12t |: CCE[%0d] MEM DATA FWD wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] uc[%0b] last[%0b] %H"
+        $fdisplay(file, "%12t |: CCE[%0d] MEM DATA FWD wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] uc[%0b] %H"
                  , $time, cce_id_i, (mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_wr)
                  , mem_fwd_header_cast_i.addr
                  , mem_fwd_header_cast_i.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_fwd_header_cast_i.payload.lce_id, mem_fwd_header_cast_i.payload.way_id
                  , mem_fwd_header_cast_i.payload.state
                  , (mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_uc_wr)
-                 , mem_fwd_last_i
                  , mem_fwd_data_i
                  );
         end

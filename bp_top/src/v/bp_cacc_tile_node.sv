@@ -13,28 +13,28 @@ module bp_cacc_tile_node
    `declare_bp_proc_params(bp_params_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam dma_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(dma_noc_flit_width_p)
    , parameter accelerator_type_p = 1
    )
-  (input                                         core_clk_i
-   , input                                       core_reset_i
+  (input                                               core_clk_i
+   , input                                             core_reset_i
 
-   , input                                       coh_clk_i
-   , input                                       coh_reset_i
+   , input                                             coh_clk_i
+   , input                                             coh_reset_i
 
-   , input [coh_noc_cord_width_p-1:0]            my_cord_i
+   , input [coh_noc_cord_width_p-1:0]                  my_cord_i
    // Connected to other tiles on east and west
-   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_req_link_i
-   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_req_link_o
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_req_link_i
+   , output logic [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_req_link_o
 
-   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_cmd_link_i
-   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_cmd_link_i
+   , output logic [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
 
-   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_fill_link_i
-   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_fill_link_o
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_fill_link_i
+   , output logic [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_fill_link_o
 
-   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_resp_link_i
-   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_resp_link_o
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_resp_link_i
+   , output logic [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_resp_link_o
    );
 
   // Declare the routing links

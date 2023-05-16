@@ -18,7 +18,7 @@ module bp_cce_msg
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
-    , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
+    , localparam block_size_in_bytes_lp    = (bedrock_block_width_p/8)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
 
@@ -30,7 +30,7 @@ module bp_cce_msg
     , localparam counter_width_lp          = 8
 
     // byte offset bits required per bedrock data channel beat
-    , localparam lg_bedrock_data_bytes_lp = `BSG_SAFE_CLOG2(bedrock_data_width_p/8)
+    , localparam lg_bedrock_data_bytes_lp = `BSG_SAFE_CLOG2(bedrock_fill_width_p/8)
 
     // Interface Widths
     , localparam mshr_width_lp             = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
@@ -39,7 +39,7 @@ module bp_cce_msg
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
     // stream pump
-    , localparam stream_words_lp = cce_block_width_p / bedrock_data_width_p
+    , localparam stream_words_lp = bedrock_block_width_p / bedrock_fill_width_p
     , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
   )
   (input                                            clk_i
@@ -52,21 +52,21 @@ module bp_cce_msg
    // BedRock Burst protocol: ready&valid
    // inbound headers use valid->yumi
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
-   , input [bedrock_data_width_p-1:0]               lce_req_data_i
+   , input [bedrock_fill_width_p-1:0]               lce_req_data_i
    , input                                          lce_req_v_i
    , output logic                                   lce_req_yumi_o
    , input                                          lce_req_new_i
    , input                                          lce_req_last_i
 
    , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
-   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
+   , input [bedrock_fill_width_p-1:0]               lce_resp_data_i
    , input                                          lce_resp_v_i
    , output logic                                   lce_resp_yumi_o
    , input                                          lce_resp_new_i
    , input                                          lce_resp_last_i
 
    , output logic [lce_cmd_header_width_lp-1:0]     lce_cmd_header_o
-   , output logic [bedrock_data_width_p-1:0]        lce_cmd_data_o
+   , output logic [bedrock_fill_width_p-1:0]        lce_cmd_data_o
    , output logic                                   lce_cmd_v_o
    , input                                          lce_cmd_yumi_i
    , input                                          lce_cmd_new_i
@@ -75,7 +75,7 @@ module bp_cce_msg
    // CCE-MEM Interface
    // memory response stream pump in
    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
-   , input [bedrock_data_width_p-1:0]               mem_rev_data_i
+   , input [bedrock_fill_width_p-1:0]               mem_rev_data_i
    , input                                          mem_rev_v_i
    , output logic                                   mem_rev_yumi_o
    , input                                          mem_rev_new_i
@@ -83,7 +83,7 @@ module bp_cce_msg
 
    // memory command stream pump out
    , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
-   , output logic [bedrock_data_width_p-1:0]        mem_fwd_data_o
+   , output logic [bedrock_fill_width_p-1:0]        mem_fwd_data_o
    , output logic                                   mem_fwd_v_o
    , input                                          mem_fwd_yumi_i
    , input                                          mem_fwd_new_i
@@ -191,9 +191,9 @@ module bp_cce_msg
      );
 
   // memory command/response counter
-  logic [`BSG_WIDTH(mem_noc_max_credits_p)-1:0] mem_credit_count_lo;
+  logic [`BSG_WIDTH(dma_noc_max_credits_p)-1:0] mem_credit_count_lo;
   bsg_flow_counter
-   #(.els_p(mem_noc_max_credits_p))
+   #(.els_p(dma_noc_max_credits_p))
    mem_credit_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -205,7 +205,7 @@ module bp_cce_msg
      ,.count_o(mem_credit_count_lo)
      );
 
-  wire mem_credits_empty = (mem_credit_count_lo == mem_noc_max_credits_p);
+  wire mem_credits_empty = (mem_credit_count_lo == dma_noc_max_credits_p);
   wire mem_credits_full = (mem_credit_count_lo == 0);
   assign mem_credits_empty_o = mem_credits_empty;
 

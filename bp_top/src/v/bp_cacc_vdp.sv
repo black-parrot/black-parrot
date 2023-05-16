@@ -23,70 +23,46 @@ module bp_cacc_vdp
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , output logic [lce_req_header_width_lp-1:0]  lce_req_header_o
-    , output logic                                lce_req_header_v_o
-    , input                                       lce_req_header_ready_and_i
-    , output logic                                lce_req_has_data_o
     , output logic [acache_fill_width_p-1:0]      lce_req_data_o
-    , output logic                                lce_req_data_v_o
-    , input                                       lce_req_data_ready_and_i
-    , output logic                                lce_req_last_o
+    , output logic                                lce_req_v_o
+    , input                                       lce_req_ready_and_i
 
     , input [lce_cmd_header_width_lp-1:0]         lce_cmd_header_i
-    , input                                       lce_cmd_header_v_i
-    , output logic                                lce_cmd_header_ready_and_o
-    , input                                       lce_cmd_has_data_i
     , input [acache_fill_width_p-1:0]             lce_cmd_data_i
-    , input                                       lce_cmd_data_v_i
-    , output logic                                lce_cmd_data_ready_and_o
-    , input                                       lce_cmd_last_i
+    , input                                       lce_cmd_v_i
+    , output logic                                lce_cmd_ready_and_o
 
     , input [lce_fill_header_width_lp-1:0]        lce_fill_header_i
-    , input                                       lce_fill_header_v_i
-    , output logic                                lce_fill_header_ready_and_o
-    , input                                       lce_fill_has_data_i
     , input [acache_fill_width_p-1:0]             lce_fill_data_i
-    , input                                       lce_fill_data_v_i
-    , output logic                                lce_fill_data_ready_and_o
-    , input                                       lce_fill_last_i
+    , input                                       lce_fill_v_i
+    , output logic                                lce_fill_ready_and_o
 
     , output logic [lce_fill_header_width_lp-1:0] lce_fill_header_o
-    , output logic                                lce_fill_header_v_o
-    , input                                       lce_fill_header_ready_and_i
-    , output logic                                lce_fill_has_data_o
     , output logic [acache_fill_width_p-1:0]      lce_fill_data_o
-    , output logic                                lce_fill_data_v_o
-    , input                                       lce_fill_data_ready_and_i
-    , output logic                                lce_fill_last_o
+    , output logic                                lce_fill_v_o
+    , input                                       lce_fill_ready_and_i
 
     , output logic [lce_resp_header_width_lp-1:0] lce_resp_header_o
-    , output logic                                lce_resp_header_v_o
-    , input                                       lce_resp_header_ready_and_i
-    , output logic                                lce_resp_has_data_o
     , output logic [acache_fill_width_p-1:0]      lce_resp_data_o
-    , output logic                                lce_resp_data_v_o
-    , input                                       lce_resp_data_ready_and_i
-    , output logic                                lce_resp_last_o
+    , output logic                                lce_resp_v_o
+    , input                                       lce_resp_ready_and_i
 
     // BedRock Stream
     // may only support single beat messages
-    , input [mem_fwd_header_width_lp-1:0]         io_fwd_header_i
-    , input [acache_fill_width_p-1:0]             io_fwd_data_i
-    , input                                       io_fwd_v_i
-    , input                                       io_fwd_last_i
-    , output logic                                io_fwd_ready_and_o
+    , input [mem_fwd_header_width_lp-1:0]         mem_fwd_header_i
+    , input [acache_fill_width_p-1:0]             mem_fwd_data_i
+    , input                                       mem_fwd_v_i
+    , output logic                                mem_fwd_ready_and_o
 
-    , output logic [mem_rev_header_width_lp-1:0]  io_rev_header_o
-    , output logic [acache_fill_width_p-1:0]      io_rev_data_o
-    , output logic                                io_rev_v_o
-    , output logic                                io_rev_last_o
-    , input                                       io_rev_ready_and_i
+    , output logic [mem_rev_header_width_lp-1:0]  mem_rev_header_o
+    , output logic [acache_fill_width_p-1:0]      mem_rev_data_o
+    , output logic                                mem_rev_v_o
+    , input                                       mem_rev_ready_and_i
     );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
-  `bp_cast_i(bp_bedrock_mem_fwd_header_s, io_fwd_header);
-  `bp_cast_o(bp_bedrock_mem_rev_header_s, io_rev_header);
 
   localparam reg_els_lp = 1;
 
@@ -97,6 +73,7 @@ module bp_cacc_vdp
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
      ,.els_p(reg_els_lp)
+     ,.bus_data_width_p(acache_fill_width_p)
      ,.reg_addr_width_p(paddr_width_p)
      ,.base_addr_p({64'b????????????????})
      )
@@ -104,24 +81,14 @@ module bp_cacc_vdp
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_fwd_header_i(io_fwd_header_cast_i)
-     ,.mem_fwd_data_i(io_fwd_data_i)
-     ,.mem_fwd_v_i(io_fwd_v_i)
-     ,.mem_fwd_ready_and_o(io_fwd_ready_and_o)
-     ,.mem_fwd_last_i(io_fwd_last_i)
-
-     ,.mem_rev_header_o(io_rev_header_cast_o)
-     ,.mem_rev_data_o(io_rev_data_o)
-     ,.mem_rev_v_o(io_rev_v_o)
-     ,.mem_rev_ready_and_i(io_rev_ready_and_i)
-     ,.mem_rev_last_o(io_rev_last_o)
-
      ,.r_v_o(r_v_li)
      ,.w_v_o(w_v_li)
      ,.addr_o(addr_lo)
      ,.size_o()
      ,.data_o(data_lo)
      ,.data_i(data_li)
+
+     ,.*
      );
 
   bp_local_addr_s local_addr_lo;
@@ -132,7 +99,7 @@ module bp_cacc_vdp
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   bp_be_dcache_pkt_s        dcache_pkt;
   logic                     dcache_ready_and, dcache_v;
-  logic [dpath_width_gp-1:0] dcache_data;
+  logic [dword_width_gp-1:0] dcache_data;
   logic                     dcache_pkt_v;
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -158,7 +125,8 @@ module bp_cacc_vdp
   logic [cache_stat_info_width_lp-1:0] stat_mem_o;
   bp_cache_req_metadata_s cache_req_metadata_o;
 
-  logic [ptag_width_p-1:0] dcache_ptag, st_data_r;
+  logic [ptag_width_p-1:0] dcache_ptag;
+  logic [dword_width_gp-1:0] st_data_r;
 
   // TODO: Actually use the late signal, but we don't really care about performance
   //   for the purposes of this demo
@@ -400,7 +368,7 @@ module bp_cacc_vdp
       dcache_pkt_v = 0;
       dot_product_res = '0;
 
-  state_n = state_r;
+      state_n = state_r;
       case (state_r)
         e_reset: begin
           state_n = reset_i ? e_reset : e_wait_start;
@@ -422,7 +390,7 @@ module bp_cacc_vdp
         e_wait_dcache_c2: begin
           //if load: load both input vectors
           //if store: go to e_done after store
-          state_n = ~(lce_cmd_header_v_i | lce_fill_header_v_i) ? e_wait_dcache_c2 : e_wait_fetch;
+          state_n = ~(lce_cmd_v_i | lce_fill_v_i) ? e_wait_dcache_c2 : e_wait_fetch;
         end
         e_check_vec1_len: begin
           state_n = (len_a_cnt == input_len) ? e_fetch_vec2 : e_wait_fetch;

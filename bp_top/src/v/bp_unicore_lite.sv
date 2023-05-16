@@ -25,13 +25,11 @@ module bp_unicore_lite
    , output logic [1:0][uce_fill_width_p-1:0]          mem_fwd_data_o
    , output logic [1:0]                                mem_fwd_v_o
    , input [1:0]                                       mem_fwd_ready_and_i
-   , output logic [1:0]                                mem_fwd_last_o
 
    , input [1:0][mem_rev_header_width_lp-1:0]          mem_rev_header_i
    , input [1:0][uce_fill_width_p-1:0]                 mem_rev_data_i
    , input [1:0]                                       mem_rev_v_i
    , output logic [1:0]                                mem_rev_ready_and_o
-   , input [1:0]                                       mem_rev_last_i
 
    , input                                             debug_irq_i
    , input                                             timer_irq_i
@@ -197,21 +195,19 @@ module bp_unicore_lite
      ,.mem_fwd_data_o(mem_fwd_data_o[0])
      ,.mem_fwd_v_o(mem_fwd_v_o[0])
      ,.mem_fwd_ready_and_i(mem_fwd_ready_and_i[0])
-     ,.mem_fwd_last_o(mem_fwd_last_o[0])
 
      ,.mem_rev_header_i(mem_rev_header_i[0])
      ,.mem_rev_data_i(mem_rev_data_i[0])
      ,.mem_rev_v_i(mem_rev_v_i[0])
      ,.mem_rev_ready_and_o(mem_rev_ready_and_o[0])
-     ,.mem_rev_last_i(mem_rev_last_i[0])
      );
 
   bp_bedrock_mem_fwd_header_s [1:1] _mem_fwd_header_o;
   logic [1:1][uce_fill_width_p-1:0] _mem_fwd_data_o;
-  logic [1:1] _mem_fwd_v_o, _mem_fwd_ready_and_i, _mem_fwd_last_o;
+  logic [1:1] _mem_fwd_v_o, _mem_fwd_ready_and_i;
   bp_bedrock_mem_rev_header_s [1:1] _mem_rev_header_i;
   logic [1:1][uce_fill_width_p-1:0] _mem_rev_data_i;
-  logic [1:1] _mem_rev_v_i, _mem_rev_ready_and_o, _mem_rev_last_i;
+  logic [1:1] _mem_rev_v_i, _mem_rev_ready_and_o;
   bp_uce
    #(.bp_params_p(bp_params_p)
      ,.assoc_p(dcache_assoc_p)
@@ -259,39 +255,37 @@ module bp_unicore_lite
      ,.mem_fwd_data_o(_mem_fwd_data_o[1])
      ,.mem_fwd_v_o(_mem_fwd_v_o[1])
      ,.mem_fwd_ready_and_i(_mem_fwd_ready_and_i[1])
-     ,.mem_fwd_last_o(_mem_fwd_last_o[1])
 
      ,.mem_rev_header_i(_mem_rev_header_i[1])
      ,.mem_rev_data_i(_mem_rev_data_i[1])
      ,.mem_rev_v_i(_mem_rev_v_i[1])
      ,.mem_rev_ready_and_o(_mem_rev_ready_and_o[1])
-     ,.mem_rev_last_i(_mem_rev_last_i[1])
      );
 
   // Synchronize back to posedge clk
   bsg_edge_extend
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+2))
    posedge_latch
     (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
-     ,.data_i({_mem_fwd_header_o[1], _mem_fwd_data_o[1], _mem_fwd_v_o[1], _mem_fwd_last_o[1]
+     ,.data_i({_mem_fwd_header_o[1], _mem_fwd_data_o[1], _mem_fwd_v_o[1]
                ,mem_fwd_ready_and_i[1]
                })
-     ,.data_o({mem_fwd_header_o[1], mem_fwd_data_o[1], mem_fwd_v_o[1], mem_fwd_last_o[1]
+     ,.data_o({mem_fwd_header_o[1], mem_fwd_data_o[1], mem_fwd_v_o[1]
                ,_mem_fwd_ready_and_i[1]
                })
      );
 
   // Synchronize back to negedge clk
   bsg_edge_extend
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+3))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+2))
    negedge_latch
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
-     ,.data_i({mem_rev_header_i[1], mem_rev_data_i[1], mem_rev_v_i[1], mem_rev_last_i[1]
+     ,.data_i({mem_rev_header_i[1], mem_rev_data_i[1], mem_rev_v_i[1]
                ,_mem_rev_ready_and_o[1]
                })
-     ,.data_o({_mem_rev_header_i[1], _mem_rev_data_i[1], _mem_rev_v_i[1], _mem_rev_last_i[1]
+     ,.data_o({_mem_rev_header_i[1], _mem_rev_data_i[1], _mem_rev_v_i[1]
                ,mem_rev_ready_and_o[1]
                })
      );

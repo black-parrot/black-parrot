@@ -18,7 +18,7 @@ module bp_cce
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
-    , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
+    , localparam block_size_in_bytes_lp    = (bedrock_block_width_p/8)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
     // number of way groups managed by this CCE
@@ -47,49 +47,35 @@ module bp_cce
    // LCE-CCE Interface
    // BedRock Burst protocol: ready&valid
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
-   , input                                          lce_req_header_v_i
-   , output logic                                   lce_req_header_ready_and_o
-   , input                                          lce_req_has_data_i
-   , input [bedrock_data_width_p-1:0]               lce_req_data_i
-   , input                                          lce_req_data_v_i
-   , output logic                                   lce_req_data_ready_and_o
-   , input                                          lce_req_last_i
+   , input [bedrock_fill_width_p-1:0]               lce_req_data_i
+   , input                                          lce_req_v_i
+   , output logic                                   lce_req_ready_and_o
 
    , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
-   , input                                          lce_resp_header_v_i
-   , output logic                                   lce_resp_header_ready_and_o
-   , input                                          lce_resp_has_data_i
-   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
-   , input                                          lce_resp_data_v_i
-   , output logic                                   lce_resp_data_ready_and_o
-   , input                                          lce_resp_last_i
+   , input [bedrock_fill_width_p-1:0]               lce_resp_data_i
+   , input                                          lce_resp_v_i
+   , output logic                                   lce_resp_ready_and_o
 
    , output logic [lce_cmd_header_width_lp-1:0]     lce_cmd_header_o
-   , output logic                                   lce_cmd_header_v_o
-   , input                                          lce_cmd_header_ready_and_i
-   , output logic                                   lce_cmd_has_data_o
-   , output logic [bedrock_data_width_p-1:0]        lce_cmd_data_o
-   , output logic                                   lce_cmd_data_v_o
-   , input                                          lce_cmd_data_ready_and_i
-   , output logic                                   lce_cmd_last_o
+   , output logic [bedrock_fill_width_p-1:0]        lce_cmd_data_o
+   , output logic                                   lce_cmd_v_o
+   , input                                          lce_cmd_ready_and_i
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
-   , input [bedrock_data_width_p-1:0]               mem_rev_data_i
+   , input [bedrock_fill_width_p-1:0]               mem_rev_data_i
    , input                                          mem_rev_v_i
    , output logic                                   mem_rev_ready_and_o
-   , input                                          mem_rev_last_i
 
    , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
-   , output logic [bedrock_data_width_p-1:0]        mem_fwd_data_o
+   , output logic [bedrock_fill_width_p-1:0]        mem_fwd_data_o
    , output logic                                   mem_fwd_v_o
    , input                                          mem_fwd_ready_and_i
-   , output logic                                   mem_fwd_last_o
   );
 
   // parameter checks
-  if (cce_block_width_p < `bp_cce_inst_gpr_width)
+  if (bedrock_block_width_p < `bp_cce_inst_gpr_width)
     $error("CCE block width must be greater than CCE GPR width");
 
 
@@ -270,13 +256,13 @@ module bp_cce
 
   bp_bedrock_lce_req_header_s fsm_req_header_li;
   logic [paddr_width_p-1:0] fsm_req_addr_li;
-  logic [bedrock_data_width_p-1:0] fsm_req_data_li;
+  logic [bedrock_fill_width_p-1:0] fsm_req_data_li;
   logic fsm_req_v_li, fsm_req_yumi_lo;
   logic fsm_req_new_li, fsm_req_last_li;
-  bp_me_burst_pump_in
+  bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(bedrock_data_width_p)
-     ,.block_width_p(cce_block_width_p)
+     ,.stream_data_width_p(bedrock_fill_width_p)
+     ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(lce_req_payload_width_lp)
      ,.msg_stream_mask_p(lce_req_payload_mask_gp)
      ,.fsm_stream_mask_p(lce_req_payload_mask_gp)
@@ -286,13 +272,9 @@ module bp_cce
      ,.reset_i(reset_i)
 
      ,.msg_header_i(lce_req_header_cast_i)
-     ,.msg_header_v_i(lce_req_header_v_i)
-     ,.msg_header_ready_and_o(lce_req_header_ready_and_o)
-     ,.msg_has_data_i(lce_req_has_data_i)
      ,.msg_data_i(lce_req_data_i)
-     ,.msg_data_v_i(lce_req_data_v_i)
-     ,.msg_data_ready_and_o(lce_req_data_ready_and_o)
-     ,.msg_last_i(lce_req_last_i)
+     ,.msg_v_i(lce_req_v_i)
+     ,.msg_ready_and_o(lce_req_ready_and_o)
 
      ,.fsm_header_o(fsm_req_header_li)
      ,.fsm_addr_o(fsm_req_addr_li)
@@ -304,17 +286,17 @@ module bp_cce
      ,.fsm_last_o(fsm_req_last_li)
      );
 
-  localparam block_size_in_fill_lp = cce_block_width_p / bedrock_data_width_p;
+  localparam block_size_in_fill_lp = bedrock_block_width_p / bedrock_fill_width_p;
   localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
   bp_bedrock_lce_cmd_header_s fsm_cmd_header_lo;
-  logic [bedrock_data_width_p-1:0] fsm_cmd_data_lo;
+  logic [bedrock_fill_width_p-1:0] fsm_cmd_data_lo;
   logic fsm_cmd_v_lo, fsm_cmd_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt_lo;
   logic fsm_cmd_new_lo, fsm_cmd_last_lo;
-  bp_me_burst_pump_out
+  bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(bedrock_data_width_p)
-     ,.block_width_p(cce_block_width_p)
+     ,.stream_data_width_p(bedrock_fill_width_p)
+     ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.msg_stream_mask_p(lce_cmd_payload_mask_gp)
      ,.fsm_stream_mask_p(lce_cmd_payload_mask_gp)
@@ -324,13 +306,9 @@ module bp_cce
      ,.reset_i(reset_i)
 
      ,.msg_header_o(lce_cmd_header_cast_o)
-     ,.msg_header_v_o(lce_cmd_header_v_o)
-     ,.msg_header_ready_and_i(lce_cmd_header_ready_and_i)
-     ,.msg_has_data_o(lce_cmd_has_data_o)
      ,.msg_data_o(lce_cmd_data_o)
-     ,.msg_data_v_o(lce_cmd_data_v_o)
-     ,.msg_data_ready_and_i(lce_cmd_data_ready_and_i)
-     ,.msg_last_o(lce_cmd_last_o)
+     ,.msg_v_o(lce_cmd_v_o)
+     ,.msg_ready_and_i(lce_cmd_ready_and_i)
 
      ,.fsm_header_i(fsm_cmd_header_lo)
      ,.fsm_addr_o()
@@ -344,13 +322,13 @@ module bp_cce
 
   bp_bedrock_lce_resp_header_s fsm_resp_header_li;
   logic [paddr_width_p-1:0] fsm_resp_addr_li;
-  logic [bedrock_data_width_p-1:0] fsm_resp_data_li;
+  logic [bedrock_fill_width_p-1:0] fsm_resp_data_li;
   logic fsm_resp_v_li, fsm_resp_yumi_lo;
   logic fsm_resp_new_li, fsm_resp_last_li;
-  bp_me_burst_pump_in
+  bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(bedrock_data_width_p)
-     ,.block_width_p(cce_block_width_p)
+     ,.stream_data_width_p(bedrock_fill_width_p)
+     ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(lce_resp_payload_width_lp)
      ,.msg_stream_mask_p(lce_resp_payload_mask_gp)
      ,.fsm_stream_mask_p(lce_resp_payload_mask_gp)
@@ -360,13 +338,9 @@ module bp_cce
      ,.reset_i(reset_i)
 
      ,.msg_header_i(lce_resp_header_cast_i)
-     ,.msg_header_v_i(lce_resp_header_v_i)
-     ,.msg_header_ready_and_o(lce_resp_header_ready_and_o)
-     ,.msg_has_data_i(lce_resp_has_data_i)
      ,.msg_data_i(lce_resp_data_i)
-     ,.msg_data_v_i(lce_resp_data_v_i)
-     ,.msg_data_ready_and_o(lce_resp_data_ready_and_o)
-     ,.msg_last_i(lce_resp_last_i)
+     ,.msg_v_i(lce_resp_v_i)
+     ,.msg_ready_and_o(lce_resp_ready_and_o)
 
      ,.fsm_header_o(fsm_resp_header_li)
      ,.fsm_addr_o(fsm_resp_addr_li)
@@ -382,16 +356,14 @@ module bp_cce
   // From memory response stream pump to CCE
   bp_bedrock_mem_rev_header_s fsm_rev_header_li;
   logic fsm_rev_v_li, fsm_rev_yumi_lo, fsm_rev_new_li, fsm_rev_last_li;
-  logic [bedrock_data_width_p-1:0] fsm_rev_data_li;
+  logic [bedrock_fill_width_p-1:0] fsm_rev_data_li;
   bp_me_stream_pump_in
     #(.bp_params_p(bp_params_p)
-      ,.stream_data_width_p(bedrock_data_width_p)
-      ,.block_width_p(cce_block_width_p)
+      ,.stream_data_width_p(bedrock_fill_width_p)
+      ,.block_width_p(bedrock_block_width_p)
       ,.payload_width_p(mem_rev_payload_width_lp)
       ,.msg_stream_mask_p(mem_rev_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_rev_payload_mask_gp)
-      // provide buffer space for two stream messages with data (for coherence protocol)
-      ,.header_els_p(2)
       )
     mem_rev_stream_pump
      (.clk_i(clk_i)
@@ -400,7 +372,6 @@ module bp_cce
       ,.msg_header_i(mem_rev_header_i)
       ,.msg_data_i(mem_rev_data_i)
       ,.msg_v_i(mem_rev_v_i)
-      ,.msg_last_i(mem_rev_last_i)
       ,.msg_ready_and_o(mem_rev_ready_and_o)
       // to FSM CCE
       ,.fsm_header_o(fsm_rev_header_li)
@@ -417,11 +388,11 @@ module bp_cce
   // From CCE to memory command stream pump
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
   logic fsm_fwd_v_lo, fsm_fwd_yumi_li, fsm_fwd_new_lo, fsm_fwd_last_lo;
-  logic [bedrock_data_width_p-1:0] fsm_fwd_data_lo;
+  logic [bedrock_fill_width_p-1:0] fsm_fwd_data_lo;
   bp_me_stream_pump_out
     #(.bp_params_p(bp_params_p)
-      ,.stream_data_width_p(bedrock_data_width_p)
-      ,.block_width_p(cce_block_width_p)
+      ,.stream_data_width_p(bedrock_fill_width_p)
+      ,.block_width_p(bedrock_block_width_p)
       ,.payload_width_p(mem_fwd_payload_width_lp)
       ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp)
@@ -433,8 +404,8 @@ module bp_cce
       ,.msg_header_o(mem_fwd_header_o)
       ,.msg_data_o(mem_fwd_data_o)
       ,.msg_v_o(mem_fwd_v_o)
-      ,.msg_last_o(mem_fwd_last_o)
       ,.msg_ready_and_i(mem_fwd_ready_and_i)
+
       // from FSM CCE
       ,.fsm_header_i(fsm_fwd_header_lo)
       ,.fsm_data_i(fsm_fwd_data_lo)

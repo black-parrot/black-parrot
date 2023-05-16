@@ -54,7 +54,6 @@ module bp_me_stream_pump_out
    , output logic [xce_header_width_lp-1:0]         msg_header_o
    , output logic [stream_data_width_p-1:0]         msg_data_o
    , output logic                                   msg_v_o
-   , output logic                                   msg_last_o
    , input                                          msg_ready_and_i
 
    // FSM producer side
@@ -89,16 +88,17 @@ module bp_me_stream_pump_out
   wire msg_stream = msg_stream_mask_p[fsm_header_cast_i.msg_type];
 
   logic cnt_up;
-  wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
-  wire [stream_cnt_width_lp-1:0] first_cnt = fsm_header_cast_i.addr[stream_offset_width_lp+:stream_cnt_width_lp];
   bp_me_stream_pump_control
-   #(.max_val_p(stream_words_lp-1))
+   #(.max_val_p(stream_words_lp-1)
+     ,.fsm_stream_mask_p(fsm_stream_mask_p)
+     ,.data_width_p(stream_data_width_p)
+     ,.payload_width_p(payload_width_p)
+     )
    pump_control
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.size_i(size_li)
-     ,.val_i(first_cnt)
+     ,.msg_header_i(fsm_header_cast_i)
      ,.en_i(cnt_up)
 
      ,.wrap_o(fsm_cnt_o)
@@ -146,8 +146,6 @@ module bp_me_stream_pump_out
           cnt_up  = fsm_yumi_o;
           msg_header_cast_o.addr = wrap_addr;
         end
-
-      msg_last_o = fsm_last_o;
     end
 
   // parameter checks

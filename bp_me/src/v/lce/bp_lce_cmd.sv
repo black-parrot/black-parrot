@@ -71,32 +71,20 @@ module bp_lce_cmd
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-    , input                                          lce_cmd_header_v_i
-    , output logic                                   lce_cmd_header_ready_and_o
-    , input                                          lce_cmd_has_data_i
     , input [fill_width_p-1:0]                       lce_cmd_data_i
-    , input                                          lce_cmd_data_v_i
-    , output logic                                   lce_cmd_data_ready_and_o
-    , input                                          lce_cmd_last_i
+    , input                                          lce_cmd_v_i
+    , output logic                                   lce_cmd_ready_and_o
 
     , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
-    , output logic                                   lce_fill_header_v_o
-    , input                                          lce_fill_header_ready_and_i
-    , output logic                                   lce_fill_has_data_o
     , output logic [fill_width_p-1:0]                lce_fill_data_o
-    , output logic                                   lce_fill_data_v_o
-    , input                                          lce_fill_data_ready_and_i
-    , output logic                                   lce_fill_last_o
+    , output logic                                   lce_fill_v_o
+    , input                                          lce_fill_ready_and_i
 
     , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
-    , output logic                                   lce_resp_header_v_o
-    , input                                          lce_resp_header_ready_and_i
-    , output logic                                   lce_resp_has_data_o
     , output logic [fill_width_p-1:0]                lce_resp_data_o
-    , output logic                                   lce_resp_data_v_o
-    , input                                          lce_resp_data_ready_and_i
-    , output logic                                   lce_resp_last_o
-  );
+    , output logic                                   lce_resp_v_o
+    , input                                          lce_resp_ready_and_i
+    );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
@@ -125,7 +113,7 @@ module bp_lce_cmd
   // tag offset
   localparam tag_offset_lp = block_byte_offset_lp + (sets_p > 1 ? lg_sets_lp : 0);
   // coherence request size for cached requests
-  localparam bp_bedrock_msg_size_e cmd_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
+  localparam cmd_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
 
   // FSM states
   enum logic [3:0] {
@@ -146,28 +134,22 @@ module bp_lce_cmd
   logic fsm_cmd_v_li, fsm_cmd_yumi_lo;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt_li;
   logic fsm_cmd_new_li, fsm_cmd_last_li;
-  bp_me_burst_pump_in
+  bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.msg_stream_mask_p(lce_cmd_payload_mask_gp)
      ,.fsm_stream_mask_p(lce_cmd_payload_mask_gp)
-     ,.header_els_p(2)
-     ,.data_els_p(2)
      )
    cmd_pump_in
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.msg_header_i(lce_cmd_header_cast_i)
-     ,.msg_header_v_i(lce_cmd_header_v_i)
-     ,.msg_header_ready_and_o(lce_cmd_header_ready_and_o)
-     ,.msg_has_data_i(lce_cmd_has_data_i)
      ,.msg_data_i(lce_cmd_data_i)
-     ,.msg_data_v_i(lce_cmd_data_v_i)
-     ,.msg_data_ready_and_o(lce_cmd_data_ready_and_o)
-     ,.msg_last_i(lce_cmd_last_i)
+     ,.msg_v_i(lce_cmd_v_i)
+     ,.msg_ready_and_o(lce_cmd_ready_and_o)
 
      ,.fsm_header_o(fsm_cmd_header_li)
      ,.fsm_addr_o(fsm_cmd_addr_li)
@@ -195,7 +177,7 @@ module bp_lce_cmd
   logic fsm_fill_v_lo, fsm_fill_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_fill_cnt_lo;
   logic fsm_fill_new_lo, fsm_fill_last_lo;
-  bp_me_burst_pump_out
+  bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
@@ -208,13 +190,9 @@ module bp_lce_cmd
      ,.reset_i(reset_i)
 
      ,.msg_header_o(lce_fill_header_cast_o)
-     ,.msg_header_v_o(lce_fill_header_v_o)
-     ,.msg_header_ready_and_i(lce_fill_header_ready_and_i)
-     ,.msg_has_data_o(lce_fill_has_data_o)
      ,.msg_data_o(lce_fill_data_o)
-     ,.msg_data_v_o(lce_fill_data_v_o)
-     ,.msg_data_ready_and_i(lce_fill_data_ready_and_i)
-     ,.msg_last_o(lce_fill_last_o)
+     ,.msg_v_o(lce_fill_v_o)
+     ,.msg_ready_and_i(lce_fill_ready_and_i)
 
      ,.fsm_header_i(fsm_fill_header_lo)
      ,.fsm_addr_o()
@@ -231,7 +209,7 @@ module bp_lce_cmd
   logic fsm_resp_v_lo, fsm_resp_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_resp_cnt_lo;
   logic fsm_resp_new_lo, fsm_resp_last_lo;
-  bp_me_burst_pump_out
+  bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
@@ -244,13 +222,9 @@ module bp_lce_cmd
      ,.reset_i(reset_i)
 
      ,.msg_header_o(lce_resp_header_cast_o)
-     ,.msg_header_v_o(lce_resp_header_v_o)
-     ,.msg_header_ready_and_i(lce_resp_header_ready_and_i)
-     ,.msg_has_data_o(lce_resp_has_data_o)
      ,.msg_data_o(lce_resp_data_o)
-     ,.msg_data_v_o(lce_resp_data_v_o)
-     ,.msg_data_ready_and_i(lce_resp_data_ready_and_i)
-     ,.msg_last_o(lce_resp_last_o)
+     ,.msg_v_o(lce_resp_v_o)
+     ,.msg_ready_and_i(lce_resp_ready_and_i)
 
      ,.fsm_header_i(fsm_resp_header_lo)
      ,.fsm_addr_o()
@@ -715,9 +689,9 @@ module bp_lce_cmd
                                                : e_bedrock_resp_null_wb;
         fsm_resp_header_lo.payload.src_id = lce_id_i;
         fsm_resp_header_lo.payload.dst_id = fsm_cmd_header_r.payload.src_id;
-        fsm_resp_header_lo.size = dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]]
-                                      ? bp_bedrock_msg_size_e'(cmd_block_size_lp)
-                                      : e_bedrock_msg_size_1;
+        fsm_resp_header_lo.size = bp_bedrock_msg_size_e'(dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]]
+                                      ? cmd_block_size_lp
+                                      : e_bedrock_msg_size_1);
         dirty_data_select = fsm_resp_cnt_lo;
         fsm_resp_data_lo = dirty_data_selected;
         fsm_resp_v_lo = 1'b1;
