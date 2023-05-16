@@ -13,7 +13,7 @@ module bp_l2e_tile_node
    `declare_bp_proc_params(bp_params_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam dma_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(dma_noc_flit_width_p)
    )
   (input                                               core_clk_i
    , input                                             core_reset_i
@@ -21,10 +21,10 @@ module bp_l2e_tile_node
    , input                                             coh_clk_i
    , input                                             coh_reset_i
 
-   , input                                             mem_clk_i
-   , input                                             mem_reset_i
+   , input                                             dma_clk_i
+   , input                                             dma_reset_i
 
-   , input [io_noc_did_width_p-1:0]                    my_did_i
+   , input [mem_noc_did_width_p-1:0]                    my_did_i
    , input [coh_noc_cord_width_p-1:0]                  my_cord_i
 
    , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_req_link_i
@@ -36,13 +36,13 @@ module bp_l2e_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_resp_link_i
    , output logic [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_resp_link_o
 
-   , input [S:N][mem_noc_ral_link_width_lp-1:0]        mem_dma_link_i
-   , output logic [S:N][mem_noc_ral_link_width_lp-1:0] mem_dma_link_o
+   , input [S:N][dma_noc_ral_link_width_lp-1:0]        mem_dma_link_i
+   , output logic [S:N][dma_noc_ral_link_width_lp-1:0] mem_dma_link_o
    );
 
   // Declare the routing links
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_mem_ready_and_link_s);
 
   // Tile-side coherence connections
   bp_coh_ready_and_link_s l2e_lce_req_link_li, l2e_lce_req_link_lo;
@@ -97,21 +97,21 @@ module bp_l2e_tile_node
      );
 
  bp_nd_socket
-   #(.flit_width_p(mem_noc_flit_width_p)
-     ,.dims_p(mem_noc_dims_p)
-     ,.cord_dims_p(mem_noc_cord_dims_p)
-     ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
-     ,.len_width_p(mem_noc_len_width_p)
+   #(.flit_width_p(dma_noc_flit_width_p)
+     ,.dims_p(dma_noc_dims_p)
+     ,.cord_dims_p(dma_noc_cord_dims_p)
+     ,.cord_markers_pos_p(dma_noc_cord_markers_pos_p)
+     ,.len_width_p(dma_noc_len_width_p)
      ,.routing_matrix_p(StrictX)
-     ,.async_clk_p(async_mem_clk_p)
+     ,.async_clk_p(async_dma_clk_p)
      ,.els_p(1)
      )
    l2e_mem_socket
     (.tile_clk_i(core_clk_i)
      ,.tile_reset_i(core_reset_i)
-     ,.network_clk_i(mem_clk_i)
-     ,.network_reset_i(mem_reset_i)
-     ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
+     ,.network_clk_i(dma_clk_i)
+     ,.network_reset_i(dma_reset_i)
+     ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:dma_noc_y_cord_width_p])
      ,.network_link_i(mem_dma_link_i)
      ,.network_link_o(mem_dma_link_o)
      ,.tile_link_i(l2e_mem_dma_link_lo)

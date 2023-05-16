@@ -13,7 +13,7 @@ module bp_cacc_tile_node
    `declare_bp_proc_params(bp_params_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam dma_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(dma_noc_flit_width_p)
    , parameter accelerator_type_p = 1
    )
   (input                                               core_clk_i

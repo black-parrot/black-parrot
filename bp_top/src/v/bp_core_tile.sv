@@ -28,15 +28,15 @@ module bp_core_tile
 
    // Wormhole parameters
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam dma_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(dma_noc_flit_width_p)
    )
   (input                                                      clk_i
    , input                                                    rt_clk_i
    , input                                                    reset_i
 
    // Memory side connection
-   , input [io_noc_did_width_p-1:0]                           my_did_i
-   , input [io_noc_did_width_p-1:0]                           host_did_i
+   , input [mem_noc_did_width_p-1:0]                           my_did_i
+   , input [mem_noc_did_width_p-1:0]                           host_did_i
    , input [coh_noc_cord_width_p-1:0]                         my_cord_i
 
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_req_link_i
@@ -51,15 +51,15 @@ module bp_core_tile
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_resp_link_i
    , output logic [coh_noc_ral_link_width_lp-1:0]             lce_resp_link_o
 
-   , output logic [mem_noc_ral_link_width_lp-1:0]             mem_dma_link_o
-   , input [mem_noc_ral_link_width_lp-1:0]                    mem_dma_link_i
+   , output logic [dma_noc_ral_link_width_lp-1:0]             mem_dma_link_o
+   , input [dma_noc_ral_link_width_lp-1:0]                    mem_dma_link_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_mem_ready_and_link_s);
 
   // Reset
   logic reset_r;
@@ -626,18 +626,18 @@ module bp_core_tile
   bp_mem_ready_and_link_s [l2_banks_p-1:0] mem_dma_link_lo, mem_dma_link_li;
   for (genvar i = 0; i < l2_banks_p; i++)
     begin : dma
-      wire [mem_noc_cord_width_p-1:0] cord_li = my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p];
-      wire [mem_noc_cid_width_p-1:0]   cid_li = i;
+      wire [dma_noc_cord_width_p-1:0] cord_li = my_cord_i[coh_noc_x_cord_width_p+:dma_noc_y_cord_width_p];
+      wire [dma_noc_cid_width_p-1:0]   cid_li = i;
 
       bsg_cache_dma_to_wormhole
        #(.dma_addr_width_p(daddr_width_p)
          ,.dma_burst_len_p(l2_block_size_in_fill_p)
          ,.dma_mask_width_p(l2_block_size_in_words_p)
 
-         ,.wh_flit_width_p(mem_noc_flit_width_p)
-         ,.wh_cid_width_p(mem_noc_cid_width_p)
-         ,.wh_len_width_p(mem_noc_len_width_p)
-         ,.wh_cord_width_p(mem_noc_cord_width_p)
+         ,.wh_flit_width_p(dma_noc_flit_width_p)
+         ,.wh_cid_width_p(dma_noc_cid_width_p)
+         ,.wh_len_width_p(dma_noc_len_width_p)
+         ,.wh_cord_width_p(dma_noc_cord_width_p)
          )
        dma2wh
         (.clk_i(clk_i)
@@ -667,10 +667,10 @@ module bp_core_tile
     end
 
   bsg_wormhole_concentrator
-   #(.flit_width_p(mem_noc_flit_width_p)
-     ,.len_width_p(mem_noc_len_width_p)
-     ,.cid_width_p(mem_noc_cid_width_p)
-     ,.cord_width_p(mem_noc_cord_width_p)
+   #(.flit_width_p(dma_noc_flit_width_p)
+     ,.len_width_p(dma_noc_len_width_p)
+     ,.cid_width_p(dma_noc_cid_width_p)
+     ,.cord_width_p(dma_noc_cord_width_p)
      ,.num_in_p(l2_banks_p)
      ,.hold_on_valid_p(1)
      )

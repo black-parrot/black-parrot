@@ -41,8 +41,8 @@ module bp_unicore
    , input                                               rt_clk_i
    , input                                               reset_i
 
-   , input [io_noc_did_width_p-1:0]                      my_did_i
-   , input [io_noc_did_width_p-1:0]                      host_did_i
+   , input [mem_noc_did_width_p-1:0]                      my_did_i
+   , input [mem_noc_did_width_p-1:0]                      host_did_i
    , input [coh_noc_cord_width_p-1:0]                    my_cord_i
 
    // Outgoing I/O

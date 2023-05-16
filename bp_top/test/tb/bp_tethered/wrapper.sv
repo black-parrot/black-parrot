@@ -70,12 +70,12 @@ module wrapper
   if (cce_type_p != e_cce_uce)
     begin : multicore
 
-      `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
       `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
+      `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_dma_noc_ral_link_s);
 
-      bp_io_noc_ral_link_s [E:W] proc_fwd_link_li, proc_fwd_link_lo;
-      bp_io_noc_ral_link_s [E:W] proc_rev_link_li, proc_rev_link_lo;
-      bp_mem_noc_ral_link_s [S:N][mc_x_dim_p-1:0] mem_dma_link_lo, mem_dma_link_li;
+      bp_mem_noc_ral_link_s [E:W] proc_fwd_link_li, proc_fwd_link_lo;
+      bp_mem_noc_ral_link_s [E:W] proc_rev_link_li, proc_rev_link_lo;
+      bp_dma_noc_ral_link_s [S:N][mc_x_dim_p-1:0] mem_dma_link_lo, mem_dma_link_li;
 
       assign mem_dma_link_li[N] = '0;
       assign proc_fwd_link_li[W] = '0;
@@ -91,11 +91,11 @@ module wrapper
          ,.coh_clk_i(clk_i)
          ,.coh_reset_i(reset_i)
 
-         ,.io_clk_i(clk_i)
-         ,.io_reset_i(reset_i)
-
          ,.mem_clk_i(clk_i)
          ,.mem_reset_i(reset_i)
+
+         ,.dma_clk_i(clk_i)
+         ,.dma_reset_i(reset_i)
 
          ,.my_did_i(my_did_i)
          ,.host_did_i(host_did_i)
@@ -111,21 +111,21 @@ module wrapper
          );
 
       `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-      `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
+      `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
       `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
       `bp_cast_o(bp_bedrock_mem_rev_header_s, mem_rev_header);
       `bp_cast_o(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
       `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
-      wire [io_noc_cord_width_p-1:0] mem_fwd_dst_cord_li = 1;
-      wire [io_noc_cid_width_p-1:0] mem_fwd_dst_cid_li = '0;
+      wire [mem_noc_cord_width_p-1:0] mem_fwd_dst_cord_li = 1;
+      wire [mem_noc_cid_width_p-1:0] mem_fwd_dst_cid_li = '0;
 
       bp_me_stream_to_wormhole
        #(.bp_params_p(bp_params_p)
-         ,.flit_width_p(io_noc_flit_width_p)
-         ,.cord_width_p(io_noc_cord_width_p)
-         ,.len_width_p(io_noc_len_width_p)
-         ,.cid_width_p(io_noc_cid_width_p)
+         ,.flit_width_p(mem_noc_flit_width_p)
+         ,.cord_width_p(mem_noc_cord_width_p)
+         ,.len_width_p(mem_noc_len_width_p)
+         ,.cid_width_p(mem_noc_cid_width_p)
          ,.pr_hdr_width_p(mem_fwd_header_width_lp)
          ,.pr_payload_width_p(mem_fwd_payload_width_lp)
          ,.pr_payload_mask_p(mem_fwd_payload_mask_gp)
@@ -147,15 +147,15 @@ module wrapper
          ,.link_ready_and_i(proc_fwd_link_lo[E].ready_and_rev)
          );
 
-      wire [io_noc_cord_width_p-1:0] mem_rev_dst_cord_li = mem_rev_header_cast_i.payload.did;
-      wire [io_noc_cid_width_p-1:0] mem_rev_dst_cid_li = '0;
+      wire [mem_noc_cord_width_p-1:0] mem_rev_dst_cord_li = mem_rev_header_cast_i.payload.did;
+      wire [mem_noc_cid_width_p-1:0] mem_rev_dst_cid_li = '0;
 
       bp_me_stream_to_wormhole
        #(.bp_params_p(bp_params_p)
-         ,.flit_width_p(io_noc_flit_width_p)
-         ,.cord_width_p(io_noc_cord_width_p)
-         ,.len_width_p(io_noc_len_width_p)
-         ,.cid_width_p(io_noc_cid_width_p)
+         ,.flit_width_p(mem_noc_flit_width_p)
+         ,.cord_width_p(mem_noc_cord_width_p)
+         ,.len_width_p(mem_noc_len_width_p)
+         ,.cid_width_p(mem_noc_cid_width_p)
          ,.pr_hdr_width_p(mem_rev_header_width_lp)
          ,.pr_payload_width_p(mem_rev_payload_width_lp)
          ,.pr_payload_mask_p(mem_rev_payload_mask_gp)
@@ -179,10 +179,10 @@ module wrapper
 
       bp_me_wormhole_to_stream
        #(.bp_params_p(bp_params_p)
-         ,.flit_width_p(io_noc_flit_width_p)
-         ,.cord_width_p(io_noc_cord_width_p)
-         ,.len_width_p(io_noc_len_width_p)
-         ,.cid_width_p(io_noc_cid_width_p)
+         ,.flit_width_p(mem_noc_flit_width_p)
+         ,.cord_width_p(mem_noc_cord_width_p)
+         ,.len_width_p(mem_noc_len_width_p)
+         ,.cid_width_p(mem_noc_cid_width_p)
          ,.pr_hdr_width_p(mem_fwd_header_width_lp)
          ,.pr_payload_width_p(mem_fwd_payload_width_lp)
          ,.pr_payload_mask_p(mem_fwd_payload_mask_gp)
@@ -204,10 +204,10 @@ module wrapper
 
       bp_me_wormhole_to_stream
        #(.bp_params_p(bp_params_p)
-         ,.flit_width_p(io_noc_flit_width_p)
-         ,.cord_width_p(io_noc_cord_width_p)
-         ,.len_width_p(io_noc_len_width_p)
-         ,.cid_width_p(io_noc_cid_width_p)
+         ,.flit_width_p(mem_noc_flit_width_p)
+         ,.cord_width_p(mem_noc_cord_width_p)
+         ,.len_width_p(mem_noc_len_width_p)
+         ,.cid_width_p(mem_noc_cid_width_p)
          ,.pr_hdr_width_p(mem_rev_header_width_lp)
          ,.pr_payload_width_p(mem_rev_payload_width_lp)
          ,.pr_payload_mask_p(mem_rev_payload_mask_gp)
@@ -228,7 +228,7 @@ module wrapper
         );
 
       import bsg_cache_pkg::*;
-      `declare_bsg_cache_wh_header_flit_s(mem_noc_flit_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p);
+      `declare_bsg_cache_wh_header_flit_s(dma_noc_flit_width_p, dma_noc_cord_width_p, dma_noc_len_width_p, dma_noc_cid_width_p);
       localparam dma_per_col_lp = num_cce_p/mc_x_dim_p*l2_banks_p;
       logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0][dma_pkt_width_lp-1:0] dma_pkt_lo;
       logic [mc_x_dim_p-1:0][dma_per_col_lp-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
@@ -243,10 +243,10 @@ module wrapper
           wire [`BSG_SAFE_CLOG2(dma_per_col_lp)-1:0] dma_id_li =
             l2_banks_p*(header_flit.src_cord-1)+header_flit.src_cid;
           bsg_wormhole_to_cache_dma_fanout
-           #(.wh_flit_width_p(mem_noc_flit_width_p)
-             ,.wh_cid_width_p(mem_noc_cid_width_p)
-             ,.wh_len_width_p(mem_noc_len_width_p)
-             ,.wh_cord_width_p(mem_noc_cord_width_p)
+           #(.wh_flit_width_p(dma_noc_flit_width_p)
+             ,.wh_cid_width_p(dma_noc_cid_width_p)
+             ,.wh_len_width_p(dma_noc_len_width_p)
+             ,.wh_cord_width_p(dma_noc_cord_width_p)
 
              ,.num_dma_p(dma_per_col_lp)
              ,.dma_addr_width_p(daddr_width_p)

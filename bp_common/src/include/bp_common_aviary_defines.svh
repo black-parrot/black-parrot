@@ -132,38 +132,38 @@
                                                                                                    \
     , localparam async_mem_clk_p           = proc_param_lp.async_mem_clk                           \
     , localparam mem_noc_max_credits_p     = proc_param_lp.mem_noc_max_credits                     \
+    , localparam mem_noc_did_width_p       = proc_param_lp.mem_noc_did_width                       \
     , localparam mem_noc_flit_width_p      = proc_param_lp.mem_noc_flit_width                      \
     , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                       \
     , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                       \
-    , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)   \
-    , localparam mem_noc_x_cord_width_p    = 0                                                     \
+    , localparam mem_noc_y_cord_width_p    = 0                                                     \
+    , localparam mem_noc_x_cord_width_p    = mem_noc_did_width_p                                   \
     , localparam mem_noc_dims_p            = 1                                                     \
     , localparam mem_noc_cord_dims_p       = 2                                                     \
-    , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                  \
-    , localparam mem_noc_trans_p           = 1                                                     \
+    , localparam mem_noc_dirs_p            = mem_noc_cord_dims_p*2 + 1                             \
+    , localparam mem_noc_trans_p           = 0                                                     \
     , localparam int mem_noc_cord_markers_pos_p[mem_noc_cord_dims_p:0] = mem_noc_trans_p           \
         ? '{mem_noc_x_cord_width_p+mem_noc_y_cord_width_p, mem_noc_y_cord_width_p, 0}              \
         : '{mem_noc_y_cord_width_p+mem_noc_x_cord_width_p, mem_noc_x_cord_width_p, 0}              \
     , localparam mem_noc_cord_width_p      = mem_noc_cord_markers_pos_p[mem_noc_dims_p]            \
                                                                                                    \
-    , localparam async_io_clk_p           = proc_param_lp.async_io_clk                             \
-    , localparam io_noc_max_credits_p     = proc_param_lp.io_noc_max_credits                       \
-    , localparam io_noc_did_width_p       = proc_param_lp.io_noc_did_width                         \
-    , localparam io_noc_flit_width_p      = proc_param_lp.io_noc_flit_width                        \
-    , localparam io_noc_cid_width_p       = proc_param_lp.io_noc_cid_width                         \
-    , localparam io_noc_len_width_p       = proc_param_lp.io_noc_len_width                         \
-    , localparam io_noc_y_cord_width_p    = 0                                                      \
-    , localparam io_noc_x_cord_width_p    = io_noc_did_width_p                                     \
-    , localparam io_noc_dims_p            = 1                                                      \
-    , localparam io_noc_cord_dims_p       = 2                                                      \
-    , localparam io_noc_dirs_p            = io_noc_cord_dims_p*2 + 1                               \
-    , localparam io_noc_trans_p           = 0                                                      \
-    , localparam int io_noc_cord_markers_pos_p[io_noc_cord_dims_p:0] = io_noc_trans_p              \
-        ? '{io_noc_x_cord_width_p+io_noc_y_cord_width_p, io_noc_y_cord_width_p, 0}                 \
-        : '{io_noc_y_cord_width_p+io_noc_x_cord_width_p, io_noc_x_cord_width_p, 0}                 \
-    , localparam io_noc_cord_width_p      = io_noc_cord_markers_pos_p[io_noc_dims_p]               \
+    , localparam async_dma_clk_p           = proc_param_lp.async_dma_clk                           \
+    , localparam dma_noc_max_credits_p     = proc_param_lp.dma_noc_max_credits                     \
+    , localparam dma_noc_flit_width_p      = proc_param_lp.dma_noc_flit_width                      \
+    , localparam dma_noc_cid_width_p       = proc_param_lp.dma_noc_cid_width                       \
+    , localparam dma_noc_len_width_p       = proc_param_lp.dma_noc_len_width                       \
+    , localparam dma_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)   \
+    , localparam dma_noc_x_cord_width_p    = 0                                                     \
+    , localparam dma_noc_dims_p            = 1                                                     \
+    , localparam dma_noc_cord_dims_p       = 2                                                     \
+    , localparam dma_noc_dirs_p            = dma_noc_dims_p*2 + 1                                  \
+    , localparam dma_noc_trans_p           = 1                                                     \
+    , localparam int dma_noc_cord_markers_pos_p[dma_noc_cord_dims_p:0] = dma_noc_trans_p           \
+        ? '{dma_noc_x_cord_width_p+dma_noc_y_cord_width_p, dma_noc_y_cord_width_p, 0}              \
+        : '{dma_noc_y_cord_width_p+dma_noc_x_cord_width_p, dma_noc_x_cord_width_p, 0}              \
+    , localparam dma_noc_cord_width_p      = dma_noc_cord_markers_pos_p[dma_noc_dims_p]            \
                                                                                                    \
-    , localparam did_width_p  = io_noc_did_width_p                                                 \
+    , localparam did_width_p = mem_noc_did_width_p                                                 \
                                                                                                    \
     , localparam etag_width_p  = dword_width_gp - page_offset_width_gp                             \
     , localparam vtag_width_p  = vaddr_width_p - page_offset_width_gp                              \
@@ -268,14 +268,14 @@
           ,`bp_aviary_parameter_override(mem_noc_max_credits, override_cfg_mp, default_cfg_mp)     \
           ,`bp_aviary_parameter_override(mem_noc_flit_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(mem_noc_cid_width, override_cfg_mp, default_cfg_mp)       \
+          ,`bp_aviary_parameter_override(mem_noc_did_width, override_cfg_mp, default_cfg_mp)       \
           ,`bp_aviary_parameter_override(mem_noc_len_width, override_cfg_mp, default_cfg_mp)       \
                                                                                                    \
-          ,`bp_aviary_parameter_override(async_io_clk, override_cfg_mp, default_cfg_mp)            \
-          ,`bp_aviary_parameter_override(io_noc_max_credits, override_cfg_mp, default_cfg_mp)      \
-          ,`bp_aviary_parameter_override(io_noc_flit_width, override_cfg_mp, default_cfg_mp)       \
-          ,`bp_aviary_parameter_override(io_noc_cid_width, override_cfg_mp, default_cfg_mp)        \
-          ,`bp_aviary_parameter_override(io_noc_did_width, override_cfg_mp, default_cfg_mp)        \
-          ,`bp_aviary_parameter_override(io_noc_len_width, override_cfg_mp, default_cfg_mp)        \
+          ,`bp_aviary_parameter_override(async_dma_clk, override_cfg_mp, default_cfg_mp)           \
+          ,`bp_aviary_parameter_override(dma_noc_max_credits, override_cfg_mp, default_cfg_mp)     \
+          ,`bp_aviary_parameter_override(dma_noc_flit_width, override_cfg_mp, default_cfg_mp)      \
+          ,`bp_aviary_parameter_override(dma_noc_cid_width, override_cfg_mp, default_cfg_mp)       \
+          ,`bp_aviary_parameter_override(dma_noc_len_width, override_cfg_mp, default_cfg_mp)       \
           }
 
 `endif

@@ -40,8 +40,8 @@ module bp_core
    , input [cce_instr_width_gp-1:0]                      cce_ucode_data_i
 
    // Memory side connection
-   , input [io_noc_did_width_p-1:0]                      my_did_i
-   , input [io_noc_did_width_p-1:0]                      host_did_i
+   , input [mem_noc_did_width_p-1:0]                      my_did_i
+   , input [mem_noc_did_width_p-1:0]                      host_did_i
    , input [coh_noc_cord_width_p-1:0]                    my_cord_i
 
    , output logic [1:0][lce_req_header_width_lp-1:0]     lce_req_header_o

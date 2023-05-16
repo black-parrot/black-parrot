@@ -12,7 +12,7 @@ module bp_mem_complex
    `declare_bp_proc_params(bp_params_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam dma_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(dma_noc_flit_width_p)
    )
   (input                                                               core_clk_i
    , input                                                             core_reset_i
@@ -20,10 +20,10 @@ module bp_mem_complex
    , input                                                             coh_clk_i
    , input                                                             coh_reset_i
 
-   , input                                                             mem_clk_i
-   , input                                                             mem_reset_i
+   , input                                                             dma_clk_i
+   , input                                                             dma_reset_i
 
-   , input [io_noc_did_width_p-1:0]                                    my_did_i
+   , input [mem_noc_did_width_p-1:0]                                    my_did_i
 
    , input [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]             coh_req_link_i
    , output logic [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_req_link_o
@@ -34,12 +34,12 @@ module bp_mem_complex
    , input [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]             coh_resp_link_i
    , output logic [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_resp_link_o
 
-   , input [S:N][mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]        mem_dma_link_i
-   , output logic [S:N][mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_dma_link_o
+   , input [S:N][mc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0]        mem_dma_link_i
+   , output logic [S:N][mc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0] mem_dma_link_o
    );
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_mem_ready_and_link_s);
 
   bp_coh_ready_and_link_s [mc_x_dim_p-1:0][S:W] lce_req_link_li, lce_req_link_lo;
   bp_coh_ready_and_link_s [E:W] lce_req_hor_link_li, lce_req_hor_link_lo;
@@ -69,8 +69,8 @@ module bp_mem_complex
              ,.coh_clk_i(coh_clk_i)
              ,.coh_reset_i(coh_reset_i)
 
-             ,.mem_clk_i(mem_clk_i)
-             ,.mem_reset_i(mem_reset_i)
+             ,.dma_clk_i(dma_clk_i)
+             ,.dma_reset_i(dma_reset_i)
 
              ,.my_did_i(my_did_i)
              ,.my_cord_i(cord_li)

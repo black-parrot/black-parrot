@@ -98,9 +98,9 @@ module bp_me_nonsynth_cfg_loader
     ,DONE
   } state_n, state_r;
 
-  logic [`BSG_WIDTH(io_noc_max_credits_p)-1:0] credit_count_lo;
+  logic [`BSG_WIDTH(mem_noc_max_credits_p)-1:0] credit_count_lo;
   bsg_flow_counter
-   #(.els_p(io_noc_max_credits_p))
+   #(.els_p(mem_noc_max_credits_p))
    cfg_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -111,7 +111,7 @@ module bp_me_nonsynth_cfg_loader
      ,.yumi_i(io_rev_v_i)
      ,.count_o(credit_count_lo)
      );
-  wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
+  wire credits_full_lo = (credit_count_lo == mem_noc_max_credits_p);
   wire credits_empty_lo = (credit_count_lo == '0);
 
   logic [dev_addr_width_gp-1:0] sync_cnt_r;

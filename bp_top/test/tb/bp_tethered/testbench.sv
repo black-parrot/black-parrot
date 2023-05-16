@@ -148,8 +148,8 @@ module testbench
   logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
   logic [num_cce_p-1:0][l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
-  wire [io_noc_did_width_p-1:0] proc_did_li = 1;
-  wire [io_noc_did_width_p-1:0] host_did_li = '1;
+  wire [mem_noc_did_width_p-1:0] proc_did_li = 1;
+  wire [mem_noc_did_width_p-1:0] host_did_li = '1;
   wrapper
    #(.bp_params_p(bp_params_p), .io_data_width_p(io_data_width_p))
    wrapper

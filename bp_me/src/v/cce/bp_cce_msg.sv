@@ -191,9 +191,9 @@ module bp_cce_msg
      );
 
   // memory command/response counter
-  logic [`BSG_WIDTH(mem_noc_max_credits_p)-1:0] mem_credit_count_lo;
+  logic [`BSG_WIDTH(dma_noc_max_credits_p)-1:0] mem_credit_count_lo;
   bsg_flow_counter
-   #(.els_p(mem_noc_max_credits_p))
+   #(.els_p(dma_noc_max_credits_p))
    mem_credit_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -205,7 +205,7 @@ module bp_cce_msg
      ,.count_o(mem_credit_count_lo)
      );
 
-  wire mem_credits_empty = (mem_credit_count_lo == mem_noc_max_credits_p);
+  wire mem_credits_empty = (mem_credit_count_lo == dma_noc_max_credits_p);
   wire mem_credits_full = (mem_credit_count_lo == 0);
   assign mem_credits_empty_o = mem_credits_empty;
 

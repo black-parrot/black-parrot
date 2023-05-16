@@ -110,9 +110,9 @@ module bp_nonsynth_nbf_loader
   `bp_cast_o(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
   `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
-  logic [`BSG_WIDTH(io_noc_max_credits_p)-1:0] credit_count_lo;
+  logic [`BSG_WIDTH(mem_noc_max_credits_p)-1:0] credit_count_lo;
   bsg_flow_counter
-   #(.els_p(io_noc_max_credits_p))
+   #(.els_p(mem_noc_max_credits_p))
    nbf_fc
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -123,7 +123,7 @@ module bp_nonsynth_nbf_loader
      ,.yumi_i(mem_rev_v_i)
      ,.count_o(credit_count_lo)
      );
-  wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
+  wire credits_full_lo = (credit_count_lo == mem_noc_max_credits_p);
   wire credits_empty_lo = (credit_count_lo == '0);
   assign mem_rev_ready_and_o = 1'b1;
 

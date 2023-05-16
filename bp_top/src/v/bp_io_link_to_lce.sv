@@ -24,7 +24,7 @@ module bp_io_link_to_lce
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam dma_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(dma_noc_flit_width_p)
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -67,7 +67,7 @@ module bp_io_link_to_lce
   for (genvar i = 0; i < num_pseudo_cce_p; i++)
     begin : return_fifos
       bsg_fifo_1r1w_small
-       #(.width_p($bits(bp_bedrock_mem_fwd_header_s)), .els_p(io_noc_max_credits_p/num_pseudo_cce_p))
+       #(.width_p($bits(bp_bedrock_mem_fwd_header_s)), .els_p(mem_noc_max_credits_p/num_pseudo_cce_p))
        fifo
         (.clk_i(clk_i)
          ,.reset_i(reset_i)

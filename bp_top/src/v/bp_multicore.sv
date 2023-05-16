@@ -19,8 +19,8 @@ module bp_multicore
    `declare_bp_proc_params(bp_params_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
+   , localparam dma_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(dma_noc_flit_width_p)
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
-   , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
    )
   (input                                                               core_clk_i
    , input                                                             rt_clk_i
@@ -29,29 +29,29 @@ module bp_multicore
    , input                                                             coh_clk_i
    , input                                                             coh_reset_i
 
-   , input                                                             io_clk_i
-   , input                                                             io_reset_i
-
    , input                                                             mem_clk_i
    , input                                                             mem_reset_i
 
-   , input [io_noc_did_width_p-1:0]                                    my_did_i
-   , input [io_noc_did_width_p-1:0]                                    host_did_i
+   , input                                                             dma_clk_i
+   , input                                                             dma_reset_i
 
-   , input [E:W][io_noc_ral_link_width_lp-1:0]                         io_fwd_link_i
-   , output logic [E:W][io_noc_ral_link_width_lp-1:0]                  io_fwd_link_o
+   , input [mem_noc_did_width_p-1:0]                                    my_did_i
+   , input [mem_noc_did_width_p-1:0]                                    host_did_i
 
-   , input [E:W][io_noc_ral_link_width_lp-1:0]                         io_rev_link_i
-   , output logic [E:W][io_noc_ral_link_width_lp-1:0]                  io_rev_link_o
+   , input [E:W][mem_noc_ral_link_width_lp-1:0]                         io_fwd_link_i
+   , output logic [E:W][mem_noc_ral_link_width_lp-1:0]                  io_fwd_link_o
 
-   , output logic [S:N][mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_dma_link_o
-   , input [S:N][mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]        mem_dma_link_i
+   , input [E:W][mem_noc_ral_link_width_lp-1:0]                         io_rev_link_i
+   , output logic [E:W][mem_noc_ral_link_width_lp-1:0]                  io_rev_link_o
+
+   , output logic [S:N][mc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0] mem_dma_link_o
+   , input [S:N][mc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0]        mem_dma_link_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-  `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_ready_and_link_s);
-  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_io_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_mem_ready_and_link_s);
 
   bp_coh_ready_and_link_s [E:W][cc_y_dim_p-1:0] coh_req_hor_link_li, coh_req_hor_link_lo;
   bp_coh_ready_and_link_s [E:W][cc_y_dim_p-1:0] coh_cmd_hor_link_li, coh_cmd_hor_link_lo;
@@ -84,8 +84,8 @@ module bp_multicore
      ,.coh_clk_i(coh_clk_i)
      ,.coh_reset_i(coh_reset_i)
 
-     ,.mem_clk_i(mem_clk_i)
-     ,.mem_reset_i(mem_reset_i)
+     ,.dma_clk_i(dma_clk_i)
+     ,.dma_reset_i(dma_reset_i)
 
      ,.my_did_i(my_did_i)
      ,.host_did_i(host_did_i)
@@ -127,8 +127,8 @@ module bp_multicore
      ,.coh_clk_i(coh_clk_i)
      ,.coh_reset_i(coh_reset_i)
 
-     ,.io_clk_i(io_clk_i)
-     ,.io_reset_i(io_reset_i)
+     ,.mem_clk_i(mem_clk_i)
+     ,.mem_reset_i(mem_reset_i)
 
      ,.my_did_i(my_did_i)
      ,.host_did_i(host_did_i)
@@ -156,8 +156,8 @@ module bp_multicore
      ,.coh_clk_i(coh_clk_i)
      ,.coh_reset_i(coh_reset_i)
 
-     ,.mem_clk_i(mem_clk_i)
-     ,.mem_reset_i(mem_reset_i)
+     ,.dma_clk_i(dma_clk_i)
+     ,.dma_reset_i(dma_reset_i)
 
      ,.my_did_i(my_did_i)
 

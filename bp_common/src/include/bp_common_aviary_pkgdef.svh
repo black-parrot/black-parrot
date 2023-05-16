@@ -175,12 +175,12 @@
       ,l2_fill_width       : 512
       ,l2_outstanding_reqs : 32
 
-      ,mem_noc_flit_width  : 512
-      ,mem_noc_cid_width   : 3
+      ,dma_noc_flit_width  : 512
+      ,dma_noc_cid_width   : 3
 
       ,coh_noc_flit_width  : 512
 
-      ,io_noc_flit_width   : 512
+      ,mem_noc_flit_width   : 512
 
       ,default : "inv"
       };
@@ -223,8 +223,8 @@
       ,l2_fill_width : 64
 
       ,coh_noc_flit_width : 64
-      ,mem_noc_flit_width : 64
-      ,io_noc_flit_width  : 64
+      ,dma_noc_flit_width : 64
+      ,mem_noc_flit_width  : 64
 
       ,default : "inv"
       };
