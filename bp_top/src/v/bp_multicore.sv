@@ -22,30 +22,30 @@ module bp_multicore
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
    )
-  (input                                                    core_clk_i
-   , input                                                  rt_clk_i
-   , input                                                  core_reset_i
+  (input                                                               core_clk_i
+   , input                                                             rt_clk_i
+   , input                                                             core_reset_i
 
-   , input                                                  coh_clk_i
-   , input                                                  coh_reset_i
+   , input                                                             coh_clk_i
+   , input                                                             coh_reset_i
 
-   , input                                                  io_clk_i
-   , input                                                  io_reset_i
+   , input                                                             io_clk_i
+   , input                                                             io_reset_i
 
-   , input                                                  mem_clk_i
-   , input                                                  mem_reset_i
+   , input                                                             mem_clk_i
+   , input                                                             mem_reset_i
 
-   , input [io_noc_did_width_p-1:0]                         my_did_i
-   , input [io_noc_did_width_p-1:0]                         host_did_i
+   , input [io_noc_did_width_p-1:0]                                    my_did_i
+   , input [io_noc_did_width_p-1:0]                                    host_did_i
 
-   , input  [E:W][io_noc_ral_link_width_lp-1:0]             io_fwd_link_i
-   , output [E:W][io_noc_ral_link_width_lp-1:0]             io_fwd_link_o
+   , input [E:W][io_noc_ral_link_width_lp-1:0]                         io_fwd_link_i
+   , output logic [E:W][io_noc_ral_link_width_lp-1:0]                  io_fwd_link_o
 
-   , input  [E:W][io_noc_ral_link_width_lp-1:0]             io_rev_link_i
-   , output [E:W][io_noc_ral_link_width_lp-1:0]             io_rev_link_o
+   , input [E:W][io_noc_ral_link_width_lp-1:0]                         io_rev_link_i
+   , output logic [E:W][io_noc_ral_link_width_lp-1:0]                  io_rev_link_o
 
-   , output [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_dma_link_o
-   , input [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_dma_link_i
+   , output logic [S:N][mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_dma_link_o
+   , input [S:N][mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]        mem_dma_link_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -63,8 +63,7 @@ module bp_multicore
   bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_fill_ver_link_li, coh_fill_ver_link_lo;
   bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_resp_ver_link_li, coh_resp_ver_link_lo;
 
-  bp_mem_ready_and_link_s [N:N][cc_x_dim_p-1:0] mem_fwd_ver_link_li, mem_rev_ver_link_lo;
-  bp_mem_ready_and_link_s [S:S][cc_x_dim_p-1:0] mem_rev_ver_link_li, mem_fwd_ver_link_lo;
+  bp_mem_ready_and_link_s [S:N][cc_x_dim_p-1:0] mem_dma_link_li, mem_dma_link_lo;
 
   // IO and SACC complexes only use Req/Cmd networks
   assign coh_resp_ver_link_li[N] = '0;
@@ -74,7 +73,7 @@ module bp_multicore
   // Memory complex does not use Fill network
   assign coh_fill_ver_link_li[S] = '0;
 
-  assign mem_fwd_ver_link_li[N] = '0;
+  assign mem_dma_link_li[N] = '0;
   bp_core_complex
    #(.bp_params_p(bp_params_p))
    cc
@@ -115,11 +114,8 @@ module bp_multicore
      ,.coh_resp_ver_link_i(coh_resp_ver_link_li)
      ,.coh_resp_ver_link_o(coh_resp_ver_link_lo)
 
-     ,.mem_fwd_ver_link_i(mem_fwd_ver_link_li)
-     ,.mem_fwd_ver_link_o(mem_fwd_ver_link_lo)
-
-     ,.mem_rev_ver_link_i(mem_rev_ver_link_li)
-     ,.mem_rev_ver_link_o(mem_rev_ver_link_lo)
+     ,.mem_dma_link_i(mem_dma_link_li)
+     ,.mem_dma_link_o(mem_dma_link_lo)
      );
 
   bp_io_complex
@@ -150,6 +146,7 @@ module bp_multicore
      ,.io_rev_link_o(io_rev_link_o)
      );
 
+  bp_mem_ready_and_link_s [S:N][cc_x_dim_p-1:0] l2e_mem_dma_link_li, l2e_mem_dma_link_lo;
   bp_mem_complex
    #(.bp_params_p(bp_params_p))
    mc
@@ -173,12 +170,14 @@ module bp_multicore
      ,.coh_resp_link_i(coh_resp_ver_link_lo[S])
      ,.coh_resp_link_o(coh_resp_ver_link_li[S])
 
-     ,.mem_fwd_link_i(mem_fwd_ver_link_lo)
-     ,.mem_rev_link_o(mem_rev_ver_link_li)
-
-     ,.mem_dma_link_o(mem_dma_link_o)
-     ,.mem_dma_link_i(mem_dma_link_i)
+     ,.mem_dma_link_i(l2e_mem_dma_link_li)
+     ,.mem_dma_link_o(l2e_mem_dma_link_lo)
      );
+  assign l2e_mem_dma_link_li[N] = mem_dma_link_lo[S];
+  assign mem_dma_link_li[S] = l2e_mem_dma_link_lo[N];
+
+  assign l2e_mem_dma_link_li[S] = mem_dma_link_i[S];
+  assign mem_dma_link_o[S] = l2e_mem_dma_link_lo[S];
 
   bp_cacc_complex
    #(.bp_params_p(bp_params_p))

@@ -45,8 +45,8 @@ module bp_l2e_tile
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_resp_link_i
    , output logic [coh_noc_ral_link_width_lp-1:0]             lce_resp_link_o
 
-   , output logic [mem_noc_ral_link_width_lp-1:0]             mem_fwd_link_o
-   , input [mem_noc_ral_link_width_lp-1:0]                    mem_rev_link_i
+   , output logic [mem_noc_ral_link_width_lp-1:0]             mem_dma_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]                    mem_dma_link_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -462,8 +462,8 @@ module bp_l2e_tile
      ,.links_i(mem_dma_link_lo)
      ,.links_o(mem_dma_link_li)
 
-     ,.concentrated_link_o(mem_fwd_link_o)
-     ,.concentrated_link_i(mem_rev_link_i)
+     ,.concentrated_link_o(mem_dma_link_o)
+     ,.concentrated_link_i(mem_dma_link_i)
      );
 
 endmodule

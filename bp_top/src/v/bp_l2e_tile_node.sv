@@ -15,32 +15,29 @@ module bp_l2e_tile_node
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
-  (input                                         core_clk_i
-   , input                                       core_reset_i
+  (input                                               core_clk_i
+   , input                                             core_reset_i
 
-   , input                                       coh_clk_i
-   , input                                       coh_reset_i
+   , input                                             coh_clk_i
+   , input                                             coh_reset_i
 
-   , input                                       mem_clk_i
-   , input                                       mem_reset_i
+   , input                                             mem_clk_i
+   , input                                             mem_reset_i
 
-   , input [io_noc_did_width_p-1:0]              my_did_i
-   , input [coh_noc_cord_width_p-1:0]            my_cord_i
+   , input [io_noc_did_width_p-1:0]                    my_did_i
+   , input [coh_noc_cord_width_p-1:0]                  my_cord_i
 
-   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_req_link_i
-   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_req_link_o
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_req_link_i
+   , output logic [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_req_link_o
 
-   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_cmd_link_i
-   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_cmd_link_i
+   , output logic [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
 
-   , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_resp_link_i
-   , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_resp_link_o
+   , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_resp_link_i
+   , output logic [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_resp_link_o
 
-   , input [mem_noc_ral_link_width_lp-1:0]       mem_fwd_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]      mem_fwd_link_o
-
-   , input [mem_noc_ral_link_width_lp-1:0]       mem_rev_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]      mem_rev_link_o
+   , input [S:N][mem_noc_ral_link_width_lp-1:0]        mem_dma_link_i
+   , output logic [S:N][mem_noc_ral_link_width_lp-1:0] mem_dma_link_o
    );
 
   // Declare the routing links
@@ -53,7 +50,7 @@ module bp_l2e_tile_node
   bp_coh_ready_and_link_s l2e_lce_resp_link_li, l2e_lce_resp_link_lo;
 
   // Tile side membus connections
-  bp_mem_ready_and_link_s l2e_mem_fwd_link_lo, l2e_mem_rev_link_li;
+  bp_mem_ready_and_link_s l2e_mem_dma_link_lo, l2e_mem_dma_link_li;
 
   bp_l2e_tile
    #(.bp_params_p(bp_params_p))
@@ -73,8 +70,8 @@ module bp_l2e_tile_node
      ,.lce_resp_link_i(l2e_lce_resp_link_li)
      ,.lce_resp_link_o(l2e_lce_resp_link_lo)
 
-     ,.mem_fwd_link_o(l2e_mem_fwd_link_lo)
-     ,.mem_rev_link_i(l2e_mem_rev_link_li)
+     ,.mem_dma_link_o(l2e_mem_dma_link_lo)
+     ,.mem_dma_link_i(l2e_mem_dma_link_li)
      );
 
   bp_nd_socket
@@ -115,10 +112,10 @@ module bp_l2e_tile_node
      ,.network_clk_i(mem_clk_i)
      ,.network_reset_i(mem_reset_i)
      ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
-     ,.network_link_i({mem_rev_link_i, mem_fwd_link_i})
-     ,.network_link_o({mem_fwd_link_o, mem_rev_link_o})
-     ,.tile_link_i(l2e_mem_fwd_link_lo)
-     ,.tile_link_o(l2e_mem_rev_link_li)
+     ,.network_link_i(mem_dma_link_i)
+     ,.network_link_o(mem_dma_link_o)
+     ,.tile_link_i(l2e_mem_dma_link_lo)
+     ,.tile_link_o(l2e_mem_dma_link_li)
      );
 
 endmodule
