@@ -22,12 +22,12 @@ module bp_unicore_lite
 
    // Outgoing BP Stream Mem Buses from I$ and D$
    , output logic [1:0][mem_fwd_header_width_lp-1:0]   mem_fwd_header_o
-   , output logic [1:0][uce_fill_width_p-1:0]          mem_fwd_data_o
+   , output logic [1:0][bedrock_fill_width_p-1:0]      mem_fwd_data_o
    , output logic [1:0]                                mem_fwd_v_o
    , input [1:0]                                       mem_fwd_ready_and_i
 
    , input [1:0][mem_rev_header_width_lp-1:0]          mem_rev_header_i
-   , input [1:0][uce_fill_width_p-1:0]                 mem_rev_data_i
+   , input [1:0][bedrock_fill_width_p-1:0]             mem_rev_data_i
    , input [1:0]                                       mem_rev_v_i
    , output logic [1:0]                                mem_rev_ready_and_o
 
@@ -203,17 +203,17 @@ module bp_unicore_lite
      );
 
   bp_bedrock_mem_fwd_header_s [1:1] _mem_fwd_header_o;
-  logic [1:1][uce_fill_width_p-1:0] _mem_fwd_data_o;
+  logic [1:1][bedrock_fill_width_p-1:0] _mem_fwd_data_o;
   logic [1:1] _mem_fwd_v_o, _mem_fwd_ready_and_i;
   bp_bedrock_mem_rev_header_s [1:1] _mem_rev_header_i;
-  logic [1:1][uce_fill_width_p-1:0] _mem_rev_data_i;
+  logic [1:1][bedrock_fill_width_p-1:0] _mem_rev_data_i;
   logic [1:1] _mem_rev_v_i, _mem_rev_ready_and_o;
   bp_uce
    #(.bp_params_p(bp_params_p)
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
-     ,.fill_width_p(uce_fill_width_p)
+     ,.fill_width_p(bedrock_fill_width_p)
      ,.ctag_width_p(dcache_ctag_width_p)
      ,.writeback_p(dcache_features_p[e_cfg_writeback])
      ,.metadata_latency_p(1)
@@ -264,7 +264,7 @@ module bp_unicore_lite
 
   // Synchronize back to posedge clk
   bsg_edge_extend
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+2))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bedrock_fill_width_p+2))
    posedge_latch
     (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
@@ -278,7 +278,7 @@ module bp_unicore_lite
 
   // Synchronize back to negedge clk
   bsg_edge_extend
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+uce_fill_width_p+2))
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bedrock_fill_width_p+2))
    negedge_latch
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)

@@ -41,29 +41,29 @@ module bp_unicore
    , input                                               rt_clk_i
    , input                                               reset_i
 
-   , input [mem_noc_did_width_p-1:0]                      my_did_i
-   , input [mem_noc_did_width_p-1:0]                      host_did_i
+   , input [mem_noc_did_width_p-1:0]                     my_did_i
+   , input [mem_noc_did_width_p-1:0]                     host_did_i
    , input [coh_noc_cord_width_p-1:0]                    my_cord_i
 
    // Outgoing I/O
    , output logic [mem_fwd_header_width_lp-1:0]          mem_fwd_header_o
-   , output logic [uce_fill_width_p-1:0]                 mem_fwd_data_o
+   , output logic [bedrock_fill_width_p-1:0]             mem_fwd_data_o
    , output logic                                        mem_fwd_v_o
    , input                                               mem_fwd_ready_and_i
 
    , input [mem_rev_header_width_lp-1:0]                 mem_rev_header_i
-   , input [uce_fill_width_p-1:0]                        mem_rev_data_i
+   , input [bedrock_fill_width_p-1:0]                    mem_rev_data_i
    , input                                               mem_rev_v_i
    , output logic                                        mem_rev_ready_and_o
 
    // Incoming I/O
    , input [mem_fwd_header_width_lp-1:0]                 mem_fwd_header_i
-   , input [uce_fill_width_p-1:0]                        mem_fwd_data_i
+   , input [bedrock_fill_width_p-1:0]                    mem_fwd_data_i
    , input                                               mem_fwd_v_i
    , output logic                                        mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]          mem_rev_header_o
-   , output logic [uce_fill_width_p-1:0]                 mem_rev_data_o
+   , output logic [bedrock_fill_width_p-1:0]             mem_rev_data_o
    , output logic                                        mem_rev_v_o
    , input                                               mem_rev_ready_and_i
 
@@ -101,18 +101,18 @@ module bp_unicore
 
   // {IO, BE UCE, FE UCE}
   bp_bedrock_mem_fwd_header_s [num_proc_lp-1:0] proc_fwd_header_lo;
-  logic [num_proc_lp-1:0][uce_fill_width_p-1:0] proc_fwd_data_lo;
+  logic [num_proc_lp-1:0][bedrock_fill_width_p-1:0] proc_fwd_data_lo;
   logic [num_proc_lp-1:0] proc_fwd_v_lo, proc_fwd_ready_and_li;
   bp_bedrock_mem_rev_header_s [num_proc_lp-1:0] proc_rev_header_li;
-  logic [num_proc_lp-1:0][uce_fill_width_p-1:0] proc_rev_data_li;
+  logic [num_proc_lp-1:0][bedrock_fill_width_p-1:0] proc_rev_data_li;
   logic [num_proc_lp-1:0] proc_rev_v_li, proc_rev_ready_and_lo;
 
   // {LOOPBACK, IO, L2, CLINT, CFG}
   bp_bedrock_mem_fwd_header_s [num_dev_lp-1:0] dev_fwd_header_li;
-  logic [num_dev_lp-1:0][uce_fill_width_p-1:0] dev_fwd_data_li;
+  logic [num_dev_lp-1:0][bedrock_fill_width_p-1:0] dev_fwd_data_li;
   logic [num_dev_lp-1:0] dev_fwd_v_li, dev_fwd_ready_and_lo;
   bp_bedrock_mem_rev_header_s [num_dev_lp-1:0] dev_rev_header_lo;
-  logic [num_dev_lp-1:0][uce_fill_width_p-1:0] dev_rev_data_lo;
+  logic [num_dev_lp-1:0][bedrock_fill_width_p-1:0] dev_rev_data_lo;
   logic [num_dev_lp-1:0] dev_rev_v_lo, dev_rev_ready_and_li;
 
   bp_cfg_bus_s cfg_bus_lo;
@@ -193,7 +193,7 @@ module bp_unicore
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(uce_fill_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.num_source_p(num_proc_lp)
      ,.num_sink_p(num_dev_lp)
@@ -217,7 +217,7 @@ module bp_unicore
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
      ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(uce_fill_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.num_source_p(num_dev_lp)
      ,.num_sink_p(num_proc_lp)
@@ -239,7 +239,7 @@ module bp_unicore
      );
 
   bp_me_cfg_slice
-   #(.bp_params_p(bp_params_p), .data_width_p(uce_fill_width_p))
+   #(.bp_params_p(bp_params_p))
    cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
@@ -267,7 +267,7 @@ module bp_unicore
      );
 
   bp_me_clint_slice
-   #(.bp_params_p(bp_params_p), .data_width_p(uce_fill_width_p))
+   #(.bp_params_p(bp_params_p))
    clint
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
@@ -332,7 +332,7 @@ module bp_unicore
   assign mem_rev_ready_and_o = dev_rev_ready_and_li[3];
 
   bp_me_loopback
-   #(.bp_params_p(bp_params_p), .data_width_p(uce_fill_width_p))
+   #(.bp_params_p(bp_params_p))
    loopback
     (.clk_i(clk_i)
      ,.reset_i(reset_r)

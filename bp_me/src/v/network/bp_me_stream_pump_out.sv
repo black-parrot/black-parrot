@@ -89,7 +89,8 @@ module bp_me_stream_pump_out
 
   logic cnt_up;
   bp_me_stream_pump_control
-   #(.max_val_p(stream_words_lp-1)
+   #(.bp_params_p(bp_params_p)
+     ,.max_val_p(stream_words_lp-1)
      ,.fsm_stream_mask_p(fsm_stream_mask_p)
      ,.data_width_p(stream_data_width_p)
      ,.payload_width_p(payload_width_p)

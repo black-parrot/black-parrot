@@ -73,7 +73,6 @@ module bp_cacc_vdp
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
      ,.els_p(reg_els_lp)
-     ,.bus_data_width_p(acache_fill_width_p)
      ,.reg_addr_width_p(paddr_width_p)
      ,.base_addr_p({64'b????????????????})
      )

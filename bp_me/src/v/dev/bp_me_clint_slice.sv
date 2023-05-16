@@ -18,7 +18,6 @@ module bp_me_clint_slice
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
-   , parameter `BSG_INV_PARAM(data_width_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
@@ -29,12 +28,12 @@ module bp_me_clint_slice
    , input [cfg_bus_width_lp-1:0]                       cfg_bus_i
 
    , input [mem_fwd_header_width_lp-1:0]                mem_fwd_header_i
-   , input [data_width_p-1:0]                           mem_fwd_data_i
+   , input [bedrock_fill_width_p-1:0]                   mem_fwd_data_i
    , input                                              mem_fwd_v_i
    , output logic                                       mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]         mem_rev_header_o
-   , output logic [data_width_p-1:0]                    mem_rev_data_o
+   , output logic [bedrock_fill_width_p-1:0]            mem_rev_data_o
    , output logic                                       mem_rev_v_o
    , input                                              mem_rev_ready_and_i
 
@@ -63,7 +62,6 @@ module bp_me_clint_slice
   logic mtime_w_v_li, mtimesel_w_v_li, mtimecmp_w_v_li, mipi_w_v_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
-     ,.bus_data_width_p(data_width_p)
      ,.reg_data_width_p(dword_width_gp)
      ,.reg_addr_width_p(dev_addr_width_gp)
      ,.els_p(reg_els_lp)

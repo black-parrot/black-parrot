@@ -30,6 +30,9 @@
       ,dcache_block_width : 512
       ,dcache_fill_width  : 512
 
+      ,bedrock_block_width : 512
+      ,bedrock_fill_width  : 512
+
       ,l2_banks            : 8
       ,l2_data_width       : 512
       ,l2_sets             : 128
@@ -67,6 +70,9 @@
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
 
+      ,bedrock_block_width: 64
+      ,bedrock_fill_width : 64
+
       // We use L2 for the write buffer support, but not AMO
       ,l2_features   : (1 << e_cfg_writeback) | (1 << e_cfg_word_tracking)
       ,l2_data_width : 64
@@ -100,6 +106,9 @@
       ,dcache_assoc       : 1
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
+
+      ,bedrock_block_width: 64
+      ,bedrock_fill_width : 64
 
       // We use L2 for the write buffer support
       ,l2_features   : (1 << e_cfg_enabled)
@@ -165,7 +174,8 @@
       ,acache_block_width : 512
       ,acache_fill_width  : 512
 
-      ,bedrock_fill_width : 512
+      ,bedrock_fill_width  : 512
+      ,bedrock_block_width : 512
 
       ,l2_banks            : 8
       ,l2_data_width       : 512
@@ -176,11 +186,8 @@
       ,l2_outstanding_reqs : 32
 
       ,dma_noc_flit_width  : 512
-      ,dma_noc_cid_width   : 3
-
       ,coh_noc_flit_width  : 512
-
-      ,mem_noc_flit_width   : 512
+      ,mem_noc_flit_width  : 512
 
       ,default : "inv"
       };
@@ -202,8 +209,6 @@
       ,bht_row_els              : 2
       ,ghist_width              : 2
 
-      ,bedrock_fill_width : 64
-
       ,icache_sets        : 512
       ,icache_assoc       : 1
       ,icache_block_width : 64
@@ -218,6 +223,9 @@
       ,acache_assoc       : 1
       ,acache_block_width : 64
       ,acache_fill_width  : 64
+
+      ,bedrock_block_width : 64
+      ,bedrock_fill_width  : 64
 
       ,l2_data_width : 64
       ,l2_fill_width : 64

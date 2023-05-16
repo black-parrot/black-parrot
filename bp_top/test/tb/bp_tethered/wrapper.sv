@@ -18,7 +18,6 @@ module wrapper
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : bedrock_fill_width_p
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
@@ -32,23 +31,23 @@ module wrapper
 
    // Outgoing I/O
    , output logic [mem_fwd_header_width_lp-1:0]                         mem_fwd_header_o
-   , output logic [io_data_width_p-1:0]                                 mem_fwd_data_o
+   , output logic [bedrock_fill_width_p-1:0]                            mem_fwd_data_o
    , output logic                                                       mem_fwd_v_o
    , input                                                              mem_fwd_ready_and_i
 
    , input [mem_rev_header_width_lp-1:0]                                mem_rev_header_i
-   , input [io_data_width_p-1:0]                                        mem_rev_data_i
+   , input [bedrock_fill_width_p-1:0]                                   mem_rev_data_i
    , input                                                              mem_rev_v_i
    , output logic                                                       mem_rev_ready_and_o
 
    // Incoming I/O
    , input [mem_fwd_header_width_lp-1:0]                                mem_fwd_header_i
-   , input [io_data_width_p-1:0]                                        mem_fwd_data_i
+   , input [bedrock_fill_width_p-1:0]                                   mem_fwd_data_i
    , input                                                              mem_fwd_v_i
    , output logic                                                       mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]                         mem_rev_header_o
-   , output logic [io_data_width_p-1:0]                                 mem_rev_data_o
+   , output logic [bedrock_fill_width_p-1:0]                            mem_rev_data_o
    , output logic                                                       mem_rev_v_o
    , input                                                              mem_rev_ready_and_i
 

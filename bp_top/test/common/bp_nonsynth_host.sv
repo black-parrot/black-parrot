@@ -10,7 +10,6 @@ module bp_nonsynth_host
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
-   , parameter `BSG_INV_PARAM(data_width_p)
 
    , parameter icache_trace_p         = 0
    , parameter dcache_trace_p         = 0
@@ -30,12 +29,12 @@ module bp_nonsynth_host
    , input                                          reset_i
 
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input [data_width_p-1:0]                       mem_fwd_data_i
+   , input [bedrock_fill_width_p-1:0]               mem_fwd_data_i
    , input                                          mem_fwd_v_i
    , output logic                                   mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
-   , output logic [data_width_p-1:0]                mem_rev_data_o
+   , output logic [bedrock_fill_width_p-1:0]        mem_rev_data_o
    , output logic                                   mem_rev_v_o
    , input                                          mem_rev_ready_and_i
 
@@ -97,7 +96,6 @@ module bp_nonsynth_host
   logic [bedrock_reg_els_lp-1:0][dword_width_gp-1:0] data_li;
   bp_me_bedrock_register
    #(.bp_params_p(bp_params_p)
-     ,.bus_data_width_p(data_width_p)
      ,.reg_data_width_p(dword_width_gp)
      ,.reg_addr_width_p(dev_addr_width_gp)
      ,.els_p(bedrock_reg_els_lp)

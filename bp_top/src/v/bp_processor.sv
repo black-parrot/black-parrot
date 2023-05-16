@@ -17,7 +17,6 @@ module bp_processor
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : bedrock_fill_width_p
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
@@ -31,23 +30,23 @@ module bp_processor
 
    // Outgoing I/O
    , output logic [mem_fwd_header_width_lp-1:0]                         mem_fwd_header_o
-   , output logic [io_data_width_p-1:0]                                 mem_fwd_data_o
+   , output logic [bedrock_fill_width_p-1:0]                            mem_fwd_data_o
    , output logic                                                       mem_fwd_v_o
    , input                                                              mem_fwd_ready_and_i
 
    , input [mem_rev_header_width_lp-1:0]                                mem_rev_header_i
-   , input [io_data_width_p-1:0]                                        mem_rev_data_i
+   , input [bedrock_fill_width_p-1:0]                                   mem_rev_data_i
    , input                                                              mem_rev_v_i
    , output logic                                                       mem_rev_ready_and_o
 
    // Incoming I/O
    , input [mem_fwd_header_width_lp-1:0]                                mem_fwd_header_i
-   , input [io_data_width_p-1:0]                                        mem_fwd_data_i
+   , input [bedrock_fill_width_p-1:0]                                   mem_fwd_data_i
    , input                                                              mem_fwd_v_i
    , output logic                                                       mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]                         mem_rev_header_o
-   , output logic [io_data_width_p-1:0]                                 mem_rev_data_o
+   , output logic [bedrock_fill_width_p-1:0]                            mem_rev_data_o
    , output logic                                                       mem_rev_v_o
    , input                                                              mem_rev_ready_and_i
 
@@ -66,7 +65,7 @@ module bp_processor
    );
 
   if (cce_type_p != e_cce_uce)
-    begin : multicore
+    begin : m
 
       `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
       `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_dma_noc_ral_link_s);
@@ -81,7 +80,7 @@ module bp_processor
 
       bp_multicore
        #(.bp_params_p(bp_params_p))
-       dut
+       multicore
         (.core_clk_i(clk_i)
          ,.rt_clk_i(rt_clk_i)
          ,.core_reset_i(reset_i)
@@ -296,10 +295,10 @@ module bp_processor
         end
     end
   else
-    begin : unicore
+    begin : u
       bp_unicore
        #(.bp_params_p(bp_params_p))
-       dut
+       unicore
         (.my_cord_i('0), .*);
     end
 

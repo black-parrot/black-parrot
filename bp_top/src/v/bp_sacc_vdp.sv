@@ -37,7 +37,6 @@ module bp_sacc_vdp
    #(.bp_params_p(bp_params_p)
      ,.els_p(1)
      ,.reg_addr_width_p(paddr_width_p)
-     ,.bus_data_width_p(acache_fill_width_p)
      ,.base_addr_p({64'b????????????????})
      )
    register

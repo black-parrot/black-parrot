@@ -18,18 +18,17 @@ module bp_me_loopback
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
-    , parameter `BSG_INV_PARAM(data_width_p)
     )
    (input                                            clk_i
     , input                                          reset_i
 
     , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-    , input [data_width_p-1:0]                       mem_fwd_data_i
+    , input [bedrock_fill_width_p-1:0]               mem_fwd_data_i
     , input                                          mem_fwd_v_i
     , output logic                                   mem_fwd_ready_and_o
 
     , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
-    , output logic [data_width_p-1:0]                mem_rev_data_o
+    , output logic [bedrock_fill_width_p-1:0]        mem_rev_data_o
     , output logic                                   mem_rev_v_o
     , input                                          mem_rev_ready_and_i
     );
@@ -39,11 +38,11 @@ module bp_me_loopback
   `bp_cast_o(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_li;
-  logic [data_width_p-1:0] fsm_fwd_data_li;
+  logic [bedrock_fill_width_p-1:0] fsm_fwd_data_li;
   logic fsm_fwd_v_li, fsm_fwd_yumi_lo;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(data_width_p)
+     ,.stream_data_width_p(bedrock_fill_width_p)
      ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
@@ -69,11 +68,11 @@ module bp_me_loopback
      );
 
   bp_bedrock_mem_rev_header_s fsm_rev_header_lo;
-  logic [data_width_p-1:0] fsm_rev_data_lo;
+  logic [bedrock_fill_width_p-1:0] fsm_rev_data_lo;
   logic fsm_rev_yumi_li, fsm_rev_v_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(data_width_p)
+     ,.stream_data_width_p(bedrock_fill_width_p)
      ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.msg_stream_mask_p(mem_rev_payload_mask_gp)

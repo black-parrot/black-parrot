@@ -149,6 +149,8 @@
     integer unsigned cce_type;
     // Determines the size of the CCE instruction RAM
     integer unsigned cce_pc_width;
+    // The width of the coherence protocol block
+    integer unsigned bedrock_block_width;
     // The width of the coherence protocol beats
     integer unsigned bedrock_fill_width;
 
@@ -282,6 +284,7 @@
 
       ,cce_type             : e_cce_uce
       ,cce_pc_width         : 8
+      ,bedrock_block_width  : 512
       ,bedrock_fill_width   : 128
 
       ,l2_features          : (1 << e_cfg_enabled)
@@ -306,20 +309,20 @@
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 128
-      ,coh_noc_cid_width   : 2
+      ,coh_noc_cid_width   : 3
       ,coh_noc_len_width   : 4
       ,coh_noc_max_credits : 32
 
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 128
-      ,mem_noc_cid_width     : 2
+      ,mem_noc_cid_width     : 3
       ,mem_noc_did_width     : 3
       ,mem_noc_len_width     : 4
       ,mem_noc_max_credits   : 32
 
       ,async_dma_clk         : 0
       ,dma_noc_flit_width    : 128
-      ,dma_noc_cid_width     : 2
+      ,dma_noc_cid_width     : 3
       ,dma_noc_len_width     : 4
       ,dma_noc_max_credits   : 32
       };
@@ -392,7 +395,8 @@
 
       ,`bp_aviary_define_override(cce_type, BP_CCE_TYPE, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(cce_pc_width, BP_CCE_PC_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(bedrock_fill_width, BP_BEDROCK_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(bedrock_block_width, BP_BEDROCK_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(bedrock_fill_width, BP_BEDROCK_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(l2_features, BP_L2_FEATURES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_banks, BP_L2_BANKS, `BP_CUSTOM_BASE_CFG)

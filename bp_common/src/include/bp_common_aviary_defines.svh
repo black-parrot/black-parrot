@@ -84,13 +84,9 @@
         `BSG_MAX(dcache_sets_p, `BSG_MAX(icache_sets_p, num_cacc_p ? acache_sets_p : '0))          \
     , localparam lce_sets_width_p           = `BSG_SAFE_CLOG2(lce_sets_p)                          \
                                                                                                    \
-    , localparam bedrock_block_width_p          =                                                  \
-        `BSG_MAX(dcache_block_width_p, `BSG_MAX(icache_block_width_p, num_cacc_p ? acache_block_width_p : '0)) \
-    , localparam uce_fill_width_p           =                                                      \
-        `BSG_MAX(dcache_fill_width_p, `BSG_MAX(icache_fill_width_p, num_cacc_p ? acache_fill_width_p : '0)) \
-                                                                                                   \
     , localparam cce_type_p                 = proc_param_lp.cce_type                               \
     , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                           \
+    , localparam bedrock_block_width_p      = proc_param_lp.bedrock_block_width                    \
     , localparam bedrock_fill_width_p       = proc_param_lp.bedrock_fill_width                     \
     , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                    \
     , localparam cce_way_groups_p           =                                                      \
@@ -247,6 +243,7 @@
                                                                                                    \
           ,`bp_aviary_parameter_override(cce_type, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)            \
+          ,`bp_aviary_parameter_override(bedrock_block_width, override_cfg_mp, default_cfg_mp)     \
           ,`bp_aviary_parameter_override(bedrock_fill_width, override_cfg_mp, default_cfg_mp)      \
                                                                                                    \
           ,`bp_aviary_parameter_override(l2_features, override_cfg_mp, default_cfg_mp)             \

@@ -53,7 +53,6 @@ module testbench
    // Synthesis parameters
    , parameter no_bind_p                   = 0
 
-   , parameter io_data_width_p = (cce_type_p == e_cce_uce) ? uce_fill_width_p : bedrock_fill_width_p
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
    )
   (output bit reset_i);
@@ -127,17 +126,17 @@ module testbench
     (.o(rt_clk_i));
 
   bp_bedrock_mem_fwd_header_s proc_fwd_header_lo;
-  logic [io_data_width_p-1:0] proc_fwd_data_lo;
+  logic [bedrock_fill_width_p-1:0] proc_fwd_data_lo;
   logic proc_fwd_v_lo, proc_fwd_ready_and_li;
   bp_bedrock_mem_rev_header_s proc_rev_header_li;
-  logic [io_data_width_p-1:0] proc_rev_data_li;
+  logic [bedrock_fill_width_p-1:0] proc_rev_data_li;
   logic proc_rev_v_li, proc_rev_ready_and_lo;
 
   bp_bedrock_mem_fwd_header_s proc_fwd_header_li;
-  logic [io_data_width_p-1:0] proc_fwd_data_li;
+  logic [bedrock_fill_width_p-1:0] proc_fwd_data_li;
   logic proc_fwd_v_li, proc_fwd_ready_and_lo;
   bp_bedrock_mem_rev_header_s proc_rev_header_lo;
-  logic [io_data_width_p-1:0] proc_rev_data_lo;
+  logic [bedrock_fill_width_p-1:0] proc_rev_data_lo;
   logic proc_rev_v_lo, proc_rev_ready_and_li;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
@@ -151,7 +150,7 @@ module testbench
   wire [mem_noc_did_width_p-1:0] proc_did_li = 1;
   wire [mem_noc_did_width_p-1:0] host_did_li = '1;
   wrapper
-   #(.bp_params_p(bp_params_p), .io_data_width_p(io_data_width_p))
+   #(.bp_params_p(bp_params_p))
    wrapper
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
@@ -222,7 +221,7 @@ module testbench
 
   wire [lce_id_width_p-1:0] io_lce_id_li = num_core_p*2+num_cacc_p+num_l2e_p+num_sacc_p+num_io_p;
   bp_nonsynth_nbf_loader
-   #(.bp_params_p(bp_params_p), .data_width_p(io_data_width_p))
+   #(.bp_params_p(bp_params_p))
    nbf_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -260,7 +259,6 @@ module testbench
   logic dev_trace_en_lo;
   bp_nonsynth_host
    #(.bp_params_p(bp_params_p)
-     ,.data_width_p(io_data_width_p)
      ,.icache_trace_p(icache_trace_p)
      ,.dcache_trace_p(dcache_trace_p)
      ,.lce_trace_p(lce_trace_p)
@@ -583,7 +581,6 @@ module testbench
       bind bp_me_clint_slice
         bp_me_nonsynth_dev_tracer
          #(.bp_params_p(bp_params_p)
-           ,.data_width_p(uce_fill_width_p)
            ,.trace_file_p("clint")
            )
          clint_tracer
