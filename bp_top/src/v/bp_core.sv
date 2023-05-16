@@ -233,13 +233,13 @@ module bp_core
   wire is_cfg_fwd      = local_fwd_li & (device_fwd_li == cfg_dev_gp);
   wire is_clint_fwd    = local_fwd_li & (device_fwd_li == clint_dev_gp);
   wire is_cache_fwd    = local_fwd_li & (device_fwd_li == cache_dev_gp);
-  wire is_mem_fwd      = ~local_fwd_li || is_cache_fwd;
-  wire is_loopback_fwd = local_fwd_li & ~is_cfg_fwd & ~is_clint_fwd & ~is_mem_fwd;
+  wire is_l2_fwd       = ~local_fwd_li || is_cache_fwd;
+  wire is_loopback_fwd = local_fwd_li & ~is_cfg_fwd & ~is_clint_fwd & ~is_l2_fwd;
 
   bsg_encode_one_hot
    #(.width_p(4), .lo_to_hi_p(1))
    fwd_pe
-    (.i({is_loopback_fwd, is_clint_fwd, is_cfg_fwd, is_mem_fwd})
+    (.i({is_loopback_fwd, is_clint_fwd, is_cfg_fwd, is_l2_fwd})
      ,.addr_o(mem_fwd_dst_lo)
      ,.v_o()
      );

@@ -860,15 +860,15 @@ module testbench
 
      ,.lce_id_i('0)
 
-     ,.io_fwd_header_o(cfg_mem_fwd_lo)
-     ,.io_fwd_data_o(cfg_mem_fwd_data_lo)
-     ,.io_fwd_v_o(cfg_mem_fwd_v_lo)
-     ,.io_fwd_yumi_i(cfg_mem_fwd_ready_and_li & cfg_mem_fwd_v_lo)
+     ,.mem_fwd_header_o(cfg_mem_fwd_lo)
+     ,.mem_fwd_data_o(cfg_mem_fwd_data_lo)
+     ,.mem_fwd_v_o(cfg_mem_fwd_v_lo)
+     ,.mem_fwd_yumi_i(cfg_mem_fwd_ready_and_li & cfg_mem_fwd_v_lo)
 
-     ,.io_rev_header_i('0)
-     ,.io_rev_data_i('0)
-     ,.io_rev_v_i(cfg_mem_rev_v_lo)
-     ,.io_rev_ready_and_o()
+     ,.mem_rev_header_i('0)
+     ,.mem_rev_data_i('0)
+     ,.mem_rev_v_i(cfg_mem_rev_v_lo)
+     ,.mem_rev_ready_and_o()
 
      ,.done_o(cfg_loader_done_lo)
      );

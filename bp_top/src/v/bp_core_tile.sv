@@ -51,15 +51,15 @@ module bp_core_tile
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_resp_link_i
    , output logic [coh_noc_ral_link_width_lp-1:0]             lce_resp_link_o
 
-   , output logic [dma_noc_ral_link_width_lp-1:0]             mem_dma_link_o
-   , input [dma_noc_ral_link_width_lp-1:0]                    mem_dma_link_i
+   , output logic [dma_noc_ral_link_width_lp-1:0]             dma_link_o
+   , input [dma_noc_ral_link_width_lp-1:0]                    dma_link_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-  `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_mem_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_dma_ready_and_link_s);
 
   // Reset
   logic reset_r;
@@ -623,7 +623,7 @@ module bp_core_tile
      ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
      );
 
-  bp_mem_ready_and_link_s [l2_banks_p-1:0] mem_dma_link_lo, mem_dma_link_li;
+  bp_dma_ready_and_link_s [l2_banks_p-1:0] dma_link_lo, dma_link_li;
   for (genvar i = 0; i < l2_banks_p; i++)
     begin : dma
       wire [dma_noc_cord_width_p-1:0] cord_li = my_cord_i[coh_noc_x_cord_width_p+:dma_noc_y_cord_width_p];
@@ -655,8 +655,8 @@ module bp_core_tile
          ,.dma_data_v_i(dma_data_v_lo[i])
          ,.dma_data_yumi_o(dma_data_yumi_li[i])
 
-         ,.wh_link_sif_i(mem_dma_link_li[i])
-         ,.wh_link_sif_o(mem_dma_link_lo[i])
+         ,.wh_link_sif_i(dma_link_li[i])
+         ,.wh_link_sif_o(dma_link_lo[i])
 
          ,.my_wh_cord_i(cord_li)
          ,.my_wh_cid_i(cid_li)
@@ -678,11 +678,11 @@ module bp_core_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.links_i(mem_dma_link_lo)
-     ,.links_o(mem_dma_link_li)
+     ,.links_i(dma_link_lo)
+     ,.links_o(dma_link_li)
 
-     ,.concentrated_link_o(mem_dma_link_o)
-     ,.concentrated_link_i(mem_dma_link_i)
+     ,.concentrated_link_o(dma_link_o)
+     ,.concentrated_link_i(dma_link_i)
      );
 
 endmodule

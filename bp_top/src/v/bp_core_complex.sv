@@ -58,8 +58,8 @@ module bp_core_complex
    , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_resp_ver_link_i
    , output logic [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_ver_link_o
 
-   , input [S:N][cc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0]        mem_dma_link_i
-   , output logic [S:N][cc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0] mem_dma_link_o
+   , input [S:N][cc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0]        dma_link_i
+   , output logic [S:N][cc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0] dma_link_o
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -71,7 +71,7 @@ module bp_core_complex
   coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_fill_link_lo, lce_fill_link_li;
   coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_resp_link_lo, lce_resp_link_li;
 
-  dma_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:N] mem_dma_link_lo, mem_dma_link_li;
+  dma_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:N] dma_link_lo, dma_link_li;
 
   coh_noc_ral_link_s [E:W][cc_y_dim_p-1:0] lce_req_hor_link_li, lce_req_hor_link_lo;
   coh_noc_ral_link_s [S:N][cc_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo;
@@ -118,8 +118,8 @@ module bp_core_complex
              ,.coh_lce_cmd_link_o(lce_cmd_link_lo[j][i])
              ,.coh_lce_fill_link_o(lce_fill_link_lo[j][i])
 
-             ,.mem_dma_link_i(mem_dma_link_li[j][i])
-             ,.mem_dma_link_o(mem_dma_link_lo[j][i])
+             ,.dma_link_i(dma_link_li[j][i])
+             ,.dma_link_o(dma_link_lo[j][i])
              );
         end
     end
@@ -204,10 +204,10 @@ module bp_core_complex
     for (genvar i = 0; i < cc_y_dim_p; i++)
       for (genvar j = 0; j < cc_x_dim_p; j++)
         begin : link
-          assign mem_mesh_lo[i][j][S:N] = mem_dma_link_lo[i][j][S:N];
-          assign mem_dma_link_li[i][j][S:N] = mem_mesh_li[i][j][S:N];
+          assign mem_mesh_lo[i][j][S:N] = dma_link_lo[i][j][S:N];
+          assign dma_link_li[i][j][S:N] = mem_mesh_li[i][j][S:N];
         end
-    assign mem_ver_link_li = mem_dma_link_i;
+    assign mem_ver_link_li = dma_link_i;
     bsg_mesh_stitch
      #(.width_p($bits(dma_noc_ral_link_s))
        ,.x_max_p(cc_x_dim_p)
@@ -222,7 +222,7 @@ module bp_core_complex
        ,.ver_i(mem_ver_link_li)
        ,.ver_o(mem_ver_link_lo)
        );
-    assign mem_dma_link_o = mem_ver_link_lo;
+    assign dma_link_o = mem_ver_link_lo;
 
 endmodule
 

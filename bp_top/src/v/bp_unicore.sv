@@ -170,13 +170,13 @@ module bp_unicore
       wire is_host_fwd     = is_my_core & is_local & (device_fwd_li == host_dev_gp);
 
       wire is_io_fwd       = is_host_fwd | is_other_hio | is_other_core;
-      wire is_mem_fwd      = is_cache_fwd | (~is_local & ~is_io_fwd);
-      wire is_loopback_fwd = ~is_cfg_fwd & ~is_clint_fwd & ~is_mem_fwd & ~is_io_fwd;
+      wire is_l2_fwd       = is_cache_fwd | (~is_local & ~is_io_fwd);
+      wire is_loopback_fwd = ~is_cfg_fwd & ~is_clint_fwd & ~is_io_fwd & ~is_l2_fwd;
 
       bsg_encode_one_hot
        #(.width_p(num_dev_lp), .lo_to_hi_p(1))
        fwd_pe
-        (.i({is_loopback_fwd, is_io_fwd, is_mem_fwd, is_clint_fwd, is_cfg_fwd})
+        (.i({is_loopback_fwd, is_io_fwd, is_l2_fwd, is_clint_fwd, is_cfg_fwd})
          ,.addr_o(proc_fwd_dst_lo[i])
          ,.v_o()
          );

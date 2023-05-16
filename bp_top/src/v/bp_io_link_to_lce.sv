@@ -32,15 +32,15 @@ module bp_io_link_to_lce
    , input [lce_id_width_p-1:0]                     lce_id_i
 
    // Bedrock Burst: ready&valid
-   , input [mem_fwd_header_width_lp-1:0]            io_fwd_header_i
-   , input [bedrock_fill_width_p-1:0]               io_fwd_data_i
-   , input                                          io_fwd_v_i
-   , output logic                                   io_fwd_ready_and_o
+   , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
+   , input [bedrock_fill_width_p-1:0]               mem_fwd_data_i
+   , input                                          mem_fwd_v_i
+   , output logic                                   mem_fwd_ready_and_o
 
-   , output logic [mem_rev_header_width_lp-1:0]     io_rev_header_o
-   , output logic [bedrock_fill_width_p-1:0]        io_rev_data_o
-   , output logic                                   io_rev_v_o
-   , input                                          io_rev_ready_and_i
+   , output logic [mem_rev_header_width_lp-1:0]     mem_rev_header_o
+   , output logic [bedrock_fill_width_p-1:0]        mem_rev_data_o
+   , output logic                                   mem_rev_v_o
+   , input                                          mem_rev_ready_and_i
 
    , output logic [lce_req_header_width_lp-1:0]     lce_req_header_o
    , output logic [bedrock_fill_width_p-1:0]        lce_req_data_o
@@ -55,8 +55,8 @@ module bp_io_link_to_lce
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  `bp_cast_i(bp_bedrock_mem_fwd_header_s, io_fwd_header);
-  `bp_cast_o(bp_bedrock_mem_rev_header_s, io_rev_header);
+  `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
+  `bp_cast_o(bp_bedrock_mem_rev_header_s, mem_rev_header);
   `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
 
@@ -80,38 +80,38 @@ module bp_io_link_to_lce
          ,.v_o(/* Correct by construction */)
          ,.yumi_i(fifo_yumi_li[i])
          );
-      assign fifo_li[i] = io_fwd_header_cast_i;
+      assign fifo_li[i] = mem_fwd_header_cast_i;
       assign fifo_v_li[i] = lce_req_ready_and_i & lce_req_v_o & (lce_req_header_cast_o.payload.dst_id == i);
 
-      assign fifo_yumi_li[i] = io_rev_ready_and_i & io_rev_v_o & (lce_cmd_header_cast_i.payload.src_id == i);
+      assign fifo_yumi_li[i] = mem_rev_ready_and_i & mem_rev_v_o & (lce_cmd_header_cast_i.payload.src_id == i);
     end
-  assign io_rev_data_o = lce_cmd_data_i;
-  assign io_rev_header_cast_o = fifo_lo[lce_cmd_header_cast_i.payload.src_id];
-  assign io_rev_v_o = lce_cmd_v_i;
-  assign lce_cmd_ready_and_o = io_rev_ready_and_i;
+  assign mem_rev_data_o = lce_cmd_data_i;
+  assign mem_rev_header_cast_o = fifo_lo[lce_cmd_header_cast_i.payload.src_id];
+  assign mem_rev_v_o = lce_cmd_v_i;
+  assign lce_cmd_ready_and_o = mem_rev_ready_and_i;
 
   logic [cce_id_width_p-1:0] cce_id_lo;
   bp_me_addr_to_cce_id
    #(.bp_params_p(bp_params_p))
    addr_map
-    (.paddr_i(io_fwd_header_cast_i.addr)
+    (.paddr_i(mem_fwd_header_cast_i.addr)
      ,.cce_id_o(cce_id_lo)
      );
 
-  wire io_fwd_wr_not_rd = (io_fwd_header_cast_i.msg_type == e_bedrock_mem_uc_wr);
+  wire mem_fwd_wr_not_rd = (mem_fwd_header_cast_i.msg_type == e_bedrock_mem_uc_wr);
   wire lce_cmd_wr_not_rd = (lce_cmd_header_cast_i.msg_type == e_bedrock_cmd_uc_st_done);
   always_comb
     begin
       // Require all payloads to be ready to maintain helpfulness
-      io_fwd_ready_and_o                   = &fifo_ready_and_lo & lce_req_ready_and_i;
-      lce_req_v_o                          = &fifo_ready_and_lo & io_fwd_v_i;
+      mem_fwd_ready_and_o                   = &fifo_ready_and_lo & lce_req_ready_and_i;
+      lce_req_v_o                          = &fifo_ready_and_lo & mem_fwd_v_i;
       lce_req_header_cast_o                = '0;
-      lce_req_header_cast_o.size           = io_fwd_header_cast_i.size;
-      lce_req_header_cast_o.addr           = io_fwd_header_cast_i.addr;
-      lce_req_header_cast_o.msg_type       = io_fwd_wr_not_rd ? e_bedrock_req_uc_wr : e_bedrock_req_uc_rd;
+      lce_req_header_cast_o.size           = mem_fwd_header_cast_i.size;
+      lce_req_header_cast_o.addr           = mem_fwd_header_cast_i.addr;
+      lce_req_header_cast_o.msg_type       = mem_fwd_wr_not_rd ? e_bedrock_req_uc_wr : e_bedrock_req_uc_rd;
       lce_req_header_cast_o.payload.src_id = lce_id_i;
       lce_req_header_cast_o.payload.dst_id = cce_id_lo;
-      lce_req_data_o                       = io_fwd_data_i;
+      lce_req_data_o                       = mem_fwd_data_i;
     end
 
 endmodule

@@ -48,13 +48,13 @@ module bp_core_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_resp_link_i
    , output logic [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_resp_link_o
 
-   , input [S:N][dma_noc_ral_link_width_lp-1:0]        mem_dma_link_i
-   , output logic [S:N][dma_noc_ral_link_width_lp-1:0] mem_dma_link_o
+   , input [S:N][dma_noc_ral_link_width_lp-1:0]        dma_link_i
+   , output logic [S:N][dma_noc_ral_link_width_lp-1:0] dma_link_o
    );
 
   // Declare the routing links
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-  `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_mem_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_dma_ready_and_link_s);
 
   // Tile-side coherence connections
   bp_coh_ready_and_link_s core_lce_req_link_li, core_lce_req_link_lo;
@@ -63,7 +63,7 @@ module bp_core_tile_node
   bp_coh_ready_and_link_s core_lce_resp_link_li, core_lce_resp_link_lo;
 
   // Tile side membus connections
-  bp_mem_ready_and_link_s core_mem_dma_link_lo, core_mem_dma_link_li;
+  bp_dma_ready_and_link_s core_dma_link_lo, core_dma_link_li;
 
   bp_core_tile
    #(.bp_params_p(bp_params_p))
@@ -89,8 +89,8 @@ module bp_core_tile_node
      ,.lce_resp_link_i(core_lce_resp_link_li)
      ,.lce_resp_link_o(core_lce_resp_link_lo)
 
-     ,.mem_dma_link_o(core_mem_dma_link_lo)
-     ,.mem_dma_link_i(core_mem_dma_link_li)
+     ,.dma_link_o(core_dma_link_lo)
+     ,.dma_link_i(core_dma_link_li)
      );
 
   bp_nd_socket
@@ -132,10 +132,10 @@ module bp_core_tile_node
      ,.network_clk_i(dma_clk_i)
      ,.network_reset_i(dma_reset_i)
      ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:dma_noc_y_cord_width_p])
-     ,.network_link_i(mem_dma_link_i)
-     ,.network_link_o(mem_dma_link_o)
-     ,.tile_link_i(core_mem_dma_link_lo)
-     ,.tile_link_o(core_mem_dma_link_li)
+     ,.network_link_i(dma_link_i)
+     ,.network_link_o(dma_link_o)
+     ,.tile_link_i(core_dma_link_lo)
+     ,.tile_link_o(core_dma_link_li)
      );
 
 endmodule

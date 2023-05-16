@@ -27,11 +27,11 @@ module bp_io_tile
    , input [coh_noc_ral_link_width_lp-1:0]        lce_cmd_link_i
    , output logic [coh_noc_ral_link_width_lp-1:0] lce_cmd_link_o
 
-   , input [mem_noc_ral_link_width_lp-1:0]         io_fwd_link_i
-   , output logic [mem_noc_ral_link_width_lp-1:0]  io_fwd_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]         mem_fwd_link_i
+   , output logic [mem_noc_ral_link_width_lp-1:0]  mem_fwd_link_o
 
-   , input [mem_noc_ral_link_width_lp-1:0]         io_rev_link_i
-   , output logic [mem_noc_ral_link_width_lp-1:0]  io_rev_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]         mem_rev_link_i
+   , output logic [mem_noc_ral_link_width_lp-1:0]  mem_rev_link_o
    );
 
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -45,13 +45,13 @@ module bp_io_tile
   `bp_cast_o(bp_coh_noc_ready_and_link_sif_s, lce_cmd_link);
 
   // I/O Link to LCE connections
-  bp_bedrock_mem_fwd_header_s io_fwd_header_li;
-  logic [bedrock_fill_width_p-1:0] io_fwd_data_li;
-  logic io_fwd_v_li, io_fwd_ready_and_lo;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
+  logic [bedrock_fill_width_p-1:0] mem_fwd_data_li;
+  logic mem_fwd_v_li, mem_fwd_ready_and_lo;
 
-  bp_bedrock_mem_rev_header_s io_rev_header_lo;
-  logic [bedrock_fill_width_p-1:0] io_rev_data_lo;
-  logic io_rev_v_lo, io_rev_ready_and_li;
+  bp_bedrock_mem_rev_header_s mem_rev_header_lo;
+  logic [bedrock_fill_width_p-1:0] mem_rev_data_lo;
+  logic mem_rev_v_lo, mem_rev_ready_and_li;
 
   bp_bedrock_lce_req_header_s lce_req_header_lo;
   logic [bedrock_fill_width_p-1:0] lce_req_data_lo;
@@ -74,13 +74,13 @@ module bp_io_tile
   logic [bedrock_fill_width_p-1:0] lce_req_data_li;
   logic lce_req_v_li, lce_req_ready_and_lo;
 
-  bp_bedrock_mem_fwd_header_s io_fwd_header_lo;
-  logic [bedrock_fill_width_p-1:0] io_fwd_data_lo;
-  logic io_fwd_v_lo, io_fwd_ready_and_li;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
+  logic [bedrock_fill_width_p-1:0] mem_fwd_data_lo;
+  logic mem_fwd_v_lo, mem_fwd_ready_and_li;
 
-  bp_bedrock_mem_rev_header_s io_rev_header_li;
-  logic [bedrock_fill_width_p-1:0] io_rev_data_li;
-  logic io_rev_v_li, io_rev_ready_and_lo;
+  bp_bedrock_mem_rev_header_s mem_rev_header_li;
+  logic [bedrock_fill_width_p-1:0] mem_rev_data_li;
+  logic mem_rev_v_li, mem_rev_ready_and_lo;
 
   logic reset_r;
   always_ff @(posedge clk_i)
@@ -106,15 +106,15 @@ module bp_io_tile
 
      ,.lce_id_i(lce_id_li)
 
-     ,.io_fwd_header_i(io_fwd_header_li)
-     ,.io_fwd_data_i(io_fwd_data_li)
-     ,.io_fwd_v_i(io_fwd_v_li)
-     ,.io_fwd_ready_and_o(io_fwd_ready_and_lo)
+     ,.mem_fwd_header_i(mem_fwd_header_li)
+     ,.mem_fwd_data_i(mem_fwd_data_li)
+     ,.mem_fwd_v_i(mem_fwd_v_li)
+     ,.mem_fwd_ready_and_o(mem_fwd_ready_and_lo)
 
-     ,.io_rev_header_o(io_rev_header_lo)
-     ,.io_rev_data_o(io_rev_data_lo)
-     ,.io_rev_v_o(io_rev_v_lo)
-     ,.io_rev_ready_and_i(io_rev_ready_and_li)
+     ,.mem_rev_header_o(mem_rev_header_lo)
+     ,.mem_rev_data_o(mem_rev_data_lo)
+     ,.mem_rev_v_o(mem_rev_v_lo)
+     ,.mem_rev_ready_and_i(mem_rev_ready_and_li)
 
      ,.lce_req_header_o(lce_req_header_lo)
      ,.lce_req_data_o(lce_req_data_lo)
@@ -146,15 +146,15 @@ module bp_io_tile
      ,.lce_cmd_v_o(lce_cmd_v_lo)
      ,.lce_cmd_ready_and_i(lce_cmd_ready_and_li)
 
-     ,.io_fwd_header_o(io_fwd_header_lo)
-     ,.io_fwd_data_o(io_fwd_data_lo)
-     ,.io_fwd_v_o(io_fwd_v_lo)
-     ,.io_fwd_ready_and_i(io_fwd_ready_and_li)
+     ,.mem_fwd_header_o(mem_fwd_header_lo)
+     ,.mem_fwd_data_o(mem_fwd_data_lo)
+     ,.mem_fwd_v_o(mem_fwd_v_lo)
+     ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
 
-     ,.io_rev_header_i(io_rev_header_li)
-     ,.io_rev_data_i(io_rev_data_li)
-     ,.io_rev_v_i(io_rev_v_li)
-     ,.io_rev_ready_and_o(io_rev_ready_and_lo)
+     ,.mem_rev_header_i(mem_rev_header_li)
+     ,.mem_rev_data_i(mem_rev_data_li)
+     ,.mem_rev_v_i(mem_rev_v_li)
+     ,.mem_rev_ready_and_o(mem_rev_ready_and_lo)
      );
 
   // LCE Req Link WH-Burst conversion
@@ -285,20 +285,20 @@ module bp_io_tile
   bp_global_addr_s global_addr_lo;
   bp_local_addr_s  local_addr_lo;
 
-  assign global_addr_lo = io_fwd_header_lo.addr;
-  assign local_addr_lo  = io_fwd_header_lo.addr;
+  assign global_addr_lo = mem_fwd_header_lo.addr;
+  assign local_addr_lo  = mem_fwd_header_lo.addr;
 
   wire is_host_addr = (~local_addr_lo.nonlocal && (local_addr_lo.dev inside {host_dev_gp}));
   wire [mem_noc_did_width_p-1:0] dst_did_lo = is_host_addr ? host_did_i : global_addr_lo.hio;
 
   `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
-  `bp_cast_i(bsg_ready_and_link_sif_s, io_fwd_link);
-  `bp_cast_o(bsg_ready_and_link_sif_s, io_rev_link);
-  `bp_cast_o(bsg_ready_and_link_sif_s, io_fwd_link);
-  `bp_cast_i(bsg_ready_and_link_sif_s, io_rev_link);
+  `bp_cast_i(bsg_ready_and_link_sif_s, mem_fwd_link);
+  `bp_cast_o(bsg_ready_and_link_sif_s, mem_rev_link);
+  `bp_cast_o(bsg_ready_and_link_sif_s, mem_fwd_link);
+  `bp_cast_i(bsg_ready_and_link_sif_s, mem_rev_link);
 
-  wire [mem_noc_cord_width_p-1:0] io_fwd_dst_cord_lo = dst_did_lo;
-  wire [mem_noc_cid_width_p-1:0] io_fwd_dst_cid_lo = '0;
+  wire [mem_noc_cord_width_p-1:0] mem_fwd_dst_cord_lo = dst_did_lo;
+  wire [mem_noc_cid_width_p-1:0] mem_fwd_dst_cid_lo = '0;
   bp_me_stream_to_wormhole
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(mem_noc_flit_width_p)
@@ -310,24 +310,24 @@ module bp_io_tile
      ,.pr_payload_mask_p(mem_fwd_payload_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
-   io_fwd_stream_to_wormhole
+   mem_fwd_stream_to_wormhole
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.pr_hdr_i(io_fwd_header_lo)
-     ,.pr_data_i(io_fwd_data_lo)
-     ,.pr_v_i(io_fwd_v_lo)
-     ,.pr_ready_and_o(io_fwd_ready_and_li)
-     ,.dst_cord_i(io_fwd_dst_cord_lo)
-     ,.dst_cid_i(io_fwd_dst_cid_lo)
+     ,.pr_hdr_i(mem_fwd_header_lo)
+     ,.pr_data_i(mem_fwd_data_lo)
+     ,.pr_v_i(mem_fwd_v_lo)
+     ,.pr_ready_and_o(mem_fwd_ready_and_li)
+     ,.dst_cord_i(mem_fwd_dst_cord_lo)
+     ,.dst_cid_i(mem_fwd_dst_cid_lo)
 
-     ,.link_data_o(io_fwd_link_cast_o.data)
-     ,.link_v_o(io_fwd_link_cast_o.v)
-     ,.link_ready_and_i(io_fwd_link_cast_i.ready_and_rev)
+     ,.link_data_o(mem_fwd_link_cast_o.data)
+     ,.link_v_o(mem_fwd_link_cast_o.v)
+     ,.link_ready_and_i(mem_fwd_link_cast_i.ready_and_rev)
      );
 
-  wire [mem_noc_cord_width_p-1:0] io_rev_dst_cord_lo = io_rev_header_lo.payload.did;
-  wire [mem_noc_cid_width_p-1:0] io_rev_dst_cid_lo = '0;
+  wire [mem_noc_cord_width_p-1:0] mem_rev_dst_cord_lo = mem_rev_header_lo.payload.did;
+  wire [mem_noc_cid_width_p-1:0] mem_rev_dst_cid_lo = '0;
   bp_me_stream_to_wormhole
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(mem_noc_flit_width_p)
@@ -339,20 +339,20 @@ module bp_io_tile
      ,.pr_payload_mask_p(mem_rev_payload_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
-   io_rev_stream_to_wormhole
+   mem_rev_stream_to_wormhole
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.pr_hdr_i(io_rev_header_lo)
-     ,.pr_data_i(io_rev_data_lo)
-     ,.pr_v_i(io_rev_v_lo)
-     ,.pr_ready_and_o(io_rev_ready_and_li)
-     ,.dst_cord_i(io_rev_dst_cord_lo)
-     ,.dst_cid_i(io_rev_dst_cid_lo)
+     ,.pr_hdr_i(mem_rev_header_lo)
+     ,.pr_data_i(mem_rev_data_lo)
+     ,.pr_v_i(mem_rev_v_lo)
+     ,.pr_ready_and_o(mem_rev_ready_and_li)
+     ,.dst_cord_i(mem_rev_dst_cord_lo)
+     ,.dst_cid_i(mem_rev_dst_cid_lo)
 
-     ,.link_data_o(io_rev_link_cast_o.data)
-     ,.link_v_o(io_rev_link_cast_o.v)
-     ,.link_ready_and_i(io_rev_link_cast_i.ready_and_rev)
+     ,.link_data_o(mem_rev_link_cast_o.data)
+     ,.link_v_o(mem_rev_link_cast_o.v)
+     ,.link_ready_and_i(mem_rev_link_cast_i.ready_and_rev)
      );  
 
   bp_me_wormhole_to_stream
@@ -366,18 +366,18 @@ module bp_io_tile
      ,.pr_payload_mask_p(mem_fwd_payload_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
-   io_fwd_wormhole_to_stream
+   mem_fwd_wormhole_to_stream
    (.clk_i(clk_i)
     ,.reset_i(reset_r)
 
-    ,.link_data_i(io_fwd_link_cast_i.data)
-    ,.link_v_i(io_fwd_link_cast_i.v)
-    ,.link_ready_and_o(io_fwd_link_cast_o.ready_and_rev)
+    ,.link_data_i(mem_fwd_link_cast_i.data)
+    ,.link_v_i(mem_fwd_link_cast_i.v)
+    ,.link_ready_and_o(mem_fwd_link_cast_o.ready_and_rev)
 
-    ,.pr_hdr_o(io_fwd_header_li)
-    ,.pr_data_o(io_fwd_data_li)
-    ,.pr_v_o(io_fwd_v_li)
-    ,.pr_ready_and_i(io_fwd_ready_and_lo)
+    ,.pr_hdr_o(mem_fwd_header_li)
+    ,.pr_data_o(mem_fwd_data_li)
+    ,.pr_v_o(mem_fwd_v_li)
+    ,.pr_ready_and_i(mem_fwd_ready_and_lo)
     );
 
   bp_me_wormhole_to_stream
@@ -391,18 +391,18 @@ module bp_io_tile
      ,.pr_payload_mask_p(mem_rev_payload_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
-   io_rev_wormhole_to_stream
+   mem_rev_wormhole_to_stream
    (.clk_i(clk_i)
     ,.reset_i(reset_r)
 
-    ,.link_data_i(io_rev_link_cast_i.data)
-    ,.link_v_i(io_rev_link_cast_i.v)
-    ,.link_ready_and_o(io_rev_link_cast_o.ready_and_rev)
+    ,.link_data_i(mem_rev_link_cast_i.data)
+    ,.link_v_i(mem_rev_link_cast_i.v)
+    ,.link_ready_and_o(mem_rev_link_cast_o.ready_and_rev)
 
-    ,.pr_hdr_o(io_rev_header_li)
-    ,.pr_data_o(io_rev_data_li)
-    ,.pr_v_o(io_rev_v_li)
-    ,.pr_ready_and_i(io_rev_ready_and_lo)
+    ,.pr_hdr_o(mem_rev_header_li)
+    ,.pr_data_o(mem_rev_data_li)
+    ,.pr_v_o(mem_rev_v_li)
+    ,.pr_ready_and_i(mem_rev_ready_and_lo)
     );
 
 endmodule

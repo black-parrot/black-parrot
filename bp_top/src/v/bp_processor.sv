@@ -73,9 +73,9 @@ module bp_processor
 
       bp_mem_noc_ral_link_s [E:W] proc_fwd_link_li, proc_fwd_link_lo;
       bp_mem_noc_ral_link_s [E:W] proc_rev_link_li, proc_rev_link_lo;
-      bp_dma_noc_ral_link_s [S:N][mc_x_dim_p-1:0] mem_dma_link_lo, mem_dma_link_li;
+      bp_dma_noc_ral_link_s [S:N][mc_x_dim_p-1:0] dma_link_lo, dma_link_li;
 
-      assign mem_dma_link_li[N] = '0;
+      assign dma_link_li[N] = '0;
       assign proc_fwd_link_li[W] = '0;
       assign proc_rev_link_li[W] = '0;
 
@@ -98,14 +98,14 @@ module bp_processor
          ,.my_did_i(my_did_i)
          ,.host_did_i(host_did_i)
 
-         ,.io_fwd_link_i(proc_fwd_link_li)
-         ,.io_fwd_link_o(proc_fwd_link_lo)
+         ,.mem_fwd_link_i(proc_fwd_link_li)
+         ,.mem_fwd_link_o(proc_fwd_link_lo)
 
-         ,.io_rev_link_i(proc_rev_link_li)
-         ,.io_rev_link_o(proc_rev_link_lo)
+         ,.mem_rev_link_i(proc_rev_link_li)
+         ,.mem_rev_link_o(proc_rev_link_lo)
 
-         ,.mem_dma_link_i(mem_dma_link_li)
-         ,.mem_dma_link_o(mem_dma_link_lo)
+         ,.dma_link_i(dma_link_li)
+         ,.dma_link_o(dma_link_lo)
          );
 
       `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
@@ -237,7 +237,7 @@ module bp_processor
       for (genvar i = 0; i < mc_x_dim_p; i++)
         begin : column
           bsg_cache_wh_header_flit_s header_flit;
-          assign header_flit = mem_dma_link_lo[S][i].data;
+          assign header_flit = dma_link_lo[S][i].data;
           wire [`BSG_SAFE_CLOG2(dma_per_col_lp)-1:0] dma_id_li =
             l2_banks_p*(header_flit.src_cord-1)+header_flit.src_cid;
           bsg_wormhole_to_cache_dma_fanout
@@ -255,9 +255,9 @@ module bp_processor
             (.clk_i(clk_i)
              ,.reset_i(reset_i)
 
-             ,.wh_link_sif_i(mem_dma_link_lo[S][i])
+             ,.wh_link_sif_i(dma_link_lo[S][i])
              ,.wh_dma_id_i(dma_id_li)
-             ,.wh_link_sif_o(mem_dma_link_li[S][i])
+             ,.wh_link_sif_o(dma_link_li[S][i])
 
              ,.dma_pkt_o(dma_pkt_lo[i])
              ,.dma_pkt_v_o(dma_pkt_v_lo[i])

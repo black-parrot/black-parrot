@@ -69,13 +69,13 @@ module bp_sacc_tile
   logic [acache_fill_width_p-1:0] lce_req_data_li;
   logic lce_req_v_li, lce_req_ready_and_lo;
 
-  bp_bedrock_mem_fwd_header_s io_fwd_header_lo;
-  logic [acache_fill_width_p-1:0] io_fwd_data_lo;
-  logic io_fwd_v_lo, io_fwd_ready_and_li;
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
+  logic [acache_fill_width_p-1:0] mem_fwd_data_lo;
+  logic mem_fwd_v_lo, mem_fwd_ready_and_li;
 
-  bp_bedrock_mem_rev_header_s io_rev_header_li;
-  logic [acache_fill_width_p-1:0] io_rev_data_li;
-  logic io_rev_v_li, io_rev_ready_and_lo;
+  bp_bedrock_mem_rev_header_s mem_rev_header_li;
+  logic [acache_fill_width_p-1:0] mem_rev_data_li;
+  logic mem_rev_v_li, mem_rev_ready_and_lo;
 
   logic reset_r;
   always_ff @(posedge clk_i)
@@ -101,15 +101,15 @@ module bp_sacc_tile
 
      ,.lce_id_i(lce_id_li)
 
-     ,.io_fwd_header_i('0)
-     ,.io_fwd_data_i('0)
-     ,.io_fwd_v_i(1'b0)
-     ,.io_fwd_ready_and_o()
+     ,.mem_fwd_header_i('0)
+     ,.mem_fwd_data_i('0)
+     ,.mem_fwd_v_i(1'b0)
+     ,.mem_fwd_ready_and_o()
 
-     ,.io_rev_header_o()
-     ,.io_rev_data_o()
-     ,.io_rev_v_o()
-     ,.io_rev_ready_and_i(1'b0)
+     ,.mem_rev_header_o()
+     ,.mem_rev_data_o()
+     ,.mem_rev_v_o()
+     ,.mem_rev_ready_and_i(1'b0)
 
      ,.lce_req_header_o(lce_req_header_lo)
      ,.lce_req_data_o(lce_req_data_lo)
@@ -141,15 +141,15 @@ module bp_sacc_tile
      ,.lce_cmd_v_o(lce_cmd_v_lo)
      ,.lce_cmd_ready_and_i(lce_cmd_ready_and_li)
 
-     ,.io_fwd_header_o(io_fwd_header_lo)
-     ,.io_fwd_data_o(io_fwd_data_lo)
-     ,.io_fwd_v_o(io_fwd_v_lo)
-     ,.io_fwd_ready_and_i(io_fwd_ready_and_li)
+     ,.mem_fwd_header_o(mem_fwd_header_lo)
+     ,.mem_fwd_data_o(mem_fwd_data_lo)
+     ,.mem_fwd_v_o(mem_fwd_v_lo)
+     ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
 
-     ,.io_rev_header_i(io_rev_header_li)
-     ,.io_rev_data_i(io_rev_data_li)
-     ,.io_rev_v_i(io_rev_v_li)
-     ,.io_rev_ready_and_o(io_rev_ready_and_lo)
+     ,.mem_rev_header_i(mem_rev_header_li)
+     ,.mem_rev_data_i(mem_rev_data_li)
+     ,.mem_rev_v_i(mem_rev_v_li)
+     ,.mem_rev_ready_and_o(mem_rev_ready_and_lo)
      );
 
   if (sacc_type_p == e_sacc_vdp) begin : sacc_vdp
@@ -161,15 +161,15 @@ module bp_sacc_tile
 
        ,.lce_id_i(lce_id_li)
 
-       ,.mem_fwd_header_i(io_fwd_header_lo)
-       ,.mem_fwd_data_i(io_fwd_data_lo)
-       ,.mem_fwd_v_i(io_fwd_v_lo)
-       ,.mem_fwd_ready_and_o(io_fwd_ready_and_li)
+       ,.mem_fwd_header_i(mem_fwd_header_lo)
+       ,.mem_fwd_data_i(mem_fwd_data_lo)
+       ,.mem_fwd_v_i(mem_fwd_v_lo)
+       ,.mem_fwd_ready_and_o(mem_fwd_ready_and_li)
 
-       ,.mem_rev_header_o(io_rev_header_li)
-       ,.mem_rev_data_o(io_rev_data_li)
-       ,.mem_rev_v_o(io_rev_v_li)
-       ,.mem_rev_ready_and_i(io_rev_ready_and_lo)
+       ,.mem_rev_header_o(mem_rev_header_li)
+       ,.mem_rev_data_o(mem_rev_data_li)
+       ,.mem_rev_v_o(mem_rev_v_li)
+       ,.mem_rev_ready_and_i(mem_rev_ready_and_lo)
        );
   end
   else if (sacc_type_p == e_sacc_scratchpad) begin : sacc_scratchpad
@@ -181,22 +181,22 @@ module bp_sacc_tile
 
        ,.lce_id_i(lce_id_li)
 
-       ,.mem_fwd_header_i(io_fwd_header_lo)
-       ,.mem_fwd_data_i(io_fwd_data_lo)
-       ,.mem_fwd_v_i(io_fwd_v_lo)
-       ,.mem_fwd_ready_and_o(io_fwd_ready_and_li)
+       ,.mem_fwd_header_i(mem_fwd_header_lo)
+       ,.mem_fwd_data_i(mem_fwd_data_lo)
+       ,.mem_fwd_v_i(mem_fwd_v_lo)
+       ,.mem_fwd_ready_and_o(mem_fwd_ready_and_li)
 
-       ,.mem_rev_header_o(io_rev_header_li)
-       ,.mem_rev_data_o(io_rev_data_li)
-       ,.mem_rev_v_o(io_rev_v_li)
-       ,.mem_rev_ready_and_i(io_rev_ready_and_lo)
+       ,.mem_rev_header_o(mem_rev_header_li)
+       ,.mem_rev_data_o(mem_rev_data_li)
+       ,.mem_rev_v_o(mem_rev_v_li)
+       ,.mem_rev_ready_and_i(mem_rev_ready_and_lo)
        );
   end
   else begin : none
-    assign io_fwd_ready_and_li = 1'b0;
-    assign io_rev_header_li = '0;
-    assign io_rev_data_li = '0;
-    assign io_rev_v_li = 1'b0;
+    assign mem_fwd_ready_and_li = 1'b0;
+    assign mem_rev_header_li = '0;
+    assign mem_rev_data_li = '0;
+    assign mem_rev_v_li = 1'b0;
   end
 
   // Burst to WH (lce_req_header_lo)
