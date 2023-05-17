@@ -126,7 +126,7 @@ module bp_be_director
                               : freeze_li
                                 ? e_freeze
                                 : e_run;
-        e_freeze: state_n = (commit_pkt_cast_i.unfreeze) ? e_run : e_freeze;
+        e_freeze: state_n = commit_pkt_cast_i.unfreeze ? e_run : e_freeze;
         // e_fence:
         default : state_n = (drained_i & cmd_empty_n_o) ? e_run : e_fence;
       endcase

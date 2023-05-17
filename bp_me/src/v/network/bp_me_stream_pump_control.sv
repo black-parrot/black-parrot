@@ -31,7 +31,7 @@ module bp_me_stream_pump_control
    , parameter `BSG_INV_PARAM(max_val_p)
    , parameter `BSG_INV_PARAM(payload_width_p)
    , parameter `BSG_INV_PARAM(data_width_p)
-   , parameter fsm_stream_mask_p = 0
+   , parameter `BSG_INV_PARAM(fsm_stream_mask_p)
    , localparam width_lp = `BSG_WIDTH(max_val_p)
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, xce)
    )

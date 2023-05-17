@@ -349,11 +349,10 @@ module bp_core_lite
      ,.lce_resp_ready_and_i(_lce_resp_ready_and_i[1])
      );
 
-  bsg_edge_extend
-   #(.width_p($bits(bp_bedrock_lce_req_header_s)+$bits(bp_bedrock_lce_fill_header_s)+$bits(bp_bedrock_lce_resp_header_s)+3*dcache_fill_width_p+3*2))
-   posedge_extend
+  bsg_dlatch
+   #(.width_p($bits(bp_bedrock_lce_req_header_s)+$bits(bp_bedrock_lce_fill_header_s)+$bits(bp_bedrock_lce_resp_header_s)+3*dcache_fill_width_p+3*2), .i_know_this_is_a_bad_idea_p(1))
+   posedge_latch
     (.clk_i(posedge_clk)
-     ,.reset_i(reset_i)
      ,.data_i({_lce_req_header_o[1], _lce_req_data_o[1], _lce_req_v_o[1]
                ,_lce_fill_header_o[1], _lce_fill_data_o[1], _lce_fill_v_o[1]
                ,_lce_resp_header_o[1], _lce_resp_data_o[1], _lce_resp_v_o[1]
@@ -366,11 +365,10 @@ module bp_core_lite
                })
      );
 
-  bsg_edge_extend
-   #(.width_p($bits(bp_bedrock_lce_cmd_header_s)+$bits(bp_bedrock_lce_fill_header_s)+2*dcache_fill_width_p+2*2))
-   negedge_extend
+  bsg_dlatch
+   #(.width_p($bits(bp_bedrock_lce_cmd_header_s)+$bits(bp_bedrock_lce_fill_header_s)+2*dcache_fill_width_p+2*2), .i_know_this_is_a_bad_idea_p(1))
+   negedge_latch
     (.clk_i(negedge_clk)
-     ,.reset_i(reset_i)
      ,.data_i({lce_cmd_header_i[1], lce_cmd_data_i[1], lce_cmd_v_i[1]
                ,lce_fill_header_i[1], lce_fill_data_i[1], lce_fill_v_i[1]
                ,_lce_cmd_ready_and_o[1], _lce_fill_ready_and_o[1]

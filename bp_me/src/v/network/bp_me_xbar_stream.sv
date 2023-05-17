@@ -22,7 +22,7 @@ module bp_me_xbar_stream
    , parameter `BSG_INV_PARAM(payload_width_p)
    , parameter `BSG_INV_PARAM(num_source_p)
    , parameter `BSG_INV_PARAM(num_sink_p)
-   , parameter payload_mask_p = 0
+   , parameter `BSG_INV_PARAM(payload_mask_p)
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, xbar)
 
    , localparam lg_num_source_lp = `BSG_SAFE_CLOG2(num_source_p)

@@ -327,7 +327,8 @@ module bp_uce
 
      ,.count_o(index_cnt)
      );
-  wire index_done = (index_cnt == sets_p-1);
+  wire index_done = (sets_p == 1) || (index_cnt == sets_p-1);
+  wire index_done_n = (sets_p == 1) || (index_cnt == sets_p-1);
 
   logic [`BSG_SAFE_CLOG2(assoc_p)-1:0] way_cnt;
   logic way_up;
@@ -345,7 +346,8 @@ module bp_uce
 
      ,.count_o(way_cnt)
      );
-  wire way_done = (way_cnt == assoc_p-1);
+  wire way_done = (assoc_p == 1) || (way_cnt == assoc_p-1);
+  wire way_done_n = (assoc_p == 1) || (way_cnt == assoc_p-2);
 
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
@@ -519,7 +521,6 @@ module bp_uce
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-            // TODO: This actually does an extra increment
             way_up = fsm_fwd_yumi_li & fsm_fwd_last_lo;
             index_up = way_done & way_up;
 

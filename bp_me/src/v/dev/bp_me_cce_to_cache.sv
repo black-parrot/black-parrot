@@ -198,9 +198,10 @@ module bp_me_cce_to_cache
 
   bp_bedrock_mem_rev_header_s fsm_rev_header_lo;
   logic [l2_data_width_p-1:0] fsm_rev_data_lo;
+  logic [paddr_width_p-1:0] fsm_rev_addr_lo;
+  logic fsm_rev_v_lo, fsm_rev_yumi_li, fsm_rev_new_lo, fsm_rev_last_lo;
   logic [lg_l2_banks_lp-1:0] cache_rev_bank_lo;
-  logic stream_header_v_lo, fsm_rev_yumi_li, fsm_rev_v_lo;
-  logic fsm_rev_last_lo, stream_fifo_ready_lo;
+  logic stream_fifo_ready_lo, stream_header_v_lo;
   bsg_fifo_1r1w_small
    #(.width_p(lg_l2_banks_lp+$bits(bp_bedrock_mem_fwd_header_s))
      ,.els_p(l2_outstanding_reqs_p)
@@ -238,11 +239,11 @@ module bp_me_cce_to_cache
 
      ,.fsm_header_i(fsm_rev_header_lo)
      ,.fsm_data_i(fsm_rev_data_lo)
-     ,.fsm_addr_o()
+     ,.fsm_addr_o(fsm_rev_addr_lo)
      ,.fsm_v_i(fsm_rev_v_lo)
      ,.fsm_yumi_o(fsm_rev_yumi_li)
-     ,.fsm_cnt_o(/* unused */)
-     ,.fsm_new_o(/* unused */)
+     ,.fsm_cnt_o()
+     ,.fsm_new_o(fsm_rev_new_lo)
      ,.fsm_last_o(fsm_rev_last_lo)
      );
 

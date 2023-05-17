@@ -373,11 +373,10 @@ module bp_be_pipe_mem
         dcache_ptag_dram       = tlb_ptag_dram;
       end
 
-  bsg_edge_extend
-   #(.width_p(2))
-   posedge_extend
+  bsg_dlatch
+   #(.width_p(2), .i_know_this_is_a_bad_idea_p(1))
+   posedge_latch
     (.clk_i(posedge_clk)
-     ,.reset_i(reset_i)
      ,.data_i({_dcache_ordered_lo, _dcache_ready_and_lo})
      ,.data_o({dcache_ordered_lo, dcache_ready_and_lo})
      );
