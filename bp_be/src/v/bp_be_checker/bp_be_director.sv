@@ -128,7 +128,7 @@ module bp_be_director
                                 : e_run;
         e_freeze: state_n = commit_pkt_cast_i.unfreeze ? e_run : e_freeze;
         // e_fence:
-        default : state_n = (drained_i & cmd_empty_n_o) ? e_run : e_fence;
+        default : state_n = clear_iss_o ? e_run : e_fence;
       endcase
     end
 
@@ -142,7 +142,7 @@ module bp_be_director
       end
 
   assign suppress_iss_o = (state_r != e_run);
-  assign clear_iss_o    = (state_r == e_fence);
+  assign clear_iss_o    = (state_r == e_fence) & cmd_empty_r_o & drained_i;
   assign unfreeze_o     = (state_r == e_freeze) & ~freeze_li;
 
   always_comb
