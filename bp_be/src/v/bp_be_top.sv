@@ -121,6 +121,7 @@ module bp_be_top
      ,.cmd_full_n_o(cmd_full_n_lo)
      ,.cmd_full_r_o(cmd_full_r_lo)
      ,.drained_i(drained_lo)
+     ,.dispatch_v_i(dispatch_v)
 
      ,.br_pkt_i(br_pkt)
      ,.commit_pkt_i(commit_pkt)
