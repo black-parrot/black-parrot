@@ -40,7 +40,6 @@ module bp_be_detector
    , input                             mem_ordered_i
    , input                             ptw_busy_i
    , input                             irq_pending_i
-   , output logic                      drained_o
 
    // Pipeline control signals from the checker to the calculator
    , output logic                      dispatch_v_o
@@ -251,8 +250,6 @@ module bp_be_detector
   // Don't interrupt PTW. This could be made okay if we save the current privilege mode as well
   //   as the PTE mode
   assign interrupt_v_o = ~ptw_busy_i & ~cmd_full_i & irq_pending_i;
-
-  assign drained_o = ~|{dep_status_r[0].v, dep_status_r[1].v};
 
   bp_be_dep_status_s dep_status_n;
   always_comb
