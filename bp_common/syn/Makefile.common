@@ -7,11 +7,14 @@ include $(TOP)/Makefile.common
 
 .DEFAULT: help
 
-RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -d -t
-RISCV_OBJCOPY ?= $(CROSS_COMPILE)objcopy
-MEM2NBF       ?= $(BP_COMMON_DIR)/software/py/nbf.py
-DROMAJO       ?= dromajo
-SED           ?= sed
+RISCV_OBJDUMP    ?= $(CROSS_COMPILE)objdump -d -t
+RISCV_OBJCOPY    ?= $(CROSS_COMPILE)objcopy
+MEM2NBF          ?= $(BP_COMMON_DIR)/software/py/nbf.py
+DROMAJO          ?= dromajo
+SED              ?= sed
+PDK_ROOT         ?= $(SKY130_DIR)
+PDK              ?= $(SKY130_VER)
+STD_CELL_LIBRARY ?= sky130_fd_sc_hd
 
 report:
 	$(eval REPORT_LIST := $(shell find $(REPORT_PATH) -type f -name "*.rpt"))
