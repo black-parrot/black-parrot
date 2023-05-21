@@ -15,31 +15,20 @@ module bp_sacc_scratchpad
 
    , input [lce_id_width_p-1:0]                 lce_id_i
 
-   , input [mem_fwd_header_width_lp-1:0]        io_fwd_header_i
-   , input [acache_fill_width_p-1:0]            io_fwd_data_i
-   , input                                      io_fwd_v_i
-   , input                                      io_fwd_last_i
-   , output logic                               io_fwd_ready_and_o
+   , input [mem_fwd_header_width_lp-1:0]        mem_fwd_header_i
+   , input [acache_fill_width_p-1:0]            mem_fwd_data_i
+   , input                                      mem_fwd_v_i
+   , output logic                               mem_fwd_ready_and_o
 
-   , output logic [mem_rev_header_width_lp-1:0] io_rev_header_o
-   , output logic [acache_fill_width_p-1:0]     io_rev_data_o
-   , output logic                               io_rev_v_o
-   , output logic                               io_rev_last_o
-   , input                                      io_rev_ready_and_i
+   , output logic [mem_rev_header_width_lp-1:0] mem_rev_header_o
+   , output logic [acache_fill_width_p-1:0]     mem_rev_data_o
+   , output logic                               mem_rev_v_o
+   , input                                      mem_rev_ready_and_i
    );
-
-  // synopsys translate_off
-  always_ff @(negedge clk_i) begin
-    assert(~io_fwd_v_i | (io_fwd_v_i & io_fwd_last_i))
-      else $error("sacc_vdp only supports single beat IO commands");
-  end
-  // synopsys translate_on
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
-  `bp_cast_i(bp_bedrock_mem_fwd_header_s, io_fwd_header);
-  `bp_cast_o(bp_bedrock_mem_rev_header_s, io_rev_header);
 
   logic r_v_li, w_v_li;
   logic [paddr_width_p-1:0] addr_lo;
@@ -54,24 +43,14 @@ module bp_sacc_scratchpad
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_fwd_header_i(io_fwd_header_cast_i)
-     ,.mem_fwd_data_i(io_fwd_data_i)
-     ,.mem_fwd_v_i(io_fwd_v_i)
-     ,.mem_fwd_ready_and_o(io_fwd_ready_and_o)
-     ,.mem_fwd_last_i(io_fwd_last_i)
-
-     ,.mem_rev_header_o(io_rev_header_cast_o)
-     ,.mem_rev_data_o(io_rev_data_o)
-     ,.mem_rev_v_o(io_rev_v_o)
-     ,.mem_rev_ready_and_i(io_rev_ready_and_i)
-     ,.mem_rev_last_o(io_rev_last_o)
-
      ,.r_v_o(r_v_li)
      ,.w_v_o(w_v_li)
      ,.addr_o(addr_lo)
      ,.size_o()
      ,.data_o(data_lo)
      ,.data_i(data_li)
+
+     ,.*
      );
 
   bp_local_addr_s local_addr_lo;

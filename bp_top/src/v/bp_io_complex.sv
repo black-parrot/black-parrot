@@ -12,41 +12,41 @@ module bp_io_complex
    `declare_bp_proc_params(bp_params_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
-  (input                                                         core_clk_i
-   , input                                                       core_reset_i
+  (input                                                          core_clk_i
+   , input                                                        core_reset_i
 
-   , input                                                       coh_clk_i
-   , input                                                       coh_reset_i
+   , input                                                        coh_clk_i
+   , input                                                        coh_reset_i
 
-   , input                                                       io_clk_i
-   , input                                                       io_reset_i
+   , input                                                        mem_clk_i
+   , input                                                        mem_reset_i
 
-   , input [io_noc_did_width_p-1:0]                              my_did_i
-   , input [io_noc_did_width_p-1:0]                              host_did_i
+   , input [mem_noc_did_width_p-1:0]                               my_did_i
+   , input [mem_noc_did_width_p-1:0]                               host_did_i
 
-   , input [ic_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]       coh_req_link_i
-   , output [ic_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_req_link_o
+   , input [ic_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_req_link_i
+   , output logic [ic_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_link_o
 
-   , input [ic_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]       coh_cmd_link_i
-   , output [ic_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_cmd_link_o
+   , input [ic_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_cmd_link_i
+   , output logic [ic_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_link_o
 
-   , input [E:W][io_noc_ral_link_width_lp-1:0]                   io_fwd_link_i
-   , output [E:W][io_noc_ral_link_width_lp-1:0]                  io_fwd_link_o
+   , input [E:W][mem_noc_ral_link_width_lp-1:0]                    mem_fwd_link_i
+   , output logic [E:W][mem_noc_ral_link_width_lp-1:0]             mem_fwd_link_o
 
-   , input [E:W][io_noc_ral_link_width_lp-1:0]                   io_rev_link_i
-   , output [E:W][io_noc_ral_link_width_lp-1:0]                  io_rev_link_o
+   , input [E:W][mem_noc_ral_link_width_lp-1:0]                    mem_rev_link_i
+   , output logic [E:W][mem_noc_ral_link_width_lp-1:0]             mem_rev_link_o
    );
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-  `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
 
-  bp_io_ready_and_link_s [ic_x_dim_p-1:0][E:W]  io_fwd_link_li, io_fwd_link_lo, io_rev_link_li, io_rev_link_lo;
-  bp_io_ready_and_link_s [E:W]                  io_fwd_hor_link_li, io_fwd_hor_link_lo, io_rev_hor_link_li, io_rev_hor_link_lo;
+  bp_mem_ready_and_link_s [ic_x_dim_p-1:0][E:W]  mem_fwd_link_li, mem_fwd_link_lo, mem_rev_link_li, mem_rev_link_lo;
+  bp_mem_ready_and_link_s [E:W] mem_fwd_hor_link_li, mem_fwd_hor_link_lo, mem_rev_hor_link_li, mem_rev_hor_link_lo;
   bp_coh_ready_and_link_s [ic_x_dim_p-1:0][S:W] lce_req_link_li, lce_req_link_lo, lce_cmd_link_li, lce_cmd_link_lo;
   bp_coh_ready_and_link_s [S:N][ic_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo, lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
-  bp_coh_ready_and_link_s [E:W]                 lce_req_hor_link_li, lce_req_hor_link_lo, lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
+  bp_coh_ready_and_link_s [E:W] lce_req_hor_link_li, lce_req_hor_link_lo, lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
 
   for (genvar i = 0; i < ic_x_dim_p; i++)
     begin : node
@@ -60,8 +60,8 @@ module bp_io_complex
          ,.coh_clk_i(coh_clk_i)
          ,.coh_reset_i(coh_reset_i)
 
-         ,.io_clk_i(io_clk_i)
-         ,.io_reset_i(io_reset_i)
+         ,.mem_clk_i(mem_clk_i)
+         ,.mem_reset_i(mem_reset_i)
 
          ,.host_did_i(host_did_i)
          ,.my_did_i(my_did_i)
@@ -73,11 +73,11 @@ module bp_io_complex
          ,.coh_lce_cmd_link_i(lce_cmd_link_li[i])
          ,.coh_lce_cmd_link_o(lce_cmd_link_lo[i])
 
-         ,.io_fwd_link_i(io_fwd_link_li[i])
-         ,.io_fwd_link_o(io_fwd_link_lo[i])
+         ,.mem_fwd_link_i(mem_fwd_link_li[i])
+         ,.mem_fwd_link_o(mem_fwd_link_lo[i])
 
-         ,.io_rev_link_i(io_rev_link_li[i])
-         ,.io_rev_link_o(io_rev_link_lo[i])
+         ,.mem_rev_link_i(mem_rev_link_li[i])
+         ,.mem_rev_link_o(mem_rev_link_lo[i])
          );
     end
 
@@ -119,51 +119,51 @@ module bp_io_complex
      );
   assign coh_cmd_link_o = lce_cmd_ver_link_lo[S];
 
-  bp_io_ready_and_link_s [ic_x_dim_p-1:0][S:W] io_fwd_mesh_lo, io_fwd_mesh_li;
+  bp_mem_ready_and_link_s [ic_x_dim_p-1:0][S:W] mem_fwd_mesh_lo, mem_fwd_mesh_li;
   for (genvar i = 0; i < ic_x_dim_p; i++)
     begin : cmd_link
-      assign io_fwd_mesh_lo[i][E:W] = io_fwd_link_lo[i][E:W];
-      assign io_fwd_link_li[i][E:W] = io_fwd_mesh_li[i][E:W];
+      assign mem_fwd_mesh_lo[i][E:W] = mem_fwd_link_lo[i][E:W];
+      assign mem_fwd_link_li[i][E:W] = mem_fwd_mesh_li[i][E:W];
     end
-  assign io_fwd_hor_link_li = io_fwd_link_i;
+  assign mem_fwd_hor_link_li = mem_fwd_link_i;
   bsg_mesh_stitch
-   #(.width_p(io_noc_ral_link_width_lp)
+   #(.width_p(mem_noc_ral_link_width_lp)
      ,.x_max_p(ic_x_dim_p)
      ,.y_max_p(1)
      )
    fwd_mesh
-    (.outs_i(io_fwd_mesh_lo)
-     ,.ins_o(io_fwd_mesh_li)
+    (.outs_i(mem_fwd_mesh_lo)
+     ,.ins_o(mem_fwd_mesh_li)
 
-     ,.hor_i(io_fwd_hor_link_li)
-     ,.hor_o(io_fwd_hor_link_lo)
+     ,.hor_i(mem_fwd_hor_link_li)
+     ,.hor_o(mem_fwd_hor_link_lo)
      ,.ver_i()
      ,.ver_o()
      );
-  assign io_fwd_link_o  = io_fwd_hor_link_lo;
+  assign mem_fwd_link_o  = mem_fwd_hor_link_lo;
 
-  bp_io_ready_and_link_s [ic_x_dim_p-1:0][S:W] io_rev_mesh_lo, io_rev_mesh_li;
+  bp_mem_ready_and_link_s [ic_x_dim_p-1:0][S:W] mem_rev_mesh_lo, mem_rev_mesh_li;
   for (genvar i = 0; i < ic_x_dim_p; i++)
     begin : resp_link
-      assign io_rev_mesh_lo[i][E:W] = io_rev_link_lo[i][E:W];
-      assign io_rev_link_li[i][E:W] = io_rev_mesh_li[i][E:W];
+      assign mem_rev_mesh_lo[i][E:W] = mem_rev_link_lo[i][E:W];
+      assign mem_rev_link_li[i][E:W] = mem_rev_mesh_li[i][E:W];
     end
-  assign io_rev_hor_link_li = io_rev_link_i;
+  assign mem_rev_hor_link_li = mem_rev_link_i;
   bsg_mesh_stitch
-   #(.width_p(io_noc_ral_link_width_lp)
+   #(.width_p(mem_noc_ral_link_width_lp)
      ,.x_max_p(ic_x_dim_p)
      ,.y_max_p(ic_y_dim_p)
      )
    rev_mesh
-    (.outs_i(io_rev_mesh_lo)
-     ,.ins_o(io_rev_mesh_li)
+    (.outs_i(mem_rev_mesh_lo)
+     ,.ins_o(mem_rev_mesh_li)
 
-     ,.hor_i(io_rev_hor_link_li)
-     ,.hor_o(io_rev_hor_link_lo)
+     ,.hor_i(mem_rev_hor_link_li)
+     ,.hor_o(mem_rev_hor_link_lo)
      ,.ver_i()
      ,.ver_o()
      );
-  assign io_rev_link_o = io_rev_hor_link_lo;
+  assign mem_rev_link_o = mem_rev_hor_link_lo;
 
 endmodule
 

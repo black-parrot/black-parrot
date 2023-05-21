@@ -43,45 +43,31 @@ module bp_cce_wrapper
    // LCE-CCE Interface
    // BedRock Burst protocol: ready&valid
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
-   , input                                          lce_req_header_v_i
-   , output logic                                   lce_req_header_ready_and_o
-   , input                                          lce_req_has_data_i
-   , input [bedrock_data_width_p-1:0]               lce_req_data_i
-   , input                                          lce_req_data_v_i
-   , output logic                                   lce_req_data_ready_and_o
-   , input                                          lce_req_last_i
+   , input [bedrock_fill_width_p-1:0]               lce_req_data_i
+   , input                                          lce_req_v_i
+   , output logic                                   lce_req_ready_and_o
 
    , input [lce_resp_header_width_lp-1:0]           lce_resp_header_i
-   , input                                          lce_resp_header_v_i
-   , output logic                                   lce_resp_header_ready_and_o
-   , input                                          lce_resp_has_data_i
-   , input [bedrock_data_width_p-1:0]               lce_resp_data_i
-   , input                                          lce_resp_data_v_i
-   , output logic                                   lce_resp_data_ready_and_o
-   , input                                          lce_resp_last_i
+   , input [bedrock_fill_width_p-1:0]               lce_resp_data_i
+   , input                                          lce_resp_v_i
+   , output logic                                   lce_resp_ready_and_o
 
    , output logic [lce_cmd_header_width_lp-1:0]     lce_cmd_header_o
-   , output logic                                   lce_cmd_header_v_o
-   , input                                          lce_cmd_header_ready_and_i
-   , output logic                                   lce_cmd_has_data_o
-   , output logic [bedrock_data_width_p-1:0]        lce_cmd_data_o
-   , output logic                                   lce_cmd_data_v_o
-   , input                                          lce_cmd_data_ready_and_i
-   , output logic                                   lce_cmd_last_o
+   , output logic [bedrock_fill_width_p-1:0]        lce_cmd_data_o
+   , output logic                                   lce_cmd_v_o
+   , input                                          lce_cmd_ready_and_i
 
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
-   , input [bedrock_data_width_p-1:0]               mem_rev_data_i
+   , input [bedrock_fill_width_p-1:0]               mem_rev_data_i
    , input                                          mem_rev_v_i
    , output logic                                   mem_rev_ready_and_o
-   , input                                          mem_rev_last_i
 
    , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
-   , output logic [bedrock_data_width_p-1:0]        mem_fwd_data_o
+   , output logic [bedrock_fill_width_p-1:0]        mem_fwd_data_o
    , output logic                                   mem_fwd_v_o
    , input                                          mem_fwd_ready_and_i
-   , output logic                                   mem_fwd_last_o
   );
 
   // Config Interface
@@ -108,21 +94,21 @@ module bp_cce_wrapper
   // cache organization
   // all caches must have the same block size, which must equal CCE block size
   // cache assoc and sets must be pow2
-  if (icache_block_width_p != cce_block_width_p) $error("icache block width must match cce block width");
+  if (icache_block_width_p != bedrock_block_width_p) $error("icache block width must match cce block width");
   if (!(`BSG_IS_POW2(icache_assoc_p) && `BSG_IS_POW2(icache_sets_p)))
     $error("I$ sets and assoc must be power of two");
-  if (dcache_block_width_p != cce_block_width_p) $error("dcache block width must match cce block width");
+  if (dcache_block_width_p != bedrock_block_width_p) $error("dcache block width must match cce block width");
   if (!(`BSG_IS_POW2(dcache_assoc_p) && `BSG_IS_POW2(dcache_sets_p)))
     $error("D$ sets and assoc must be power of two");
   // acclereator caches
-  if ((num_cacc_p) > 0 && (acache_block_width_p != cce_block_width_p)) $error("acache block width must match cce block width");
+  if ((num_cacc_p) > 0 && (acache_block_width_p != bedrock_block_width_p)) $error("acache block width must match cce block width");
   if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_assoc_p)))
     $error("A$ assoc must be power of two or 0");
   if ((num_cacc_p > 0) && !(`BSG_IS_POW2(acache_sets_p)))
     $error("A$ sets must be power of two or 0");
 
   // coherence system block width is pow2 and between 64 and 1024 bits
-  if (!(`BSG_IS_POW2(cce_block_width_p) || cce_block_width_p < 64 || cce_block_width_p > 1024))
+  if (!(`BSG_IS_POW2(bedrock_block_width_p) || bedrock_block_width_p < 64 || bedrock_block_width_p > 1024))
     $error("invalid CCE block width");
 
   // way groups
@@ -130,8 +116,8 @@ module bp_cce_wrapper
   if (cce_way_groups_p < 1) $error("There must be at least one way group");
 
   // bedrock data width must be pow2 between 64-bits and CCE block size
-  if (bedrock_data_width_p < 64 || bedrock_data_width_p > cce_block_width_p
-      || !(`BSG_IS_POW2(bedrock_data_width_p)))
+  if (bedrock_fill_width_p < 64 || bedrock_fill_width_p > bedrock_block_width_p
+      || !(`BSG_IS_POW2(bedrock_fill_width_p)))
       $error("CCE requires bedrock data width of between 64-bits and block width and power of 2 bits");
 
 endmodule

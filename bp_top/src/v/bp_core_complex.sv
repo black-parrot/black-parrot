@@ -18,64 +18,60 @@ module bp_core_complex
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam dma_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(dma_noc_flit_width_p)
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    )
-  (input                                                         core_clk_i
-   , input                                                       rt_clk_i
-   , input                                                       core_reset_i
+  (input                                                               core_clk_i
+   , input                                                             rt_clk_i
+   , input                                                             core_reset_i
 
-   , input                                                       coh_clk_i
-   , input                                                       coh_reset_i
+   , input                                                             coh_clk_i
+   , input                                                             coh_reset_i
 
-   , input                                                       mem_clk_i
-   , input                                                       mem_reset_i
+   , input                                                             dma_clk_i
+   , input                                                             dma_reset_i
 
-   , input [io_noc_did_width_p-1:0]                              my_did_i
-   , input [io_noc_did_width_p-1:0]                              host_did_i
+   , input [mem_noc_did_width_p-1:0]                                    my_did_i
+   , input [mem_noc_did_width_p-1:0]                                    host_did_i
 
-   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_hor_link_i
-   , output [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_hor_link_o
+   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_req_hor_link_i
+   , output logic [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_hor_link_o
 
-   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_hor_link_i
-   , output [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_hor_link_o
+   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_cmd_hor_link_i
+   , output logic [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_hor_link_o
 
-   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_fill_hor_link_i
-   , output [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_fill_hor_link_o
+   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_fill_hor_link_i
+   , output logic [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_fill_hor_link_o
 
-   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_hor_link_i
-   , output [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_hor_link_o
+   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_resp_hor_link_i
+   , output logic [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_hor_link_o
 
-   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_ver_link_i
-   , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_ver_link_o
+   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_req_ver_link_i
+   , output logic [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_ver_link_o
 
-   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_ver_link_i
-   , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_ver_link_o
+   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_cmd_ver_link_i
+   , output logic [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_ver_link_o
 
-   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_fill_ver_link_i
-   , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_fill_ver_link_o
+   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_fill_ver_link_i
+   , output logic [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_fill_ver_link_o
 
-   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_ver_link_i
-   , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_ver_link_o
+   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]        coh_resp_ver_link_i
+   , output logic [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_ver_link_o
 
-   , input [N:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_fwd_ver_link_i
-   , output [S:S][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_fwd_ver_link_o
-
-   , input [S:S][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_rev_ver_link_i
-   , output [N:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_rev_ver_link_o
+   , input [S:N][cc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0]        dma_link_i
+   , output logic [S:N][cc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0] dma_link_o
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, coh_noc_ral_link_s);
-  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, mem_noc_ral_link_s);
+  `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, dma_noc_ral_link_s);
 
   coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_req_link_lo, lce_req_link_li;
   coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_cmd_link_lo, lce_cmd_link_li;
   coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_fill_link_lo, lce_fill_link_li;
   coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_resp_link_lo, lce_resp_link_li;
 
-  mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:S] mem_fwd_link_lo, mem_rev_link_li;
-  mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][N:N] mem_rev_link_lo, mem_fwd_link_li;
+  dma_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:N] dma_link_lo, dma_link_li;
 
   coh_noc_ral_link_s [E:W][cc_y_dim_p-1:0] lce_req_hor_link_li, lce_req_hor_link_lo;
   coh_noc_ral_link_s [S:N][cc_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo;
@@ -86,7 +82,7 @@ module bp_core_complex
   coh_noc_ral_link_s [E:W][cc_y_dim_p-1:0] lce_resp_hor_link_li, lce_resp_hor_link_lo;
   coh_noc_ral_link_s [S:N][cc_x_dim_p-1:0] lce_resp_ver_link_li, lce_resp_ver_link_lo;
 
-  mem_noc_ral_link_s [S:N][cc_x_dim_p-1:0] mem_ver_link_lo, mem_ver_link_li;
+  dma_noc_ral_link_s [S:N][cc_x_dim_p-1:0] mem_ver_link_lo, mem_ver_link_li;
 
   for (genvar j = 0; j < cc_y_dim_p; j++)
     begin : y
@@ -105,8 +101,8 @@ module bp_core_complex
              ,.coh_clk_i(coh_clk_i)
              ,.coh_reset_i(coh_reset_i)
 
-             ,.mem_clk_i(mem_clk_i)
-             ,.mem_reset_i(mem_reset_i)
+             ,.dma_clk_i(dma_clk_i)
+             ,.dma_reset_i(dma_reset_i)
 
              ,.my_did_i(my_did_i)
              ,.host_did_i(host_did_i)
@@ -122,11 +118,8 @@ module bp_core_complex
              ,.coh_lce_cmd_link_o(lce_cmd_link_lo[j][i])
              ,.coh_lce_fill_link_o(lce_fill_link_lo[j][i])
 
-             ,.mem_fwd_link_i(mem_fwd_link_li[j][i])
-             ,.mem_fwd_link_o(mem_fwd_link_lo[j][i])
-
-             ,.mem_rev_link_i(mem_rev_link_li[j][i])
-             ,.mem_rev_link_o(mem_rev_link_lo[j][i])
+             ,.dma_link_i(dma_link_li[j][i])
+             ,.dma_link_o(dma_link_lo[j][i])
              );
         end
     end
@@ -207,19 +200,16 @@ module bp_core_complex
     assign coh_resp_hor_link_o = lce_resp_hor_link_lo;
     assign coh_resp_ver_link_o = lce_resp_ver_link_lo;
 
-    mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] mem_mesh_lo, mem_mesh_li;
+    dma_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] mem_mesh_lo, mem_mesh_li;
     for (genvar i = 0; i < cc_y_dim_p; i++)
       for (genvar j = 0; j < cc_x_dim_p; j++)
         begin : link
-          assign mem_mesh_lo[i][j][S] = mem_fwd_link_lo[i][j];
-          assign mem_mesh_lo[i][j][N] = mem_rev_link_lo[i][j];
-
-          assign mem_fwd_link_li[i][j] = mem_mesh_li[i][j][N];
-          assign mem_rev_link_li[i][j] = mem_mesh_li[i][j][S];
+          assign mem_mesh_lo[i][j][S:N] = dma_link_lo[i][j][S:N];
+          assign dma_link_li[i][j][S:N] = mem_mesh_li[i][j][S:N];
         end
-    assign mem_ver_link_li = {mem_rev_ver_link_i, mem_fwd_ver_link_i};
+    assign mem_ver_link_li = dma_link_i;
     bsg_mesh_stitch
-     #(.width_p($bits(mem_noc_ral_link_s))
+     #(.width_p($bits(dma_noc_ral_link_s))
        ,.x_max_p(cc_x_dim_p)
        ,.y_max_p(cc_y_dim_p)
        )
@@ -232,7 +222,7 @@ module bp_core_complex
        ,.ver_i(mem_ver_link_li)
        ,.ver_o(mem_ver_link_lo)
        );
-    assign {mem_fwd_ver_link_o, mem_rev_ver_link_o} = mem_ver_link_lo;
+    assign dma_link_o = mem_ver_link_lo;
 
 endmodule
 

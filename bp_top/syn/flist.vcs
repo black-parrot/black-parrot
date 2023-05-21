@@ -193,9 +193,6 @@ $HARDFLOAT_DIR/source/RISCV/HardFloat_specialize.v
 # Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.sv
 $BP_COMMON_DIR/src/v/bsg_bus_pack.sv
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_last.v
-$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
-$BP_COMMON_DIR/src/v/bsg_wormhole_stream_control.v
 $BP_COMMON_DIR/src/v/bp_mmu.sv
 $BP_COMMON_DIR/src/v/bp_pma.sv
 $BP_COMMON_DIR/src/v/bp_tlb.sv
@@ -284,18 +281,14 @@ $BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/network/bp_me_cce_id_to_cord.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_header_encode.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_gearbox.sv
-$BP_ME_DIR/src/v/network/bp_me_wormhole_to_burst.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_to_wormhole.sv
-$BP_ME_DIR/src/v/network/bp_me_xbar_burst.sv
-$BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_to_burst.sv
-$BP_ME_DIR/src/v/network/bp_me_burst_to_stream.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
-$BP_ME_DIR/src/v/network/bp_me_stream_fifo.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_control.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_to_wormhole.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_header_encode.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_to_stream.sv
+$BP_ME_DIR/src/v/network/bp_me_wormhole_stream_control.sv
+$BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.sv
 $BP_TOP_DIR/src/v/bp_cacc_vdp.sv
@@ -323,11 +316,10 @@ $BP_TOP_DIR/src/v/bp_unicore.sv
 $BP_TOP_DIR/src/v/bp_unicore_lite.sv
 $BP_TOP_DIR/src/v/bp_core_tile.sv
 $BP_TOP_DIR/src/v/bp_core_tile_node.sv
+$BP_TOP_DIR/src/v/bp_processor.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
-$BP_COMMON_DIR/src/v/bsg_deff_reset.v
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
 $BP_COMMON_DIR/src/v/bsg_rom_param.v
-$BP_COMMON_DIR/src/v/bsg_edge_extend.v
 

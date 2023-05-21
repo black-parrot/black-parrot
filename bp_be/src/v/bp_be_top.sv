@@ -94,7 +94,7 @@ module bp_be_top
   logic [vaddr_width_p-1:0] expected_npc_lo;
   logic npc_mismatch_lo, poison_isd_lo, clear_iss_lo, suppress_iss_lo, unfreeze_lo;
 
-  logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo, drained_lo;
+  logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo;
   logic mem_ordered_lo, mem_busy_lo, idiv_busy_lo, fdiv_busy_lo, ptw_busy_lo;
 
   bp_be_director
@@ -120,7 +120,7 @@ module bp_be_top
      ,.cmd_empty_r_o()
      ,.cmd_full_n_o(cmd_full_n_lo)
      ,.cmd_full_r_o(cmd_full_r_lo)
-     ,.drained_i(drained_lo)
+     ,.dispatch_v_i(dispatch_v)
 
      ,.br_pkt_i(br_pkt)
      ,.commit_pkt_i(commit_pkt)
@@ -142,7 +142,6 @@ module bp_be_top
      ,.idiv_busy_i(idiv_busy_lo)
      ,.ptw_busy_i(ptw_busy_lo)
      ,.irq_pending_i(irq_pending_lo)
-     ,.drained_o(drained_lo)
 
      ,.dispatch_v_o(dispatch_v)
      ,.interrupt_v_o(interrupt_v)

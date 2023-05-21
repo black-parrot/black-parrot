@@ -49,10 +49,6 @@ module bp_me_stream_pump_in
    , localparam stream_offset_width_lp = `BSG_SAFE_CLOG2(stream_bytes_lp)
    , localparam stream_words_lp = block_width_p / stream_data_width_p
    , localparam stream_cnt_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
-
-   // number of messages that can be buffered
-   , parameter header_els_p = 0
-   , parameter data_els_p   = header_els_p * stream_words_lp
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -61,7 +57,6 @@ module bp_me_stream_pump_in
    , input [xce_header_width_lp-1:0]                msg_header_i
    , input [stream_data_width_p-1:0]                msg_data_i
    , input                                          msg_v_i
-   , input                                          msg_last_i
    , output logic                                   msg_ready_and_o
 
    // FSM consumer side
@@ -88,48 +83,40 @@ module bp_me_stream_pump_in
 
   bp_bedrock_xce_header_s msg_header_li;
   logic [stream_data_width_p-1:0] msg_data_li;
-  logic msg_v_li, msg_yumi_lo, msg_last_li;
-  bp_me_stream_fifo
-   #(.header_width_p($bits(bp_bedrock_xce_header_s))
-     ,.data_width_p(stream_data_width_p)
-     ,.header_els_p(header_els_p)
-     ,.data_els_p(data_els_p)
-     )
+  logic msg_v_li, msg_yumi_lo;
+  bsg_two_fifo
+   #(.width_p($bits(bp_bedrock_xce_header_s)+stream_data_width_p))
    fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.msg_header_i(msg_header_i)
-     ,.msg_data_i(msg_data_i)
-     ,.msg_v_i(msg_v_i)
-     ,.msg_last_i(msg_last_i)
-     ,.msg_ready_and_o(msg_ready_and_o)
+     ,.data_i({msg_header_i, msg_data_i})
+     ,.v_i(msg_v_i)
+     ,.ready_o(msg_ready_and_o)
 
-     ,.msg_header_o(msg_header_li)
-     ,.msg_data_o(msg_data_li)
-     ,.msg_v_o(msg_v_li)
-     ,.msg_last_o(msg_last_li)
-     ,.msg_yumi_i(msg_yumi_lo)
+     ,.data_o({msg_header_li, msg_data_li})
+     ,.v_o(msg_v_li)
+     ,.yumi_i(msg_yumi_lo)
      );
 
   wire [stream_cnt_width_lp-1:0] stream_size =
     `BSG_MAX((1'b1 << msg_header_li.size) / stream_bytes_lp, 1'b1) - 1'b1;
   wire nz_stream  = stream_size > '0;
-  wire fsm_stream = fsm_stream_mask_p[msg_header_li.msg_type] & nz_stream;
-  wire msg_stream = msg_stream_mask_p[msg_header_li.msg_type] & nz_stream;
-  wire any_stream = fsm_stream | msg_stream;
+  wire fsm_stream = fsm_stream_mask_p[msg_header_li.msg_type];
+  wire msg_stream = msg_stream_mask_p[msg_header_li.msg_type];
 
   logic cnt_up;
-  wire [stream_cnt_width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
-  wire [stream_cnt_width_lp-1:0] first_cnt = msg_header_li.addr[stream_offset_width_lp+:stream_cnt_width_lp];
   bp_me_stream_pump_control
-   #(.max_val_p(stream_words_lp-1))
+   #(.max_val_p(stream_words_lp-1)
+     ,.fsm_stream_mask_p(fsm_stream_mask_p)
+     ,.data_width_p(stream_data_width_p)
+     ,.payload_width_p(payload_width_p)
+     )
    pump_control
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.size_i(size_li)
-     ,.val_i(first_cnt)
+     ,.msg_header_i(msg_header_li)
      ,.en_i(cnt_up)
 
      ,.wrap_o(fsm_cnt_o)
@@ -150,7 +137,7 @@ module bp_me_stream_pump_in
       fsm_header_cast_o.addr[0+:block_offset_width_lp] = msg_header_li.addr;
       fsm_data_o = msg_data_li;
 
-      if (~msg_stream & fsm_stream)
+      if (~msg_stream & fsm_stream & nz_stream)
         begin
           // 1:N
           // convert one msg message into stream of N FSM messages
@@ -159,13 +146,13 @@ module bp_me_stream_pump_in
           cnt_up = fsm_yumi_i;
           fsm_addr_o = wrap_addr;
         end
-      else if (msg_stream & ~fsm_stream)
+      else if (msg_stream & ~fsm_stream & nz_stream)
         begin
           // N:1
           // consume all but last msg input beat silently, then FSM consumes last beat
           fsm_v_o = msg_v_li & fsm_last_o;
-          msg_yumi_lo = (msg_v_li & ~fsm_last_o) | fsm_yumi_i;
-          cnt_up = msg_v_li & msg_yumi_lo;
+          msg_yumi_lo = msg_v_li & (~fsm_last_o | fsm_yumi_i);
+          cnt_up = msg_yumi_lo;
           // Hold address constant at critical address
           fsm_addr_o = msg_header_li.addr;
         end

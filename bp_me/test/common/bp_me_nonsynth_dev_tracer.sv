@@ -29,16 +29,14 @@ module bp_me_nonsynth_dev_tracer
    // CCE-MEM Interface
    // BedRock Stream protocol: ready&valid
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
-   , input [dword_width_gp-1:0]                     mem_fwd_data_i
+   , input [bedrock_fill_width_p-1:0]               mem_fwd_data_i
    , input                                          mem_fwd_v_i
    , input                                          mem_fwd_ready_and_i
-   , input                                          mem_fwd_last_i
 
    , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
-   , input [dword_width_gp-1:0]                     mem_rev_data_i
+   , input [bedrock_fill_width_p-1:0]               mem_rev_data_i
    , input                                          mem_rev_v_i
    , input                                          mem_rev_ready_and_i
-   , input                                          mem_rev_last_i
   );
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
@@ -67,9 +65,8 @@ module bp_me_nonsynth_dev_tracer
                  , mem_fwd_header_cast_i.size
                  );
         if (mem_fwd_header_cast_i.msg_type.fwd inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr}) begin
-          $fdisplay(file, "%12t |: MEM FWD DATA last[%0b] %H"
+          $fdisplay(file, "%12t |: MEM FWD DATA %H"
                    , $time
-                   , mem_fwd_last_i
                    , mem_fwd_data_i
                    );
         end
@@ -82,9 +79,8 @@ module bp_me_nonsynth_dev_tracer
                  , mem_rev_header_cast_i.size
                  );
         if (mem_rev_header_cast_i.msg_type.rev inside {e_bedrock_mem_uc_rd, e_bedrock_mem_rd}) begin
-          $fdisplay(file, "%12t |: MEM REV DATA last[%0b] %H"
+          $fdisplay(file, "%12t |: MEM REV DATA %H"
                    , $time
-                   , mem_rev_last_i
                    , mem_rev_data_i
                    );
         end

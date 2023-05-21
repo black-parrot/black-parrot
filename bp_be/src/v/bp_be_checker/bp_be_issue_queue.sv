@@ -72,7 +72,7 @@ module bp_be_issue_queue
       assign deq = deq_v_i ? 1'b1 : 1'b0;
       assign read = read_v_i ? 1'b1 : 1'b0;
     end
-  assign rptr_jmp = clr ? -rptr_r : roll ? (cptr_r - rptr_r + deq)  : read;
+  assign rptr_jmp = clr ? -rptr_r : roll ? (cptr_r - rptr_r + deq) : read;
   assign wptr_jmp = clr ? -wptr_r : enq;
   assign cptr_jmp = clr ? -cptr_r : deq;
 
@@ -227,7 +227,8 @@ module bp_be_issue_queue
      );
 
   bp_fe_queue_s fe_queue_lo;
-  wire bypass_issue = (rptr_r[ptr_wrap_bit_lp-1:ptr_base_bit_lp] == wptr_r[ptr_wrap_bit_lp-1:ptr_base_bit_lp]);
+  wire bypass_issue =
+    (wptr_r[ptr_wrap_bit_lp-1:ptr_base_bit_lp] == rptr_r[ptr_wrap_bit_lp-1:ptr_base_bit_lp]);
   bsg_mem_1r1w
    #(.width_p(fe_queue_width_lp), .els_p(fe_queue_fifo_els_p))
    queue_fifo_mem
@@ -247,7 +248,7 @@ module bp_be_issue_queue
   wire upper = compressed_support_p & rptr_r[0];
   wire [vaddr_width_p-1:0] issue_pc = upper ? (fe_queue_lo.pc + 2'b10) : fe_queue_lo.pc;
 
-  wire issue_pkt_v = ~roll & ~empty & ~clr & ~inject & ~suppress;
+  wire issue_pkt_v = ~empty & ~inject & ~suppress;
   always_comb
     begin
       issue_pkt_cast_o = '0;

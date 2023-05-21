@@ -72,7 +72,7 @@ module bp_be_scheduler
   wire fe_queue_deq_li       = commit_pkt_cast_i.queue_v;
   wire fe_queue_deq_skip_li  = !commit_pkt_cast_i.compressed | commit_pkt_cast_i.partial;
   wire fe_queue_roll_li      = commit_pkt_cast_i.npc_w_v;
-  wire fe_queue_read_li      = dispatch_v_i;
+  wire fe_queue_read_li      = dispatch_v_i & ~poison_isd_i;
   wire fe_queue_read_skip_li = !dispatch_pkt_cast_o.compressed | dispatch_pkt_cast_o.partial;
   wire fe_queue_inject_li    = ptw_fill_pkt_cast_i.v | unfreeze_i | interrupt_v_i;
 
@@ -195,7 +195,7 @@ module bp_be_scheduler
     begin
       // Form dispatch packet
       dispatch_pkt_cast_o = '0;
-      dispatch_pkt_cast_o.v          = (fe_queue_read_li & ~poison_isd_i) || be_exc_not_instr_li;
+      dispatch_pkt_cast_o.v          = fe_queue_read_li || be_exc_not_instr_li;
       dispatch_pkt_cast_o.queue_v    = fe_queue_read_li;
       dispatch_pkt_cast_o.instr_v    = fe_instr_not_exc_li;
       dispatch_pkt_cast_o.partial    = be_exc_not_instr_li ? be_partial : fe_partial;
