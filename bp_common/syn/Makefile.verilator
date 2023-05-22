@@ -24,6 +24,7 @@ VV_OPTS += config.vlt
 VV_OPTS += --build --exe
 VV_OPTS += -o simsc
 VV_OPTS += -Wno-timescalemod
+VV_OPTS += --assert
 
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module testbench -f flist.vcs config.vlt
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++14

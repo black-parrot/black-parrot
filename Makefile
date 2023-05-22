@@ -25,7 +25,7 @@ tidy:
 	echo "BlackParrot RTL is tidy enough"
 
 clean:
-	-$(MAKE) libs_clean
+	$(MAKE) libs_clean
 
 ## This target just wipes the whole repo clean.
 #  Use with caution.

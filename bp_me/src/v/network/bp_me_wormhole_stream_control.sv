@@ -26,7 +26,7 @@
 
 `include "bsg_defines.v"
 
-module bsg_wormhole_stream_control
+module bp_me_wormhole_stream_control
  #(parameter `BSG_INV_PARAM(len_width_p)
    , parameter [len_width_p-1:0] `BSG_INV_PARAM(hdr_len_p)
    )
@@ -55,8 +55,8 @@ module bsg_wormhole_stream_control
   // count from num_flits to zero, count_r_o==1 means last flit
   logic [len_width_p-1:0] hdr_flit_cnt, data_flit_cnt;
 
-  // Sending last hdr flit
-  wire hdr_flit_last  = (hdr_flit_cnt  == (len_width_p)'(1));
+  // Sending last hdr flit (single header packets are always good to go)
+  wire hdr_flit_last  = (hdr_flit_cnt  == (len_width_p)'(1)) || (hdr_len_p == 1);
   // Sending last data flit
   wire data_flit_last = (data_flit_cnt == (len_width_p)'(1));
   // All hdr flits are sent
@@ -112,7 +112,7 @@ module bsg_wormhole_stream_control
     // (data_flit_done signal takes one cycle to be registered, not useful
     // in this case, extract data_len_li signal directly from hdr)
     assign e_hdr_to_e_data = (link_accept_i & is_hdr & data_len_li != '0);
-    assign has_data_o = is_hdr & (data_len_li != '0);
+    assign has_data_o = (data_len_li != '0);
   // Multiple hdr flits
   end else begin
     // When wormhole link accept flit
@@ -122,7 +122,7 @@ module bsg_wormhole_stream_control
     // (data_len_li signal only meaningful in first hdr flit, not useful
     // in this case, use registered data_flit_done signal from data_flit_counter)
     assign e_hdr_to_e_data = (link_accept_i & hdr_flit_last & ~data_flit_done);
-    assign has_data_o = is_hdr & ~data_flit_done;
+    assign has_data_o = ~data_flit_done;
   end
 
   // When wormhole link accept flit and sending last data flit
@@ -145,5 +145,5 @@ module bsg_wormhole_stream_control
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bsg_wormhole_stream_control)
+`BSG_ABSTRACT_MODULE(bp_me_wormhole_stream_control)
 

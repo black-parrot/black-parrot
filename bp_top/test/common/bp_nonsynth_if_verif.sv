@@ -26,7 +26,7 @@ module bp_nonsynth_if_verif
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p);
+  `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
 
   initial
     begin
@@ -69,6 +69,10 @@ module bp_nonsynth_if_verif
   if (dword_width_gp != 64)
     $error("Error: BlackParrot is only tested with 64-bit dword width");
 
+  // Front End
+  if (ras_idx_width_p > 1)
+    $error("Error: RAS > 1 is not supported");
+
   // Core or Features
   if (!muldiv_support_p[e_mul])
     $error("MUL is not currently support in emulation");
@@ -80,9 +84,9 @@ module bp_nonsynth_if_verif
     $warning("Warning: Atomics cannot be emulated without LR/SC. Those instructions will fail");
 
   // L1 Caches
-  if ((cce_block_width_p == 256) && (dcache_assoc_p == 8 || icache_assoc_p == 8))
+  if ((bedrock_block_width_p == 256) && (dcache_assoc_p == 8 || icache_assoc_p == 8))
     $error("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
-  if ((cce_block_width_p == 128) && (dcache_assoc_p == 4 || dcache_assoc_p == 8 || icache_assoc_p == 4 || icache_assoc_p == 8))
+  if ((bedrock_block_width_p == 128) && (dcache_assoc_p == 4 || dcache_assoc_p == 8 || icache_assoc_p == 4 || icache_assoc_p == 8))
     $error("Error: We can't maintain 64-bit dwords with a 128-bit cache block size and 4-way or 8-way cache associativity");
   if ((dcache_features_p[e_cfg_writeback] == 0) && (dcache_features_p[e_cfg_coherent] == 1))
     $error("Error: Writethrough with coherent_l1 is unsupported");
@@ -126,19 +130,19 @@ module bp_nonsynth_if_verif
     $error("Error: L2 banks must be a power of two");
 
   // Unicore
-  if ((cce_type_p == e_cce_uce) && (uce_fill_width_p != l2_data_width_p))
+  if ((cce_type_p == e_cce_uce) && (bedrock_fill_width_p != l2_data_width_p))
     $error("Error: unicore requires L2-Cache data width same as UCE fill width");
   if ((cce_type_p == e_cce_uce) && (icache_fill_width_p != dcache_fill_width_p))
     $error("Error: unicore requires L1-Cache fill widths to match");
   if ((cce_type_p == e_cce_uce) && (num_core_p != 1))
     $error("Error: Unicore only supports a single core configuration in the tethered testbench");
-  if ((cce_type_p == e_cce_uce) && (uce_fill_width_p < dword_width_gp))
+  if ((cce_type_p == e_cce_uce) && (bedrock_fill_width_p < dword_width_gp))
     $error("Error: Unicore requires UCE fill width to be at least dword width");
 
   // Multicore
   if ((cce_type_p != e_cce_uce) && (ic_y_dim_p != 1))
     $error("Error: Must have exactly 1 row of I/O routers for multicore");
-  if ((cce_type_p != e_cce_uce) && (l2_data_width_p != bedrock_data_width_p))
+  if ((cce_type_p != e_cce_uce) && (l2_data_width_p != bedrock_fill_width_p))
     $error("Error: Multicore requires L2 data width same as BedRock data width");
   if ((cce_type_p != e_cce_uce) && (icache_fill_width_p != dcache_fill_width_p))
     $error("Error: Multicore requires L1-Cache fill widths to be the same");
@@ -150,9 +154,9 @@ module bp_nonsynth_if_verif
     $error("Error: Multicore requires L1-Cache block widths to be the same");
   if ((cce_type_p != e_cce_uce) && (l2_block_width_p < icache_block_width_p))
     $error("Error: Multicore requires L2-Cache block width to be at least L1-Cache block width");
-  if ((cce_type_p != e_cce_uce) && (bedrock_data_width_p < dword_width_gp))
+  if ((cce_type_p != e_cce_uce) && (bedrock_fill_width_p < dword_width_gp))
     $error("Error: Multicore requires BedRock data width to be at least dword width");
-  if ((cce_type_p != e_cce_uce) && (bedrock_data_width_p > icache_fill_width_p))
+  if ((cce_type_p != e_cce_uce) && (bedrock_fill_width_p > icache_fill_width_p))
     $error("Error: Multicore requires BedRock data width to be no larger than cache fill width");
   if ((cce_type_p != e_cce_uce) && l2_features_p[e_cfg_enabled] && (|{l2_features_p[e_cfg_lr_sc], l2_features_p[e_cfg_amo_swap], l2_features_p[e_cfg_amo_fetch_logic], l2_features_p[e_cfg_amo_fetch_arithmetic]}))
     $error("Error: Multicore does not support L2 atomics");

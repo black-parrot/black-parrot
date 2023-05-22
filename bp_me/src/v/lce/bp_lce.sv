@@ -6,7 +6,6 @@
  *  Description:
  *    Generic Local Cache/Coherence Engine (LCE).
  *
- *  TODO: resolve comments below regarding cache fill interface arbitration
  */
 
 `include "bp_common_defines.svh"
@@ -83,49 +82,29 @@ module bp_lce
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , output logic [lce_req_header_width_lp-1:0]     lce_req_header_o
-    , output logic                                   lce_req_header_v_o
-    , input                                          lce_req_header_ready_and_i
-    , output logic                                   lce_req_has_data_o
     , output logic [fill_width_p-1:0]                lce_req_data_o
-    , output logic                                   lce_req_data_v_o
-    , input                                          lce_req_data_ready_and_i
-    , output logic                                   lce_req_last_o
+    , output logic                                   lce_req_v_o
+    , input                                          lce_req_ready_and_i
 
     , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-    , input                                          lce_cmd_header_v_i
-    , output logic                                   lce_cmd_header_ready_and_o
-    , input                                          lce_cmd_has_data_i
     , input [fill_width_p-1:0]                       lce_cmd_data_i
-    , input                                          lce_cmd_data_v_i
-    , output logic                                   lce_cmd_data_ready_and_o
-    , input                                          lce_cmd_last_i
+    , input                                          lce_cmd_v_i
+    , output logic                                   lce_cmd_ready_and_o
 
     , input [lce_fill_header_width_lp-1:0]           lce_fill_header_i
-    , input                                          lce_fill_header_v_i
-    , output logic                                   lce_fill_header_ready_and_o
-    , input                                          lce_fill_has_data_i
     , input [fill_width_p-1:0]                       lce_fill_data_i
-    , input                                          lce_fill_data_v_i
-    , output logic                                   lce_fill_data_ready_and_o
-    , input                                          lce_fill_last_i
+    , input                                          lce_fill_v_i
+    , output logic                                   lce_fill_ready_and_o
 
     , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
-    , output logic                                   lce_fill_header_v_o
-    , input                                          lce_fill_header_ready_and_i
-    , output logic                                   lce_fill_has_data_o
     , output logic [fill_width_p-1:0]                lce_fill_data_o
-    , output logic                                   lce_fill_data_v_o
-    , input                                          lce_fill_data_ready_and_i
-    , output logic                                   lce_fill_last_o
+    , output logic                                   lce_fill_v_o
+    , input                                          lce_fill_ready_and_i
 
     , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
-    , output logic                                   lce_resp_header_v_o
-    , input                                          lce_resp_header_ready_and_i
-    , output logic                                   lce_resp_has_data_o
     , output logic [fill_width_p-1:0]                lce_resp_data_o
-    , output logic                                   lce_resp_data_v_o
-    , input                                          lce_resp_data_ready_and_i
-    , output logic                                   lce_resp_last_o
+    , output logic                                   lce_resp_v_o
+    , input                                          lce_resp_ready_and_i
   );
 
   // LCE/Cache Parameter Constraints
@@ -186,13 +165,9 @@ module bp_lce
      ,.uc_store_req_complete_i(uc_store_req_complete_lo)
 
      ,.lce_req_header_o(lce_req_header_o)
-     ,.lce_req_header_v_o(lce_req_header_v_o)
-     ,.lce_req_has_data_o(lce_req_has_data_o)
-     ,.lce_req_header_ready_and_i(lce_req_header_ready_and_i)
      ,.lce_req_data_o(lce_req_data_o)
-     ,.lce_req_data_v_o(lce_req_data_v_o)
-     ,.lce_req_last_o(lce_req_last_o)
-     ,.lce_req_data_ready_and_i(lce_req_data_ready_and_i)
+     ,.lce_req_v_o(lce_req_v_o)
+     ,.lce_req_ready_and_i(lce_req_ready_and_i)
      );
 
   // To prevent unnecessary arbitration on the critical cache request ports, we multiplex
@@ -203,14 +178,14 @@ module bp_lce
   //   the case that an input cmd is blocked by an output fill 
   bp_bedrock_lce_cmd_header_s lce_cmd_header_li;
   logic [fill_width_p-1:0] lce_cmd_data_li;
-  logic lce_cmd_header_v_li, lce_cmd_header_ready_and_lo;
-  logic lce_cmd_data_v_li, lce_cmd_data_ready_and_lo;
-  logic lce_cmd_has_data_li, lce_cmd_last_li;
+  logic lce_cmd_v_li, lce_cmd_ready_and_lo;
 
-  bp_me_xbar_burst
+  bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
+     ,.block_width_p(block_width_p)
      ,.data_width_p(fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
+     ,.payload_mask_p(lce_cmd_payload_mask_gp)
      ,.num_source_p(2)
      ,.num_sink_p(1)
      )
@@ -219,58 +194,33 @@ module bp_lce
      ,.reset_i(reset_i)
 
      ,.msg_header_i({lce_cmd_header_i, lce_fill_header_i})
-     ,.msg_header_v_i({lce_cmd_header_v_i, lce_fill_header_v_i})
-     ,.msg_header_ready_and_o({lce_cmd_header_ready_and_o, lce_fill_header_ready_and_o})
-     ,.msg_has_data_i({lce_cmd_has_data_i, lce_fill_has_data_i})
      ,.msg_data_i({lce_cmd_data_i, lce_fill_data_i})
-     ,.msg_data_v_i({lce_cmd_data_v_i, lce_fill_data_v_i})
-     ,.msg_data_ready_and_o({lce_cmd_data_ready_and_o, lce_fill_data_ready_and_o})
-     ,.msg_last_i({lce_cmd_last_i, lce_fill_last_i})
+     ,.msg_v_i({lce_cmd_v_i, lce_fill_v_i})
+     ,.msg_ready_and_o({lce_cmd_ready_and_o, lce_fill_ready_and_o})
      ,.msg_dst_i('0) // Single destination
 
      ,.msg_header_o(lce_cmd_header_li)
-     ,.msg_header_v_o(lce_cmd_header_v_li)
-     ,.msg_header_ready_and_i(lce_cmd_header_ready_and_lo)
-     ,.msg_has_data_o(lce_cmd_has_data_li)
      ,.msg_data_o(lce_cmd_data_li)
-     ,.msg_data_v_o(lce_cmd_data_v_li)
-     ,.msg_data_ready_and_i(lce_cmd_data_ready_and_lo)
-     ,.msg_last_o(lce_cmd_last_li)
+     ,.msg_v_o(lce_cmd_v_li)
+     ,.msg_ready_and_i(lce_cmd_ready_and_lo)
      );
 
   bp_bedrock_lce_fill_header_s lce_fill_header_lo;
   logic [fill_width_p-1:0] lce_fill_data_lo;
-  logic lce_fill_header_v_lo, lce_fill_header_ready_and_li;
-  logic lce_fill_data_v_lo, lce_fill_data_ready_and_li;
-  logic lce_fill_has_data_lo, lce_fill_last_lo;
+  logic lce_fill_v_lo, lce_fill_ready_and_li;
   bsg_two_fifo
-   #(.width_p(1+$bits(bp_bedrock_lce_fill_header_s)))
-   lce_fill_header_fifo
+   #(.width_p(fill_width_p+$bits(bp_bedrock_lce_fill_header_s)))
+   lce_fill_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({lce_fill_has_data_lo, lce_fill_header_lo})
-     ,.v_i(lce_fill_header_v_lo)
-     ,.ready_o(lce_fill_header_ready_and_li)
+     ,.data_i({lce_fill_data_lo, lce_fill_header_lo})
+     ,.v_i(lce_fill_v_lo)
+     ,.ready_o(lce_fill_ready_and_li)
 
-     ,.data_o({lce_fill_has_data_o, lce_fill_header_o})
-     ,.v_o(lce_fill_header_v_o)
-     ,.yumi_i(lce_fill_header_ready_and_i & lce_fill_header_v_o)
-     );
-
-  bsg_fifo_1r1w_small
-   #(.width_p(1+fill_width_p), .els_p(block_width_p/fill_width_p))
-   lce_fill_data_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i({lce_fill_last_lo, lce_fill_data_lo})
-     ,.v_i(lce_fill_data_v_lo)
-     ,.ready_o(lce_fill_data_ready_and_li)
-
-     ,.data_o({lce_fill_last_o, lce_fill_data_o})
-     ,.v_o(lce_fill_data_v_o)
-     ,.yumi_i(lce_fill_data_ready_and_i & lce_fill_data_v_o)
+     ,.data_o({lce_fill_data_o, lce_fill_header_o})
+     ,.v_o(lce_fill_v_o)
+     ,.yumi_i(lce_fill_ready_and_i & lce_fill_v_o)
      );
 
   // LCE Command Module
@@ -312,31 +262,19 @@ module bp_lce
      ,.stat_mem_i(stat_mem_i)
 
      ,.lce_cmd_header_i(lce_cmd_header_li)
-     ,.lce_cmd_header_v_i(lce_cmd_header_v_li)
-     ,.lce_cmd_has_data_i(lce_cmd_has_data_li)
-     ,.lce_cmd_header_ready_and_o(lce_cmd_header_ready_and_lo)
      ,.lce_cmd_data_i(lce_cmd_data_li)
-     ,.lce_cmd_data_v_i(lce_cmd_data_v_li)
-     ,.lce_cmd_last_i(lce_cmd_last_li)
-     ,.lce_cmd_data_ready_and_o(lce_cmd_data_ready_and_lo)
+     ,.lce_cmd_v_i(lce_cmd_v_li)
+     ,.lce_cmd_ready_and_o(lce_cmd_ready_and_lo)
 
      ,.lce_fill_header_o(lce_fill_header_lo)
-     ,.lce_fill_header_v_o(lce_fill_header_v_lo)
-     ,.lce_fill_has_data_o(lce_fill_has_data_lo)
-     ,.lce_fill_header_ready_and_i(lce_fill_header_ready_and_li)
      ,.lce_fill_data_o(lce_fill_data_lo)
-     ,.lce_fill_data_v_o(lce_fill_data_v_lo)
-     ,.lce_fill_last_o(lce_fill_last_lo)
-     ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_li)
+     ,.lce_fill_v_o(lce_fill_v_lo)
+     ,.lce_fill_ready_and_i(lce_fill_ready_and_li)
 
      ,.lce_resp_header_o(lce_resp_header_o)
-     ,.lce_resp_header_v_o(lce_resp_header_v_o)
-     ,.lce_resp_has_data_o(lce_resp_has_data_o)
-     ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_i)
      ,.lce_resp_data_o(lce_resp_data_o)
-     ,.lce_resp_data_v_o(lce_resp_data_v_o)
-     ,.lce_resp_last_o(lce_resp_last_o)
-     ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_i)
+     ,.lce_resp_v_o(lce_resp_v_o)
+     ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
      );
 
   // LCE timeout logic

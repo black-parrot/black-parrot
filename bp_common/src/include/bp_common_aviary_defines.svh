@@ -33,9 +33,12 @@
     , localparam num_cce_p = proc_param_lp.num_cce                                                 \
     , localparam num_lce_p = proc_param_lp.num_lce                                                 \
                                                                                                    \
-    , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                          \
-    , localparam cce_id_width_p  = `BSG_SAFE_CLOG2(((cc_x_dim_p*1)+2)*((cc_y_dim_p*1)+2))          \
-    , localparam lce_id_width_p  = `BSG_SAFE_CLOG2(((cc_x_dim_p*2)+2)*((cc_y_dim_p*2)+2))          \
+    , localparam num_pseudo_cce_p = num_core_p+num_io_p+num_l2e_p+num_cacc_p+num_sacc_p+1          \
+    , localparam num_pseudo_lce_p = 2*num_core_p+num_io_p+num_l2e_p+num_cacc_p+num_sacc_p+1        \
+                                                                                                   \
+    , localparam core_id_width_p = `BSG_SAFE_CLOG2(num_core_p)                                     \
+    , localparam cce_id_width_p  = `BSG_SAFE_CLOG2(num_pseudo_cce_p)                               \
+    , localparam lce_id_width_p  = `BSG_SAFE_CLOG2(num_pseudo_lce_p)                               \
                                                                                                    \
     , localparam vaddr_width_p   = proc_param_lp.vaddr_width                                       \
     , localparam paddr_width_p   = proc_param_lp.paddr_width                                       \
@@ -45,12 +48,14 @@
     , localparam hio_width_p     = paddr_width_p - daddr_width_p                                   \
                                                                                                    \
     , localparam branch_metadata_fwd_width_p = proc_param_lp.branch_metadata_fwd_width             \
+    , localparam ras_idx_width_p             = proc_param_lp.ras_idx_width                         \
     , localparam btb_tag_width_p             = proc_param_lp.btb_tag_width                         \
     , localparam btb_idx_width_p             = proc_param_lp.btb_idx_width                         \
     , localparam bht_idx_width_p             = proc_param_lp.bht_idx_width                         \
     , localparam bht_row_els_p               = proc_param_lp.bht_row_els                           \
     , localparam ghist_width_p               = proc_param_lp.ghist_width                           \
     , localparam bht_row_width_p             = 2*bht_row_els_p                                     \
+    , localparam bht_offset_width_p          = `BSG_SAFE_CLOG2(bht_row_els_p)                      \
                                                                                                    \
     , localparam itlb_els_4k_p              = proc_param_lp.itlb_els_4k                            \
     , localparam itlb_els_1g_p              = proc_param_lp.itlb_els_1g                            \
@@ -79,14 +84,10 @@
         `BSG_MAX(dcache_sets_p, `BSG_MAX(icache_sets_p, num_cacc_p ? acache_sets_p : '0))          \
     , localparam lce_sets_width_p           = `BSG_SAFE_CLOG2(lce_sets_p)                          \
                                                                                                    \
-    , localparam cce_block_width_p          =                                                      \
-        `BSG_MAX(dcache_block_width_p, `BSG_MAX(icache_block_width_p, num_cacc_p ? acache_block_width_p : '0)) \
-    , localparam uce_fill_width_p           =                                                      \
-        `BSG_MAX(dcache_fill_width_p, `BSG_MAX(icache_fill_width_p, num_cacc_p ? acache_fill_width_p : '0)) \
-                                                                                                   \
     , localparam cce_type_p                 = proc_param_lp.cce_type                               \
     , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                           \
-    , localparam bedrock_data_width_p       = proc_param_lp.bedrock_data_width                     \
+    , localparam bedrock_block_width_p      = proc_param_lp.bedrock_block_width                    \
+    , localparam bedrock_fill_width_p       = proc_param_lp.bedrock_fill_width                     \
     , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                    \
     , localparam cce_way_groups_p           =                                                      \
         `BSG_MIN(dcache_sets_p, `BSG_MIN(icache_sets_p, num_cacc_p ? acache_sets_p : icache_sets_p)) \
@@ -127,38 +128,38 @@
                                                                                                    \
     , localparam async_mem_clk_p           = proc_param_lp.async_mem_clk                           \
     , localparam mem_noc_max_credits_p     = proc_param_lp.mem_noc_max_credits                     \
+    , localparam mem_noc_did_width_p       = proc_param_lp.mem_noc_did_width                       \
     , localparam mem_noc_flit_width_p      = proc_param_lp.mem_noc_flit_width                      \
     , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                       \
     , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                       \
-    , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)   \
-    , localparam mem_noc_x_cord_width_p    = 0                                                     \
+    , localparam mem_noc_y_cord_width_p    = 0                                                     \
+    , localparam mem_noc_x_cord_width_p    = mem_noc_did_width_p                                   \
     , localparam mem_noc_dims_p            = 1                                                     \
     , localparam mem_noc_cord_dims_p       = 2                                                     \
-    , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                  \
-    , localparam mem_noc_trans_p           = 1                                                     \
+    , localparam mem_noc_dirs_p            = mem_noc_cord_dims_p*2 + 1                             \
+    , localparam mem_noc_trans_p           = 0                                                     \
     , localparam int mem_noc_cord_markers_pos_p[mem_noc_cord_dims_p:0] = mem_noc_trans_p           \
         ? '{mem_noc_x_cord_width_p+mem_noc_y_cord_width_p, mem_noc_y_cord_width_p, 0}              \
         : '{mem_noc_y_cord_width_p+mem_noc_x_cord_width_p, mem_noc_x_cord_width_p, 0}              \
     , localparam mem_noc_cord_width_p      = mem_noc_cord_markers_pos_p[mem_noc_dims_p]            \
                                                                                                    \
-    , localparam async_io_clk_p           = proc_param_lp.async_io_clk                             \
-    , localparam io_noc_max_credits_p     = proc_param_lp.io_noc_max_credits                       \
-    , localparam io_noc_did_width_p       = proc_param_lp.io_noc_did_width                         \
-    , localparam io_noc_flit_width_p      = proc_param_lp.io_noc_flit_width                        \
-    , localparam io_noc_cid_width_p       = proc_param_lp.io_noc_cid_width                         \
-    , localparam io_noc_len_width_p       = proc_param_lp.io_noc_len_width                         \
-    , localparam io_noc_y_cord_width_p    = 0                                                      \
-    , localparam io_noc_x_cord_width_p    = io_noc_did_width_p                                     \
-    , localparam io_noc_dims_p            = 1                                                      \
-    , localparam io_noc_cord_dims_p       = 2                                                      \
-    , localparam io_noc_dirs_p            = io_noc_cord_dims_p*2 + 1                               \
-    , localparam io_noc_trans_p           = 0                                                      \
-    , localparam int io_noc_cord_markers_pos_p[io_noc_cord_dims_p:0] = io_noc_trans_p              \
-        ? '{io_noc_x_cord_width_p+io_noc_y_cord_width_p, io_noc_y_cord_width_p, 0}                 \
-        : '{io_noc_y_cord_width_p+io_noc_x_cord_width_p, io_noc_x_cord_width_p, 0}                 \
-    , localparam io_noc_cord_width_p      = io_noc_cord_markers_pos_p[io_noc_dims_p]               \
+    , localparam async_dma_clk_p           = proc_param_lp.async_dma_clk                           \
+    , localparam dma_noc_max_credits_p     = proc_param_lp.dma_noc_max_credits                     \
+    , localparam dma_noc_flit_width_p      = proc_param_lp.dma_noc_flit_width                      \
+    , localparam dma_noc_cid_width_p       = proc_param_lp.dma_noc_cid_width                       \
+    , localparam dma_noc_len_width_p       = proc_param_lp.dma_noc_len_width                       \
+    , localparam dma_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)   \
+    , localparam dma_noc_x_cord_width_p    = 0                                                     \
+    , localparam dma_noc_dims_p            = 1                                                     \
+    , localparam dma_noc_cord_dims_p       = 2                                                     \
+    , localparam dma_noc_dirs_p            = dma_noc_dims_p*2 + 1                                  \
+    , localparam dma_noc_trans_p           = 1                                                     \
+    , localparam int dma_noc_cord_markers_pos_p[dma_noc_cord_dims_p:0] = dma_noc_trans_p           \
+        ? '{dma_noc_x_cord_width_p+dma_noc_y_cord_width_p, dma_noc_y_cord_width_p, 0}              \
+        : '{dma_noc_y_cord_width_p+dma_noc_x_cord_width_p, dma_noc_x_cord_width_p, 0}              \
+    , localparam dma_noc_cord_width_p      = dma_noc_cord_markers_pos_p[dma_noc_dims_p]            \
                                                                                                    \
-    , localparam did_width_p  = io_noc_did_width_p                                                 \
+    , localparam did_width_p = mem_noc_did_width_p                                                 \
                                                                                                    \
     , localparam etag_width_p  = dword_width_gp - page_offset_width_gp                             \
     , localparam vtag_width_p  = vaddr_width_p - page_offset_width_gp                              \
@@ -210,6 +211,7 @@
           ,`bp_aviary_parameter_override(compressed_support, override_cfg_mp, default_cfg_mp)      \
                                                                                                    \
           ,`bp_aviary_parameter_override(branch_metadata_fwd_width, override_cfg_mp, default_cfg_mp) \
+          ,`bp_aviary_parameter_override(ras_idx_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(btb_tag_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(btb_idx_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(bht_idx_width, override_cfg_mp, default_cfg_mp)           \
@@ -241,7 +243,8 @@
                                                                                                    \
           ,`bp_aviary_parameter_override(cce_type, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)            \
-          ,`bp_aviary_parameter_override(bedrock_data_width, override_cfg_mp, default_cfg_mp)      \
+          ,`bp_aviary_parameter_override(bedrock_block_width, override_cfg_mp, default_cfg_mp)     \
+          ,`bp_aviary_parameter_override(bedrock_fill_width, override_cfg_mp, default_cfg_mp)      \
                                                                                                    \
           ,`bp_aviary_parameter_override(l2_features, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(l2_banks, override_cfg_mp, default_cfg_mp)                \
@@ -262,14 +265,14 @@
           ,`bp_aviary_parameter_override(mem_noc_max_credits, override_cfg_mp, default_cfg_mp)     \
           ,`bp_aviary_parameter_override(mem_noc_flit_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(mem_noc_cid_width, override_cfg_mp, default_cfg_mp)       \
+          ,`bp_aviary_parameter_override(mem_noc_did_width, override_cfg_mp, default_cfg_mp)       \
           ,`bp_aviary_parameter_override(mem_noc_len_width, override_cfg_mp, default_cfg_mp)       \
                                                                                                    \
-          ,`bp_aviary_parameter_override(async_io_clk, override_cfg_mp, default_cfg_mp)            \
-          ,`bp_aviary_parameter_override(io_noc_max_credits, override_cfg_mp, default_cfg_mp)      \
-          ,`bp_aviary_parameter_override(io_noc_flit_width, override_cfg_mp, default_cfg_mp)       \
-          ,`bp_aviary_parameter_override(io_noc_cid_width, override_cfg_mp, default_cfg_mp)        \
-          ,`bp_aviary_parameter_override(io_noc_did_width, override_cfg_mp, default_cfg_mp)        \
-          ,`bp_aviary_parameter_override(io_noc_len_width, override_cfg_mp, default_cfg_mp)        \
+          ,`bp_aviary_parameter_override(async_dma_clk, override_cfg_mp, default_cfg_mp)           \
+          ,`bp_aviary_parameter_override(dma_noc_max_credits, override_cfg_mp, default_cfg_mp)     \
+          ,`bp_aviary_parameter_override(dma_noc_flit_width, override_cfg_mp, default_cfg_mp)      \
+          ,`bp_aviary_parameter_override(dma_noc_cid_width, override_cfg_mp, default_cfg_mp)       \
+          ,`bp_aviary_parameter_override(dma_noc_len_width, override_cfg_mp, default_cfg_mp)       \
           }
 
 `endif

@@ -556,8 +556,8 @@ module bp_be_instr_decoder
         `RV64_AMO_OP:
           begin
             decode_cast_o.pipe_mem_early_v = 1'b1;
-            decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-            decode_cast_o.dcache_r_v = ~(instr inside {`RV64_SCD, `RV64_SCW});
+            decode_cast_o.irf_w_v    =  (instr.rd_addr != '0);
+            decode_cast_o.dcache_r_v =  (instr inside {`RV64_LRD, `RV64_LRW});
             decode_cast_o.dcache_w_v = ~(instr inside {`RV64_LRD, `RV64_LRW});
             decode_cast_o.mem_v      = 1'b1;
             // Note: could do a more efficent decoding here by having atomic be a flag

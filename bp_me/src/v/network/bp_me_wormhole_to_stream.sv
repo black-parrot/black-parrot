@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_me_wormhole_to_burst.sv
+ *   bp_me_wormhole_to_stream.sv
  *
  * Description:
  *   Converts a wormhole router stream to BedRock Burst protocol without
@@ -36,9 +36,10 @@
 `include "bsg_defines.v"
 `include "bp_common_defines.svh"
 
-module bp_me_wormhole_to_burst
+module bp_me_wormhole_to_stream
  import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   `declare_bp_proc_params(bp_params_p)
    // The wormhole router protocol information
    // flit_width_p: number of physical data wires between links
    // cord_width_p: the width of the {y,x} coordinate of the destination
@@ -54,6 +55,7 @@ module bp_me_wormhole_to_burst
    // Higher level protocol information
    , parameter `BSG_INV_PARAM(pr_hdr_width_p)
    , parameter `BSG_INV_PARAM(pr_payload_width_p)
+   , parameter `BSG_INV_PARAM(pr_payload_mask_p)
    , parameter `BSG_INV_PARAM(pr_data_width_p)
 
    // Computed wormhole header parameters. These can be overridden directly if desired.
@@ -77,16 +79,13 @@ module bp_me_wormhole_to_burst
 
    // BedRock Burst output
    , output logic [pr_hdr_width_p-1:0]  pr_hdr_o
-   , output logic                       pr_hdr_v_o
-   , input                              pr_hdr_ready_and_i
-   , output logic                       pr_has_data_o
-
-   // The protocol data information
    , output logic [pr_data_width_p-1:0] pr_data_o
-   , output logic                       pr_data_v_o
-   , input                              pr_data_ready_and_i
-   , output logic                       pr_last_o
+   , output logic                       pr_v_o
+   , input                              pr_ready_and_i
    );
+
+  `declare_bp_bedrock_if(paddr_width_p, pr_payload_width_p, lce_id_width_p, lce_assoc_p, msg);
+  `bp_cast_o(bp_bedrock_msg_header_s, pr_hdr);
 
   // parameter checks
   if (!(`BSG_IS_POW2(pr_data_width_p)) || !(`BSG_IS_POW2(flit_width_p)))
@@ -97,62 +96,36 @@ module bp_me_wormhole_to_burst
 
   // Header SIPO
   // Aggregate flits until we have a full header-worth of data
-  logic hdr_v_li, hdr_ready_and_lo;
-  assign hdr_v_li = is_hdr & link_v_i;
-  logic [(flit_width_p*hdr_len_lp)-1:0] pr_hdr_lo;
-  logic pr_hdr_v_lo, pr_hdr_ready_and_li;
-
-  bsg_serial_in_parallel_out_passthrough
-   #(.width_p(flit_width_p)
-     ,.els_p(hdr_len_lp)
-     )
+  logic sipo_ready_and_lo, sipo_v_li;
+  logic [(flit_width_p*hdr_len_lp)-1:0] wh_hdr_lo;
+  logic pr_hdr_v_lo, pr_hdr_yumi_li;
+  bsg_serial_in_parallel_out_full
+   #(.width_p(flit_width_p), .els_p(hdr_len_lp))
    hdr_sipo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.data_i(link_data_i)
-     ,.v_i(hdr_v_li)
-     ,.ready_and_o(hdr_ready_and_lo)
+     ,.v_i(sipo_v_li)
+     ,.ready_o(sipo_ready_and_lo)
 
-     ,.data_o(pr_hdr_lo)
+     ,.data_o(wh_hdr_lo)
      ,.v_o(pr_hdr_v_lo)
-     ,.ready_and_i(pr_hdr_ready_and_li)
+     ,.yumi_i(pr_hdr_yumi_li)
      );
+  wire pr_has_data_lo = pr_payload_mask_p[pr_hdr_cast_o.msg_type];
+  wire pr_last_data_lo = wh_last_data;
+  assign sipo_v_li = is_hdr & link_v_i;
 
-  // BedRock Burst Gearbox
-  logic pr_data_ready_and_li;
-  wire pr_data_v_lo = is_data & link_v_i;
-  bp_me_burst_gearbox
-    #(.bp_params_p(bp_params_p)
-      ,.in_data_width_p(flit_width_p)
-      ,.out_data_width_p(pr_data_width_p)
-      ,.payload_width_p(pr_payload_width_p)
-      )
-    gearbox
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+  assign pr_hdr_cast_o = wh_hdr_lo[wh_pr_hdr_offset_p+:pr_hdr_width_p];
+  assign pr_data_o = link_data_i;
+  assign pr_v_o = is_hdr ? (pr_hdr_v_lo & ~pr_has_data_lo) : link_v_i;
+  assign pr_hdr_yumi_li = pr_ready_and_i & pr_v_o & (~pr_has_data_lo | pr_last_data_lo);
 
-      ,.msg_header_i(pr_hdr_lo[wh_pr_hdr_offset_p+:pr_hdr_width_p])
-      ,.msg_header_v_i(pr_hdr_v_lo)
-      ,.msg_header_ready_and_o(pr_hdr_ready_and_li)
-      ,.msg_has_data_i(wh_has_data)
-      ,.msg_data_i(link_data_i)
-      ,.msg_data_v_i(pr_data_v_lo)
-      ,.msg_data_ready_and_o(pr_data_ready_and_li)
-      ,.msg_last_i(wh_last_data)
-
-      ,.msg_header_o(pr_hdr_o)
-      ,.msg_header_v_o(pr_hdr_v_o)
-      ,.msg_header_ready_and_i(pr_hdr_ready_and_i)
-      ,.msg_has_data_o(pr_has_data_o)
-      ,.msg_data_o(pr_data_o)
-      ,.msg_data_v_o(pr_data_v_o)
-      ,.msg_data_ready_and_i(pr_data_ready_and_i)
-      ,.msg_last_o(pr_last_o)
-      );
+  assign link_ready_and_o = is_hdr ? sipo_ready_and_lo : pr_ready_and_i;
 
   // Identifies which flits are header vs data flits
-  bsg_wormhole_stream_control
+  bp_me_wormhole_stream_control
    #(.len_width_p(len_width_p)
      ,.hdr_len_p(hdr_len_lp)
      )
@@ -169,9 +142,10 @@ module bp_me_wormhole_to_burst
      ,.last_data_o(wh_last_data)
      );
 
-  assign link_ready_and_o = is_hdr ? hdr_ready_and_lo : pr_data_ready_and_li;
+  if (flit_width_p != pr_data_width_p)
+    $error("flit_width_p %d != pr_data_width_p %d", flit_width_p, pr_data_width_p);
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bp_me_wormhole_to_burst)
+`BSG_ABSTRACT_MODULE(bp_me_wormhole_to_stream)
 

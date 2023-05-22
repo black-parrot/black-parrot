@@ -60,28 +60,28 @@ module bp_be_pipe_fma
   wire [dword_width_gp-1:0] rs1 = decode.opw_v ? (reservation.rs1 << word_width_gp) : reservation.rs1;
   wire [dword_width_gp-1:0] rs2 = reservation.rs2;
   bp_be_nan_unbox
-    #(.bp_params_p(bp_params_p))
-    frs1_unbox
-     (.reg_i(reservation.rs1)
-      ,.unbox_i(decode.ops_v)
-      ,.reg_o(frs1)
-      );
+   #(.bp_params_p(bp_params_p))
+   frs1_unbox
+    (.reg_i(reservation.rs1)
+     ,.unbox_i(decode.ops_v)
+     ,.reg_o(frs1)
+     );
 
   bp_be_nan_unbox
-    #(.bp_params_p(bp_params_p))
-    frs2_unbox
-     (.reg_i(reservation.rs2)
-      ,.unbox_i(decode.ops_v)
-      ,.reg_o(frs2)
-      );
+   #(.bp_params_p(bp_params_p))
+   frs2_unbox
+    (.reg_i(reservation.rs2)
+     ,.unbox_i(decode.ops_v)
+     ,.reg_o(frs2)
+     );
 
   bp_be_nan_unbox
-    #(.bp_params_p(bp_params_p))
-    frs3_unbox
-     (.reg_i(reservation.imm)
-      ,.unbox_i(decode.ops_v)
-      ,.reg_o(frs3)
-      );
+   #(.bp_params_p(bp_params_p))
+   frs3_unbox
+    (.reg_i(reservation.imm)
+     ,.unbox_i(decode.ops_v)
+     ,.reg_o(frs3)
+     );
 
   //
   // Control bits for the FPU
@@ -122,9 +122,18 @@ module bp_be_pipe_fma
         fma_op_li = 3'b100;
     end
 
+  // We emulate A*B with A*B+0 and A+B with A*1+B
+  // According to IEEE special arithmetic rules for signed 0
+  // (https://en.wikipedia.org/wiki/Signed_zero):
+  // x + (+-0) = x for x different from zero
+  // In order to correct for this we compute the sign of of A*B
+  //   and match it to maintain the correct signedness of the result
+  wire [dp_rec_width_gp-1:0] fma_one = dp_rec_1_0;
+  wire [dp_rec_width_gp-1:0] fma_zero = (frs1.rec.sign ^ frs2.rec.sign) ? dp_rec_m0_0 : dp_rec_0_0;
+
   wire [dp_rec_width_gp-1:0] fma_a_li = is_imul_li ? rs1 : frs1.rec;
-  wire [dp_rec_width_gp-1:0] fma_b_li = is_imul_li ? rs2 : is_faddsub_li ? dp_rec_1_0 : frs2.rec;
-  wire [dp_rec_width_gp-1:0] fma_c_li = is_faddsub_li ? frs2.rec : is_fmul_li ? dp_rec_0_0 : frs3.rec;
+  wire [dp_rec_width_gp-1:0] fma_b_li = is_imul_li ? rs2 : is_faddsub_li ? fma_one : frs2.rec;
+  wire [dp_rec_width_gp-1:0] fma_c_li = is_faddsub_li ? frs2.rec : is_fmul_li ? fma_zero : frs3.rec;
 
   // Here, we switch the implementation based on synthesizing for Vivado or not. If this is
   //   a knob you'd like to turn, consider modifying the define yourself.

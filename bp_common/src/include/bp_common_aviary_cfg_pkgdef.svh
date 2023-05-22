@@ -100,6 +100,7 @@
     // Branch metadata information for the Front End
     // Must be kept consistent with FE
     integer unsigned branch_metadata_fwd_width;
+    integer unsigned ras_idx_width;
     integer unsigned btb_tag_width;
     integer unsigned btb_idx_width;
     // bht_row_els is a physically-derived parameter. It describes the number
@@ -148,8 +149,10 @@
     integer unsigned cce_type;
     // Determines the size of the CCE instruction RAM
     integer unsigned cce_pc_width;
+    // The width of the coherence protocol block
+    integer unsigned bedrock_block_width;
     // The width of the coherence protocol beats
-    integer unsigned bedrock_data_width;
+    integer unsigned bedrock_fill_width;
 
     // L2 slice parameters (per core)
     // L2 cache features
@@ -194,33 +197,33 @@
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
     integer unsigned coh_noc_max_credits;
 
-    // Whether the memory network is on the core clock or on its own clock
+    // Whether the I/O network is on the core clock or on its own clock
     integer unsigned async_mem_clk;
-    // Flit width of the memory network. Has major impact on latency / area of the network
+    // Flit width of the I/O network. Has major impact on latency / area of the network
     integer unsigned mem_noc_flit_width;
-    // Concentrator ID width of the memory network. Corresponds to how many nodes can be on a
+    // Concentrator ID width of the I/O network. Corresponds to how many nodes can be on a
     //   single wormhole router
     integer unsigned mem_noc_cid_width;
+    // Domain ID width of the I/O network. Corresponds to how many chips compose a multichip chain
+    integer unsigned mem_noc_did_width;
     // Maximum number of flits in a single wormhole message. Determined by protocol and affects
     //   buffer size
     integer unsigned mem_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
     integer unsigned mem_noc_max_credits;
 
-    // Whether the I/O network is on the core clock or on its own clock
-    integer unsigned async_io_clk;
-    // Flit width of the I/O network. Has major impact on latency / area of the network
-    integer unsigned io_noc_flit_width;
-    // Concentrator ID width of the I/O network. Corresponds to how many nodes can be on a
+    // Whether the memory network is on the core clock or on its own clock
+    integer unsigned async_dma_clk;
+    // Flit width of the memory network. Has major impact on latency / area of the network
+    integer unsigned dma_noc_flit_width;
+    // Concentrator ID width of the memory network. Corresponds to how many nodes can be on a
     //   single wormhole router
-    integer unsigned io_noc_cid_width;
-    // Domain ID width of the I/O network. Corresponds to how many chips compose a multichip chain
-    integer unsigned io_noc_did_width;
+    integer unsigned dma_noc_cid_width;
     // Maximum number of flits in a single wormhole message. Determined by protocol and affects
     //   buffer size
-    integer unsigned io_noc_len_width;
+    integer unsigned dma_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
-    integer unsigned io_noc_max_credits;
+    integer unsigned dma_noc_max_credits;
 
   }  bp_proc_param_s;
 
@@ -243,7 +246,8 @@
       ,caddr_width: 32
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 39
+      ,branch_metadata_fwd_width: 42
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 9
       ,btb_idx_width            : 6
       ,bht_idx_width            : 7
@@ -264,23 +268,24 @@
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
-      ,dcache_fill_width    : 64
+      ,dcache_fill_width    : 128
 
       ,icache_features      : (1 << e_cfg_enabled)
       ,icache_sets          : 64
       ,icache_assoc         : 8
       ,icache_block_width   : 512
-      ,icache_fill_width    : 64
+      ,icache_fill_width    : 128
 
       ,acache_features      : (1 << e_cfg_enabled)
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
-      ,acache_fill_width    : 64
+      ,acache_fill_width    : 128
 
       ,cce_type             : e_cce_uce
       ,cce_pc_width         : 8
-      ,bedrock_data_width   : 64
+      ,bedrock_block_width  : 512
+      ,bedrock_fill_width   : 128
 
       ,l2_features          : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
@@ -289,37 +294,37 @@
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)
       ,l2_banks            : 2
-      ,l2_data_width       : 64
+      ,l2_data_width       : 128
       ,l2_sets             : 128
       ,l2_assoc            : 8
       ,l2_block_width      : 512
-      ,l2_fill_width       : 64
+      ,l2_fill_width       : 128
       ,l2_outstanding_reqs : 6
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
       ,muldiv_support    : (1 << e_div) | (1 << e_mul) | (1 << e_mulh)
       ,fpu_support       : 1
-      ,compressed_support: 0
+      ,compressed_support: 1
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 128
-      ,coh_noc_cid_width   : 2
-      ,coh_noc_len_width   : 3
-      ,coh_noc_max_credits : 8
+      ,coh_noc_cid_width   : 3
+      ,coh_noc_len_width   : 4
+      ,coh_noc_max_credits : 32
 
       ,async_mem_clk         : 0
-      ,mem_noc_flit_width    : 64
-      ,mem_noc_cid_width     : 2
+      ,mem_noc_flit_width    : 128
+      ,mem_noc_cid_width     : 3
+      ,mem_noc_did_width     : 3
       ,mem_noc_len_width     : 4
-      ,mem_noc_max_credits   : 8
+      ,mem_noc_max_credits   : 32
 
-      ,async_io_clk         : 0
-      ,io_noc_flit_width    : 64
-      ,io_noc_cid_width     : 2
-      ,io_noc_did_width     : 3
-      ,io_noc_len_width     : 4
-      ,io_noc_max_credits   : 16
+      ,async_dma_clk         : 0
+      ,dma_noc_flit_width    : 128
+      ,dma_noc_cid_width     : 3
+      ,dma_noc_len_width     : 4
+      ,dma_noc_max_credits   : 32
       };
 
   // BP_CUSTOM_DEFINES_PATH can be set to a file which has the custom defines below set
@@ -358,6 +363,7 @@
       ,`bp_aviary_define_override(compressed_support, BP_COMPRESSED_SUPPORT, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(branch_metadata_fwd_width, BRANCH_METADATA_FWD_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(ras_idx_width, BP_RAS_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(btb_tag_width, BP_BTB_TAG_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(btb_idx_width, BP_BTB_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(bht_idx_width, BP_BHT_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
@@ -389,7 +395,8 @@
 
       ,`bp_aviary_define_override(cce_type, BP_CCE_TYPE, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(cce_pc_width, BP_CCE_PC_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(bedrock_data_width, BP_BEDROCK_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(bedrock_block_width, BP_BEDROCK_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(bedrock_fill_width, BP_BEDROCK_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(l2_features, BP_L2_FEATURES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_banks, BP_L2_BANKS, `BP_CUSTOM_BASE_CFG)
@@ -406,18 +413,18 @@
       ,`bp_aviary_define_override(coh_noc_cid_width, BP_COH_NOC_CID_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(coh_noc_len_width, BP_COH_NOC_LEN_WIDTH, `BP_CUSTOM_BASE_CFG)
 
-      ,`bp_aviary_define_override(async_mem_clk, BP_ASYNC_MEM_CLK, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(mem_noc_max_credits, BP_MEM_NOC_MAX_CREDITS, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(mem_noc_flit_width, BP_MEM_NOC_FLIT_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(mem_noc_cid_width, BP_MEM_NOC_CID_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(mem_noc_len_width, BP_MEM_NOC_LEN_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(async_mem_clk, BP_ASYNC_IO_CLK, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(mem_noc_max_credits, BP_IO_NOC_MAX_CREDITS, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(mem_noc_flit_width, BP_IO_NOC_FLIT_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(mem_noc_cid_width, BP_IO_NOC_CID_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(mem_noc_did_width, BP_IO_NOC_DID_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(mem_noc_len_width, BP_IO_NOC_LEN_WIDTH, `BP_CUSTOM_BASE_CFG)
 
-      ,`bp_aviary_define_override(async_io_clk, BP_ASYNC_IO_CLK, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(io_noc_max_credits, BP_IO_NOC_MAX_CREDITS, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(io_noc_flit_width, BP_IO_NOC_FLIT_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(io_noc_cid_width, BP_IO_NOC_CID_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(io_noc_did_width, BP_IO_NOC_DID_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(io_noc_len_width, BP_IO_NOC_LEN_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(async_dma_clk, BP_ASYNC_MEM_CLK, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dma_noc_max_credits, BP_MEM_NOC_MAX_CREDITS, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dma_noc_flit_width, BP_MEM_NOC_FLIT_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dma_noc_cid_width, BP_MEM_NOC_CID_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dma_noc_len_width, BP_MEM_NOC_LEN_WIDTH, `BP_CUSTOM_BASE_CFG)
       };
 
 `endif

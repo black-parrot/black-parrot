@@ -495,7 +495,7 @@ module bp_fe_icache
 
   assign cache_req_v_o = v_tv & ~fill_tv_r & |{uncached_req, cached_req, fencei_req};
   assign cache_req_cast_o =
-   '{addr     : paddr_tv_r
+   '{addr     : `bp_addr_align(paddr_tv_r, 4)
      ,size    : bp_cache_req_size_e'(cached_req ? block_req_size : uncached_req_size)
      ,msg_type: cached_req ? e_miss_load : uncached_req ? e_uc_load : e_cache_clear
      ,subop   : e_req_amoswap

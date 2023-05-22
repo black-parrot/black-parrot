@@ -25,5 +25,8 @@
   localparam paramrom_base_addr_gp     = (dev_addr_width_gp)'('h2_0000);
   localparam paramrom_match_addr_gp    = (dev_addr_width_gp)'('h2_????);
 
+  localparam debugrom_base_addr_gp     = (dev_addr_width_gp)'('h3_0800);
+  localparam debugrom_match_addr_gp    = (dev_addr_width_gp)'('h3_????);
+
 `endif
 

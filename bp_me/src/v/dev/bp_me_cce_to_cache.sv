@@ -36,13 +36,11 @@ module bp_me_cce_to_cache
    , input [l2_data_width_p-1:0]                           mem_fwd_data_i
    , input                                                 mem_fwd_v_i
    , output logic                                          mem_fwd_ready_and_o
-   , input                                                 mem_fwd_last_i
 
    , output logic [mem_rev_header_width_lp-1:0]            mem_rev_header_o
    , output logic [l2_data_width_p-1:0]                    mem_rev_data_o
    , output logic                                          mem_rev_v_o
    , input                                                 mem_rev_ready_and_i
-   , output logic                                          mem_rev_last_o
 
    // cache-side
    , output logic [l2_banks_p-1:0][cache_pkt_width_lp-1:0] cache_pkt_o
@@ -83,16 +81,14 @@ module bp_me_cce_to_cache
   logic [l2_data_width_p-1:0] fsm_fwd_data_li;
   logic fsm_fwd_v_li, fsm_fwd_yumi_lo;
   logic fsm_fwd_new_li, fsm_fwd_last_li;
-  logic [paddr_width_p-1:0] fsm_fwd_stream_addr_li;
+  logic [paddr_width_p-1:0] fsm_fwd_addr_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(l2_data_width_p)
-     ,.block_width_p(cce_block_width_p)
+     ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)
-     ,.header_els_p(2)
-     ,.data_els_p(`BSG_MAX(2, cce_block_width_p/l2_data_width_p))
      )
    fwd_pump_in
     (.clk_i(clk_i)
@@ -101,11 +97,10 @@ module bp_me_cce_to_cache
      ,.msg_header_i(mem_fwd_header_i)
      ,.msg_data_i(mem_fwd_data_i)
      ,.msg_v_i(mem_fwd_v_i)
-     ,.msg_last_i(mem_fwd_last_i)
      ,.msg_ready_and_o(mem_fwd_ready_and_o)
 
      ,.fsm_header_o(fsm_fwd_header_li)
-     ,.fsm_addr_o(fsm_fwd_stream_addr_li)
+     ,.fsm_addr_o(fsm_fwd_addr_li)
      ,.fsm_data_o(fsm_fwd_data_li)
      ,.fsm_v_o(fsm_fwd_v_li)
      ,.fsm_yumi_i(fsm_fwd_yumi_lo)
@@ -196,17 +191,17 @@ module bp_me_cce_to_cache
   bp_me_dram_hash_encode
    #(.bp_params_p(bp_params_p))
    fsm_fwd_hash
-    (.daddr_i(fsm_fwd_stream_addr_li[0+:daddr_width_p])
+    (.daddr_i(fsm_fwd_addr_li[0+:daddr_width_p])
      ,.daddr_o(cache_pkt_addr_lo)
      ,.bank_o(cache_fwd_bank_lo)
      );
 
   bp_bedrock_mem_rev_header_s fsm_rev_header_lo;
   logic [l2_data_width_p-1:0] fsm_rev_data_lo;
+  logic [paddr_width_p-1:0] fsm_rev_addr_lo;
+  logic fsm_rev_v_lo, fsm_rev_yumi_li, fsm_rev_new_lo, fsm_rev_last_lo;
   logic [lg_l2_banks_lp-1:0] cache_rev_bank_lo;
-  logic stream_header_v_lo, fsm_rev_ready_and_li, fsm_rev_v_lo;
-  logic fsm_rev_last_lo;
-  logic stream_fifo_ready_lo;
+  logic stream_fifo_ready_lo, stream_header_v_lo;
   bsg_fifo_1r1w_small
    #(.width_p(lg_l2_banks_lp+$bits(bp_bedrock_mem_fwd_header_s))
      ,.els_p(l2_outstanding_reqs_p)
@@ -222,13 +217,13 @@ module bp_me_cce_to_cache
 
      ,.data_o({cache_rev_bank_lo, fsm_rev_header_lo})
      ,.v_o(stream_header_v_lo)
-     ,.yumi_i(fsm_rev_ready_and_li & fsm_rev_v_lo & fsm_rev_last_lo)
+     ,.yumi_i(fsm_rev_yumi_li & fsm_rev_last_lo)
      );
 
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.stream_data_width_p(l2_data_width_p)
-     ,.block_width_p(cce_block_width_p)
+     ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.msg_stream_mask_p(mem_rev_payload_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)
@@ -240,16 +235,15 @@ module bp_me_cce_to_cache
      ,.msg_header_o(mem_rev_header_o)
      ,.msg_data_o(mem_rev_data_o)
      ,.msg_v_o(mem_rev_v_o)
-     ,.msg_last_o(mem_rev_last_o)
      ,.msg_ready_and_i(mem_rev_ready_and_i)
 
      ,.fsm_header_i(fsm_rev_header_lo)
      ,.fsm_data_i(fsm_rev_data_lo)
-     ,.fsm_addr_o()
+     ,.fsm_addr_o(fsm_rev_addr_lo)
      ,.fsm_v_i(fsm_rev_v_lo)
-     ,.fsm_ready_and_o(fsm_rev_ready_and_li)
-     ,.fsm_cnt_o(/* unused */)
-     ,.fsm_new_o(/* unused */)
+     ,.fsm_yumi_o(fsm_rev_yumi_li)
+     ,.fsm_cnt_o()
+     ,.fsm_new_o(fsm_rev_new_lo)
      ,.fsm_last_o(fsm_rev_last_lo)
      );
 
@@ -406,7 +400,7 @@ module bp_me_cce_to_cache
             fsm_fwd_yumi_lo = fsm_fwd_v_li & cache_pkt_yumi_i[cache_fwd_bank_lo];
 
             fsm_rev_v_lo = stream_header_v_lo & cache_data_v_i[cache_rev_bank_lo];
-            cache_data_yumi_o[cache_rev_bank_lo] = fsm_rev_v_lo & fsm_rev_ready_and_li;
+            cache_data_yumi_o[cache_rev_bank_lo] = fsm_rev_yumi_li;
           end
         default: begin end
       endcase

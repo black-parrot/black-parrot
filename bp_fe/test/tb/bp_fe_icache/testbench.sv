@@ -31,13 +31,13 @@ module testbench
   )
   (output bit reset_i);
 
-  if ((uce_p == 0) && (l2_data_width_p != bedrock_data_width_p))
+  if ((uce_p == 0) && (l2_data_width_p != bedrock_fill_width_p))
     $error("CCE requires L2 fill width same as bedrock data width for memory networks");
-  if ((uce_p == 0) && (icache_fill_width_p != bedrock_data_width_p))
+  if ((uce_p == 0) && (icache_fill_width_p != bedrock_fill_width_p))
     $error("CCE requires L2 fill width same as bedrock data width for memory networks");
   if ((uce_p == 1) && (l2_data_width_p != icache_fill_width_p))
     $error("UCE requires L2 data width same as I$ fill width");
-  if (cce_block_width_p != icache_block_width_p)
+  if (bedrock_block_width_p != icache_block_width_p)
     $error("Memory fetch block width does not match icache block width");
 
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
@@ -77,12 +77,10 @@ module testbench
      ,.async_reset_o(dram_reset_i)
      );
 
-  bp_cfg_bus_s cfg_bus_cast_li;
-  logic [cfg_bus_width_lp-1:0] cfg_bus_li;
-  assign cfg_bus_li = cfg_bus_cast_li;
+  bp_cfg_bus_s cfg_bus_li;
 
   logic mem_fwd_v_lo, mem_rev_v_li;
-  logic mem_fwd_ready_and_li, mem_rev_ready_and_lo, mem_fwd_last_lo, mem_rev_last_li;
+  logic mem_fwd_ready_and_li, mem_rev_ready_and_lo;
   bp_bedrock_mem_fwd_header_s mem_fwd_header_lo;
   bp_bedrock_mem_rev_header_s mem_rev_header_li;
   logic [l2_data_width_p-1:0] mem_fwd_data_lo, mem_rev_data_li;
@@ -104,12 +102,12 @@ module testbench
   logic [ptag_width_p-1:0] ptag_li;
 
   always_comb begin
-    cfg_bus_cast_li = '0;
-    cfg_bus_cast_li.freeze = '0;
-    cfg_bus_cast_li.core_id = '0;
-    cfg_bus_cast_li.icache_id = '0;
-    cfg_bus_cast_li.icache_mode = e_lce_mode_normal;
-    cfg_bus_cast_li.cce_mode = e_cce_mode_normal;
+    cfg_bus_li = '0;
+    cfg_bus_li.freeze = '0;
+    cfg_bus_li.core_id = '0;
+    cfg_bus_li.icache_id = '0;
+    cfg_bus_li.icache_mode = e_lce_mode_normal;
+    cfg_bus_li.cce_mode = e_cce_mode_normal;
   end
 
   assign ptag_li       = trace_data_lo[0+:(ptag_width_p)];
@@ -228,13 +226,11 @@ module testbench
      ,.mem_fwd_data_o(mem_fwd_data_lo)
      ,.mem_fwd_v_o(mem_fwd_v_lo)
      ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
-     ,.mem_fwd_last_o(mem_fwd_last_lo)
 
      ,.mem_rev_header_i(mem_rev_header_li)
      ,.mem_rev_data_i(mem_rev_data_li)
      ,.mem_rev_v_i(mem_rev_v_li)
      ,.mem_rev_ready_and_o(mem_rev_ready_and_lo)
-     ,.mem_rev_last_i(mem_rev_last_li)
      );
 
   // Memory
@@ -251,13 +247,11 @@ module testbench
      ,.mem_fwd_data_i(mem_fwd_data_lo)
      ,.mem_fwd_v_i(mem_fwd_v_lo)
      ,.mem_fwd_ready_and_o(mem_fwd_ready_and_li)
-     ,.mem_fwd_last_i(mem_fwd_last_lo)
 
      ,.mem_rev_header_o(mem_rev_header_li)
      ,.mem_rev_data_o(mem_rev_data_li)
      ,.mem_rev_v_o(mem_rev_v_li)
      ,.mem_rev_ready_and_i(mem_rev_ready_and_lo)
-     ,.mem_rev_last_o(mem_rev_last_li)
 
      ,.dram_clk_i(dram_clk_i)
      ,.dram_reset_i(dram_reset_i)
@@ -297,39 +291,29 @@ module testbench
           ,.lce_id_i(lce_id_i)
 
           ,.lce_req_header_i(lce_req_header_o)
-          ,.lce_req_header_v_i(lce_req_header_v_o)
-          ,.lce_req_header_ready_and_i(lce_req_header_ready_and_i)
           ,.lce_req_data_i(lce_req_data_o)
-          ,.lce_req_data_v_i(lce_req_data_v_o)
-          ,.lce_req_data_ready_and_i(lce_req_data_ready_and_i)
+          ,.lce_req_v_i(lce_req_v_o)
+          ,.lce_req_ready_and_i(lce_req_ready_and_i)
 
           ,.lce_cmd_header_i(lce_cmd_header_i)
-          ,.lce_cmd_header_v_i(lce_cmd_header_v_i)
-          ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_o)
           ,.lce_cmd_data_i(lce_cmd_data_i)
-          ,.lce_cmd_data_v_i(lce_cmd_data_v_i)
-          ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_o)
+          ,.lce_cmd_v_i(lce_cmd_v_i)
+          ,.lce_cmd_ready_and_i(lce_cmd_ready_and_o)
 
           ,.lce_fill_header_i(lce_fill_header_i)
-          ,.lce_fill_header_v_i(lce_fill_header_v_i)
-          ,.lce_fill_header_ready_and_i(lce_fill_header_ready_and_o)
           ,.lce_fill_data_i(lce_fill_data_i)
-          ,.lce_fill_data_v_i(lce_fill_data_v_i)
-          ,.lce_fill_data_ready_and_i(lce_fill_data_ready_and_o)
+          ,.lce_fill_v_i(lce_fill_v_i)
+          ,.lce_fill_ready_and_i(lce_fill_ready_and_o)
 
           ,.lce_fill_o_header_i(lce_fill_header_o)
-          ,.lce_fill_o_header_v_i(lce_fill_header_v_o)
-          ,.lce_fill_o_header_ready_and_i(lce_fill_header_ready_and_i)
           ,.lce_fill_o_data_i(lce_fill_data_o)
-          ,.lce_fill_o_data_v_i(lce_fill_data_v_o)
-          ,.lce_fill_o_data_ready_and_i(lce_fill_data_ready_and_i)
+          ,.lce_fill_o_v_i(lce_fill_v_o)
+          ,.lce_fill_o_ready_and_i(lce_fill_ready_and_i)
 
           ,.lce_resp_header_i(lce_resp_header_o)
-          ,.lce_resp_header_v_i(lce_resp_header_v_o)
-          ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_i)
           ,.lce_resp_data_i(lce_resp_data_o)
-          ,.lce_resp_data_v_i(lce_resp_data_v_o)
-          ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_i)
+          ,.lce_resp_v_i(lce_resp_v_o)
+          ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
 
           ,.cache_req_complete_i(cache_req_complete_o)
           ,.uc_store_req_complete_i(uc_store_req_complete_lo)
@@ -347,25 +331,19 @@ module testbench
           // LCE-CCE Interface
           // BedRock Burst protocol: ready&valid
           ,.lce_req_header_i(lce_req_header_i)
-          ,.lce_req_header_v_i(lce_req_header_v_i)
-          ,.lce_req_header_ready_and_i(lce_req_header_ready_and_o)
           ,.lce_req_data_i(lce_req_data_i)
-          ,.lce_req_data_v_i(lce_req_data_v_i)
-          ,.lce_req_data_ready_and_i(lce_req_data_ready_and_o)
+          ,.lce_req_v_i(lce_req_v_i)
+          ,.lce_req_ready_and_i(lce_req_ready_and_o)
 
           ,.lce_cmd_header_i(lce_cmd_header_o)
-          ,.lce_cmd_header_v_i(lce_cmd_header_v_o)
-          ,.lce_cmd_header_ready_and_i(lce_cmd_header_ready_and_i)
           ,.lce_cmd_data_i(lce_cmd_data_o)
-          ,.lce_cmd_data_v_i(lce_cmd_data_v_o)
-          ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_i)
+          ,.lce_cmd_v_i(lce_cmd_v_o)
+          ,.lce_cmd_ready_and_i(lce_cmd_ready_and_i)
 
           ,.lce_resp_header_i(lce_resp_header_i)
-          ,.lce_resp_header_v_i(lce_resp_header_v_i)
-          ,.lce_resp_header_ready_and_i(lce_resp_header_ready_and_o)
           ,.lce_resp_data_i(lce_resp_data_i)
-          ,.lce_resp_data_v_i(lce_resp_data_v_i)
-          ,.lce_resp_data_ready_and_i(lce_resp_data_ready_and_o)
+          ,.lce_resp_v_i(lce_resp_v_i)
+          ,.lce_resp_ready_and_i(lce_resp_ready_and_o)
 
           // CCE-MEM Interface
           // BedRock Stream protocol: ready&valid
@@ -373,13 +351,11 @@ module testbench
           ,.mem_rev_data_i(mem_rev_data_i)
           ,.mem_rev_v_i(mem_rev_v_i)
           ,.mem_rev_ready_and_i(mem_rev_ready_and_o)
-          ,.mem_rev_last_i(mem_rev_last_i)
 
           ,.mem_fwd_header_i(mem_fwd_header_o)
           ,.mem_fwd_data_i(mem_fwd_data_o)
           ,.mem_fwd_v_i(mem_fwd_v_o)
           ,.mem_fwd_ready_and_i(mem_fwd_ready_and_i)
-          ,.mem_fwd_last_i(mem_fwd_last_o)
           );
   end
 
@@ -394,13 +370,11 @@ module testbench
        ,.mem_fwd_data_i(mem_fwd_data_i)
        ,.mem_fwd_v_i(mem_fwd_v_i)
        ,.mem_fwd_ready_and_i(mem_fwd_ready_and_o)
-       ,.mem_fwd_last_i(mem_fwd_last_i)
 
        ,.mem_rev_header_i(mem_rev_header_o)
        ,.mem_rev_data_i(mem_rev_data_o)
        ,.mem_rev_v_i(mem_rev_v_o)
        ,.mem_rev_ready_and_i(mem_rev_ready_and_i)
-       ,.mem_rev_last_i(mem_rev_last_o)
        );
 
   // Parameter Verification

@@ -272,8 +272,7 @@ module bp_be_csr
   // This currently depends on specific offsets in the debug module which are
   //   compatible with the pulp-platform debug rom:
   // https://github.com/pulp-platform/riscv-dbg/blob/64f48cd8ef3ed4269ab3dfcc32e8a137a871e3e1/src/dm_pkg.sv#L28
-  // For now, assume that unfreeze_pc is 16 byte aligned to avoid another mux
-  wire [vaddr_width_p-1:0] unfreeze_pc        = {cfg_npc_r[vaddr_width_p-1:4], 4'b0000};
+  // For now, assume that debug_halt_pc is 16 byte aligned to avoid another mux
   wire [vaddr_width_p-1:0] debug_halt_pc      = {cfg_npc_r[vaddr_width_p-1:4], 4'b0000};
   wire [vaddr_width_p-1:0] debug_resume_pc    = {cfg_npc_r[vaddr_width_p-1:4], 4'b0100};
   wire [vaddr_width_p-1:0] debug_exception_pc = {cfg_npc_r[vaddr_width_p-1:4], 4'b1000};
@@ -436,14 +435,16 @@ module bp_be_csr
                 // SIP subset of MIP
                 {1'b1, `CSR_ADDR_SIP          }: csr_data_lo = mip_lo & sip_rmask_li;
                 {1'b1, `CSR_ADDR_SATP         }: csr_data_lo = satp_lo;
-                // We havr no vendorid currently
+                // We have no vendorid currently
                 {1'b1, `CSR_ADDR_MVENDORID    }: csr_data_lo = '0;
                 // https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md
                 //   Lucky 13 (*v*)
                 {1'b1, `CSR_ADDR_MARCHID      }: csr_data_lo = 64'd13;
                 // 0: Tapeout 0, July 2019
-                // 1: Current
-                {1'b1, `CSR_ADDR_MIMPID       }: csr_data_lo = 64'd1;
+                // 1: Tapeout 1, June 2021
+                // 2: Tapeout 2, Sept 2022
+                // 3: Current
+                {1'b1, `CSR_ADDR_MIMPID       }: csr_data_lo = 64'd3;
                 {1'b1, `CSR_ADDR_MHARTID      }: csr_data_lo = cfg_bus_cast_i.core_id;
                 {1'b1, `CSR_ADDR_MSTATUS      }: csr_data_lo = mstatus_lo;
                 // MISA is optionally read-write, but all fields are read-only in BlackParrot
@@ -518,14 +519,7 @@ module bp_be_csr
 
       if (retire_pkt_cast_i.exception._interrupt)
         begin
-          if (d_interrupt_icode_v_li & dgie)
-            begin
-              enter_debug    = 1'b1;
-              dpc_li         = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
-              dcsr_li.cause  = 3; // Debugger
-              dcsr_li.prv    = priv_mode_r;
-            end
-          else if (m_interrupt_icode_v_li & mgie)
+          if (m_interrupt_icode_v_li & mgie)
             begin
               priv_mode_n          = `PRIV_MODE_M;
 
@@ -601,18 +595,39 @@ module bp_be_csr
             end
         end
 
-      if (retire_pkt_cast_i.special.dbreak)
+      // Re-enter debug mode if ebreaking during debug sequence
+      if (is_debug_mode)
+        begin
+          enter_debug = retire_pkt_cast_i.special.dbreak;
+        end
+      else if (retire_pkt_cast_i.exception._interrupt & d_interrupt_icode_v_li & dgie)
+        begin
+          enter_debug    = 1'b1;
+          dpc_li         = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
+          dcsr_li.cause  = 3; // Debugger
+          dcsr_li.prv    = priv_mode_r;
+        end
+      else if (retire_pkt_cast_i.special.dbreak)
         begin
           enter_debug    = 1'b1;
           dpc_li         = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
           dcsr_li.cause  = 1; // Ebreak
           dcsr_li.prv    = priv_mode_r;
         end
+      // Always break in single step mode
+      else if (retire_pkt_cast_i.queue_v & dcsr_lo.step)
+        begin
+          enter_debug    = 1'b1;
+          dpc_li         = `BSG_SIGN_EXTEND(core_npc, dword_width_gp);
+          dcsr_li.cause  = 4;
+          dcsr_li.prv    = priv_mode_r;
+        end
 
+      // Only exit debug mode through dret
       if (retire_pkt_cast_i.special.dret)
         begin
-          exit_debug       = 1'b1;
-          priv_mode_n      = dcsr_lo.prv;
+          exit_debug     = 1'b1;
+          priv_mode_n    = dcsr_lo.prv;
         end
 
       if (retire_pkt_cast_i.special.mret)
@@ -633,15 +648,6 @@ module bp_be_csr
           mstatus_li.spie  = 1'b1;
           mstatus_li.sie   = mstatus_lo.spie;
           mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
-        end
-
-      // Always break in single step mode
-      if (~is_debug_mode & retire_pkt_cast_i.queue_v & dcsr_lo.step)
-        begin
-          enter_debug   = 1'b1;
-          dpc_li        = `BSG_SIGN_EXTEND(core_npc, dword_width_gp);
-          dcsr_li.cause = 4;
-          dcsr_li.prv   = priv_mode_r;
         end
 
       // Accumulate interrupts
@@ -673,6 +679,8 @@ module bp_be_csr
   assign commit_pkt_cast_o.npc_w_v           = |{retire_pkt_cast_i.special, retire_pkt_cast_i.exception};
   assign commit_pkt_cast_o.queue_v           = retire_pkt_cast_i.queue_v & ~|retire_pkt_cast_i.exception;
   assign commit_pkt_cast_o.instret           = retire_pkt_cast_i.instret;
+  assign commit_pkt_cast_o.partial           = retire_pkt_cast_i.partial;
+  assign commit_pkt_cast_o.compressed        = retire_pkt_cast_i.compressed;
   assign commit_pkt_cast_o.pc                = apc_r;
   assign commit_pkt_cast_o.npc               = apc_n;
   assign commit_pkt_cast_o.vaddr             = retire_pkt_cast_i.vaddr;
@@ -681,7 +689,6 @@ module bp_be_csr
   assign commit_pkt_cast_o.priv_n            = priv_mode_n;
   assign commit_pkt_cast_o.translation_en_n  = translation_en_n;
   assign commit_pkt_cast_o.exception         = exception_v_lo;
-  assign commit_pkt_cast_o.partial           = retire_pkt_cast_i.partial;
   // Debug mode acts as a pseudo-interrupt
   assign commit_pkt_cast_o._interrupt        = interrupt_v_lo | enter_debug;
   assign commit_pkt_cast_o.fencei            = retire_pkt_cast_i.special.fencei_clean;

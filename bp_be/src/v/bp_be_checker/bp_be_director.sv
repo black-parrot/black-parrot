@@ -36,6 +36,7 @@ module bp_be_director
    , input [issue_pkt_width_lp-1:0]     issue_pkt_i
    , output logic [vaddr_width_p-1:0]   expected_npc_o
    , output logic                       poison_isd_o
+   , output logic                       clear_iss_o
    , output logic                       suppress_iss_o
    , output logic                       unfreeze_o
    , input                              irq_waiting_i
@@ -43,13 +44,13 @@ module bp_be_director
    , output logic                       cmd_empty_r_o
    , output logic                       cmd_full_n_o
    , output logic                       cmd_full_r_o
+   , input                              dispatch_v_i
 
    // FE-BE interface
    , output logic [fe_cmd_width_lp-1:0] fe_cmd_o
    , output logic                       fe_cmd_v_o
    , input                              fe_cmd_yumi_i
 
-   , input                              dispatch_v_i
    , input [branch_pkt_width_lp-1:0]    br_pkt_i
    , input [commit_pkt_width_lp-1:0]    commit_pkt_i
    );
@@ -117,7 +118,7 @@ module bp_be_director
   always_comb
     begin
       unique casez (state_r)
-        e_wait  : state_n = (fe_cmd_nonattaboy_v | irq_waiting_i) ? e_fence : e_wait;
+        e_wait  : state_n = irq_waiting_i ? e_fence : e_wait;
         e_run   : state_n = commit_pkt_cast_i.wfi
                             ? e_wait
                             : fe_cmd_nonattaboy_v
@@ -125,9 +126,9 @@ module bp_be_director
                               : freeze_li
                                 ? e_freeze
                                 : e_run;
-        e_freeze: state_n = (fe_cmd_v_li & commit_pkt_cast_i.unfreeze) ? e_run : e_freeze;
+        e_freeze: state_n = commit_pkt_cast_i.unfreeze ? e_run : e_freeze;
         // e_fence:
-        default : state_n = cmd_empty_n_o ? e_run : e_fence;
+        default : state_n = cmd_empty_r_o ? e_run : e_fence;
       endcase
     end
 
@@ -140,8 +141,9 @@ module bp_be_director
         state_r <= state_n;
       end
 
-  assign suppress_iss_o  = (state_r != e_run);
-  assign unfreeze_o      = (state_r == e_freeze) & ~freeze_li;
+  assign suppress_iss_o = (state_r != e_run);
+  assign clear_iss_o    = (state_r == e_fence) & cmd_empty_r_o;
+  assign unfreeze_o     = (state_r == e_freeze) & ~freeze_li;
 
   always_comb
     begin
@@ -152,7 +154,7 @@ module bp_be_director
       if (commit_pkt_cast_i.unfreeze)
         begin
           fe_cmd_li.opcode = e_op_state_reset;
-          fe_cmd_li.npc = npc_r;
+          fe_cmd_li.npc = npc_n;
 
           fe_cmd_pc_redirect_operands.priv           = commit_pkt_cast_i.priv_n;
           fe_cmd_pc_redirect_operands.translation_en = commit_pkt_cast_i.translation_en_n;
@@ -243,7 +245,7 @@ module bp_be_director
                                                              : e_not_a_branch;
           fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
-          fe_cmd_v_li = is_run;
+          fe_cmd_v_li = ~cmd_full_r_o & is_run;
         end
       // Send an attaboy if there's a correct prediction
       else if (npc_match_v & last_instr_was_branch)
@@ -253,7 +255,7 @@ module bp_be_director
           fe_cmd_li.operands.attaboy.taken               = last_instr_was_btaken;
           fe_cmd_li.operands.attaboy.branch_metadata_fwd = issue_pkt_cast_i.branch_metadata_fwd;
 
-          fe_cmd_v_li = is_run;
+          fe_cmd_v_li = ~cmd_full_r_o & is_run;
         end
     end
 

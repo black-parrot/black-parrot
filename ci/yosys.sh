@@ -6,17 +6,13 @@
 N=${1:-1}
 
 # Bash array to iterate over for configurations
+# Only works with tinyparrot_cfg at the moment
 cfgs=(\
-    "e_bp_unicore_cfg"
     "e_bp_unicore_tinyparrot_cfg"
-    "e_bp_multicore_1_cfg"
-    "e_bp_multicore_1_cce_ucode_cfg"
-    "e_bp_multicore_4_cfg"
-    "e_bp_multicore_4_cce_ucode_cfg"
     )
 
 # The base command to append the configuration to
-cmd_base="make -C bp_top/syn convert.bsg_sv2v"
+cmd_base="make -C bp_top/syn convert.bsg_sv2v synth.yosys build_yosys.v sim_yosys.v"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"

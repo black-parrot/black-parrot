@@ -20,7 +20,7 @@ module bp_me_nonsynth_cce_dir_tracer
     , localparam cce_dir_trace_file_p   = "cce_dir"
 
     // Derived parameters
-    , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
+    , localparam block_size_in_bytes_lp    = (bedrock_block_width_p/8)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
     // number of way groups managed by this CCE

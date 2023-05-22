@@ -12,7 +12,8 @@
       ,daddr_width: 55
       ,caddr_width: 54
 
-      ,branch_metadata_fwd_width: 42
+      ,branch_metadata_fwd_width: 45
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 9
       ,btb_idx_width            : 8
       ,bht_idx_width            : 8
@@ -28,6 +29,9 @@
       ,dcache_assoc       : 8
       ,dcache_block_width : 512
       ,dcache_fill_width  : 512
+
+      ,bedrock_block_width : 512
+      ,bedrock_fill_width  : 512
 
       ,l2_banks            : 8
       ,l2_data_width       : 512
@@ -47,7 +51,8 @@
   localparam bp_proc_param_s bp_unicore_tinyparrot_override_p =
     '{paddr_width         : 34
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 6
       ,btb_idx_width            : 4
       ,bht_idx_width            : 5
@@ -65,8 +70,13 @@
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
 
+      ,bedrock_block_width: 64
+      ,bedrock_fill_width : 64
+
       // We use L2 for the write buffer support, but not AMO
-      ,l2_features : (1 << e_cfg_writeback) | (1 << e_cfg_word_tracking)
+      ,l2_features   : (1 << e_cfg_writeback) | (1 << e_cfg_word_tracking)
+      ,l2_data_width : 64
+      ,l2_fill_width : 64
 
       ,default : "inv"
       };
@@ -78,7 +88,8 @@
   localparam bp_proc_param_s bp_unicore_miniparrot_override_p =
     '{paddr_width         : 34
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 6
       ,btb_idx_width            : 4
       ,bht_idx_width            : 5
@@ -96,13 +107,18 @@
       ,dcache_block_width : 64
       ,dcache_fill_width  : 64
 
+      ,bedrock_block_width: 64
+      ,bedrock_fill_width : 64
+
       // We use L2 for the write buffer support
-      ,l2_features : (1 << e_cfg_enabled)
-                     | (1 << e_cfg_writeback)
-                     | (1 << e_cfg_word_tracking)
-                     | (1 << e_cfg_amo_swap)
-                     | (1 << e_cfg_amo_fetch_logic)
-                     | (1 << e_cfg_amo_fetch_arithmetic)
+      ,l2_features   : (1 << e_cfg_enabled)
+                       | (1 << e_cfg_writeback)
+                       | (1 << e_cfg_word_tracking)
+                       | (1 << e_cfg_amo_swap)
+                       | (1 << e_cfg_amo_fetch_logic)
+                       | (1 << e_cfg_amo_fetch_arithmetic)
+      ,l2_data_width : 64
+      ,l2_fill_width : 64
 
       ,default : "inv"
       };
@@ -135,7 +151,8 @@
       ,daddr_width: 55
       ,caddr_width: 54
 
-      ,branch_metadata_fwd_width: 42
+      ,branch_metadata_fwd_width: 45
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 9
       ,btb_idx_width            : 8
       ,bht_idx_width            : 8
@@ -157,7 +174,8 @@
       ,acache_block_width : 512
       ,acache_fill_width  : 512
 
-      ,bedrock_data_width : 512
+      ,bedrock_fill_width  : 512
+      ,bedrock_block_width : 512
 
       ,l2_banks            : 8
       ,l2_data_width       : 512
@@ -167,12 +185,9 @@
       ,l2_fill_width       : 512
       ,l2_outstanding_reqs : 32
 
-      ,mem_noc_flit_width  : 512
-      ,mem_noc_cid_width   : 3
-
+      ,dma_noc_flit_width  : 512
       ,coh_noc_flit_width  : 512
-
-      ,io_noc_flit_width   : 512
+      ,mem_noc_flit_width  : 512
 
       ,default : "inv"
       };
@@ -186,7 +201,8 @@
       ,daddr_width: 33
       ,caddr_width: 32
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
+      ,ras_idx_width            : 1
       ,btb_tag_width            : 6
       ,btb_idx_width            : 4
       ,bht_idx_width            : 5
@@ -207,6 +223,16 @@
       ,acache_assoc       : 1
       ,acache_block_width : 64
       ,acache_fill_width  : 64
+
+      ,bedrock_block_width : 64
+      ,bedrock_fill_width  : 64
+
+      ,l2_data_width : 64
+      ,l2_fill_width : 64
+
+      ,coh_noc_flit_width : 64
+      ,dma_noc_flit_width : 64
+      ,mem_noc_flit_width  : 64
 
       ,default : "inv"
       };

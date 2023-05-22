@@ -45,39 +45,29 @@ module bp_me_nonsynth_lce_tracer
 
     // LCE-CCE Interface
     ,input [lce_req_header_width_lp-1:0]                    lce_req_header_i
-    ,input                                                  lce_req_header_v_i
-    ,input                                                  lce_req_header_ready_and_i
     ,input [fill_width_p-1:0]                               lce_req_data_i
-    ,input                                                  lce_req_data_v_i
-    ,input                                                  lce_req_data_ready_and_i
+    ,input                                                  lce_req_v_i
+    ,input                                                  lce_req_ready_and_i
 
     ,input [lce_cmd_header_width_lp-1:0]                    lce_cmd_header_i
-    ,input                                                  lce_cmd_header_v_i
-    ,input                                                  lce_cmd_header_ready_and_i
     ,input [fill_width_p-1:0]                               lce_cmd_data_i
-    ,input                                                  lce_cmd_data_v_i
-    ,input                                                  lce_cmd_data_ready_and_i
+    ,input                                                  lce_cmd_v_i
+    ,input                                                  lce_cmd_ready_and_i
 
     ,input [lce_fill_header_width_lp-1:0]                   lce_fill_header_i
-    ,input                                                  lce_fill_header_v_i
-    ,input                                                  lce_fill_header_ready_and_i
     ,input [fill_width_p-1:0]                               lce_fill_data_i
-    ,input                                                  lce_fill_data_v_i
-    ,input                                                  lce_fill_data_ready_and_i
+    ,input                                                  lce_fill_v_i
+    ,input                                                  lce_fill_ready_and_i
 
     ,input [lce_fill_header_width_lp-1:0]                   lce_fill_o_header_i
-    ,input                                                  lce_fill_o_header_v_i
-    ,input                                                  lce_fill_o_header_ready_and_i
     ,input [fill_width_p-1:0]                               lce_fill_o_data_i
-    ,input                                                  lce_fill_o_data_v_i
-    ,input                                                  lce_fill_o_data_ready_and_i
+    ,input                                                  lce_fill_o_v_i
+    ,input                                                  lce_fill_o_ready_and_i
 
     ,input [lce_resp_header_width_lp-1:0]                   lce_resp_header_i
-    ,input                                                  lce_resp_header_v_i
-    ,input                                                  lce_resp_header_ready_and_i
     ,input [fill_width_p-1:0]                               lce_resp_data_i
-    ,input                                                  lce_resp_data_v_i
-    ,input                                                  lce_resp_data_ready_and_i
+    ,input                                                  lce_resp_v_i
+    ,input                                                  lce_resp_ready_and_i
 
     ,input                                                  cache_req_complete_i
     ,input                                                  uc_store_req_complete_i
@@ -102,7 +92,7 @@ module bp_me_nonsynth_lce_tracer
   end
 
   logic cnt_up;
-  wire req_cnt_clr = lce_req_header_v_i & lce_req_header_ready_and_i;
+  wire req_cnt_clr = lce_req_v_i & lce_req_ready_and_i;
   logic [cnt_ptr_width_lp-1:0] req_cnt;
   bsg_counter_clear_up
     #(.max_val_p(cnt_max_lp)
@@ -126,7 +116,7 @@ module bp_me_nonsynth_lce_tracer
       // LCE-CCE Interface
 
       // request to CCE
-      if (lce_req_header_v_i & lce_req_header_ready_and_i) begin
+      if (lce_req_v_i & lce_req_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] uc[%b] tag[%H] set[%0d] ne[%b] lru[%0d] size[%b]"
                   , $time, lce_req_header_cast_i.payload.src_id, lce_req_header_cast_i.addr, lce_req_header_cast_i.payload.dst_id, lce_req_header_cast_i.msg_type
                   , uc_req
@@ -137,7 +127,7 @@ module bp_me_nonsynth_lce_tracer
                   );
         cnt_up <= 1'b1;
       end
-      if (lce_req_data_v_i & lce_req_data_ready_and_i) begin
+      if (lce_req_v_i & lce_req_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE[%0d] REQ DATA %H"
                   , $time, lce_id_i
                   , lce_req_data_i
@@ -145,14 +135,14 @@ module bp_me_nonsynth_lce_tracer
       end
 
       // response to CCE
-      if (lce_resp_header_v_i & lce_resp_header_ready_and_i) begin
+      if (lce_resp_v_i & lce_resp_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE[%0d] RESP addr[%H] cce[%0d] msg[%b] set[%0d] size[%b]"
                   , $time, lce_resp_header_cast_i.payload.src_id, lce_resp_header_cast_i.addr, lce_resp_header_cast_i.payload.dst_id, lce_resp_header_cast_i.msg_type.resp
                   , lce_resp_header_cast_i.addr[block_offset_bits_lp+:lg_sets_lp]
                   , lce_resp_header_cast_i.size
                   );
       end
-      if (lce_resp_data_v_i & lce_resp_data_ready_and_i) begin
+      if (lce_resp_v_i & lce_resp_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE[%0d] RESP DATA %H"
                   , $time, lce_id_i
                   , lce_resp_data_i
@@ -160,7 +150,7 @@ module bp_me_nonsynth_lce_tracer
       end
 
       // command to LCE
-      if (lce_cmd_header_v_i & lce_cmd_header_ready_and_i) begin
+      if (lce_cmd_v_i & lce_cmd_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE[%0d] CMD IN addr[%H] cce[%0d] msg[%b] set[%0d] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] tgt_state[%b] size[%b]"
                   , $time, lce_cmd_header_cast_i.payload.dst_id, lce_cmd_header_cast_i.addr, lce_cmd_header_cast_i.payload.src_id, lce_cmd_header_cast_i.msg_type.cmd
                   , lce_cmd_header_cast_i.addr[block_offset_bits_lp+:lg_sets_lp], lce_cmd_header_cast_i.payload.way_id, lce_cmd_header_cast_i.payload.state, lce_cmd_header_cast_i.payload.target
@@ -169,7 +159,7 @@ module bp_me_nonsynth_lce_tracer
                   , lce_cmd_header_cast_i.size
                   );
       end
-      if (lce_cmd_data_v_i & lce_cmd_data_ready_and_i) begin
+      if (lce_cmd_v_i & lce_cmd_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE[%0d] CMD DATA %H"
                   , $time, lce_id_i
                   , lce_cmd_data_i
@@ -177,7 +167,7 @@ module bp_me_nonsynth_lce_tracer
       end
 
       // Fill to LCE
-      if (lce_fill_header_v_i & lce_fill_header_ready_and_i) begin
+      if (lce_fill_v_i & lce_fill_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE[%0d] FILL IN addr[%H] cce[%0d] msg[%b] set[%0d] way[%0d] state[%b] size[%b]"
                   , $time, lce_fill_header_cast_i.payload.dst_id, lce_fill_header_cast_i.addr
                   , lce_fill_header_cast_i.payload.src_id, lce_fill_header_cast_i.msg_type.fill
@@ -186,7 +176,7 @@ module bp_me_nonsynth_lce_tracer
                   , lce_fill_header_cast_i.size
                   );
       end
-      if (lce_fill_data_v_i & lce_fill_data_ready_and_i) begin
+      if (lce_fill_v_i & lce_fill_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE[%0d] FILL DATA %H"
                   , $time, lce_id_i
                   , lce_fill_data_i
@@ -194,7 +184,7 @@ module bp_me_nonsynth_lce_tracer
       end
 
       // Fill from LCE
-      if (lce_fill_o_header_v_i & lce_fill_o_header_ready_and_i) begin
+      if (lce_fill_o_v_i & lce_fill_o_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE[%0d] FILL OUT dst[%0d] addr[%H] CCE[%0d] msg[%b] set[%0d] way[%0d] state[%b] size[%b]"
                   , $time, lce_id_i, lce_fill_o_header_cast_i.payload.dst_id, lce_fill_o_header_cast_i.addr
                   , lce_fill_o_header_cast_i.payload.src_id, lce_fill_o_header_cast_i.msg_type.fill
@@ -203,7 +193,7 @@ module bp_me_nonsynth_lce_tracer
                   , lce_fill_o_header_cast_i.size
                   );
       end
-      if (lce_fill_o_data_v_i & lce_fill_o_data_ready_and_i) begin
+      if (lce_fill_o_v_i & lce_fill_o_ready_and_i) begin
         $fdisplay(file, "%12t |: LCE[%0d] FILL OUT DATA %H"
                   , $time, lce_id_i
                   , lce_fill_o_data_i

@@ -22,7 +22,7 @@ module bp_cce_dir
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
-    , localparam block_size_in_bytes_lp = (cce_block_width_p/8)
+    , localparam block_size_in_bytes_lp = (bedrock_block_width_p/8)
 
     // I$ and D$ LCE ID's are [0, (2*num_core_p)-1]
     // A$ LCE ID's start at (2*num_core_p)

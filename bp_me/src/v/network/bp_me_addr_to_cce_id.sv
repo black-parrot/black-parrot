@@ -40,7 +40,7 @@ module bp_me_addr_to_cce_id
   wire local_addr_v_li = (paddr_i < dram_base_addr_gp);
   wire dram_addr_v_li = (paddr_i >= dram_base_addr_gp) && (paddr_i < coproc_base_addr_gp);
 
-  localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
+  localparam block_offset_lp = `BSG_SAFE_CLOG2(bedrock_block_width_p/8);
   localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
 
   // convert miss address (excluding block offset bits) into CCE ID
