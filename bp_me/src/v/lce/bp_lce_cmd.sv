@@ -60,8 +60,7 @@ module bp_lce_cmd
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
     // cache_req_complete_o is routed to the cache to indicate a blocking request is complete
-    , output logic                                   cache_req_critical_tag_o
-    , output logic                                   cache_req_critical_data_o
+    , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_complete_o
     // uncached store request complete is used by the LCE to decrement the request credit counter
     // when an uncached store complete, but is not routed to the cache because the caches do not
@@ -133,10 +132,10 @@ module bp_lce_cmd
   logic [fill_width_p-1:0] fsm_cmd_data_li;
   logic fsm_cmd_v_li, fsm_cmd_yumi_lo;
   logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt_li;
-  logic fsm_cmd_new_li, fsm_cmd_last_li;
+  logic fsm_cmd_new_li, fsm_cmd_critical_li, fsm_cmd_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.msg_stream_mask_p(lce_cmd_stream_mask_gp)
@@ -158,6 +157,7 @@ module bp_lce_cmd
      ,.fsm_v_o(fsm_cmd_v_li)
      ,.fsm_yumi_i(fsm_cmd_yumi_lo)
      ,.fsm_new_o(fsm_cmd_new_li)
+     ,.fsm_critical_o(fsm_cmd_critical_li)
      ,.fsm_last_o(fsm_cmd_last_li)
      );
 
@@ -176,10 +176,10 @@ module bp_lce_cmd
   logic [fill_width_p-1:0] fsm_fill_data_lo;
   logic fsm_fill_v_lo, fsm_fill_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_fill_cnt_lo;
-  logic fsm_fill_new_lo, fsm_fill_last_lo;
+  logic fsm_fill_new_lo, fsm_fill_critical_lo, fsm_fill_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_fill_payload_width_lp)
      ,.msg_stream_mask_p(lce_fill_stream_mask_gp)
@@ -201,6 +201,7 @@ module bp_lce_cmd
      ,.fsm_yumi_o(fsm_fill_yumi_li)
      ,.fsm_cnt_o(fsm_fill_cnt_lo)
      ,.fsm_new_o(fsm_fill_new_lo)
+     ,.fsm_critical_o(fsm_fill_critical_lo)
      ,.fsm_last_o(fsm_fill_last_lo)
      );
 
@@ -208,10 +209,10 @@ module bp_lce_cmd
   logic [fill_width_p-1:0] fsm_resp_data_lo;
   logic fsm_resp_v_lo, fsm_resp_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_resp_cnt_lo;
-  logic fsm_resp_new_lo, fsm_resp_last_lo;
+  logic fsm_resp_new_lo, fsm_resp_critical_lo, fsm_resp_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_resp_payload_width_lp)
      ,.msg_stream_mask_p(lce_resp_stream_mask_gp)
@@ -233,6 +234,7 @@ module bp_lce_cmd
      ,.fsm_yumi_o(fsm_resp_yumi_li)
      ,.fsm_cnt_o(fsm_resp_cnt_lo)
      ,.fsm_new_o(fsm_resp_new_lo)
+     ,.fsm_critical_o(fsm_resp_critical_lo)
      ,.fsm_last_o(fsm_resp_last_lo)
      );
 
@@ -260,6 +262,9 @@ module bp_lce_cmd
      ,.sel_i(dirty_data_select)
      ,.data_o(dirty_data_selected)
      );
+
+  assign cache_req_critical_o = data_mem_pkt_yumi_i & fsm_cmd_critical_li
+    & data_mem_pkt_cast_o.opcode inside {e_cache_data_mem_write, e_cache_data_mem_uncached};
 
   bp_cache_tag_info_s dirty_tag_r;
   wire dirty_tag_read = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
@@ -335,8 +340,6 @@ module bp_lce_cmd
     state_n = state_r;
 
     uc_store_req_complete_o = 1'b0;
-    cache_req_critical_data_o = 1'b0;
-    cache_req_critical_tag_o = 1'b0;
     // raised request is fully resolved
     cache_req_complete_o = 1'b0;
 
@@ -471,9 +474,6 @@ module bp_lce_cmd
             // consume header when tag write consumed by cache
             fsm_cmd_yumi_lo = tag_mem_pkt_yumi_i;
 
-            // inform cache that tag is returning to resolve miss
-            cache_req_critical_tag_o = tag_mem_pkt_yumi_i & (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup});
-
             state_n = (tag_mem_pkt_yumi_i && (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup}))
                       ? e_coh_ack
                       : state_r;
@@ -493,7 +493,6 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:ctag_width_p];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
             tag_mem_pkt_v_o = fsm_cmd_v_li;
-            cache_req_critical_tag_o = tag_mem_pkt_yumi_i & fsm_cmd_new_li;
 
             // do not consume header since it is needed to compute fill index for cache data writes
             state_n = tag_mem_pkt_yumi_i
@@ -517,9 +516,6 @@ module bp_lce_cmd
 
             // raise request complete signal when data consumed
             cache_req_complete_o = data_mem_pkt_yumi_i & fsm_cmd_new_li;
-            // Note: should create a tag_mem_pkt message for uncached
-            cache_req_critical_tag_o = data_mem_pkt_yumi_i & fsm_cmd_new_li;
-            cache_req_critical_data_o = data_mem_pkt_yumi_i & fsm_cmd_new_li;
           end
 
           // Uncached Store/Req Done
@@ -617,8 +613,6 @@ module bp_lce_cmd
         data_mem_pkt_v_o = fsm_cmd_v_li;
         // consume data beat when write to cache occurs
         fsm_cmd_yumi_lo = data_mem_pkt_yumi_i;
-        // critical beat is first data beat
-        cache_req_critical_data_o = fsm_cmd_yumi_lo & fsm_cmd_new_li;
 
         state_n = (fsm_cmd_yumi_lo & fsm_cmd_last_li)
                   ? e_coh_ack

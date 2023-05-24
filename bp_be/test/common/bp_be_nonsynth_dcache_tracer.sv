@@ -39,8 +39,7 @@ module bp_be_nonsynth_dcache_tracer
    , input                                                cache_req_busy_i
    , input [cache_req_metadata_width_lp-1:0]              cache_req_metadata_o
    , input                                                cache_req_metadata_v_o
-   , input                                                cache_req_critical_tag_i
-   , input                                                cache_req_critical_data_i
+   , input                                                cache_req_critical_i
    , input                                                cache_req_complete_i
    // Unused
    , input                                                cache_req_credits_full_i
@@ -163,10 +162,8 @@ module bp_be_nonsynth_dcache_tracer
         $fwrite(eng_file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);
       if (cache_req_metadata_v_o)
         $fwrite(eng_file, "%12t | cache_req_metadata: %p\n", $time, cache_req_metadata_cast_o);
-      if (cache_req_critical_tag_i)
-        $fwrite(eng_file, "%12t | cache_req_critical_tag_i: %b \n", $time, cache_req_critical_tag_i);
-      if (cache_req_critical_data_i)
-        $fwrite(eng_file, "%12t | cache_req_critical_data_i: %b \n", $time, cache_req_critical_data_i);
+      if (cache_req_critical_i)
+        $fwrite(eng_file, "%12t | cache_req_critical_i: %b \n", $time, cache_req_critical_i);
       if (cache_req_complete_i)
         $fwrite(eng_file, "%12t | cache_req_complete_i: %b \n", $time, cache_req_complete_i);
 

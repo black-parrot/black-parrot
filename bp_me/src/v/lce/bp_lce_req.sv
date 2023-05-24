@@ -134,10 +134,10 @@ module bp_lce_req
   logic [fill_width_p-1:0] fsm_req_data_lo;
   logic fsm_req_v_lo, fsm_req_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_req_cnt_lo;
-  logic fsm_req_new_lo, fsm_req_last_lo;
+  logic fsm_req_new_lo, fsm_req_critical_lo, fsm_req_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_req_payload_width_lp)
      ,.msg_stream_mask_p(lce_req_stream_mask_gp)
@@ -159,6 +159,7 @@ module bp_lce_req
      ,.fsm_yumi_o(fsm_req_yumi_li)
      ,.fsm_cnt_o(fsm_req_cnt_lo)
      ,.fsm_new_o(fsm_req_new_lo)
+     ,.fsm_critical_o(fsm_req_critical_lo)
      ,.fsm_last_o(fsm_req_last_lo)
      );
 

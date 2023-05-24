@@ -31,14 +31,14 @@ module bp_me_stream_pump_control
    , parameter `BSG_INV_PARAM(max_val_p)
    , parameter `BSG_INV_PARAM(payload_width_p)
    , parameter `BSG_INV_PARAM(data_width_p)
-   , parameter `BSG_INV_PARAM(fsm_stream_mask_p)
+   , parameter `BSG_INV_PARAM(stream_mask_p)
    , localparam width_lp = `BSG_WIDTH(max_val_p)
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, xce)
    )
   (input                                          clk_i
    , input                                        reset_i
 
-   , input [xce_header_width_lp-1:0]              msg_header_i
+   , input [xce_header_width_lp-1:0]              header_i
    // Increment counter
    , input                                        en_i
 
@@ -47,10 +47,11 @@ module bp_me_stream_pump_control
    , output logic [`BSG_SAFE_MINUS(width_lp,1):0] wrap_o
    , output logic                                 first_o
    , output logic                                 last_o
+   , output logic                                 critical_o
    );
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
-  `bp_cast_i(bp_bedrock_xce_header_s, msg_header);
+  `bp_cast_i(bp_bedrock_xce_header_s, header);
 
   if (max_val_p == 0)
     begin : z
@@ -68,11 +69,11 @@ module bp_me_stream_pump_control
       localparam offset_width_lp = `BSG_SAFE_CLOG2(data_bytes_lp);
 
       wire [width_lp-1:0] stream_size =
-        `BSG_MAX((1'b1 << msg_header_cast_i.size) / data_bytes_lp, 1'b1) - 1'b1;
-      wire fsm_stream = fsm_stream_mask_p[msg_header_cast_i.msg_type];
+        `BSG_MAX((1'b1 << header_cast_i.size) / data_bytes_lp, 1'b1) - 1'b1;
+      wire stream = stream_mask_p[header_cast_i.msg_type];
 
-      wire [width_lp-1:0] size_li = fsm_stream ? stream_size : '0;
-      wire [width_lp-1:0] first_cnt = msg_header_cast_i.addr[offset_width_lp+:width_lp];
+      wire [width_lp-1:0] size_li = stream ? stream_size : '0;
+      wire [width_lp-1:0] first_cnt = header_cast_i.addr[offset_width_lp+:width_lp];
 
       assign first_o = is_ready;
 
@@ -89,18 +90,13 @@ module bp_me_stream_pump_control
          ,.val_i(cnt_val_li)
          ,.count_o(cnt_r)
          );
+      wire [width_lp-1:0] cnt_lo = is_ready ? first_cnt : cnt_r;
 
-      logic [width_lp-1:0] last_cnt_r;
-      wire [width_lp-1:0] last_cnt_n = first_cnt + size_li;
-      bsg_dff_en
-       #(.width_p(width_lp))
-       last_cnt_reg
-        (.clk_i(clk_i)
-         ,.en_i(is_ready)
-         ,.data_i(last_cnt_n)
-         ,.data_o(last_cnt_r)
-         );
-      assign last_o = is_ready ? (size_li == '0) : (last_cnt_r == cnt_r);
+      wire [width_lp-1:0] critical_cnt = header_cast_i.addr[offset_width_lp+:width_lp];
+      assign critical_o = (critical_cnt == cnt_lo);
+
+      wire [width_lp-1:0] last_cnt = first_cnt + size_li;
+      assign last_o = (last_cnt == cnt_lo);
 
       // Dynamically generate sub-block wrapped stream count
       // The count is wrapped within the size_li aligned portion of the block containing first_cnt
@@ -153,7 +149,7 @@ module bp_me_stream_pump_control
        #(.width_p(width_lp))
        wrap_mux
         (.data0_i(first_cnt)
-         ,.data1_i(cnt_r)
+         ,.data1_i(cnt_lo)
          ,.sel_i(wrap_sel_li)
          ,.data_o(wrap_lo)
          );

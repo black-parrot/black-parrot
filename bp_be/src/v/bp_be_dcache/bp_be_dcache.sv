@@ -150,8 +150,7 @@ module bp_be_dcache
    , input                                           cache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
-   , input                                           cache_req_critical_tag_i
-   , input                                           cache_req_critical_data_i
+   , input                                           cache_req_critical_i
    , input                                           cache_req_complete_i
    // Unused
    , input                                           cache_req_credits_full_i
@@ -375,7 +374,7 @@ module bp_be_dcache
    #(.width_p(3*assoc_p), .els_p(2))
    hit_mux
     (.data_i({{3{tag_mem_pseudo_hit}}, {way_v_tl, store_hit_tl, load_hit_tl}})
-     ,.sel_i(cache_req_critical_tag_i)
+     ,.sel_i(cache_req_critical_i)
      ,.data_o({way_v_tv_n, store_hit_tv_n, load_hit_tv_n})
      );
 
@@ -384,7 +383,7 @@ module bp_be_dcache
    hit_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(tv_we | cache_req_critical_tag_i)
+     ,.en_i(tv_we | cache_req_critical_i)
      ,.data_i({way_v_tv_n, store_hit_tv_n, load_hit_tv_n})
      ,.data_o({way_v_tv_r, store_hit_tv_r, load_hit_tv_r})
      );
@@ -418,7 +417,7 @@ module bp_be_dcache
    #(.width_p(block_width_p), .els_p(2))
    ld_data_mux
     (.data_i({snoop_data_lo, data_mem_data_lo})
-     ,.sel_i(cache_req_critical_data_i)
+     ,.sel_i(cache_req_critical_i)
      ,.data_o(ld_data_tv_n)
      );
 
@@ -426,7 +425,7 @@ module bp_be_dcache
    #(.width_p(block_width_p))
    ld_data_tv_reg
     (.clk_i(clk_i)
-     ,.en_i(tv_we | cache_req_critical_data_i)
+     ,.en_i(tv_we | cache_req_critical_i)
      ,.data_i(ld_data_tv_n)
      ,.data_o(ld_data_tv_r)
      );

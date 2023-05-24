@@ -38,8 +38,7 @@ module bp_uce
     , output logic                                   cache_req_busy_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
-    , output logic                                   cache_req_critical_tag_o
-    , output logic                                   cache_req_critical_data_o
+    , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_credits_full_o
     , output logic                                   cache_req_credits_empty_o
@@ -226,10 +225,10 @@ module bp_uce
   logic [fill_width_p-1:0] fsm_fwd_data_lo;
   logic fsm_fwd_v_lo, fsm_fwd_yumi_li;
   logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt_lo;
-  logic fsm_fwd_new_lo, fsm_fwd_last_lo;
+  logic fsm_fwd_new_lo, fsm_fwd_critical_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
@@ -251,6 +250,7 @@ module bp_uce
      ,.fsm_yumi_o(fsm_fwd_yumi_li)
      ,.fsm_cnt_o(fsm_fwd_cnt_lo)
      ,.fsm_new_o(fsm_fwd_new_lo)
+     ,.fsm_critical_o(fsm_fwd_critical_lo)
      ,.fsm_last_o(fsm_fwd_last_lo)
      );
 
@@ -258,10 +258,11 @@ module bp_uce
   logic [paddr_width_p-1:0] fsm_rev_addr_li;
   logic [fill_width_p-1:0] fsm_rev_data_li;
   logic fsm_rev_v_li, fsm_rev_yumi_lo;
-  logic fsm_rev_new_li, fsm_rev_last_li;
+  logic [fill_cnt_width_lp-1:0] fsm_rev_cnt_li;
+  logic fsm_rev_new_li, fsm_rev_critical_li, fsm_rev_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
@@ -281,8 +282,9 @@ module bp_uce
      ,.fsm_data_o(fsm_rev_data_li)
      ,.fsm_v_o(fsm_rev_v_li)
      ,.fsm_yumi_i(fsm_rev_yumi_lo)
-     ,.fsm_cnt_o()
+     ,.fsm_cnt_o(fsm_rev_cnt_li)
      ,.fsm_new_o(fsm_rev_new_li)
+     ,.fsm_critical_o(fsm_rev_critical_li)
      ,.fsm_last_o(fsm_rev_last_li)
      );
 
@@ -347,7 +349,6 @@ module bp_uce
      ,.count_o(way_cnt)
      );
   wire way_done = (assoc_p == 1) || (way_cnt == assoc_p-1);
-  wire way_done_n = (assoc_p == 1) || (way_cnt == assoc_p-2);
 
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
@@ -378,26 +379,8 @@ module bp_uce
      ,.data_o(writeback_data)
      );
 
-  // We expect the critical word to come back first, so we can simply
-  //   start waiting when we enter the sending state, and then we'll
-  //   know the next non-write response will be critical
-  logic critical_pending;
-  wire critical_sent = is_send_critical & fsm_fwd_yumi_li;
-  wire critical_recv = load_resp_v_li & fsm_rev_yumi_lo;
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   critical_pending_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.set_i(critical_sent)
-     ,.clear_i(critical_recv)
-     ,.data_o(critical_pending)
-     );
-  // This is sufficient for UCE because we only set tags on requests, not invalidation
-  assign cache_req_critical_tag_o =
-    (tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_set_tag))
-    || (is_uc_read_wait & data_mem_pkt_yumi_i);
-  assign cache_req_critical_data_o = critical_pending & critical_recv;
+  assign cache_req_critical_o = data_mem_pkt_yumi_i & fsm_rev_critical_li
+    & data_mem_pkt_cast_o.opcode inside {e_cache_data_mem_write, e_cache_data_mem_uncached};
 
   bp_cache_req_wr_subop_e cache_wr_subop;
   bp_bedrock_wr_subop_e mem_wr_subop;
