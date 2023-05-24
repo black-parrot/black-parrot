@@ -72,6 +72,8 @@ module bp_me_stream_pump_out
    , output logic                                   fsm_new_o
    // fsm_last is raised on last beat of every message
    , output logic                                   fsm_last_o
+   // fsm_critical is raised on critical beat of every message
+   , output logic                                   fsm_critical_o
    );
 
   if (block_width_p % stream_data_width_p != 0)

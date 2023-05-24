@@ -87,8 +87,8 @@ module bp_me_cce_to_cache
      ,.stream_data_width_p(l2_data_width_p)
      ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
-     ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)
+     ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
+     ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp | mem_rev_stream_mask_gp)
      )
    fwd_pump_in
     (.clk_i(clk_i)
@@ -225,8 +225,8 @@ module bp_me_cce_to_cache
      ,.stream_data_width_p(l2_data_width_p)
      ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
-     ,.msg_stream_mask_p(mem_rev_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)
+     ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
+     ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp | mem_rev_stream_mask_gp)
      )
    rev_pump_out
     (.clk_i(clk_i)

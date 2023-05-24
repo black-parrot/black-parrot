@@ -139,8 +139,8 @@ module bp_lce_cmd
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
-     ,.msg_stream_mask_p(lce_cmd_payload_mask_gp)
-     ,.fsm_stream_mask_p(lce_cmd_payload_mask_gp)
+     ,.msg_stream_mask_p(lce_cmd_stream_mask_gp)
+     ,.fsm_stream_mask_p(lce_cmd_stream_mask_gp)
      )
    cmd_pump_in
     (.clk_i(clk_i)
@@ -182,8 +182,8 @@ module bp_lce_cmd
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_fill_payload_width_lp)
-     ,.msg_stream_mask_p(lce_fill_payload_mask_gp)
-     ,.fsm_stream_mask_p(lce_fill_payload_mask_gp)
+     ,.msg_stream_mask_p(lce_fill_stream_mask_gp)
+     ,.fsm_stream_mask_p(lce_fill_stream_mask_gp)
      )
    lce_fill_pump_out
     (.clk_i(clk_i)
@@ -214,8 +214,8 @@ module bp_lce_cmd
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_resp_payload_width_lp)
-     ,.msg_stream_mask_p(lce_resp_payload_mask_gp)
-     ,.fsm_stream_mask_p(lce_resp_payload_mask_gp)
+     ,.msg_stream_mask_p(lce_resp_stream_mask_gp)
+     ,.fsm_stream_mask_p(lce_resp_stream_mask_gp)
      )
    lce_resp_pump_out
     (.clk_i(clk_i)

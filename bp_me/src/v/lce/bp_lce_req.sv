@@ -140,8 +140,8 @@ module bp_lce_req
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_req_payload_width_lp)
-     ,.msg_stream_mask_p(lce_req_payload_mask_gp)
-     ,.fsm_stream_mask_p(lce_req_payload_mask_gp)
+     ,.msg_stream_mask_p(lce_req_stream_mask_gp)
+     ,.fsm_stream_mask_p(lce_req_stream_mask_gp)
      )
    lce_req_pump_out
     (.clk_i(clk_i)
