@@ -48,6 +48,8 @@
      ,e_cache_tag_mem_set_state
      // read tag mem packets for writeback and transfer (Used for UCE)
      ,e_cache_tag_mem_read
+     // write uncached load tag 
+     ,e_cache_tag_mem_uncached
     } bp_cache_tag_mem_opcode_e;
 
     // Stat mem pkt opcodes

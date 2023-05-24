@@ -887,7 +887,9 @@ module bp_be_dcache
     : tag_mem_fast_read
       ? vaddr_index
       : tag_mem_pkt_cast_i.index;
-  assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_fast_write;
+  assign tag_mem_pkt_yumi_o = (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_uncached)
+    ? tag_mem_pkt_v_i
+    : ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_fast_write;
 
   logic [assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode
