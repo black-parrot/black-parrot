@@ -51,7 +51,7 @@ module bp_me_stream_pump_out
 
    // Output BedRock Stream
    , output logic [xce_header_width_lp-1:0]         msg_header_o
-   , output logic [fsm_data_width_p-1:0]            msg_data_o
+   , output logic [bedrock_fill_width_p-1:0]        msg_data_o
    , output logic                                   msg_v_o
    , input                                          msg_ready_and_i
 
@@ -75,12 +75,34 @@ module bp_me_stream_pump_out
    , output logic                                   fsm_critical_o
    );
 
-  if (block_width_p % fsm_data_width_p != 0)
-    $error("Stream pump block width must be multiple of stream data width");
-
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, fsm_header);
   `bp_cast_o(bp_bedrock_xce_header_s, msg_header);
+
+  bp_bedrock_xce_header_s msg_header_lo;
+  logic [fsm_data_width_p-1:0] msg_data_lo;
+  logic msg_v_lo, msg_ready_and_li;
+  bp_me_stream_gearbox
+   #(.buffered_p(0)
+     ,.in_data_width_p(fsm_data_width_p)
+     ,.out_data_width_p(bedrock_fill_width_p)
+     ,.payload_width_p(payload_width_p)
+     ,.stream_mask_p(msg_stream_mask_p)
+     )
+   gearbox
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.msg_header_i(msg_header_lo)
+     ,.msg_data_i(msg_data_lo)
+     ,.msg_v_i(msg_v_lo)
+     ,.msg_ready_and_o(msg_ready_and_li)
+
+     ,.msg_header_o(msg_header_cast_o)
+     ,.msg_data_o(msg_data_o)
+     ,.msg_v_o(msg_v_o)
+     ,.msg_ready_param_i(msg_ready_and_i)
+     );
 
   wire [fsm_cnt_width_lp-1:0] stream_size =
     `BSG_MAX((1'b1 << fsm_header_cast_i.size) / fsm_bytes_lp, 1'b1) - 1'b1;
@@ -117,32 +139,32 @@ module bp_me_stream_pump_out
      };
   assign fsm_addr_o = wrap_addr;
 
-  assign msg_header_cast_o = fsm_header_cast_i;
-  assign msg_data_o = fsm_data_i;
+  assign msg_header_lo = fsm_header_cast_i;
+  assign msg_data_lo = fsm_data_i;
 
   always_comb
     if (~fsm_stream & msg_stream & nz_stream)
       begin
         // 1:N
         // send N msg beats, and ack single FSM beat on last msg beat
-        msg_v_o = fsm_v_i;
-        fsm_yumi_o = fsm_v_i & fsm_last_o & msg_ready_and_i;
-        cnt_up = msg_v_o & msg_ready_and_i;
+        msg_v_lo = fsm_v_i;
+        fsm_yumi_o = fsm_v_i & fsm_last_o & msg_ready_and_li;
+        cnt_up = msg_v_lo & msg_ready_and_li;
       end
     else if (fsm_stream & ~msg_stream & nz_stream)
       begin
         // N:1
         // only send msg on first FSM beat
-        msg_v_o = fsm_v_i & fsm_new_o;
+        msg_v_lo = fsm_v_i & fsm_new_o;
         // ack all but last FSM beat silently, then ack last FSM beat when msg beat sends
-        fsm_yumi_o = fsm_v_i & (msg_ready_and_i | ~fsm_new_o);
+        fsm_yumi_o = fsm_v_i & (msg_ready_and_li | ~fsm_new_o);
         cnt_up = fsm_yumi_o;
       end
     else
       begin
         // 1:1
-        msg_v_o = fsm_v_i;
-        fsm_yumi_o = msg_ready_and_i & msg_v_o;
+        msg_v_lo = fsm_v_i;
+        fsm_yumi_o = msg_ready_and_li & msg_v_lo;
         cnt_up  = fsm_yumi_o;
       end
 

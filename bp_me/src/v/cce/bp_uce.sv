@@ -59,12 +59,12 @@ module bp_uce
     , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
     , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
-    , output logic [fill_width_p-1:0]                mem_fwd_data_o
+    , output logic [bedrock_fill_width_p-1:0]        mem_fwd_data_o
     , output logic                                   mem_fwd_v_o
     , input                                          mem_fwd_ready_and_i
 
     , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
-    , input [fill_width_p-1:0]                       mem_rev_data_i
+    , input [bedrock_fill_width_p-1:0]               mem_rev_data_i
     , input                                          mem_rev_v_i
     , output logic                                   mem_rev_ready_and_o
     );
