@@ -83,7 +83,8 @@ module bp_me_stream_pump_out
   logic [fsm_data_width_p-1:0] msg_data_lo;
   logic msg_v_lo, msg_ready_and_li;
   bp_me_stream_gearbox
-   #(.buffered_p(0)
+   #(.bp_params_p(bp_params_p)
+     ,.buffered_p(0)
      ,.in_data_width_p(fsm_data_width_p)
      ,.out_data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(payload_width_p)
