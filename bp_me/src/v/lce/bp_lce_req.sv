@@ -131,9 +131,9 @@ module bp_lce_req
      );
 
   bp_bedrock_lce_req_header_s fsm_req_header_lo;
+  logic [paddr_width_p-1:0] fsm_req_addr_lo;
   logic [fill_width_p-1:0] fsm_req_data_lo;
   logic fsm_req_v_lo, fsm_req_yumi_li;
-  logic [fill_cnt_width_lp-1:0] fsm_req_cnt_lo;
   logic fsm_req_new_lo, fsm_req_critical_lo, fsm_req_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -153,11 +153,10 @@ module bp_lce_req
      ,.msg_ready_and_i(lce_req_ready_and_i)
 
      ,.fsm_header_i(fsm_req_header_lo)
-     ,.fsm_addr_o()
+     ,.fsm_addr_o(fsm_req_addr_lo)
      ,.fsm_data_i(fsm_req_data_lo)
      ,.fsm_v_i(fsm_req_v_lo)
      ,.fsm_yumi_o(fsm_req_yumi_li)
-     ,.fsm_cnt_o(fsm_req_cnt_lo)
      ,.fsm_new_o(fsm_req_new_lo)
      ,.fsm_critical_o(fsm_req_critical_lo)
      ,.fsm_last_o(fsm_req_last_lo)

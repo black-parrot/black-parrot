@@ -59,14 +59,13 @@ module bp_me_stream_pump_out
    // FSM must hold fsm_header_i constant throughout the transaction
    // (i.e., through cycle fsm_last_o is raised)
    , input [xce_header_width_lp-1:0]                fsm_header_i
-   , output logic [paddr_width_p-1:0]               fsm_addr_o
    , input [fsm_data_width_p-1:0]                   fsm_data_i
    , input                                          fsm_v_i
    , output logic                                   fsm_yumi_o
 
    // FSM control signals
-   // fsm_cnt is the current stream word being sent
-   , output logic [fsm_cnt_width_lp-1:0]            fsm_cnt_o
+   // fsm_addr is the effective address of the beat
+   , output logic [paddr_width_p-1:0]               fsm_addr_o
    // fsm_new is raised when first beat of every message is acked
    , output logic                                   fsm_new_o
    // fsm_last is raised on last beat of every message
@@ -114,9 +113,9 @@ module bp_me_stream_pump_out
   logic cnt_up;
   bp_me_stream_pump_control
    #(.bp_params_p(bp_params_p)
-     ,.max_val_p(fsm_words_lp-1)
      ,.stream_mask_p(fsm_stream_mask_p)
      ,.data_width_p(fsm_data_width_p)
+     ,.block_width_p(block_width_p)
      ,.payload_width_p(payload_width_p)
      )
    pump_control
@@ -124,21 +123,13 @@ module bp_me_stream_pump_out
      ,.reset_i(reset_i)
 
      ,.header_i(fsm_header_cast_i)
-     ,.en_i(cnt_up)
+     ,.ack_i(cnt_up)
 
-     ,.wrap_o(fsm_cnt_o)
+     ,.addr_o(fsm_addr_o)
      ,.first_o(fsm_new_o)
      ,.last_o(fsm_last_o)
      ,.critical_o(fsm_critical_o)
      );
-
-  localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3);
-  wire [paddr_width_p-1:0] wrap_addr =
-    {fsm_header_cast_i.addr[paddr_width_p-1:block_offset_width_lp]
-     ,{fsm_words_lp>1{fsm_cnt_o}}
-     ,fsm_header_cast_i.addr[0+:fsm_cnt_offset_width_lp]
-     };
-  assign fsm_addr_o = wrap_addr;
 
   assign msg_header_lo = fsm_header_cast_i;
   assign msg_data_lo = fsm_data_i;

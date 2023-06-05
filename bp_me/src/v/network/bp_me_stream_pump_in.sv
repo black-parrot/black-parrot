@@ -60,19 +60,18 @@ module bp_me_stream_pump_in
 
    // FSM consumer side
    , output logic [xce_header_width_lp-1:0]         fsm_header_o
-   , output logic [paddr_width_p-1:0]               fsm_addr_o
    , output logic [fsm_data_width_p-1:0]            fsm_data_o
    , output logic                                   fsm_v_o
    , input                                          fsm_yumi_i
    // FSM control signals
-   // fsm_cnt is the current stream word being sent
-   , output logic [fsm_cnt_width_lp-1:0]            fsm_cnt_o
+   // fsm_addr is the effective address of the beat
+   , output logic [paddr_width_p-1:0]               fsm_addr_o
    // fsm_new is raised when first beat of every message is acked
    , output logic                                   fsm_new_o
-   // fsm_last is raised on last beat of every message
-   , output logic                                   fsm_last_o
    // fsm_critical is raised on the critical beat of every message
    , output logic                                   fsm_critical_o
+   // fsm_last is raised on last beat of every message
+   , output logic                                   fsm_last_o
    );
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
@@ -114,7 +113,7 @@ module bp_me_stream_pump_in
   logic cnt_up;
   bp_me_stream_pump_control
    #(.bp_params_p(bp_params_p)
-     ,.max_val_p(fsm_words_lp-1)
+     ,.block_width_p(block_width_p)
      ,.stream_mask_p(fsm_stream_mask_p)
      ,.data_width_p(fsm_data_width_p)
      ,.payload_width_p(payload_width_p)
@@ -124,24 +123,16 @@ module bp_me_stream_pump_in
      ,.reset_i(reset_i)
 
      ,.header_i(fsm_header_cast_o)
-     ,.en_i(cnt_up)
+     ,.ack_i(cnt_up)
 
-     ,.wrap_o(fsm_cnt_o)
+     ,.addr_o(fsm_addr_o)
      ,.first_o(fsm_new_o)
      ,.last_o(fsm_last_o)
      ,.critical_o(fsm_critical_o)
      );
 
-  localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3);
-  wire [paddr_width_p-1:0] wrap_addr =
-    {msg_header_li.addr[paddr_width_p-1:block_offset_width_lp]
-     ,{fsm_words_lp>1{fsm_cnt_o}}
-     ,msg_header_li.addr[0+:fsm_cnt_offset_width_lp]
-     };
-
   assign fsm_header_cast_o = msg_header_li;
   assign fsm_data_o = msg_data_li;
-  assign fsm_addr_o = wrap_addr;
 
   always_comb
     if (~msg_stream & fsm_stream & nz_stream)

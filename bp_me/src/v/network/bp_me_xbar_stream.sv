@@ -27,7 +27,6 @@ module bp_me_xbar_stream
 
    , localparam lg_num_source_lp = `BSG_SAFE_CLOG2(num_source_p)
    , localparam lg_num_sink_lp   = `BSG_SAFE_CLOG2(num_sink_p)
-   , localparam words_lp         = block_width_p / data_width_p
    )
   (input                                                              clk_i
    , input                                                            reset_i
@@ -97,8 +96,8 @@ module bp_me_xbar_stream
       logic msg_last_lo;
       bp_me_stream_pump_control
        #(.bp_params_p(bp_params_p)
-         ,.max_val_p(words_lp-1)
          ,.stream_mask_p(stream_mask_p)
+         ,.block_width_p(block_width_p)
          ,.data_width_p(data_width_p)
          ,.payload_width_p(payload_width_p)
          )
@@ -107,12 +106,12 @@ module bp_me_xbar_stream
          ,.reset_i(reset_i)
 
          ,.header_i(msg_header_o[i])
-         ,.en_i(msg_ready_and_i[i] & msg_v_o[i])
+         ,.ack_i(msg_ready_and_i[i] & msg_v_o[i])
 
-         ,.wrap_o()
+         ,.addr_o()
          ,.first_o()
-         ,.last_o(msg_last_lo)
          ,.critical_o()
+         ,.last_o(msg_last_lo)
          );
 
       assign {msg_header_o[i], msg_data_o[i]} = sink_combine[i];

@@ -64,7 +64,6 @@ module bp_me_loopback
      ,.fsm_v_o(fsm_fwd_v_li)
      ,.fsm_yumi_i(fsm_fwd_yumi_lo)
      ,.fsm_addr_o(fsm_fwd_addr_lo)
-     ,.fsm_cnt_o()
      ,.fsm_new_o(fsm_fwd_new_lo)
      ,.fsm_critical_o(fsm_fwd_critical_lo)
      ,.fsm_last_o(fsm_fwd_last_lo)
@@ -72,8 +71,8 @@ module bp_me_loopback
 
   bp_bedrock_mem_rev_header_s fsm_rev_header_lo;
   logic [bedrock_fill_width_p-1:0] fsm_rev_data_lo;
-  logic [paddr_width_p-1:0] fsm_rev_addr_lo;
   logic fsm_rev_v_lo, fsm_rev_yumi_li;
+  logic [paddr_width_p-1:0] fsm_rev_addr_lo;
   logic fsm_rev_new_lo, fsm_rev_critical_lo, fsm_rev_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -97,7 +96,6 @@ module bp_me_loopback
      ,.fsm_v_i(fsm_fwd_v_li)
      ,.fsm_yumi_o(fsm_fwd_yumi_lo)
      ,.fsm_addr_o(fsm_rev_addr_lo)
-     ,.fsm_cnt_o()
      ,.fsm_new_o(fsm_rev_new_lo)
      ,.fsm_critical_o(fsm_rev_critical_lo)
      ,.fsm_last_o(fsm_rev_last_lo)

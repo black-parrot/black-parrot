@@ -224,7 +224,7 @@ module bp_uce
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
   logic [fill_width_p-1:0] fsm_fwd_data_lo;
   logic fsm_fwd_v_lo, fsm_fwd_yumi_li;
-  logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt_lo;
+  logic [paddr_width_p-1:0] fsm_fwd_addr_lo;
   logic fsm_fwd_new_lo, fsm_fwd_critical_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -245,20 +245,18 @@ module bp_uce
 
      ,.fsm_header_i(fsm_fwd_header_lo)
      ,.fsm_data_i(fsm_fwd_data_lo)
-     ,.fsm_addr_o()
      ,.fsm_v_i(fsm_fwd_v_lo)
      ,.fsm_yumi_o(fsm_fwd_yumi_li)
-     ,.fsm_cnt_o(fsm_fwd_cnt_lo)
+     ,.fsm_addr_o(fsm_fwd_addr_lo)
      ,.fsm_new_o(fsm_fwd_new_lo)
      ,.fsm_critical_o(fsm_fwd_critical_lo)
      ,.fsm_last_o(fsm_fwd_last_lo)
      );
 
   bp_bedrock_mem_rev_header_s fsm_rev_header_li;
-  logic [paddr_width_p-1:0] fsm_rev_addr_li;
   logic [fill_width_p-1:0] fsm_rev_data_li;
   logic fsm_rev_v_li, fsm_rev_yumi_lo;
-  logic [fill_cnt_width_lp-1:0] fsm_rev_cnt_li;
+  logic [paddr_width_p-1:0] fsm_rev_addr_li;
   logic fsm_rev_new_li, fsm_rev_critical_li, fsm_rev_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
@@ -278,11 +276,10 @@ module bp_uce
      ,.msg_ready_and_o(mem_rev_ready_and_o)
 
      ,.fsm_header_o(fsm_rev_header_li)
-     ,.fsm_addr_o(fsm_rev_addr_li)
      ,.fsm_data_o(fsm_rev_data_li)
      ,.fsm_v_o(fsm_rev_v_li)
      ,.fsm_yumi_i(fsm_rev_yumi_lo)
-     ,.fsm_cnt_o(fsm_rev_cnt_li)
+     ,.fsm_addr_o(fsm_rev_addr_li)
      ,.fsm_new_o(fsm_rev_new_li)
      ,.fsm_critical_o(fsm_rev_critical_li)
      ,.fsm_last_o(fsm_rev_last_li)
@@ -370,12 +367,14 @@ module bp_uce
   assign cache_req_credits_full_o = cache_req_v_r && (credit_count_lo == coh_noc_max_credits_p);
   assign cache_req_credits_empty_o = ~cache_req_v_r && (credit_count_lo == 0);
 
+
   logic [fill_width_p-1:0] writeback_data;
+  wire [fill_cnt_width_lp-1:0] dirty_data_select = fsm_fwd_addr_lo[fill_offset_width_lp+:fill_cnt_width_lp];
   bsg_mux
    #(.width_p(fill_width_p), .els_p(block_size_in_fill_lp))
    writeback_mux
     (.data_i(dirty_data_r)
-     ,.sel_i(fsm_fwd_cnt_lo)
+     ,.sel_i(dirty_data_select)
      ,.data_o(writeback_data)
      );
 
