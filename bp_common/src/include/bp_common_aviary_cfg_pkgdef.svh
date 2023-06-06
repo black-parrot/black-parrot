@@ -268,22 +268,19 @@
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
-      ,dcache_fill_width    : 64
-      //,dcache_fill_width    : 128
+      ,dcache_fill_width    : 128
 
       ,icache_features      : (1 << e_cfg_enabled)
       ,icache_sets          : 64
       ,icache_assoc         : 8
       ,icache_block_width   : 512
-      ,icache_fill_width    : 64
-      //,icache_fill_width    : 128
+      ,icache_fill_width    : 128
 
       ,acache_features      : (1 << e_cfg_enabled)
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
-      ,acache_fill_width    : 64
-      //,acache_fill_width    : 128
+      ,acache_fill_width    : 128
 
       ,cce_type             : e_cce_uce
       ,cce_pc_width         : 8
@@ -296,7 +293,7 @@
                               | (1 << e_cfg_amo_swap)
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)
-      ,l2_banks            : 1
+      ,l2_banks            : 2
       ,l2_data_width       : 128
       ,l2_sets             : 128
       ,l2_assoc            : 8
