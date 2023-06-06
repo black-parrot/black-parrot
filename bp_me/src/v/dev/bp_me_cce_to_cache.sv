@@ -80,15 +80,15 @@ module bp_me_cce_to_cache
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_li;
   logic [l2_data_width_p-1:0] fsm_fwd_data_li;
   logic fsm_fwd_v_li, fsm_fwd_yumi_lo;
-  logic fsm_fwd_new_li, fsm_fwd_last_li;
+  logic fsm_fwd_new_li, fsm_fwd_critical_li, fsm_fwd_last_li;
   logic [paddr_width_p-1:0] fsm_fwd_addr_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(l2_data_width_p)
+     ,.fsm_data_width_p(l2_data_width_p)
      ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
-     ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)
+     ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
+     ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp | mem_rev_stream_mask_gp)
      )
    fwd_pump_in
     (.clk_i(clk_i)
@@ -106,6 +106,7 @@ module bp_me_cce_to_cache
      ,.fsm_yumi_i(fsm_fwd_yumi_lo)
      ,.fsm_cnt_o()
      ,.fsm_new_o(fsm_fwd_new_li)
+     ,.fsm_critical_o(fsm_fwd_critical_li)
      ,.fsm_last_o(fsm_fwd_last_li)
      );
 
@@ -199,7 +200,8 @@ module bp_me_cce_to_cache
   bp_bedrock_mem_rev_header_s fsm_rev_header_lo;
   logic [l2_data_width_p-1:0] fsm_rev_data_lo;
   logic [paddr_width_p-1:0] fsm_rev_addr_lo;
-  logic fsm_rev_v_lo, fsm_rev_yumi_li, fsm_rev_new_lo, fsm_rev_last_lo;
+  logic fsm_rev_v_lo, fsm_rev_yumi_li;
+  logic fsm_rev_new_lo, fsm_rev_critical_lo, fsm_rev_last_lo;
   logic [lg_l2_banks_lp-1:0] cache_rev_bank_lo;
   logic stream_fifo_ready_lo, stream_header_v_lo;
   bsg_fifo_1r1w_small
@@ -222,11 +224,11 @@ module bp_me_cce_to_cache
 
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(l2_data_width_p)
+     ,.fsm_data_width_p(l2_data_width_p)
      ,.block_width_p(bedrock_block_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
-     ,.msg_stream_mask_p(mem_rev_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp | mem_rev_payload_mask_gp)
+     ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
+     ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp | mem_rev_stream_mask_gp)
      )
    rev_pump_out
     (.clk_i(clk_i)
@@ -244,6 +246,7 @@ module bp_me_cce_to_cache
      ,.fsm_yumi_o(fsm_rev_yumi_li)
      ,.fsm_cnt_o()
      ,.fsm_new_o(fsm_rev_new_lo)
+     ,.fsm_critical_o(fsm_rev_critical_lo)
      ,.fsm_last_o(fsm_rev_last_lo)
      );
 

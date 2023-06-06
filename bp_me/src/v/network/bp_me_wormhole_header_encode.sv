@@ -25,7 +25,7 @@ module bp_me_wormhole_header_encode
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, msg)
 
    // Constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
-   , parameter payload_mask_p = 0
+   , parameter stream_mask_p = 0
 
    , localparam wh_header_width_lp =
        `bp_bedrock_wormhole_header_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, msg_header_width_lp)
@@ -88,7 +88,7 @@ module bp_me_wormhole_header_encode
         default: msg_len_li = '0;
       endcase
 
-      if (payload_mask_p[header_cast_i.msg_type])
+      if (stream_mask_p[header_cast_i.msg_type])
         wh_header_cast_o.rtr_hdr.len = len_width_p'(msg_len_li);
       else
         wh_header_cast_o.rtr_hdr.len = len_width_p'(msg_hdr_len_lp);

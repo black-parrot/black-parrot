@@ -107,8 +107,7 @@ module bp_fe_icache
    , input                                            cache_req_busy_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
-   , input                                            cache_req_critical_tag_i
-   , input                                            cache_req_critical_data_i
+   , input                                            cache_req_critical_i
    , input                                            cache_req_complete_i
    , input                                            cache_req_credits_full_i
    , input                                            cache_req_credits_empty_i
@@ -333,7 +332,7 @@ module bp_fe_icache
    #(.width_p(3*assoc_p), .els_p(2))
    hit_mux
     (.data_i({{3{tag_mem_pseudo_hit}}, {ld_data_way_select_tl, way_v_tl, hit_v_tl}})
-     ,.sel_i(cache_req_critical_tag_i)
+     ,.sel_i(cache_req_critical_i)
      ,.data_o({ld_data_way_select_tv_n, way_v_tv_n, hit_v_tv_n})
      );
 
@@ -342,7 +341,7 @@ module bp_fe_icache
    hit_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(tv_we | cache_req_critical_tag_i)
+     ,.en_i(tv_we | cache_req_critical_i)
      ,.data_i({ld_data_way_select_tv_n, way_v_tv_n, hit_v_tv_n})
      ,.data_o({ld_data_way_select_tv_r, way_v_tv_r, hit_v_tv_r})
      );
@@ -375,7 +374,7 @@ module bp_fe_icache
    #(.width_p(block_width_p), .els_p(2))
    ld_data_mux
     (.data_i({snoop_data_lo, data_mem_data_lo})
-     ,.sel_i(cache_req_critical_data_i)
+     ,.sel_i(cache_req_critical_i)
      ,.data_o(ld_data_tv_n)
      );
 
@@ -383,7 +382,7 @@ module bp_fe_icache
    #(.width_p(block_width_p))
    ld_data_tv_reg
     (.clk_i(clk_i)
-     ,.en_i(tv_we | cache_req_critical_data_i)
+     ,.en_i(tv_we | cache_req_critical_i)
      ,.data_i(ld_data_tv_n)
      ,.data_o(ld_data_tv_r)
      );
@@ -578,7 +577,7 @@ module bp_fe_icache
   assign tag_mem_addr_li = tag_mem_fast_read
     ? is_recover ? vaddr_index_tl : vaddr_index
     : tag_mem_pkt_cast_i.index;
-  assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i & ~tag_mem_fast_read;
+  assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i & ~|tag_mem_fast_read;
 
   logic [assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode

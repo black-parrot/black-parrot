@@ -57,7 +57,7 @@ module wrapper
   logic cache_req_v_lo;
   logic [icache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
   logic cache_req_metadata_v_lo;
-  logic cache_req_critical_tag_li, cache_req_critical_data_li, cache_req_complete_li;
+  logic cache_req_critical_li, cache_req_complete_li;
   logic cache_req_credits_full_li, cache_req_credits_empty_li;
 
   // Fill Interfaces
@@ -129,8 +129,7 @@ module wrapper
      ,.cache_req_busy_i(cache_req_busy_li)
      ,.cache_req_metadata_o(cache_req_metadata_lo)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_lo)
-     ,.cache_req_critical_tag_i(cache_req_critical_tag_li)
-     ,.cache_req_critical_data_i(cache_req_critical_data_li)
+     ,.cache_req_critical_i(cache_req_critical_li)
      ,.cache_req_complete_i(cache_req_complete_li)
      ,.cache_req_credits_full_i(cache_req_credits_full_li)
      ,.cache_req_credits_empty_i(cache_req_credits_empty_li)
@@ -198,8 +197,7 @@ module wrapper
        ,.cache_req_busy_o(cache_req_busy_li)
        ,.cache_req_metadata_i(cache_req_metadata_lo)
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-       ,.cache_req_critical_tag_o(cache_req_critical_tag_li)
-       ,.cache_req_critical_data_o(cache_req_critical_data_li)
+       ,.cache_req_critical_o(cache_req_critical_li)
        ,.cache_req_complete_o(cache_req_complete_li)
        ,.cache_req_credits_full_o(cache_req_credits_full_li)
        ,.cache_req_credits_empty_o(cache_req_credits_empty_li)
@@ -308,8 +306,7 @@ module wrapper
        ,.cache_req_busy_o(cache_req_busy_li)
        ,.cache_req_metadata_i(cache_req_metadata_lo)
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-       ,.cache_req_critical_tag_o(cache_req_critical_tag_li)
-       ,.cache_req_critical_data_o(cache_req_critical_data_li)
+       ,.cache_req_critical_o(cache_req_critical_li)
        ,.cache_req_complete_o(cache_req_complete_li)
        ,.cache_req_credits_full_o(cache_req_credits_full_li)
        ,.cache_req_credits_empty_o(cache_req_credits_empty_li)

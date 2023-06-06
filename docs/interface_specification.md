@@ -236,8 +236,7 @@ The stat memory contains LRU and dirty data for a block, and the packet format i
 - Replacement way
 - Replacement index
 
-When the critical data of a transaction is being sent, cache_req_critical_data_o will go high.
-When the critical tag of a transaction is being sent, cache_req_critical_tag_o will go high.
+When the critical data of a transaction is being sent, cache_req_critical_o will go high.
 When a transaction is completed, cache_req_complete_o will go high for one cycle.
 
 There are additional signals for available credits in the engine, used for fencing. Empty credits

@@ -184,12 +184,12 @@
    * These masks define the BedRock message types that carry data.
    *
    */
-  localparam mem_fwd_payload_mask_gp  = (1 << e_bedrock_mem_uc_wr) | (1 << e_bedrock_mem_wr) | (1 << e_bedrock_mem_amo);
-  localparam mem_rev_payload_mask_gp = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd) | (1 << e_bedrock_mem_amo);
-  localparam lce_req_payload_mask_gp = (1 << e_bedrock_req_uc_wr) | (1 << e_bedrock_req_uc_amo);
-  localparam lce_cmd_payload_mask_gp = (1 << e_bedrock_cmd_data) | (1 << e_bedrock_cmd_uc_data);
-  localparam lce_fill_payload_mask_gp = (1 << e_bedrock_fill_data);
-  localparam lce_resp_payload_mask_gp = (1 << e_bedrock_resp_wb);
+  localparam mem_fwd_stream_mask_gp  = (1 << e_bedrock_mem_uc_wr) | (1 << e_bedrock_mem_wr) | (1 << e_bedrock_mem_amo);
+  localparam mem_rev_stream_mask_gp  = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd) | (1 << e_bedrock_mem_amo);
+  localparam lce_req_stream_mask_gp  = (1 << e_bedrock_req_uc_wr) | (1 << e_bedrock_req_uc_amo);
+  localparam lce_cmd_stream_mask_gp  = (1 << e_bedrock_cmd_data) | (1 << e_bedrock_cmd_uc_data);
+  localparam lce_fill_stream_mask_gp = (1 << e_bedrock_fill_data);
+  localparam lce_resp_stream_mask_gp = (1 << e_bedrock_resp_wb);
 
 `endif
 

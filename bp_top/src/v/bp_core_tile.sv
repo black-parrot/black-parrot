@@ -154,7 +154,7 @@ module bp_core_tile
        ,.cid_width_p(coh_noc_cid_width_p)
        ,.pr_hdr_width_p(lce_req_header_width_lp)
        ,.pr_payload_width_p(lce_req_payload_width_lp)
-       ,.pr_payload_mask_p(lce_req_payload_mask_gp)
+       ,.pr_stream_mask_p(lce_req_stream_mask_gp)
        ,.pr_data_width_p(icache_fill_width_p)
        )
      lce_req_stream_to_wh
@@ -184,7 +184,7 @@ module bp_core_tile
        ,.cid_width_p(coh_noc_cid_width_p)
        ,.pr_hdr_width_p(lce_cmd_header_width_lp)
        ,.pr_payload_width_p(lce_cmd_payload_width_lp)
-       ,.pr_payload_mask_p(lce_cmd_payload_mask_gp)
+       ,.pr_stream_mask_p(lce_cmd_stream_mask_gp)
        ,.pr_data_width_p(icache_fill_width_p)
        )
      lce_cmd_wh_to_stream
@@ -213,7 +213,7 @@ module bp_core_tile
        ,.cid_width_p(coh_noc_cid_width_p)
        ,.pr_hdr_width_p(lce_fill_header_width_lp)
        ,.pr_payload_width_p(lce_fill_payload_width_lp)
-       ,.pr_payload_mask_p(lce_fill_payload_mask_gp)
+       ,.pr_stream_mask_p(lce_fill_stream_mask_gp)
        ,.pr_data_width_p(icache_fill_width_p)
        )
      lce_fill_wh_to_stream
@@ -247,7 +247,7 @@ module bp_core_tile
        ,.cid_width_p(coh_noc_cid_width_p)
        ,.pr_hdr_width_p(lce_fill_header_width_lp)
        ,.pr_payload_width_p(lce_fill_payload_width_lp)
-       ,.pr_payload_mask_p(lce_fill_payload_mask_gp)
+       ,.pr_stream_mask_p(lce_fill_stream_mask_gp)
        ,.pr_data_width_p(icache_fill_width_p)
        )
      lce_fill_stream_to_wh
@@ -283,7 +283,7 @@ module bp_core_tile
        ,.cid_width_p(coh_noc_cid_width_p)
        ,.pr_hdr_width_p(lce_resp_header_width_lp)
        ,.pr_payload_width_p(lce_resp_payload_width_lp)
-       ,.pr_payload_mask_p(lce_resp_payload_mask_gp)
+       ,.pr_stream_mask_p(lce_resp_stream_mask_gp)
        ,.pr_data_width_p(icache_fill_width_p)
        )
      lce_resp_stream_to_wh
@@ -315,7 +315,7 @@ module bp_core_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_req_header_width_lp)
      ,.pr_payload_width_p(lce_req_payload_width_lp)
-     ,.pr_payload_mask_p(lce_req_payload_mask_gp)
+     ,.pr_stream_mask_p(lce_req_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_req_wh_to_stream
@@ -349,7 +349,7 @@ module bp_core_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_cmd_header_width_lp)
      ,.pr_payload_width_p(lce_cmd_payload_width_lp)
-     ,.pr_payload_mask_p(lce_cmd_payload_mask_gp)
+     ,.pr_stream_mask_p(lce_cmd_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_cmd_stream_to_wh
@@ -377,7 +377,7 @@ module bp_core_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_resp_header_width_lp)
      ,.pr_payload_width_p(lce_resp_payload_width_lp)
-     ,.pr_payload_mask_p(lce_resp_payload_mask_gp)
+     ,.pr_stream_mask_p(lce_resp_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_resp_wh_to_stream

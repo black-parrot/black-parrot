@@ -43,8 +43,7 @@ module bp_be_top
    , input                                           cache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
-   , input                                           cache_req_critical_tag_i
-   , input                                           cache_req_critical_data_i
+   , input                                           cache_req_critical_i
    , input                                           cache_req_complete_i
    , input                                           cache_req_credits_full_i
    , input                                           cache_req_credits_empty_i
@@ -207,8 +206,7 @@ module bp_be_top
      ,.cache_req_ready_and_i(cache_req_ready_and_i)
      ,.cache_req_busy_i(cache_req_busy_i)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-     ,.cache_req_critical_tag_i(cache_req_critical_tag_i)
-     ,.cache_req_critical_data_i(cache_req_critical_data_i)
+     ,.cache_req_critical_i(cache_req_critical_i)
      ,.cache_req_complete_i(cache_req_complete_i)
      ,.cache_req_credits_full_i(cache_req_credits_full_i)
      ,.cache_req_credits_empty_i(cache_req_credits_empty_i)

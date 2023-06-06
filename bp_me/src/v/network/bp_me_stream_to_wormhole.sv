@@ -55,7 +55,7 @@ module bp_me_stream_to_wormhole
    // Higher level protocol information
    , parameter `BSG_INV_PARAM(pr_hdr_width_p)
    , parameter `BSG_INV_PARAM(pr_payload_width_p)
-   , parameter `BSG_INV_PARAM(pr_payload_mask_p)
+   , parameter `BSG_INV_PARAM(pr_stream_mask_p)
    , parameter `BSG_INV_PARAM(pr_data_width_p)
 
    // Computed wormhole header parameters. These can be overridden directly if desired.
@@ -111,7 +111,7 @@ module bp_me_stream_to_wormhole
      ,.cid_width_p(cid_width_p)
      ,.len_width_p(len_width_p)
      ,.payload_width_p(pr_payload_width_p)
-     ,.payload_mask_p(pr_payload_mask_p)
+     ,.stream_mask_p(pr_stream_mask_p)
      )
    encode
     (.header_i(pr_hdr_cast_i)

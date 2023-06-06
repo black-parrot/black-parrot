@@ -187,7 +187,7 @@ module testbench
      ,.block_width_p(bedrock_block_width_p)
      ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_req_payload_width_lp)
-     ,.payload_mask_p(lce_req_payload_mask_gp)
+     ,.stream_mask_p(lce_req_stream_mask_gp)
      ,.num_source_p(num_lce_p)
      ,.num_sink_p(num_cce_p)
      )
@@ -213,7 +213,7 @@ module testbench
      ,.block_width_p(bedrock_block_width_p)
      ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_resp_payload_width_lp)
-     ,.payload_mask_p(lce_resp_payload_mask_gp)
+     ,.stream_mask_p(lce_resp_stream_mask_gp)
      ,.num_source_p(num_lce_p)
      ,.num_sink_p(num_cce_p)
      )
@@ -240,7 +240,7 @@ module testbench
      ,.block_width_p(bedrock_block_width_p)
      ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_fill_payload_width_lp)
-     ,.payload_mask_p(lce_fill_payload_mask_gp)
+     ,.stream_mask_p(lce_fill_stream_mask_gp)
      ,.num_source_p(num_lce_p)
      ,.num_sink_p(num_lce_p)
      )
@@ -268,7 +268,7 @@ module testbench
      ,.block_width_p(bedrock_block_width_p)
      ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
-     ,.payload_mask_p(lce_cmd_payload_mask_gp)
+     ,.stream_mask_p(lce_cmd_stream_mask_gp)
      ,.num_source_p(num_cce_p)
      ,.num_sink_p(num_lce_p)
      )
@@ -294,7 +294,7 @@ module testbench
   logic [num_lce_p-1:0] cache_req_v_lo, cache_req_ready_and_li, cache_req_busy_li;
   bp_cache_req_metadata_s [num_lce_p-1:0] cache_req_metadata_lo;
   logic [num_lce_p-1:0] cache_req_metadata_v_lo;
-  logic [num_lce_p-1:0] cache_req_critical_tag_li, cache_req_critical_data_li, cache_req_complete_li;
+  logic [num_lce_p-1:0] cache_req_critical_li, cache_req_complete_li;
   logic [num_lce_p-1:0] cache_req_credits_full_li, cache_req_credits_empty_li;
 
   bp_cache_tag_mem_pkt_s [num_lce_p-1:0] tag_mem_pkt_li;
@@ -384,8 +384,7 @@ module testbench
        ,.cache_req_metadata_o(cache_req_metadata_lo[i])
        ,.cache_req_metadata_v_o(cache_req_metadata_v_lo[i])
        ,.cache_req_complete_i(cache_req_complete_li[i])
-       ,.cache_req_critical_tag_i(cache_req_critical_tag_li[i])
-       ,.cache_req_critical_data_i(cache_req_critical_data_li[i])
+       ,.cache_req_critical_i(cache_req_critical_li[i])
        ,.cache_req_credits_full_i(cache_req_credits_full_li[i])
        ,.cache_req_credits_empty_i(cache_req_credits_empty_li[i])
 
@@ -435,8 +434,7 @@ module testbench
        ,.cache_req_busy_o(cache_req_busy_li[i])
        ,.cache_req_metadata_i(cache_req_metadata_lo[i])
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
-       ,.cache_req_critical_tag_o(cache_req_critical_tag_li[i])
-       ,.cache_req_critical_data_o(cache_req_critical_data_li[i])
+       ,.cache_req_critical_o(cache_req_critical_li[i])
        ,.cache_req_complete_o(cache_req_complete_li[i])
        ,.cache_req_credits_full_o(cache_req_credits_full_li[i])
        ,.cache_req_credits_empty_o(cache_req_credits_empty_li[i])
