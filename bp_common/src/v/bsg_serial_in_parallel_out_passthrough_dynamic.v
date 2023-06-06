@@ -1,7 +1,7 @@
 
 
 /**
- *  bsg_serial_in_parallel_out_passthrough.v
+ *  bsg_serial_in_parallel_out_passthrough_dynamic.v
  */
 
 `include "bsg_defines.v"
@@ -91,5 +91,5 @@ module bsg_serial_in_parallel_out_passthrough_dynamic
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bsg_serial_in_parallel_out_passthrough)
+`BSG_ABSTRACT_MODULE(bsg_serial_in_parallel_out_passthrough_dynamic)
 

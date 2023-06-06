@@ -588,7 +588,7 @@ module bp_uce
           if (miss_v_r)
             begin
               fsm_fwd_header_lo.msg_type = e_bedrock_mem_rd;
-              fsm_fwd_header_lo.addr     = {cache_req_r.addr[paddr_width_p-1:fill_offset_width_lp], (fill_offset_width_lp)'(0)};
+              fsm_fwd_header_lo.addr     = {cache_req_r.addr[paddr_width_p-1:fill_offset_width_lp], {fill_offset_width_lp{1'b0}}};
               fsm_fwd_header_lo.size     = block_msg_size_lp;
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;

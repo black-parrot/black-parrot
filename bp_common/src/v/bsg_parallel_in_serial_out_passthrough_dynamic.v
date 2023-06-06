@@ -109,5 +109,5 @@ module bsg_parallel_in_serial_out_passthrough_dynamic #( parameter `BSG_INV_PARA
 
 endmodule
 
-`BSG_ABSTRACT_MODULE(bsg_parallel_in_serial_out_passthrough)
+`BSG_ABSTRACT_MODULE(bsg_parallel_in_serial_out_passthrough_dynamic)
 

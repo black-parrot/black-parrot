@@ -110,10 +110,10 @@ module bp_me_cce_to_cache
      );
 
   bp_local_addr_s local_addr_cast;
-  assign local_addr_cast = fsm_fwd_header_li.addr;
+  assign local_addr_cast = fsm_fwd_addr_li;
 
   wire is_word_op = (fsm_fwd_header_li.size == e_bedrock_msg_size_4);
-  wire is_csr     = (fsm_fwd_header_li.addr < dram_base_addr_gp);
+  wire is_csr     = (local_addr_cast < dram_base_addr_gp);
   wire is_tagfl   = is_csr && (local_addr_cast.addr == cache_tagfl_addr_gp);
   wire [daddr_width_p-1:0] tagfl_addr = fsm_fwd_data_li[0+:lg_l2_sets_lp+lg_l2_assoc_lp] << l2_block_offset_width_lp;
 
@@ -256,30 +256,14 @@ module bp_me_cce_to_cache
   // bus pack has log2(l2_data_width_p/8) = log2(l2 data width bytes) mux elements
   //   == data_byte_offset_width_lp
   localparam bus_pack_size_width_lp = `BSG_WIDTH(data_byte_offset_width_lp);
-  logic [bus_pack_size_width_lp-1:0] fsm_rev_size_li;
-  wire [bus_pack_size_width_lp-1:0] fsm_rev_max_size_li = bus_pack_size_width_lp'(data_byte_offset_width_lp);
-  logic [data_byte_offset_width_lp-1:0] fsm_rev_data_sel_li;
 
-  always_comb begin
-    // size to use is set to max size if response is larger than data width (indicating a multi-beat
-    // message will be sent and therefore each data beat will be full and valid),
-    // otherwise extract size from memory response header
-    fsm_rev_size_li = (1'b1 << fsm_rev_header_lo.size) > data_bytes_lp
-                       ? fsm_rev_max_size_li
-                       : fsm_rev_header_lo.size[0+:bus_pack_size_width_lp];
-    // B/H/W/D response data is at LSB, but larger responses should use byte offset bits of
-    // address to pick correct data
-    fsm_rev_data_sel_li = '0;
-    case (fsm_rev_header_lo.size)
-      e_bedrock_msg_size_1
-      ,e_bedrock_msg_size_2
-      ,e_bedrock_msg_size_4
-      ,e_bedrock_msg_size_8:
-        fsm_rev_data_sel_li = '0;
-      default:
-        fsm_rev_data_sel_li = fsm_rev_header_lo.addr[0+:data_byte_offset_width_lp];
-    endcase
-  end
+  // size to use is set to max size if response is larger than data width (indicating a multi-beat
+  // message will be sent and therefore each data beat will be full and valid),
+  // otherwise extract size from memory response header
+  wire [bus_pack_size_width_lp-1:0] fsm_rev_size_li =
+    ((1'b1 << fsm_rev_header_lo.size) > data_bytes_lp)
+    ? data_byte_offset_width_lp
+    : fsm_rev_header_lo.size[0+:bus_pack_size_width_lp];
 
   logic [l2_data_width_p-1:0] cache_data_li;
   bsg_mux
@@ -294,7 +278,7 @@ module bp_me_cce_to_cache
    #(.in_width_p(l2_data_width_p))
    mem_rev_data_bus_pack
     (.data_i(cache_data_li)
-    ,.sel_i(fsm_rev_data_sel_li)
+    ,.sel_i('0) // Data is always aligned
     ,.size_i(fsm_rev_size_li)
     ,.data_o(fsm_rev_data_lo)
     );
@@ -313,7 +297,7 @@ module bp_me_cce_to_cache
       tagst_sent_n     = tagst_sent_r;
       tagst_received_n = tagst_received_r;
 
-      state_n  = state_r;
+      state_n = state_r;
 
       case (state_r)
         e_reset:
