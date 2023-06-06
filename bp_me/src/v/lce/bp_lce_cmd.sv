@@ -70,17 +70,17 @@ module bp_lce_cmd
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-    , input [fill_width_p-1:0]                       lce_cmd_data_i
+    , input [bedrock_fill_width_p-1:0]               lce_cmd_data_i
     , input                                          lce_cmd_v_i
     , output logic                                   lce_cmd_ready_and_o
 
     , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
-    , output logic [fill_width_p-1:0]                lce_fill_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_fill_data_o
     , output logic                                   lce_fill_v_o
     , input                                          lce_fill_ready_and_i
 
     , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
-    , output logic [fill_width_p-1:0]                lce_resp_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_resp_data_o
     , output logic                                   lce_resp_v_o
     , input                                          lce_resp_ready_and_i
     );
@@ -99,16 +99,13 @@ module bp_lce_cmd
   localparam block_size_in_fill_lp = block_width_p / fill_width_p;
   // number of bits to select fill per block
   localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
+  localparam fill_offset_width_lp = `BSG_SAFE_CLOG2(fill_width_p>>3);
   localparam lg_assoc_lp = `BSG_SAFE_CLOG2(assoc_p);
   localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p);
   // bytes per cache block
   localparam block_size_in_bytes_lp = (block_width_p/8);
   // number of bits for byte select in block
   localparam block_byte_offset_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp);
-  // number of bytes per fill
-  localparam fill_bytes_lp = (fill_width_p/8);
-  // byte offset bits per fill
-  localparam fill_byte_offset_lp = `BSG_SAFE_CLOG2(fill_bytes_lp);
   // tag offset
   localparam tag_offset_lp = block_byte_offset_lp + (sets_p > 1 ? lg_sets_lp : 0);
   // coherence request size for cached requests
@@ -131,7 +128,6 @@ module bp_lce_cmd
   logic [paddr_width_p-1:0] fsm_cmd_addr_li;
   logic [fill_width_p-1:0] fsm_cmd_data_li;
   logic fsm_cmd_v_li, fsm_cmd_yumi_lo;
-  logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt_li;
   logic fsm_cmd_new_li, fsm_cmd_critical_li, fsm_cmd_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
@@ -152,7 +148,6 @@ module bp_lce_cmd
 
      ,.fsm_header_o(fsm_cmd_header_li)
      ,.fsm_addr_o(fsm_cmd_addr_li)
-     ,.fsm_cnt_o(fsm_cmd_cnt_li)
      ,.fsm_data_o(fsm_cmd_data_li)
      ,.fsm_v_o(fsm_cmd_v_li)
      ,.fsm_yumi_i(fsm_cmd_yumi_lo)
@@ -175,7 +170,7 @@ module bp_lce_cmd
   bp_bedrock_lce_fill_header_s fsm_fill_header_lo;
   logic [fill_width_p-1:0] fsm_fill_data_lo;
   logic fsm_fill_v_lo, fsm_fill_yumi_li;
-  logic [fill_cnt_width_lp-1:0] fsm_fill_cnt_lo;
+  logic [paddr_width_p-1:0] fsm_fill_addr_lo;
   logic fsm_fill_new_lo, fsm_fill_critical_lo, fsm_fill_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -195,11 +190,10 @@ module bp_lce_cmd
      ,.msg_ready_and_i(lce_fill_ready_and_i)
 
      ,.fsm_header_i(fsm_fill_header_lo)
-     ,.fsm_addr_o()
+     ,.fsm_addr_o(fsm_fill_addr_lo)
      ,.fsm_data_i(fsm_fill_data_lo)
      ,.fsm_v_i(fsm_fill_v_lo)
      ,.fsm_yumi_o(fsm_fill_yumi_li)
-     ,.fsm_cnt_o(fsm_fill_cnt_lo)
      ,.fsm_new_o(fsm_fill_new_lo)
      ,.fsm_critical_o(fsm_fill_critical_lo)
      ,.fsm_last_o(fsm_fill_last_lo)
@@ -208,7 +202,7 @@ module bp_lce_cmd
   bp_bedrock_lce_resp_header_s fsm_resp_header_lo;
   logic [fill_width_p-1:0] fsm_resp_data_lo;
   logic fsm_resp_v_lo, fsm_resp_yumi_li;
-  logic [fill_cnt_width_lp-1:0] fsm_resp_cnt_lo;
+  logic [paddr_width_p-1:0] fsm_resp_addr_lo;
   logic fsm_resp_new_lo, fsm_resp_critical_lo, fsm_resp_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -228,11 +222,10 @@ module bp_lce_cmd
      ,.msg_ready_and_i(lce_resp_ready_and_i)
 
      ,.fsm_header_i(fsm_resp_header_lo)
-     ,.fsm_addr_o()
+     ,.fsm_addr_o(fsm_resp_addr_lo)
      ,.fsm_data_i(fsm_resp_data_lo)
      ,.fsm_v_i(fsm_resp_v_lo)
      ,.fsm_yumi_o(fsm_resp_yumi_li)
-     ,.fsm_cnt_o(fsm_resp_cnt_lo)
      ,.fsm_new_o(fsm_resp_new_lo)
      ,.fsm_critical_o(fsm_resp_critical_lo)
      ,.fsm_last_o(fsm_resp_last_lo)
@@ -635,7 +628,7 @@ module bp_lce_cmd
         fsm_fill_header_lo.payload.way_id = fsm_cmd_header_li.payload.target_way_id;
         fsm_fill_header_lo.payload.state = fsm_cmd_header_li.payload.target_state;
 
-        dirty_data_select = fsm_fill_cnt_lo;
+        dirty_data_select = fsm_fill_addr_lo[fill_offset_width_lp+:fill_cnt_width_lp];
         fsm_fill_data_lo = dirty_data_selected;
 
         // handshake - r&v
@@ -686,7 +679,7 @@ module bp_lce_cmd
         fsm_resp_header_lo.size = bp_bedrock_msg_size_e'(dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]]
                                       ? cmd_block_size_lp
                                       : e_bedrock_msg_size_1);
-        dirty_data_select = fsm_resp_cnt_lo;
+        dirty_data_select = fsm_resp_addr_lo[fill_offset_width_lp+:fill_cnt_width_lp];
         fsm_resp_data_lo = dirty_data_selected;
         fsm_resp_v_lo = 1'b1;
 

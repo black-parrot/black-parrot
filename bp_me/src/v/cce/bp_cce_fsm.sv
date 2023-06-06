@@ -100,9 +100,9 @@ module bp_cce_fsm
   `bp_cast_o(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
 
   bp_bedrock_lce_req_header_s fsm_req_header_li;
-  logic [paddr_width_p-1:0] fsm_req_addr_li;
   logic [bedrock_fill_width_p-1:0] fsm_req_data_li;
   logic fsm_req_v_li, fsm_req_yumi_lo;
+  logic [paddr_width_p-1:0] fsm_req_addr_li;
   logic fsm_req_new_li, fsm_req_critical_li, fsm_req_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
@@ -122,23 +122,19 @@ module bp_cce_fsm
      ,.msg_ready_and_o(lce_req_ready_and_o)
 
      ,.fsm_header_o(fsm_req_header_li)
-     ,.fsm_addr_o(fsm_req_addr_li)
-     ,.fsm_cnt_o()
      ,.fsm_data_o(fsm_req_data_li)
      ,.fsm_v_o(fsm_req_v_li)
      ,.fsm_yumi_i(fsm_req_yumi_lo)
+     ,.fsm_addr_o(fsm_req_addr_li)
      ,.fsm_new_o(fsm_req_new_li)
      ,.fsm_critical_o(fsm_req_critical_li)
      ,.fsm_last_o(fsm_req_last_li)
      );
 
-  localparam block_size_in_fill_lp = bedrock_block_width_p / bedrock_fill_width_p;
-  localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
   bp_bedrock_lce_cmd_header_s fsm_cmd_header_lo;
-  logic [paddr_width_p-1:0] fsm_cmd_addr_lo;
   logic [bedrock_fill_width_p-1:0] fsm_cmd_data_lo;
   logic fsm_cmd_v_lo, fsm_cmd_yumi_li;
-  logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt_lo;
+  logic [paddr_width_p-1:0] fsm_cmd_addr_lo;
   logic fsm_cmd_new_lo, fsm_cmd_critical_lo, fsm_cmd_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -162,16 +158,15 @@ module bp_cce_fsm
      ,.fsm_data_i(fsm_cmd_data_lo)
      ,.fsm_v_i(fsm_cmd_v_lo)
      ,.fsm_yumi_o(fsm_cmd_yumi_li)
-     ,.fsm_cnt_o(fsm_cmd_cnt_lo)
      ,.fsm_new_o(fsm_cmd_new_lo)
      ,.fsm_critical_o(fsm_cmd_critical_lo)
      ,.fsm_last_o(fsm_cmd_last_lo)
      );
 
   bp_bedrock_lce_resp_header_s fsm_resp_header_li;
-  logic [paddr_width_p-1:0] fsm_resp_addr_li;
   logic [bedrock_fill_width_p-1:0] fsm_resp_data_li;
   logic fsm_resp_v_li, fsm_resp_yumi_lo;
+  logic [paddr_width_p-1:0] fsm_resp_addr_li;
   logic fsm_resp_new_li, fsm_resp_critical_li, fsm_resp_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
@@ -191,11 +186,10 @@ module bp_cce_fsm
      ,.msg_ready_and_o(lce_resp_ready_and_o)
 
      ,.fsm_header_o(fsm_resp_header_li)
-     ,.fsm_addr_o(fsm_resp_addr_li)
-     ,.fsm_cnt_o()
      ,.fsm_data_o(fsm_resp_data_li)
      ,.fsm_v_o(fsm_resp_v_li)
      ,.fsm_yumi_i(fsm_resp_yumi_lo)
+     ,.fsm_addr_o(fsm_resp_addr_li)
      ,.fsm_new_o(fsm_resp_new_li)
      ,.fsm_critical_o(fsm_resp_critical_li)
      ,.fsm_last_o(fsm_resp_last_li)
@@ -203,9 +197,9 @@ module bp_cce_fsm
 
   // Memory Rev Stream Pump
   bp_bedrock_mem_rev_header_s fsm_rev_header_li;
+  logic [bedrock_fill_width_p-1:0] fsm_rev_data_li;
   logic fsm_rev_v_li, fsm_rev_yumi_lo;
   logic [paddr_width_p-1:0] fsm_rev_addr_li;
-  logic [bedrock_fill_width_p-1:0] fsm_rev_data_li;
   logic fsm_rev_new_li, fsm_rev_critical_li, fsm_rev_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
@@ -225,11 +219,10 @@ module bp_cce_fsm
      ,.msg_ready_and_o(mem_rev_ready_and_o)
      // to FSM CCE
      ,.fsm_header_o(fsm_rev_header_li)
-     ,.fsm_addr_o(fsm_rev_addr_li)
      ,.fsm_data_o(fsm_rev_data_li)
      ,.fsm_v_o(fsm_rev_v_li)
      ,.fsm_yumi_i(fsm_rev_yumi_lo)
-     ,.fsm_cnt_o()
+     ,.fsm_addr_o(fsm_rev_addr_li)
      ,.fsm_new_o(fsm_rev_new_li)
      ,.fsm_critical_o(fsm_rev_critical_li)
      ,.fsm_last_o(fsm_rev_last_li)
@@ -238,8 +231,8 @@ module bp_cce_fsm
   // Memory Fwd Stream Pump
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
   logic [bedrock_fill_width_p-1:0] fsm_fwd_data_lo;
-  logic [paddr_width_p-1:0] fsm_fwd_addr_lo;
   logic fsm_fwd_v_lo, fsm_fwd_yumi_li;
+  logic [paddr_width_p-1:0] fsm_fwd_addr_lo;
   logic fsm_fwd_new_lo, fsm_fwd_critical_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -260,10 +253,9 @@ module bp_cce_fsm
      // from FSM CCE
      ,.fsm_header_i(fsm_fwd_header_lo)
      ,.fsm_data_i(fsm_fwd_data_lo)
-     ,.fsm_addr_o(fsm_fwd_addr_lo)
      ,.fsm_v_i(fsm_fwd_v_lo)
      ,.fsm_yumi_o(fsm_fwd_yumi_li)
-     ,.fsm_cnt_o()
+     ,.fsm_addr_o(fsm_fwd_addr_lo)
      ,.fsm_new_o(fsm_fwd_new_lo)
      ,.fsm_critical_o(fsm_fwd_critical_lo)
      ,.fsm_last_o(fsm_fwd_last_lo)

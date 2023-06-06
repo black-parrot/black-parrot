@@ -7,10 +7,6 @@
  *   Generates the stream word/cnt portion of a BedRock Stream protocol message address given
  *   an initial stream word and transaction size in stream words (both zero-based).
  *
- *   max_val_p is equal to (block width / stream width) - 1 (i.e., zero-based).
- *   max_val_p+1 must be a power of two for the wrap-around counting to work properly
- *   E.g., if a block is divided into 8 stream words, max_val_p = 7.
- *
  *   size_li is the zero-based transaction size (e.g., a transaction of 4 stream words has size_li = 3)
  *   - size_li+1 should be a power of two
  *
@@ -28,34 +24,37 @@ module bp_me_stream_pump_control
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter `BSG_INV_PARAM(max_val_p)
    , parameter `BSG_INV_PARAM(payload_width_p)
+   , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(data_width_p)
    , parameter `BSG_INV_PARAM(stream_mask_p)
-   , localparam width_lp = `BSG_WIDTH(max_val_p)
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, xce)
    )
   (input                                          clk_i
    , input                                        reset_i
 
+   // Move to next beat
    , input [xce_header_width_lp-1:0]              header_i
-   // Increment counter
-   , input                                        en_i
+   , input                                        ack_i
 
    // wrap-around count, used to construct proper stream beat address
    // wraps within sub-block aligned portion of block targeted by request
-   , output logic [`BSG_SAFE_MINUS(width_lp,1):0] wrap_o
+   , output logic [paddr_width_p-1:0]             addr_o
    , output logic                                 first_o
-   , output logic                                 last_o
    , output logic                                 critical_o
+   , output logic                                 last_o
    );
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, header);
 
-  if (max_val_p == 0)
+  localparam bytes_lp = data_width_p >> 3;
+  localparam width_lp = `BSG_SAFE_CLOG2(block_width_p/data_width_p);
+  localparam offset_width_lp = `BSG_SAFE_CLOG2(bytes_lp);
+  wire [$bits(bp_bedrock_msg_size_e)-1:0] beat_size = `BSG_SAFE_CLOG2(bytes_lp);
+
+  if (block_width_p == data_width_p)
     begin : z
-      assign wrap_o = '0;
       assign first_o = 1'b1;
       assign last_o = 1'b1;
     end
@@ -65,38 +64,38 @@ module bp_me_stream_pump_control
       wire is_ready = (state_r == e_ready);
       wire is_stream = (state_r == e_stream);
 
-      localparam data_bytes_lp = (data_width_p >> 3);
-      localparam offset_width_lp = `BSG_SAFE_CLOG2(data_bytes_lp);
-
       wire [width_lp-1:0] stream_size =
-        `BSG_MAX((1'b1 << header_cast_i.size) / data_bytes_lp, 1'b1) - 1'b1;
+        `BSG_MAX((1'b1 << header_cast_i.size) / bytes_lp, 1'b1) - 1'b1;
       wire stream = stream_mask_p[header_cast_i.msg_type];
-
       wire [width_lp-1:0] size_li = stream ? stream_size : '0;
-      wire [width_lp-1:0] first_cnt = header_cast_i.addr[offset_width_lp+:width_lp];
+      wire [paddr_width_p-1:0] addr_mask = ~((1'b1 << header_cast_i.size) - 1'b1);
+      wire [paddr_width_p-1:0] beat_mask = ~((1'b1 << beat_size) - 1'b1);
+      wire [paddr_width_p-1:0] final_mask = `BSG_MAX(addr_mask, beat_mask);
 
-      assign first_o = is_ready;
+      wire [paddr_width_p-1:0] base_addr = header_cast_i.addr & addr_mask;
+
+      wire [width_lp-1:0] first_cnt    = base_addr[offset_width_lp+:width_lp];
+      wire [width_lp-1:0] critical_cnt = header_cast_i.addr[offset_width_lp+:width_lp];
+      wire [width_lp-1:0] last_cnt     = first_cnt + size_li;
 
       logic [width_lp-1:0] cnt_r;
-      wire [width_lp-1:0] cnt_val_li = first_cnt + en_i;
+      wire [width_lp-1:0] cnt_val_li = first_cnt + ack_i;
       bsg_counter_set_en
-       #(.max_val_p(max_val_p), .reset_val_p('0))
+       #(.max_val_p(2**width_lp-1), .reset_val_p('0))
        counter
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
          ,.set_i(is_ready)
-         ,.en_i(en_i)
+         ,.en_i(ack_i)
          ,.val_i(cnt_val_li)
          ,.count_o(cnt_r)
          );
       wire [width_lp-1:0] cnt_lo = is_ready ? first_cnt : cnt_r;
 
-      wire [width_lp-1:0] critical_cnt = header_cast_i.addr[offset_width_lp+:width_lp];
+      assign first_o    = is_ready;
       assign critical_o = (critical_cnt == cnt_lo);
-
-      wire [width_lp-1:0] last_cnt = first_cnt + size_li;
-      assign last_o = (last_cnt == cnt_lo);
+      assign last_o     = (last_cnt == cnt_lo);
 
       // Dynamically generate sub-block wrapped stream count
       // The count is wrapped within the size_li aligned portion of the block containing first_cnt
@@ -154,12 +153,18 @@ module bp_me_stream_pump_control
          ,.data_o(wrap_lo)
          );
 
-      assign wrap_o = is_ready ? first_cnt : wrap_lo;
+      localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3);
+      wire [`BSG_SAFE_MINUS(width_lp,1):0] wrap_cnt = is_ready ? first_cnt : wrap_lo;
+      wire [paddr_width_p-1:block_offset_width_lp] high_bits =
+        header_cast_i.addr[paddr_width_p-1:block_offset_width_lp];
+      wire [offset_width_lp-1:0] low_bits = header_cast_i.addr[0+:offset_width_lp];
+
+      assign addr_o = {high_bits, {block_width_p>data_width_p{wrap_cnt}}, low_bits} & final_mask;
 
       always_comb
         case (state_r)
-          e_stream: state_n = (en_i &  last_o) ? e_ready : e_stream;
-          default : state_n = (en_i & ~last_o) ? e_stream : e_ready;
+          e_stream: state_n = (ack_i &  last_o) ? e_ready : e_stream;
+          default : state_n = (ack_i & ~last_o) ? e_stream : e_ready;
         endcase
 
       // synopsys sync_set_reset "reset_i"
@@ -171,8 +176,8 @@ module bp_me_stream_pump_control
     end
 
   // parameter check
-  if ((max_val_p > 0) && !`BSG_IS_POW2(max_val_p+1))
-    $error("max_val_p+1 of %0d is not a power of two...wrap-around counting will break.", max_val_p+1);
+  if (block_width_p % data_width_p)
+    $error("block_width_p must be multiple of data_width_p");
 
 endmodule
 

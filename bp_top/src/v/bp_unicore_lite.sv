@@ -210,7 +210,7 @@ module bp_unicore_lite
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
      ,.block_width_p(dcache_block_width_p)
-     ,.fill_width_p(bedrock_fill_width_p)
+     ,.fill_width_p(dcache_fill_width_p)
      ,.ctag_width_p(dcache_ctag_width_p)
      ,.writeback_p(dcache_features_p[e_cfg_writeback])
      ,.metadata_latency_p(1)

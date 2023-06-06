@@ -54,29 +54,25 @@ module bp_me_stream_pump_in
 
    // Input BedRock Stream
    , input [xce_header_width_lp-1:0]                msg_header_i
-   , input [fsm_data_width_p-1:0]                   msg_data_i
+   , input [bedrock_fill_width_p-1:0]               msg_data_i
    , input                                          msg_v_i
    , output logic                                   msg_ready_and_o
 
    // FSM consumer side
    , output logic [xce_header_width_lp-1:0]         fsm_header_o
-   , output logic [paddr_width_p-1:0]               fsm_addr_o
    , output logic [fsm_data_width_p-1:0]            fsm_data_o
    , output logic                                   fsm_v_o
    , input                                          fsm_yumi_i
    // FSM control signals
-   // fsm_cnt is the current stream word being sent
-   , output logic [fsm_cnt_width_lp-1:0]            fsm_cnt_o
+   // fsm_addr is the effective address of the beat
+   , output logic [paddr_width_p-1:0]               fsm_addr_o
    // fsm_new is raised when first beat of every message is acked
    , output logic                                   fsm_new_o
-   // fsm_last is raised on last beat of every message
-   , output logic                                   fsm_last_o
    // fsm_critical is raised on the critical beat of every message
    , output logic                                   fsm_critical_o
+   // fsm_last is raised on last beat of every message
+   , output logic                                   fsm_last_o
    );
-
-  if (block_width_p % fsm_data_width_p != 0)
-    $error("Stream pump block width must be multiple of stream data width");
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, msg_header);
@@ -85,19 +81,27 @@ module bp_me_stream_pump_in
   bp_bedrock_xce_header_s msg_header_li;
   logic [fsm_data_width_p-1:0] msg_data_li;
   logic msg_v_li, msg_yumi_lo;
-  bsg_two_fifo
-   #(.width_p($bits(bp_bedrock_xce_header_s)+fsm_data_width_p))
-   fifo
+  bp_me_stream_gearbox
+   #(.bp_params_p(bp_params_p)
+     ,.buffered_p(1)
+     ,.in_data_width_p(bedrock_fill_width_p)
+     ,.out_data_width_p(fsm_data_width_p)
+     ,.payload_width_p(payload_width_p)
+     ,.stream_mask_p(msg_stream_mask_p)
+     )
+   gearbox
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({msg_header_i, msg_data_i})
-     ,.v_i(msg_v_i)
-     ,.ready_o(msg_ready_and_o)
+     ,.msg_header_i(msg_header_cast_i)
+     ,.msg_data_i(msg_data_i)
+     ,.msg_v_i(msg_v_i)
+     ,.msg_ready_and_o(msg_ready_and_o)
 
-     ,.data_o({msg_header_li, msg_data_li})
-     ,.v_o(msg_v_li)
-     ,.yumi_i(msg_yumi_lo)
+     ,.msg_header_o(msg_header_li)
+     ,.msg_data_o(msg_data_li)
+     ,.msg_v_o(msg_v_li)
+     ,.msg_ready_param_i(msg_yumi_lo)
      );
 
   wire [fsm_cnt_width_lp-1:0] stream_size =
@@ -109,7 +113,7 @@ module bp_me_stream_pump_in
   logic cnt_up;
   bp_me_stream_pump_control
    #(.bp_params_p(bp_params_p)
-     ,.max_val_p(fsm_words_lp-1)
+     ,.block_width_p(block_width_p)
      ,.stream_mask_p(fsm_stream_mask_p)
      ,.data_width_p(fsm_data_width_p)
      ,.payload_width_p(payload_width_p)
@@ -119,20 +123,13 @@ module bp_me_stream_pump_in
      ,.reset_i(reset_i)
 
      ,.header_i(fsm_header_cast_o)
-     ,.en_i(cnt_up)
+     ,.ack_i(cnt_up)
 
-     ,.wrap_o(fsm_cnt_o)
+     ,.addr_o(fsm_addr_o)
      ,.first_o(fsm_new_o)
      ,.last_o(fsm_last_o)
      ,.critical_o(fsm_critical_o)
      );
-
-  localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3);
-  wire [paddr_width_p-1:0] wrap_addr =
-    {msg_header_li.addr[paddr_width_p-1:block_offset_width_lp]
-     ,{fsm_words_lp>1{fsm_cnt_o}}
-     ,msg_header_li.addr[0+:fsm_cnt_offset_width_lp]
-     };
 
   assign fsm_header_cast_o = msg_header_li;
   assign fsm_data_o = msg_data_li;
@@ -145,17 +142,14 @@ module bp_me_stream_pump_in
         fsm_v_o = msg_v_li;
         msg_yumi_lo = fsm_last_o & fsm_yumi_i;
         cnt_up = fsm_yumi_i;
-        fsm_addr_o = wrap_addr;
       end
     else if (msg_stream & ~fsm_stream & nz_stream)
       begin
         // N:1
-        // consume all but last msg input beat silently, then FSM consumes last beat
-        fsm_v_o = msg_v_li & fsm_last_o;
-        msg_yumi_lo = msg_v_li & (~fsm_last_o | fsm_yumi_i);
+        // consume all but first msg input beat silently
+        fsm_v_o = msg_v_li & fsm_new_o;
+        msg_yumi_lo = msg_v_li & (fsm_yumi_i | ~fsm_new_o);
         cnt_up = msg_yumi_lo;
-        // Hold address constant at critical address
-        fsm_addr_o = msg_header_li.addr;
       end
     else
       begin
@@ -163,7 +157,6 @@ module bp_me_stream_pump_in
         fsm_v_o = msg_v_li;
         msg_yumi_lo = fsm_yumi_i;
         cnt_up = fsm_yumi_i;
-        fsm_addr_o = wrap_addr;
       end
 
   // parameter checks

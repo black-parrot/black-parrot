@@ -81,27 +81,27 @@ module bp_lce
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , output logic [lce_req_header_width_lp-1:0]     lce_req_header_o
-    , output logic [fill_width_p-1:0]                lce_req_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_req_data_o
     , output logic                                   lce_req_v_o
     , input                                          lce_req_ready_and_i
 
     , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-    , input [fill_width_p-1:0]                       lce_cmd_data_i
+    , input [bedrock_fill_width_p-1:0]               lce_cmd_data_i
     , input                                          lce_cmd_v_i
     , output logic                                   lce_cmd_ready_and_o
 
     , input [lce_fill_header_width_lp-1:0]           lce_fill_header_i
-    , input [fill_width_p-1:0]                       lce_fill_data_i
+    , input [bedrock_fill_width_p-1:0]               lce_fill_data_i
     , input                                          lce_fill_v_i
     , output logic                                   lce_fill_ready_and_o
 
     , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
-    , output logic [fill_width_p-1:0]                lce_fill_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_fill_data_o
     , output logic                                   lce_fill_v_o
     , input                                          lce_fill_ready_and_i
 
     , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
-    , output logic [fill_width_p-1:0]                lce_resp_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_resp_data_o
     , output logic                                   lce_resp_v_o
     , input                                          lce_resp_ready_and_i
   );
@@ -181,8 +181,8 @@ module bp_lce
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(block_width_p)
-     ,.data_width_p(fill_width_p)
+     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.stream_mask_p(lce_cmd_stream_mask_gp)
      ,.num_source_p(2)
