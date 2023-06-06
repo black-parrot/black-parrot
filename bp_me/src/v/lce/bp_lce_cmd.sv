@@ -70,17 +70,17 @@ module bp_lce_cmd
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-    , input [fill_width_p-1:0]                       lce_cmd_data_i
+    , input [bedrock_fill_width_p-1:0]               lce_cmd_data_i
     , input                                          lce_cmd_v_i
     , output logic                                   lce_cmd_ready_and_o
 
     , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
-    , output logic [fill_width_p-1:0]                lce_fill_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_fill_data_o
     , output logic                                   lce_fill_v_o
     , input                                          lce_fill_ready_and_i
 
     , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
-    , output logic [fill_width_p-1:0]                lce_resp_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_resp_data_o
     , output logic                                   lce_resp_v_o
     , input                                          lce_resp_ready_and_i
     );
