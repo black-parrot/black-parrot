@@ -369,11 +369,12 @@ module bp_be_dcache
   assign tv_we_o = tv_we;
 
   logic [assoc_p-1:0] way_v_tv_n, store_hit_tv_n, load_hit_tv_n;
-  wire [assoc_p-1:0] tag_mem_pseudo_hit = 1'b1 << data_mem_pkt_cast_i.way_id;
+  wire [assoc_p-1:0] pseudo_hit =
+    (data_mem_pkt_v_i << data_mem_pkt_cast_i.way_id) | (tag_mem_pkt_v_i << tag_mem_pkt_cast_i.way_id);
   bsg_mux
    #(.width_p(3*assoc_p), .els_p(2))
    hit_mux
-    (.data_i({{3{tag_mem_pseudo_hit}}, {way_v_tl, store_hit_tl, load_hit_tl}})
+    (.data_i({{3{pseudo_hit}}, {way_v_tl, store_hit_tl, load_hit_tl}})
      ,.sel_i(cache_req_critical_i)
      ,.data_o({way_v_tv_n, store_hit_tv_n, load_hit_tv_n})
      );

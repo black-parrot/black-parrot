@@ -327,11 +327,12 @@ module bp_fe_icache
   wire v_tv = is_ready & v_tv_r;
 
   logic [assoc_p-1:0] ld_data_way_select_tv_n, way_v_tv_n, hit_v_tv_n;
-  wire [assoc_p-1:0] tag_mem_pseudo_hit = 1'b1 << data_mem_pkt_cast_i.way_id;
+  wire [assoc_p-1:0] pseudo_hit =
+    (data_mem_pkt_v_i << data_mem_pkt_cast_i.way_id) | (tag_mem_pkt_v_i << tag_mem_pkt_cast_i.way_id);
   bsg_mux
    #(.width_p(3*assoc_p), .els_p(2))
    hit_mux
-    (.data_i({{3{tag_mem_pseudo_hit}}, {ld_data_way_select_tl, way_v_tl, hit_v_tl}})
+    (.data_i({{3{pseudo_hit}}, {ld_data_way_select_tl, way_v_tl, hit_v_tl}})
      ,.sel_i(cache_req_critical_i)
      ,.data_o({ld_data_way_select_tv_n, way_v_tv_n, hit_v_tv_n})
      );
