@@ -9,7 +9,7 @@
  * Notes:
  *   This module relies on cross-boundary flattening and retiming to achieve
  *     good QoR
- *   
+ *
  *   ASIC tools prefer to have retiming chains be pure register chains at the end of
  *   a combinational logic cloud, whereas FPGA tools prefer explicitly instantiated registers.
  *   With this FPGA optimization, we've achieved 50MHz on a Zynq 7020

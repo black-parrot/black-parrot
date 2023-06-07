@@ -180,7 +180,7 @@ module bp_me_cce_to_cache
                                               ? lg_mux_els_lp'(mux_els_lp-1)
                                               : fsm_fwd_header_li.size[0+:lg_mux_els_lp];
   bsg_mux
-   #(.width_p(data_bytes_lp), .els_p(mux_els_lp)) 
+   #(.width_p(data_bytes_lp), .els_p(mux_els_lp))
    cache_pkt_mask_mux
     (.data_i(cache_pkt_mask_mux_li)
      ,.sel_i(cache_pkt_sel_li)

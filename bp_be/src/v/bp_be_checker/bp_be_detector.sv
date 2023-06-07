@@ -245,7 +245,7 @@ module bp_be_detector
                      | (idiv_busy_i & issue_pkt_cast_i.long_v);
     end
 
-  // Dispatch if we have a valid issue. Don't stall on data hazards for exceptions 
+  // Dispatch if we have a valid issue. Don't stall on data hazards for exceptions
   assign dispatch_v_o = issue_pkt_cast_i.v & ~data_haz_v & ~control_haz_v & ~struct_haz_v;
   // Don't interrupt PTW. This could be made okay if we save the current privilege mode as well
   //   as the PTE mode

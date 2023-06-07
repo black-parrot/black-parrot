@@ -1,4 +1,4 @@
-  
+
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
 
@@ -49,8 +49,8 @@ module bp_me_stream_gearbox
          ,.data_i({msg_header_cast_i, msg_data_i})
          ,.v_i(msg_v_i)
          ,.ready_o(msg_ready_and_o)
-       
-         ,.data_o({msg_header_li, msg_data_li})         
+
+         ,.data_o({msg_header_li, msg_data_li})
          ,.v_o(msg_v_li)
          ,.yumi_i(msg_ready_and_lo & msg_v_li)
          );

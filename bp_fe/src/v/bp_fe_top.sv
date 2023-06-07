@@ -335,7 +335,7 @@ module bp_fe_top
       assign fetch_scan_lo = '0;
       assign fetch_rebase_lo = '0;
     end
-  
+
   bp_fe_instr_scan
    #(.bp_params_p(bp_params_p))
    instr_scan
