@@ -50,7 +50,13 @@ module bp_me_cord_to_id
 
   assign core_id_o = cce_id_o[0+:core_id_width_p];
   always_comb
-    if (cord_in_cc_li)
+    if (cce_type_p == e_cce_uce)
+      begin
+        cce_id_o   = 1'b0;
+        lce_id0_o  = 1'b0;
+        lce_id1_o  = 1'b1;
+      end
+    else if (cord_in_cc_li)
       begin
         cce_id_o   = (xcord_li-sac_x_dim_p) + cc_x_dim_p * (ycord_li-ic_y_dim_p);
         lce_id0_o  = (cce_id_o << 1'b1) + 1'b0;

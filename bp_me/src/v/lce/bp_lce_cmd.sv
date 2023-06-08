@@ -60,8 +60,7 @@ module bp_lce_cmd
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
     // cache_req_complete_o is routed to the cache to indicate a blocking request is complete
-    , output logic                                   cache_req_critical_tag_o
-    , output logic                                   cache_req_critical_data_o
+    , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_complete_o
     // uncached store request complete is used by the LCE to decrement the request credit counter
     // when an uncached store complete, but is not routed to the cache because the caches do not
@@ -71,17 +70,17 @@ module bp_lce_cmd
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-    , input [fill_width_p-1:0]                       lce_cmd_data_i
+    , input [bedrock_fill_width_p-1:0]               lce_cmd_data_i
     , input                                          lce_cmd_v_i
     , output logic                                   lce_cmd_ready_and_o
 
     , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
-    , output logic [fill_width_p-1:0]                lce_fill_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_fill_data_o
     , output logic                                   lce_fill_v_o
     , input                                          lce_fill_ready_and_i
 
     , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
-    , output logic [fill_width_p-1:0]                lce_resp_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_resp_data_o
     , output logic                                   lce_resp_v_o
     , input                                          lce_resp_ready_and_i
     );
@@ -100,16 +99,13 @@ module bp_lce_cmd
   localparam block_size_in_fill_lp = block_width_p / fill_width_p;
   // number of bits to select fill per block
   localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
+  localparam fill_offset_width_lp = `BSG_SAFE_CLOG2(fill_width_p>>3);
   localparam lg_assoc_lp = `BSG_SAFE_CLOG2(assoc_p);
   localparam lg_sets_lp = `BSG_SAFE_CLOG2(sets_p);
   // bytes per cache block
   localparam block_size_in_bytes_lp = (block_width_p/8);
   // number of bits for byte select in block
   localparam block_byte_offset_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp);
-  // number of bytes per fill
-  localparam fill_bytes_lp = (fill_width_p/8);
-  // byte offset bits per fill
-  localparam fill_byte_offset_lp = `BSG_SAFE_CLOG2(fill_bytes_lp);
   // tag offset
   localparam tag_offset_lp = block_byte_offset_lp + (sets_p > 1 ? lg_sets_lp : 0);
   // coherence request size for cached requests
@@ -132,15 +128,14 @@ module bp_lce_cmd
   logic [paddr_width_p-1:0] fsm_cmd_addr_li;
   logic [fill_width_p-1:0] fsm_cmd_data_li;
   logic fsm_cmd_v_li, fsm_cmd_yumi_lo;
-  logic [fill_cnt_width_lp-1:0] fsm_cmd_cnt_li;
-  logic fsm_cmd_new_li, fsm_cmd_last_li;
+  logic fsm_cmd_new_li, fsm_cmd_critical_li, fsm_cmd_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
-     ,.msg_stream_mask_p(lce_cmd_payload_mask_gp)
-     ,.fsm_stream_mask_p(lce_cmd_payload_mask_gp)
+     ,.msg_stream_mask_p(lce_cmd_stream_mask_gp)
+     ,.fsm_stream_mask_p(lce_cmd_stream_mask_gp)
      )
    cmd_pump_in
     (.clk_i(clk_i)
@@ -153,11 +148,11 @@ module bp_lce_cmd
 
      ,.fsm_header_o(fsm_cmd_header_li)
      ,.fsm_addr_o(fsm_cmd_addr_li)
-     ,.fsm_cnt_o(fsm_cmd_cnt_li)
      ,.fsm_data_o(fsm_cmd_data_li)
      ,.fsm_v_o(fsm_cmd_v_li)
      ,.fsm_yumi_i(fsm_cmd_yumi_lo)
      ,.fsm_new_o(fsm_cmd_new_li)
+     ,.fsm_critical_o(fsm_cmd_critical_li)
      ,.fsm_last_o(fsm_cmd_last_li)
      );
 
@@ -175,15 +170,15 @@ module bp_lce_cmd
   bp_bedrock_lce_fill_header_s fsm_fill_header_lo;
   logic [fill_width_p-1:0] fsm_fill_data_lo;
   logic fsm_fill_v_lo, fsm_fill_yumi_li;
-  logic [fill_cnt_width_lp-1:0] fsm_fill_cnt_lo;
-  logic fsm_fill_new_lo, fsm_fill_last_lo;
+  logic [paddr_width_p-1:0] fsm_fill_addr_lo;
+  logic fsm_fill_new_lo, fsm_fill_critical_lo, fsm_fill_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_fill_payload_width_lp)
-     ,.msg_stream_mask_p(lce_fill_payload_mask_gp)
-     ,.fsm_stream_mask_p(lce_fill_payload_mask_gp)
+     ,.msg_stream_mask_p(lce_fill_stream_mask_gp)
+     ,.fsm_stream_mask_p(lce_fill_stream_mask_gp)
      )
    lce_fill_pump_out
     (.clk_i(clk_i)
@@ -195,27 +190,27 @@ module bp_lce_cmd
      ,.msg_ready_and_i(lce_fill_ready_and_i)
 
      ,.fsm_header_i(fsm_fill_header_lo)
-     ,.fsm_addr_o()
+     ,.fsm_addr_o(fsm_fill_addr_lo)
      ,.fsm_data_i(fsm_fill_data_lo)
      ,.fsm_v_i(fsm_fill_v_lo)
      ,.fsm_yumi_o(fsm_fill_yumi_li)
-     ,.fsm_cnt_o(fsm_fill_cnt_lo)
      ,.fsm_new_o(fsm_fill_new_lo)
+     ,.fsm_critical_o(fsm_fill_critical_lo)
      ,.fsm_last_o(fsm_fill_last_lo)
      );
 
   bp_bedrock_lce_resp_header_s fsm_resp_header_lo;
   logic [fill_width_p-1:0] fsm_resp_data_lo;
   logic fsm_resp_v_lo, fsm_resp_yumi_li;
-  logic [fill_cnt_width_lp-1:0] fsm_resp_cnt_lo;
-  logic fsm_resp_new_lo, fsm_resp_last_lo;
+  logic [paddr_width_p-1:0] fsm_resp_addr_lo;
+  logic fsm_resp_new_lo, fsm_resp_critical_lo, fsm_resp_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(lce_resp_payload_width_lp)
-     ,.msg_stream_mask_p(lce_resp_payload_mask_gp)
-     ,.fsm_stream_mask_p(lce_resp_payload_mask_gp)
+     ,.msg_stream_mask_p(lce_resp_stream_mask_gp)
+     ,.fsm_stream_mask_p(lce_resp_stream_mask_gp)
      )
    lce_resp_pump_out
     (.clk_i(clk_i)
@@ -227,12 +222,12 @@ module bp_lce_cmd
      ,.msg_ready_and_i(lce_resp_ready_and_i)
 
      ,.fsm_header_i(fsm_resp_header_lo)
-     ,.fsm_addr_o()
+     ,.fsm_addr_o(fsm_resp_addr_lo)
      ,.fsm_data_i(fsm_resp_data_lo)
      ,.fsm_v_i(fsm_resp_v_lo)
      ,.fsm_yumi_o(fsm_resp_yumi_li)
-     ,.fsm_cnt_o(fsm_resp_cnt_lo)
      ,.fsm_new_o(fsm_resp_new_lo)
+     ,.fsm_critical_o(fsm_resp_critical_lo)
      ,.fsm_last_o(fsm_resp_last_lo)
      );
 
@@ -335,10 +330,9 @@ module bp_lce_cmd
     state_n = state_r;
 
     uc_store_req_complete_o = 1'b0;
-    cache_req_critical_data_o = 1'b0;
-    cache_req_critical_tag_o = 1'b0;
     // raised request is fully resolved
     cache_req_complete_o = 1'b0;
+    cache_req_critical_o = 1'b0;
 
     // LCE-CCE Interface signals
     fsm_cmd_yumi_lo = 1'b0;
@@ -468,11 +462,13 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_state;
             tag_mem_pkt_v_o = fsm_cmd_v_li;
 
+            data_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
+
             // consume header when tag write consumed by cache
             fsm_cmd_yumi_lo = tag_mem_pkt_yumi_i;
 
             // inform cache that tag is returning to resolve miss
-            cache_req_critical_tag_o = tag_mem_pkt_yumi_i & (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup});
+            cache_req_critical_o = fsm_cmd_v_li & (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup});
 
             state_n = (tag_mem_pkt_yumi_i && (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup}))
                       ? e_coh_ack
@@ -493,7 +489,6 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:ctag_width_p];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
             tag_mem_pkt_v_o = fsm_cmd_v_li;
-            cache_req_critical_tag_o = tag_mem_pkt_yumi_i & fsm_cmd_new_li;
 
             // do not consume header since it is needed to compute fill index for cache data writes
             state_n = tag_mem_pkt_yumi_i
@@ -516,10 +511,8 @@ module bp_lce_cmd
             fsm_cmd_yumi_lo = data_mem_pkt_yumi_i & fsm_cmd_new_li;
 
             // raise request complete signal when data consumed
-            cache_req_complete_o = data_mem_pkt_yumi_i & fsm_cmd_new_li;
-            // Note: should create a tag_mem_pkt message for uncached
-            cache_req_critical_tag_o = data_mem_pkt_yumi_i & fsm_cmd_new_li;
-            cache_req_critical_data_o = data_mem_pkt_yumi_i & fsm_cmd_new_li;
+            cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
+            cache_req_complete_o = cache_req_critical_o;
           end
 
           // Uncached Store/Req Done
@@ -617,8 +610,8 @@ module bp_lce_cmd
         data_mem_pkt_v_o = fsm_cmd_v_li;
         // consume data beat when write to cache occurs
         fsm_cmd_yumi_lo = data_mem_pkt_yumi_i;
-        // critical beat is first data beat
-        cache_req_critical_data_o = fsm_cmd_yumi_lo & fsm_cmd_new_li;
+
+        cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
 
         state_n = (fsm_cmd_yumi_lo & fsm_cmd_last_li)
                   ? e_coh_ack
@@ -641,7 +634,7 @@ module bp_lce_cmd
         fsm_fill_header_lo.payload.way_id = fsm_cmd_header_li.payload.target_way_id;
         fsm_fill_header_lo.payload.state = fsm_cmd_header_li.payload.target_state;
 
-        dirty_data_select = fsm_fill_cnt_lo;
+        dirty_data_select = fsm_fill_addr_lo[fill_offset_width_lp+:fill_cnt_width_lp];
         fsm_fill_data_lo = dirty_data_selected;
 
         // handshake - r&v
@@ -692,7 +685,7 @@ module bp_lce_cmd
         fsm_resp_header_lo.size = bp_bedrock_msg_size_e'(dirty_stat_r.dirty[fsm_cmd_header_r.payload.way_id[0+:lg_assoc_lp]]
                                       ? cmd_block_size_lp
                                       : e_bedrock_msg_size_1);
-        dirty_data_select = fsm_resp_cnt_lo;
+        dirty_data_select = fsm_resp_addr_lo[fill_offset_width_lp+:fill_cnt_width_lp];
         fsm_resp_data_lo = dirty_data_selected;
         fsm_resp_v_lo = 1'b1;
 

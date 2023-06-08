@@ -45,27 +45,27 @@ module bp_me_nonsynth_lce_tracer
 
     // LCE-CCE Interface
     ,input [lce_req_header_width_lp-1:0]                    lce_req_header_i
-    ,input [fill_width_p-1:0]                               lce_req_data_i
+    ,input [bedrock_fill_width_p-1:0]                       lce_req_data_i
     ,input                                                  lce_req_v_i
     ,input                                                  lce_req_ready_and_i
 
     ,input [lce_cmd_header_width_lp-1:0]                    lce_cmd_header_i
-    ,input [fill_width_p-1:0]                               lce_cmd_data_i
+    ,input [bedrock_fill_width_p-1:0]                       lce_cmd_data_i
     ,input                                                  lce_cmd_v_i
     ,input                                                  lce_cmd_ready_and_i
 
     ,input [lce_fill_header_width_lp-1:0]                   lce_fill_header_i
-    ,input [fill_width_p-1:0]                               lce_fill_data_i
+    ,input [bedrock_fill_width_p-1:0]                       lce_fill_data_i
     ,input                                                  lce_fill_v_i
     ,input                                                  lce_fill_ready_and_i
 
     ,input [lce_fill_header_width_lp-1:0]                   lce_fill_o_header_i
-    ,input [fill_width_p-1:0]                               lce_fill_o_data_i
+    ,input [bedrock_fill_width_p-1:0]                       lce_fill_o_data_i
     ,input                                                  lce_fill_o_v_i
     ,input                                                  lce_fill_o_ready_and_i
 
     ,input [lce_resp_header_width_lp-1:0]                   lce_resp_header_i
-    ,input [fill_width_p-1:0]                               lce_resp_data_i
+    ,input [bedrock_fill_width_p-1:0]                       lce_resp_data_i
     ,input                                                  lce_resp_v_i
     ,input                                                  lce_resp_ready_and_i
 

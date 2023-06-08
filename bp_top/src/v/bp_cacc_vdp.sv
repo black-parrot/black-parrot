@@ -110,7 +110,7 @@ module bp_cacc_vdp
   data_mem_pkt_v_i, data_mem_pkt_yumi_o,
   tag_mem_pkt_v_i, tag_mem_pkt_yumi_o,
   stat_mem_pkt_v_i, stat_mem_pkt_yumi_o,
-  cache_req_complete_lo, cache_req_critical_tag_lo, cache_req_critical_data_lo,
+  cache_req_complete_lo, cache_req_critical_lo,
   cache_req_credits_full_lo, cache_req_credits_empty_lo;
 
   `declare_bp_cache_engine_if(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
@@ -166,8 +166,7 @@ module bp_cacc_vdp
 
      // D$-LCE Interface
      ,.cache_req_complete_i(cache_req_complete_lo)
-     ,.cache_req_critical_tag_i(cache_req_critical_tag_lo)
-     ,.cache_req_critical_data_i(cache_req_critical_data_lo)
+     ,.cache_req_critical_i(cache_req_critical_lo)
      ,.cache_req_o(cache_req_cast_o)
      ,.cache_req_v_o(cache_req_v_o)
      ,.cache_req_ready_and_i(cache_req_ready_and_i)
@@ -216,8 +215,7 @@ module bp_cacc_vdp
      ,.cache_req_busy_o(cache_req_busy_i)
      ,.cache_req_metadata_i(cache_req_metadata_o)
      ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
-     ,.cache_req_critical_tag_o(cache_req_critical_tag_lo)
-     ,.cache_req_critical_data_o(cache_req_critical_data_lo)
+     ,.cache_req_critical_o(cache_req_critical_lo)
      ,.cache_req_complete_o(cache_req_complete_lo)
      ,.cache_req_credits_full_o(cache_req_credits_full_lo)
      ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)

@@ -41,15 +41,15 @@ module bp_be_scheduler
    , input [decode_info_width_lp-1:0]         decode_info_i
    , input                                    dispatch_v_i
    , input                                    interrupt_v_i
- 
+
    // Fetch interface
    , input [fe_queue_width_lp-1:0]            fe_queue_i
    , input                                    fe_queue_v_i
    , output logic                             fe_queue_ready_and_o
- 
+
    // Dispatch interface
    , output logic [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
- 
+
    , input [commit_pkt_width_lp-1:0]          commit_pkt_i
    , input [wb_pkt_width_lp-1:0]              iwb_pkt_i
    , input [wb_pkt_width_lp-1:0]              fwb_pkt_i

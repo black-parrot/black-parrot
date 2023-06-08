@@ -174,7 +174,7 @@ module bp_io_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_req_header_width_lp)
      ,.pr_payload_width_p(lce_req_payload_width_lp)
-     ,.pr_payload_mask_p(lce_req_payload_mask_gp)
+     ,.pr_stream_mask_p(lce_req_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_req_stream_to_wh
@@ -202,7 +202,7 @@ module bp_io_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_req_header_width_lp)
      ,.pr_payload_width_p(lce_req_payload_width_lp)
-     ,.pr_payload_mask_p(lce_req_payload_mask_gp)
+     ,.pr_stream_mask_p(lce_req_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_req_wh_to_stream
@@ -236,7 +236,7 @@ module bp_io_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_cmd_header_width_lp)
      ,.pr_payload_width_p(lce_cmd_payload_width_lp)
-     ,.pr_payload_mask_p(lce_cmd_payload_mask_gp)
+     ,.pr_stream_mask_p(lce_cmd_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_cmd_stream_to_wh
@@ -264,7 +264,7 @@ module bp_io_tile
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.pr_hdr_width_p(lce_cmd_header_width_lp)
      ,.pr_payload_width_p(lce_cmd_payload_width_lp)
-     ,.pr_payload_mask_p(lce_cmd_payload_mask_gp)
+     ,.pr_stream_mask_p(lce_cmd_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    lce_cmd_wh_to_stream
@@ -307,7 +307,7 @@ module bp_io_tile
      ,.cid_width_p(mem_noc_cid_width_p)
      ,.pr_hdr_width_p(mem_fwd_header_width_lp)
      ,.pr_payload_width_p(mem_fwd_payload_width_lp)
-     ,.pr_payload_mask_p(mem_fwd_payload_mask_gp)
+     ,.pr_stream_mask_p(mem_fwd_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    mem_fwd_stream_to_wormhole
@@ -336,7 +336,7 @@ module bp_io_tile
      ,.cid_width_p(mem_noc_cid_width_p)
      ,.pr_hdr_width_p(mem_rev_header_width_lp)
      ,.pr_payload_width_p(mem_rev_payload_width_lp)
-     ,.pr_payload_mask_p(mem_rev_payload_mask_gp)
+     ,.pr_stream_mask_p(mem_rev_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    mem_rev_stream_to_wormhole
@@ -353,7 +353,7 @@ module bp_io_tile
      ,.link_data_o(mem_rev_link_cast_o.data)
      ,.link_v_o(mem_rev_link_cast_o.v)
      ,.link_ready_and_i(mem_rev_link_cast_i.ready_and_rev)
-     );  
+     );
 
   bp_me_wormhole_to_stream
    #(.bp_params_p(bp_params_p)
@@ -363,7 +363,7 @@ module bp_io_tile
      ,.cid_width_p(mem_noc_cid_width_p)
      ,.pr_hdr_width_p(mem_fwd_header_width_lp)
      ,.pr_payload_width_p(mem_fwd_payload_width_lp)
-     ,.pr_payload_mask_p(mem_fwd_payload_mask_gp)
+     ,.pr_stream_mask_p(mem_fwd_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    mem_fwd_wormhole_to_stream
@@ -388,7 +388,7 @@ module bp_io_tile
      ,.cid_width_p(mem_noc_cid_width_p)
      ,.pr_hdr_width_p(mem_rev_header_width_lp)
      ,.pr_payload_width_p(mem_rev_payload_width_lp)
-     ,.pr_payload_mask_p(mem_rev_payload_mask_gp)
+     ,.pr_stream_mask_p(mem_rev_stream_mask_gp)
      ,.pr_data_width_p(bedrock_fill_width_p)
      )
    mem_rev_wormhole_to_stream

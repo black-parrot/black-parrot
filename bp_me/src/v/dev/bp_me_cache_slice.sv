@@ -27,13 +27,13 @@ module bp_me_cache_slice
   (input                                                 clk_i
    , input                                               reset_i
 
-   , input  [mem_fwd_header_width_lp-1:0]                mem_fwd_header_i
-   , input  [l2_data_width_p-1:0]                        mem_fwd_data_i
+   , input [mem_fwd_header_width_lp-1:0]                 mem_fwd_header_i
+   , input [bedrock_fill_width_p-1:0]                    mem_fwd_data_i
    , input                                               mem_fwd_v_i
    , output logic                                        mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]          mem_rev_header_o
-   , output logic [l2_data_width_p-1:0]                  mem_rev_data_o
+   , output logic [bedrock_fill_width_p-1:0]             mem_rev_data_o
    , output logic                                        mem_rev_v_o
    , input                                               mem_rev_ready_and_i
 
@@ -60,16 +60,38 @@ module bp_me_cache_slice
   logic [l2_banks_p-1:0][l2_data_width_p-1:0] cache_data_lo;
   logic [l2_banks_p-1:0] cache_data_v_lo, cache_data_yumi_li;
 
+  // TODO: Buffering can be reduced by only saving headers per stream
+  bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
+  logic [bedrock_fill_width_p-1:0] mem_fwd_data_li;
+  logic mem_fwd_v_li, mem_fwd_ready_and_lo;
+  bsg_fifo_1r1w_small
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bedrock_fill_width_p)
+     // Buffer 1 full cache line to prevent writeback deadlock
+     ,.els_p(`BSG_MAX(2, bedrock_block_width_p/bedrock_fill_width_p))
+     )
+   fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i({mem_fwd_data_i, mem_fwd_header_i})
+     ,.v_i(mem_fwd_v_i)
+     ,.ready_o(mem_fwd_ready_and_o)
+
+     ,.data_o({mem_fwd_data_li, mem_fwd_header_li})
+     ,.v_o(mem_fwd_v_li)
+     ,.yumi_i(mem_fwd_ready_and_lo & mem_fwd_v_li)
+     );
+
   bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p))
    cce_to_cache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_fwd_header_i(mem_fwd_header_i)
-     ,.mem_fwd_data_i(mem_fwd_data_i)
-     ,.mem_fwd_v_i(mem_fwd_v_i)
-     ,.mem_fwd_ready_and_o(mem_fwd_ready_and_o)
+     ,.mem_fwd_header_i(mem_fwd_header_li)
+     ,.mem_fwd_data_i(mem_fwd_data_li)
+     ,.mem_fwd_v_i(mem_fwd_v_li)
+     ,.mem_fwd_ready_and_o(mem_fwd_ready_and_lo)
 
      ,.mem_rev_header_o(mem_rev_header_o)
      ,.mem_rev_data_o(mem_rev_data_o)

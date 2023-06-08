@@ -150,8 +150,7 @@ module bp_be_dcache
    , input                                           cache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
-   , input                                           cache_req_critical_tag_i
-   , input                                           cache_req_critical_data_i
+   , input                                           cache_req_critical_i
    , input                                           cache_req_complete_i
    // Unused
    , input                                           cache_req_credits_full_i
@@ -317,7 +316,7 @@ module bp_be_dcache
   // Concatenate unused bits from vaddr if any cache way size is not 4kb
   localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
   wire [ctag_vbits_lp-1:0] ctag_vbits = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:`BSG_MAX(ctag_vbits_lp,1)];
-  // Causes segfault in Synopsys DC O-2018.06-SP4 
+  // Causes segfault in Synopsys DC O-2018.06-SP4
   // wire [ctag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
   wire [ctag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
 
@@ -370,12 +369,13 @@ module bp_be_dcache
   assign tv_we_o = tv_we;
 
   logic [assoc_p-1:0] way_v_tv_n, store_hit_tv_n, load_hit_tv_n;
-  wire [assoc_p-1:0] tag_mem_pseudo_hit = 1'b1 << tag_mem_pkt_cast_i.way_id;
+  wire [assoc_p-1:0] pseudo_hit =
+    (data_mem_pkt_v_i << data_mem_pkt_cast_i.way_id) | (tag_mem_pkt_v_i << tag_mem_pkt_cast_i.way_id);
   bsg_mux
    #(.width_p(3*assoc_p), .els_p(2))
    hit_mux
-    (.data_i({{3{tag_mem_pseudo_hit}}, {way_v_tl, store_hit_tl, load_hit_tl}})
-     ,.sel_i(cache_req_critical_tag_i)
+    (.data_i({{3{pseudo_hit}}, {way_v_tl, store_hit_tl, load_hit_tl}})
+     ,.sel_i(cache_req_critical_i)
      ,.data_o({way_v_tv_n, store_hit_tv_n, load_hit_tv_n})
      );
 
@@ -384,7 +384,7 @@ module bp_be_dcache
    hit_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(tv_we | cache_req_critical_tag_i)
+     ,.en_i(tv_we | cache_req_critical_i)
      ,.data_i({way_v_tv_n, store_hit_tv_n, load_hit_tv_n})
      ,.data_o({way_v_tv_r, store_hit_tv_r, load_hit_tv_r})
      );
@@ -418,7 +418,7 @@ module bp_be_dcache
    #(.width_p(block_width_p), .els_p(2))
    ld_data_mux
     (.data_i({snoop_data_lo, data_mem_data_lo})
-     ,.sel_i(cache_req_critical_data_i)
+     ,.sel_i(cache_req_critical_i)
      ,.data_o(ld_data_tv_n)
      );
 
@@ -426,7 +426,7 @@ module bp_be_dcache
    #(.width_p(block_width_p))
    ld_data_tv_reg
     (.clk_i(clk_i)
-     ,.en_i(tv_we | cache_req_critical_data_i)
+     ,.en_i(tv_we | cache_req_critical_i)
      ,.data_i(ld_data_tv_n)
      ,.data_o(ld_data_tv_r)
      );
@@ -737,7 +737,7 @@ module bp_be_dcache
      );
   wire [bindex_width_lp-1:0] wbuf_entry_out_bank_offset = wbuf_entry_out.caddr[byte_offset_width_lp+:bindex_width_lp];
   wire [sindex_width_lp-1:0] wbuf_entry_out_index = wbuf_entry_out.caddr[block_offset_width_lp+:sindex_width_lp];
-  
+
   /////////////////////////////////////////////////////////////////////////////
   // Slow Path
   /////////////////////////////////////////////////////////////////////////////

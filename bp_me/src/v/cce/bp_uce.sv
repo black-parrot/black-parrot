@@ -38,8 +38,7 @@ module bp_uce
     , output logic                                   cache_req_busy_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
-    , output logic                                   cache_req_critical_tag_o
-    , output logic                                   cache_req_critical_data_o
+    , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_credits_full_o
     , output logic                                   cache_req_credits_empty_o
@@ -60,12 +59,12 @@ module bp_uce
     , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
     , output logic [mem_fwd_header_width_lp-1:0]     mem_fwd_header_o
-    , output logic [fill_width_p-1:0]                mem_fwd_data_o
+    , output logic [bedrock_fill_width_p-1:0]        mem_fwd_data_o
     , output logic                                   mem_fwd_v_o
     , input                                          mem_fwd_ready_and_i
 
     , input [mem_rev_header_width_lp-1:0]            mem_rev_header_i
-    , input [fill_width_p-1:0]                       mem_rev_data_i
+    , input [bedrock_fill_width_p-1:0]               mem_rev_data_i
     , input                                          mem_rev_v_i
     , output logic                                   mem_rev_ready_and_o
     );
@@ -225,15 +224,15 @@ module bp_uce
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
   logic [fill_width_p-1:0] fsm_fwd_data_lo;
   logic fsm_fwd_v_lo, fsm_fwd_yumi_li;
-  logic [fill_cnt_width_lp-1:0] fsm_fwd_cnt_lo;
-  logic fsm_fwd_new_lo, fsm_fwd_last_lo;
+  logic [paddr_width_p-1:0] fsm_fwd_addr_lo;
+  logic fsm_fwd_new_lo, fsm_fwd_critical_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
-     ,.msg_stream_mask_p(mem_fwd_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_fwd_payload_mask_gp)
+     ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
+     ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp)
      )
    uce_pump_out
     (.clk_i(clk_i)
@@ -246,26 +245,26 @@ module bp_uce
 
      ,.fsm_header_i(fsm_fwd_header_lo)
      ,.fsm_data_i(fsm_fwd_data_lo)
-     ,.fsm_addr_o()
      ,.fsm_v_i(fsm_fwd_v_lo)
      ,.fsm_yumi_o(fsm_fwd_yumi_li)
-     ,.fsm_cnt_o(fsm_fwd_cnt_lo)
+     ,.fsm_addr_o(fsm_fwd_addr_lo)
      ,.fsm_new_o(fsm_fwd_new_lo)
+     ,.fsm_critical_o(fsm_fwd_critical_lo)
      ,.fsm_last_o(fsm_fwd_last_lo)
      );
 
   bp_bedrock_mem_rev_header_s fsm_rev_header_li;
-  logic [paddr_width_p-1:0] fsm_rev_addr_li;
   logic [fill_width_p-1:0] fsm_rev_data_li;
   logic fsm_rev_v_li, fsm_rev_yumi_lo;
-  logic fsm_rev_new_li, fsm_rev_last_li;
+  logic [paddr_width_p-1:0] fsm_rev_addr_li;
+  logic fsm_rev_new_li, fsm_rev_critical_li, fsm_rev_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.stream_data_width_p(fill_width_p)
+     ,.fsm_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
-     ,.msg_stream_mask_p(mem_rev_payload_mask_gp)
-     ,.fsm_stream_mask_p(mem_rev_payload_mask_gp)
+     ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
+     ,.fsm_stream_mask_p(mem_rev_stream_mask_gp)
      )
    uce_pump_in
     (.clk_i(clk_i)
@@ -277,12 +276,12 @@ module bp_uce
      ,.msg_ready_and_o(mem_rev_ready_and_o)
 
      ,.fsm_header_o(fsm_rev_header_li)
-     ,.fsm_addr_o(fsm_rev_addr_li)
      ,.fsm_data_o(fsm_rev_data_li)
      ,.fsm_v_o(fsm_rev_v_li)
      ,.fsm_yumi_i(fsm_rev_yumi_lo)
-     ,.fsm_cnt_o()
+     ,.fsm_addr_o(fsm_rev_addr_li)
      ,.fsm_new_o(fsm_rev_new_li)
+     ,.fsm_critical_o(fsm_rev_critical_li)
      ,.fsm_last_o(fsm_rev_last_li)
      );
 
@@ -347,7 +346,6 @@ module bp_uce
      ,.count_o(way_cnt)
      );
   wire way_done = (assoc_p == 1) || (way_cnt == assoc_p-1);
-  wire way_done_n = (assoc_p == 1) || (way_cnt == assoc_p-2);
 
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
@@ -369,35 +367,18 @@ module bp_uce
   assign cache_req_credits_full_o = cache_req_v_r && (credit_count_lo == coh_noc_max_credits_p);
   assign cache_req_credits_empty_o = ~cache_req_v_r && (credit_count_lo == 0);
 
+
   logic [fill_width_p-1:0] writeback_data;
+  wire [fill_cnt_width_lp-1:0] dirty_data_select = fsm_fwd_addr_lo[fill_offset_width_lp+:fill_cnt_width_lp];
   bsg_mux
    #(.width_p(fill_width_p), .els_p(block_size_in_fill_lp))
    writeback_mux
     (.data_i(dirty_data_r)
-     ,.sel_i(fsm_fwd_cnt_lo)
+     ,.sel_i(dirty_data_select)
      ,.data_o(writeback_data)
      );
 
-  // We expect the critical word to come back first, so we can simply
-  //   start waiting when we enter the sending state, and then we'll
-  //   know the next non-write response will be critical
-  logic critical_pending;
-  wire critical_sent = is_send_critical & fsm_fwd_yumi_li;
-  wire critical_recv = load_resp_v_li & fsm_rev_yumi_lo;
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   critical_pending_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.set_i(critical_sent)
-     ,.clear_i(critical_recv)
-     ,.data_o(critical_pending)
-     );
-  // This is sufficient for UCE because we only set tags on requests, not invalidation
-  assign cache_req_critical_tag_o =
-    (tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_set_tag))
-    || (is_uc_read_wait & data_mem_pkt_yumi_i);
-  assign cache_req_critical_data_o = critical_pending & critical_recv;
+  assign cache_req_critical_o = load_resp_v_li & fsm_rev_v_li & fsm_rev_critical_li;
 
   bp_cache_req_wr_subop_e cache_wr_subop;
   bp_bedrock_wr_subop_e mem_wr_subop;
@@ -606,7 +587,7 @@ module bp_uce
           if (miss_v_r)
             begin
               fsm_fwd_header_lo.msg_type = e_bedrock_mem_rd;
-              fsm_fwd_header_lo.addr     = {cache_req_r.addr[paddr_width_p-1:fill_offset_width_lp], (fill_offset_width_lp)'(0)};
+              fsm_fwd_header_lo.addr     = {cache_req_r.addr[paddr_width_p-1:fill_offset_width_lp], {fill_offset_width_lp{1'b0}}};
               fsm_fwd_header_lo.size     = block_msg_size_lp;
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;
