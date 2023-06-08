@@ -55,7 +55,9 @@ module bp_me_stream_pump_control
 
   if (block_width_p == data_width_p)
     begin : z
+      assign addr_o = header_cast_i.addr;
       assign first_o = 1'b1;
+      assign critical_o = 1'b1;
       assign last_o = 1'b1;
     end
   else
@@ -72,10 +74,11 @@ module bp_me_stream_pump_control
       wire [paddr_width_p-1:0] beat_mask = ~((1'b1 << beat_size) - 1'b1);
       wire [paddr_width_p-1:0] final_mask = `BSG_MAX(addr_mask, beat_mask);
 
-      wire [paddr_width_p-1:0] base_addr = header_cast_i.addr & addr_mask;
+      wire [paddr_width_p-1:0] base_addr     = header_cast_i.addr & addr_mask;
+      wire [paddr_width_p-1:0] critical_addr = header_cast_i.addr & beat_mask;
 
       wire [width_lp-1:0] first_cnt    = base_addr[offset_width_lp+:width_lp];
-      wire [width_lp-1:0] critical_cnt = header_cast_i.addr[offset_width_lp+:width_lp];
+      wire [width_lp-1:0] critical_cnt = critical_addr[offset_width_lp+:width_lp];
       wire [width_lp-1:0] last_cnt     = first_cnt + size_li;
 
       logic [width_lp-1:0] cnt_r;

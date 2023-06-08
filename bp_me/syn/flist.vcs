@@ -162,6 +162,7 @@ $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce.sv
 # CCE
+$BP_ME_DIR/src/v/cce/bp_bedrock_size_to_len.sv
 $BP_ME_DIR/src/v/cce/bp_cce_alu.sv
 $BP_ME_DIR/src/v/cce/bp_cce_arbitrate.sv
 $BP_ME_DIR/src/v/cce/bp_cce_branch.sv
@@ -189,6 +190,7 @@ $BP_ME_DIR/src/v/dev/bp_me_cache_slice.sv
 $BP_ME_DIR/src/v/dev/bp_me_cfg_slice.sv
 # NETWORK
 $BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_gearbox.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_control.sv
@@ -198,4 +200,6 @@ $BP_ME_DIR/src/v/network/bp_me_xbar_stream.sv
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
 $BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
 

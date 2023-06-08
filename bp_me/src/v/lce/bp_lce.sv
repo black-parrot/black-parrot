@@ -32,7 +32,7 @@ module bp_lce
    // BP caches' metadata arrives cycle after request, by default
    , parameter `BSG_INV_PARAM(metadata_latency_p)
    , parameter `BSG_INV_PARAM(ctag_width_p)
-  
+
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
@@ -174,7 +174,7 @@ module bp_lce
   //   perhaps a bit less overhead at the netlist level, but it's more challenging to
   //   verify protocol/deadlock correctness at that level. At this level, we can simply
   //   say that it's sufficient to buffer a full output fill message such that it's never
-  //   the case that an input cmd is blocked by an output fill 
+  //   the case that an input cmd is blocked by an output fill
   bp_bedrock_lce_cmd_header_s lce_cmd_header_li;
   logic [fill_width_p-1:0] lce_cmd_data_li;
   logic lce_cmd_v_li, lce_cmd_ready_and_lo;

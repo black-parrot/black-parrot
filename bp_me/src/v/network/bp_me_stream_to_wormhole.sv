@@ -103,7 +103,7 @@ module bp_me_stream_to_wormhole
 
   `declare_bp_bedrock_wormhole_header_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_msg_header_s, bedrock);
   bp_bedrock_wormhole_header_s pr_wh_hdr_lo;
-  
+
   bp_me_wormhole_header_encode
    #(.bp_params_p(bp_params_p)
      ,.flit_width_p(flit_width_p)

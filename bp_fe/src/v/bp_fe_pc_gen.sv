@@ -125,7 +125,7 @@ module bp_fe_pc_gen
   ///////////////////////////
   // BTB
   ///////////////////////////
-  logic btb_w_yumi_lo, btb_init_done_lo; 
+  logic btb_w_yumi_lo, btb_init_done_lo;
   wire btb_r_v_li = if1_we_i;
   wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd_cast_i.src_btb)

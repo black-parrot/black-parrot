@@ -256,9 +256,6 @@ module bp_lce_cmd
      ,.data_o(dirty_data_selected)
      );
 
-  assign cache_req_critical_o = data_mem_pkt_yumi_i & fsm_cmd_critical_li
-    & data_mem_pkt_cast_o.opcode inside {e_cache_data_mem_write, e_cache_data_mem_uncached};
-
   bp_cache_tag_info_s dirty_tag_r;
   wire dirty_tag_read = tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
   bsg_dff_sync_read
@@ -335,6 +332,7 @@ module bp_lce_cmd
     uc_store_req_complete_o = 1'b0;
     // raised request is fully resolved
     cache_req_complete_o = 1'b0;
+    cache_req_critical_o = 1'b0;
 
     // LCE-CCE Interface signals
     fsm_cmd_yumi_lo = 1'b0;
@@ -464,8 +462,13 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_state;
             tag_mem_pkt_v_o = fsm_cmd_v_li;
 
+            data_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
+
             // consume header when tag write consumed by cache
             fsm_cmd_yumi_lo = tag_mem_pkt_yumi_i;
+
+            // inform cache that tag is returning to resolve miss
+            cache_req_critical_o = fsm_cmd_v_li & (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup});
 
             state_n = (tag_mem_pkt_yumi_i && (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup}))
                       ? e_coh_ack
@@ -508,7 +511,8 @@ module bp_lce_cmd
             fsm_cmd_yumi_lo = data_mem_pkt_yumi_i & fsm_cmd_new_li;
 
             // raise request complete signal when data consumed
-            cache_req_complete_o = data_mem_pkt_yumi_i & fsm_cmd_new_li;
+            cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
+            cache_req_complete_o = cache_req_critical_o;
           end
 
           // Uncached Store/Req Done
@@ -606,6 +610,8 @@ module bp_lce_cmd
         data_mem_pkt_v_o = fsm_cmd_v_li;
         // consume data beat when write to cache occurs
         fsm_cmd_yumi_lo = data_mem_pkt_yumi_i;
+
+        cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
 
         state_n = (fsm_cmd_yumi_lo & fsm_cmd_last_li)
                   ? e_coh_ack

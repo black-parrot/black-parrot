@@ -65,7 +65,7 @@ module bp_sacc_vdp
   logic [2:0] len_a_cnt, len_b_cnt;
   logic second_operand;
 
-  enum logic [3:0] 
+  enum logic [3:0]
   {
     e_wait
     ,e_fetch_vec1
@@ -131,13 +131,13 @@ module bp_sacc_vdp
     begin
       if (reset_i)
         begin
-          input_a_ptr <= '0; 
-          input_b_ptr <= '0; 
-          input_len   <= '0; 
-          start_cmd   <= '0; 
-          res_ptr     <= '0; 
-          res_len     <= '0; 
-          operation   <= '0; 
+          input_a_ptr <= '0;
+          input_b_ptr <= '0;
+          input_len   <= '0;
+          start_cmd   <= '0;
+          res_ptr     <= '0;
+          res_len     <= '0;
+          operation   <= '0;
         end
       else if (csr_w_v_li)
         unique casez (local_addr_lo.addr)

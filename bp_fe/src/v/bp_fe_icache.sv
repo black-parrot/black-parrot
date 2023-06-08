@@ -266,7 +266,7 @@ module bp_fe_icache
   // Concatenate unused bits from vaddr if any cache way size is not 4kb
   localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
   wire [ctag_vbits_lp-1:0] ctag_vbits = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:`BSG_MAX(ctag_vbits_lp,1)];
-  // Causes segfault in Synopsys DC O-2018.06-SP4 
+  // Causes segfault in Synopsys DC O-2018.06-SP4
   // wire [ctag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
   wire [ctag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
 
@@ -327,11 +327,12 @@ module bp_fe_icache
   wire v_tv = is_ready & v_tv_r;
 
   logic [assoc_p-1:0] ld_data_way_select_tv_n, way_v_tv_n, hit_v_tv_n;
-  wire [assoc_p-1:0] tag_mem_pseudo_hit = 1'b1 << tag_mem_pkt_cast_i.way_id;
+  wire [assoc_p-1:0] pseudo_hit =
+    (data_mem_pkt_v_i << data_mem_pkt_cast_i.way_id) | (tag_mem_pkt_v_i << tag_mem_pkt_cast_i.way_id);
   bsg_mux
    #(.width_p(3*assoc_p), .els_p(2))
    hit_mux
-    (.data_i({{3{tag_mem_pseudo_hit}}, {ld_data_way_select_tl, way_v_tl, hit_v_tl}})
+    (.data_i({{3{pseudo_hit}}, {ld_data_way_select_tl, way_v_tl, hit_v_tl}})
      ,.sel_i(cache_req_critical_i)
      ,.data_o({ld_data_way_select_tv_n, way_v_tv_n, hit_v_tv_n})
      );

@@ -353,7 +353,7 @@ module bp_io_tile
      ,.link_data_o(mem_rev_link_cast_o.data)
      ,.link_v_o(mem_rev_link_cast_o.v)
      ,.link_ready_and_i(mem_rev_link_cast_i.ready_and_rev)
-     );  
+     );
 
   bp_me_wormhole_to_stream
    #(.bp_params_p(bp_params_p)

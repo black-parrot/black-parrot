@@ -378,8 +378,7 @@ module bp_uce
      ,.data_o(writeback_data)
      );
 
-  assign cache_req_critical_o = data_mem_pkt_yumi_i & fsm_rev_critical_li
-    & data_mem_pkt_cast_o.opcode inside {e_cache_data_mem_write, e_cache_data_mem_uncached};
+  assign cache_req_critical_o = load_resp_v_li & fsm_rev_v_li & fsm_rev_critical_li;
 
   bp_cache_req_wr_subop_e cache_wr_subop;
   bp_bedrock_wr_subop_e mem_wr_subop;
