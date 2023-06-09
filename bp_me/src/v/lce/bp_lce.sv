@@ -32,7 +32,7 @@ module bp_lce
    // BP caches' metadata arrives cycle after request, by default
    , parameter `BSG_INV_PARAM(metadata_latency_p)
    , parameter `BSG_INV_PARAM(ctag_width_p)
-  
+
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
@@ -54,8 +54,7 @@ module bp_lce
     , output logic                                   cache_req_busy_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
-    , output logic                                   cache_req_critical_tag_o
-    , output logic                                   cache_req_critical_data_o
+    , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_credits_full_o
     , output logic                                   cache_req_credits_empty_o
@@ -82,27 +81,27 @@ module bp_lce
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
     , output logic [lce_req_header_width_lp-1:0]     lce_req_header_o
-    , output logic [fill_width_p-1:0]                lce_req_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_req_data_o
     , output logic                                   lce_req_v_o
     , input                                          lce_req_ready_and_i
 
     , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
-    , input [fill_width_p-1:0]                       lce_cmd_data_i
+    , input [bedrock_fill_width_p-1:0]               lce_cmd_data_i
     , input                                          lce_cmd_v_i
     , output logic                                   lce_cmd_ready_and_o
 
     , input [lce_fill_header_width_lp-1:0]           lce_fill_header_i
-    , input [fill_width_p-1:0]                       lce_fill_data_i
+    , input [bedrock_fill_width_p-1:0]               lce_fill_data_i
     , input                                          lce_fill_v_i
     , output logic                                   lce_fill_ready_and_o
 
     , output logic [lce_fill_header_width_lp-1:0]    lce_fill_header_o
-    , output logic [fill_width_p-1:0]                lce_fill_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_fill_data_o
     , output logic                                   lce_fill_v_o
     , input                                          lce_fill_ready_and_i
 
     , output logic [lce_resp_header_width_lp-1:0]    lce_resp_header_o
-    , output logic [fill_width_p-1:0]                lce_resp_data_o
+    , output logic [bedrock_fill_width_p-1:0]        lce_resp_data_o
     , output logic                                   lce_resp_v_o
     , input                                          lce_resp_ready_and_i
   );
@@ -175,17 +174,17 @@ module bp_lce
   //   perhaps a bit less overhead at the netlist level, but it's more challenging to
   //   verify protocol/deadlock correctness at that level. At this level, we can simply
   //   say that it's sufficient to buffer a full output fill message such that it's never
-  //   the case that an input cmd is blocked by an output fill 
+  //   the case that an input cmd is blocked by an output fill
   bp_bedrock_lce_cmd_header_s lce_cmd_header_li;
   logic [fill_width_p-1:0] lce_cmd_data_li;
   logic lce_cmd_v_li, lce_cmd_ready_and_lo;
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(block_width_p)
-     ,.data_width_p(fill_width_p)
+     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
-     ,.payload_mask_p(lce_cmd_payload_mask_gp)
+     ,.stream_mask_p(lce_cmd_stream_mask_gp)
      ,.num_source_p(2)
      ,.num_sink_p(1)
      )
@@ -242,8 +241,7 @@ module bp_lce
      ,.cache_init_done_o(cache_init_done_lo)
      ,.sync_done_o(sync_done_lo)
      ,.cache_req_complete_o(cache_req_complete_o)
-     ,.cache_req_critical_tag_o(cache_req_critical_tag_o)
-     ,.cache_req_critical_data_o(cache_req_critical_data_o)
+     ,.cache_req_critical_o(cache_req_critical_o)
      ,.uc_store_req_complete_o(uc_store_req_complete_lo)
 
      ,.data_mem_pkt_o(data_mem_pkt_o)

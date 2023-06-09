@@ -40,8 +40,7 @@ module bp_fe_nonsynth_icache_tracer
    , input                                                cache_req_busy_i
    , input [cache_req_metadata_width_lp-1:0]              cache_req_metadata_o
    , input                                                cache_req_metadata_v_o
-   , input                                                cache_req_critical_tag_i
-   , input                                                cache_req_critical_data_i
+   , input                                                cache_req_critical_i
    , input                                                cache_req_complete_i
    // Unused
    , input                                                cache_req_credits_full_i
@@ -145,11 +144,8 @@ module bp_fe_nonsynth_icache_tracer
       if (cache_req_metadata_v_o)
         $fwrite(file, "%12t | cache_req_metadata: %p\n", $time, cache_req_metadata_cast_o);
 
-      if (cache_req_critical_tag_i)
-        $fwrite(file, "%12t | cache_req_critical_tag_i raised\n", $time);
-
-      if (cache_req_critical_data_i)
-        $fwrite(file, "%12t | cache_req_critical_data_i raised\n", $time);
+      if (cache_req_critical_i)
+        $fwrite(file, "%12t | cache_req_critical_i raised\n", $time);
 
       if (cache_req_complete_i)
         $fwrite(file, "%12t | cache_req_complete_i raised\n", $time);

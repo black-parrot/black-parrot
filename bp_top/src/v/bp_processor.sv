@@ -125,7 +125,7 @@ module bp_processor
          ,.cid_width_p(mem_noc_cid_width_p)
          ,.pr_hdr_width_p(mem_fwd_header_width_lp)
          ,.pr_payload_width_p(mem_fwd_payload_width_lp)
-         ,.pr_payload_mask_p(mem_fwd_payload_mask_gp)
+         ,.pr_stream_mask_p(mem_fwd_stream_mask_gp)
          ,.pr_data_width_p(bedrock_fill_width_p)
          )
        mem_fwd_stream_to_wormhole
@@ -155,7 +155,7 @@ module bp_processor
          ,.cid_width_p(mem_noc_cid_width_p)
          ,.pr_hdr_width_p(mem_rev_header_width_lp)
          ,.pr_payload_width_p(mem_rev_payload_width_lp)
-         ,.pr_payload_mask_p(mem_rev_payload_mask_gp)
+         ,.pr_stream_mask_p(mem_rev_stream_mask_gp)
          ,.pr_data_width_p(bedrock_fill_width_p)
          )
        mem_rev_stream_to_wormhole
@@ -182,7 +182,7 @@ module bp_processor
          ,.cid_width_p(mem_noc_cid_width_p)
          ,.pr_hdr_width_p(mem_fwd_header_width_lp)
          ,.pr_payload_width_p(mem_fwd_payload_width_lp)
-         ,.pr_payload_mask_p(mem_fwd_payload_mask_gp)
+         ,.pr_stream_mask_p(mem_fwd_stream_mask_gp)
          ,.pr_data_width_p(bedrock_fill_width_p)
          )
        mem_fwd_wormhole_to_stream
@@ -207,7 +207,7 @@ module bp_processor
          ,.cid_width_p(mem_noc_cid_width_p)
          ,.pr_hdr_width_p(mem_rev_header_width_lp)
          ,.pr_payload_width_p(mem_rev_payload_width_lp)
-         ,.pr_payload_mask_p(mem_rev_payload_mask_gp)
+         ,.pr_stream_mask_p(mem_rev_stream_mask_gp)
          ,.pr_data_width_p(bedrock_fill_width_p)
          )
        mem_rev_wormhole_to_stream

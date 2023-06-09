@@ -10,7 +10,7 @@ with:
   - The PC currently in the IF2 stage. If it is enclosed in parentheses, this entry was
     invalidated and won't be issued.
   - The reason the above PC was fetched:
-    - undefined: the simulation just started and nothing has propagated to IF2 yet 
+    - undefined: the simulation just started and nothing has propagated to IF2 yet
     - redirect: either a BE->FE command or resuming after a stall
     - override_ntaken: a misaligned instruction required a second fetch for the same PC
     - override_ras: the RAS was used to predict a JALR (IF2)
@@ -35,30 +35,30 @@ Exmple trace ("cuts" introduced for brevity):
 
         time |   cycle,       IF2 PC,           IF2 PC src, state, events
     [============================ cut ===========================]
-    76356000 | 0022607, (0080000998), last_fetch_plus_four,   run, 
-    76357000 | 0022608,  0080000954 ,             redirect,   run, 
-    76358000 | 0022609, (0080000958), last_fetch_plus_four,   run, 
-    76359000 | 0022610,  00800007f8 ,      override_branch,   run, 
-    76360000 | 0022611,  00800007fc , last_fetch_plus_four,   run, 
-    76361000 | 0022612,  0080000800 , last_fetch_plus_four,   run, 
-    76362000 | 0022613,  0080000804 , last_fetch_plus_four,   run, 
-    76363000 | 0022614,  0080000808 , last_fetch_plus_four,   run, 
-    76364000 | 0022615,  008000080c , last_fetch_plus_four,   run, 
-    76365000 | 0022616,  0080000810 , last_fetch_plus_four,   run, 
-    76366000 | 0022617,  0080000814 , last_fetch_plus_four,   run, 
-    76367000 | 0022618,  0080000818 , last_fetch_plus_four,   run, 
-    76368000 | 0022619, (008000081c), last_fetch_plus_four,   run, 
-    76369000 | 0022620,  0080000710 ,      override_branch,   run, queue miss; i$ miss; 
-    76370000 | 0022621, (0080000714), last_fetch_plus_four, stall, 
-    76371000 | 0022622, (0080000718), last_fetch_plus_four, stall, 
+    76356000 | 0022607, (0080000998), last_fetch_plus_four,   run,
+    76357000 | 0022608,  0080000954 ,             redirect,   run,
+    76358000 | 0022609, (0080000958), last_fetch_plus_four,   run,
+    76359000 | 0022610,  00800007f8 ,      override_branch,   run,
+    76360000 | 0022611,  00800007fc , last_fetch_plus_four,   run,
+    76361000 | 0022612,  0080000800 , last_fetch_plus_four,   run,
+    76362000 | 0022613,  0080000804 , last_fetch_plus_four,   run,
+    76363000 | 0022614,  0080000808 , last_fetch_plus_four,   run,
+    76364000 | 0022615,  008000080c , last_fetch_plus_four,   run,
+    76365000 | 0022616,  0080000810 , last_fetch_plus_four,   run,
+    76366000 | 0022617,  0080000814 , last_fetch_plus_four,   run,
+    76367000 | 0022618,  0080000818 , last_fetch_plus_four,   run,
+    76368000 | 0022619, (008000081c), last_fetch_plus_four,   run,
+    76369000 | 0022620,  0080000710 ,      override_branch,   run, queue miss; i$ miss;
+    76370000 | 0022621, (0080000714), last_fetch_plus_four, stall,
+    76371000 | 0022622, (0080000718), last_fetch_plus_four, stall,
     [============================ cut ===========================]
-    76383000 | 0022634, (0080000748), last_fetch_plus_four, stall, 
-    76384000 | 0022635, (008000074c), last_fetch_plus_four, stall, 
-    76385000 | 0022636, (0080000750), last_fetch_plus_four,   run, 
-    76386000 | 0022637,  0080000710 ,             redirect,   run, 
-    76387000 | 0022638,  0080000714 , last_fetch_plus_four,   run, 
-    76388000 | 0022639,  0080000718 , last_fetch_plus_four,   run, 
-    76389000 | 0022640,  008000071c , last_fetch_plus_four,   run, 
+    76383000 | 0022634, (0080000748), last_fetch_plus_four, stall,
+    76384000 | 0022635, (008000074c), last_fetch_plus_four, stall,
+    76385000 | 0022636, (0080000750), last_fetch_plus_four,   run,
+    76386000 | 0022637,  0080000710 ,             redirect,   run,
+    76387000 | 0022638,  0080000714 , last_fetch_plus_four,   run,
+    76388000 | 0022639,  0080000718 , last_fetch_plus_four,   run,
+    76389000 | 0022640,  008000071c , last_fetch_plus_four,   run,
 */
 
 typedef enum logic [2:0]
@@ -84,7 +84,7 @@ module bp_fe_nonsynth_pc_gen_tracer
    )
   (input clk_i
    , input reset_i
-   , input freeze_i 
+   , input freeze_i
 
    , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
