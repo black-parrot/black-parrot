@@ -821,7 +821,7 @@ module bp_be_dcache
         cache_req_cast_o.msg_type = e_wt_store;
     end
 
-  wire cache_req_metadata_v = cache_req_v_o;
+  wire cache_req_metadata_v = cache_req_ready_and_i & cache_req_v_o;
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
