@@ -504,13 +504,14 @@ module bp_fe_icache
      };
 
   // The cache pipeline is designed to always send metadata a cycle after the request
+  wire cache_req_metadata_v = cache_req_ready_and_i & cache_req_v_o;
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(cache_req_v_o)
+     ,.data_i(cache_req_metadata_v)
      ,.data_o(cache_req_metadata_v_o)
      );
 
