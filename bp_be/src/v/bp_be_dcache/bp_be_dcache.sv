@@ -553,11 +553,10 @@ module bp_be_dcache
   wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
 
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
-  wire store_miss_tv    = ~uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.sc_op & ~store_hit_tv & writeback_p;
-  wire lr_miss_tv       = ~uncached_op_tv_r & decode_tv_r.lr_op & ~lr_hit_tv;
+  wire store_miss_tv    = ~uncached_op_tv_r & (decode_tv_r.store_op | decode_tv_r.lr_op) & ~decode_tv_r.sc_op & ~store_hit_tv & writeback_p;
   wire load_miss_tv     = ~uncached_op_tv_r & decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv;
 
-  wire cached_miss_tv   = load_miss_tv | store_miss_tv | lr_miss_tv;
+  wire cached_miss_tv   = load_miss_tv | store_miss_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
   wire uncached_miss_tv = uncached_op_tv_r & decode_tv_r.load_op & ~fill_tv_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_ready_and_i;
@@ -745,7 +744,7 @@ module bp_be_dcache
   `bp_cast_o(bp_dcache_req_s, cache_req);
   `bp_cast_o(bp_dcache_req_metadata_s, cache_req_metadata);
 
-  wire cached_req          = ~uncached_op_tv_r & (store_miss_tv | lr_miss_tv | load_miss_tv);
+  wire cached_req          = ~uncached_op_tv_r & (store_miss_tv | load_miss_tv);
   wire wt_req              = ~uncached_op_tv_r & (decode_tv_r.store_op & ~sc_fail_tv & !writeback_p);
   wire uncached_amo_req    =  uncached_op_tv_r & decode_tv_r.amo_op & decode_tv_r.ret_op & ~fill_tv_r;
   wire uncached_load_req   =  uncached_op_tv_r & ~decode_tv_r.amo_op & decode_tv_r.load_op & ~fill_tv_r;
@@ -806,8 +805,6 @@ module bp_be_dcache
       if (fencei_miss_tv)
         cache_req_cast_o.msg_type = e_cache_flush;
       else if (store_miss_tv)
-        cache_req_cast_o.msg_type = e_miss_store;
-      else if (lr_miss_tv)
         cache_req_cast_o.msg_type = e_miss_store;
       else if (load_miss_tv)
         cache_req_cast_o.msg_type = e_miss_load;
