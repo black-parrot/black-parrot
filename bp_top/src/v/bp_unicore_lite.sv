@@ -47,6 +47,7 @@ module bp_unicore_lite
   bp_icache_req_s icache_req_lo;
   logic icache_req_v_lo, icache_req_ready_and_li, icache_req_busy_li, icache_req_metadata_v_lo;
   bp_icache_req_metadata_s icache_req_metadata_lo;
+  logic [paddr_width_p-1:0] icache_req_addr_li;
   logic icache_req_critical_li, icache_req_complete_li;
   logic icache_req_credits_full_li, icache_req_credits_empty_li;
 
@@ -63,6 +64,7 @@ module bp_unicore_lite
   bp_dcache_req_s dcache_req_lo;
   logic dcache_req_v_lo, dcache_req_ready_and_li, dcache_req_busy_li, dcache_req_metadata_v_lo;
   bp_dcache_req_metadata_s dcache_req_metadata_lo;
+  logic [paddr_width_p-1:0] dcache_req_addr_li;
   logic dcache_req_critical_li, dcache_req_complete_li;
   logic dcache_req_credits_full_li, dcache_req_credits_empty_li;
 
@@ -93,6 +95,7 @@ module bp_unicore_lite
      ,.icache_req_busy_i(icache_req_busy_li)
      ,.icache_req_metadata_o(icache_req_metadata_lo)
      ,.icache_req_metadata_v_o(icache_req_metadata_v_lo)
+     ,.icache_req_addr_i(icache_req_addr_li)
      ,.icache_req_critical_i(icache_req_critical_li)
      ,.icache_req_complete_i(icache_req_complete_li)
      ,.icache_req_credits_full_i(icache_req_credits_full_li)
@@ -119,6 +122,7 @@ module bp_unicore_lite
      ,.dcache_req_busy_i(dcache_req_busy_li)
      ,.dcache_req_metadata_o(dcache_req_metadata_lo)
      ,.dcache_req_metadata_v_o(dcache_req_metadata_v_lo)
+     ,.dcache_req_addr_i(dcache_req_addr_li)
      ,.dcache_req_critical_i(dcache_req_critical_li)
      ,.dcache_req_complete_i(dcache_req_complete_li)
      ,.dcache_req_credits_full_i(dcache_req_credits_full_li)
@@ -168,6 +172,7 @@ module bp_unicore_lite
      ,.cache_req_busy_o(icache_req_busy_li)
      ,.cache_req_metadata_i(icache_req_metadata_lo)
      ,.cache_req_metadata_v_i(icache_req_metadata_v_lo)
+     ,.cache_req_addr_o(icache_req_addr_li)
      ,.cache_req_critical_o(icache_req_critical_li)
      ,.cache_req_complete_o(icache_req_complete_li)
      ,.cache_req_credits_full_o(icache_req_credits_full_li)
@@ -227,6 +232,7 @@ module bp_unicore_lite
      ,.cache_req_busy_o(dcache_req_busy_li)
      ,.cache_req_metadata_i(dcache_req_metadata_lo)
      ,.cache_req_metadata_v_i(dcache_req_metadata_v_lo)
+     ,.cache_req_addr_o(dcache_req_addr_li)
      ,.cache_req_critical_o(dcache_req_critical_li)
      ,.cache_req_complete_o(dcache_req_complete_li)
      ,.cache_req_credits_full_o(dcache_req_credits_full_li)

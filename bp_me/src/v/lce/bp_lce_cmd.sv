@@ -60,6 +60,7 @@ module bp_lce_cmd
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
     // cache_req_complete_o is routed to the cache to indicate a blocking request is complete
+    , output logic [paddr_width_p-1:0]               cache_req_addr_o
     , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_complete_o
     // uncached store request complete is used by the LCE to decrement the request credit counter
@@ -116,7 +117,6 @@ module bp_lce_cmd
     e_reset
     ,e_clear
     ,e_ready
-    ,e_data_to_cache
     ,e_tr
     ,e_stat_clear
     ,e_wb
@@ -333,6 +333,7 @@ module bp_lce_cmd
     // raised request is fully resolved
     cache_req_complete_o = 1'b0;
     cache_req_critical_o = 1'b0;
+    cache_req_addr_o = fsm_cmd_header_li.addr;
 
     // LCE-CCE Interface signals
     fsm_cmd_yumi_lo = 1'b0;
@@ -488,11 +489,21 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.state = fsm_cmd_header_li.payload.state;
             tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:ctag_width_p];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
-            tag_mem_pkt_v_o = fsm_cmd_v_li;
+            tag_mem_pkt_v_o = fsm_cmd_v_li & fsm_cmd_new_li;
 
-            // do not consume header since it is needed to compute fill index for cache data writes
-            state_n = tag_mem_pkt_yumi_i
-                      ? e_data_to_cache
+            data_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
+            data_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
+            data_mem_pkt_cast_o.data = fsm_cmd_data_li;
+            data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
+            data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
+            data_mem_pkt_v_o = fsm_cmd_v_li;
+
+            fsm_cmd_yumi_lo = (~tag_mem_pkt_v_o | tag_mem_pkt_yumi_i) & data_mem_pkt_yumi_i;
+
+            cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
+
+            state_n = (fsm_cmd_yumi_lo & fsm_cmd_last_li)
+                      ? e_coh_ack
                       : state_r;
           end
 
@@ -598,26 +609,6 @@ module bp_lce_cmd
 
         endcase // cmd.msg_type case
       end // e_ready
-
-      // write data from command to cache
-      // raise critical data signal only on first write
-      e_data_to_cache: begin
-        data_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
-        data_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
-        data_mem_pkt_cast_o.data = fsm_cmd_data_li;
-        data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
-        data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
-        data_mem_pkt_v_o = fsm_cmd_v_li;
-        // consume data beat when write to cache occurs
-        fsm_cmd_yumi_lo = data_mem_pkt_yumi_i;
-
-        cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
-
-        state_n = (fsm_cmd_yumi_lo & fsm_cmd_last_li)
-                  ? e_coh_ack
-                  : state_r;
-
-      end // e_data_to_cache
 
       // Transfer
       // send e_bedrock_fill_data header to target LCE

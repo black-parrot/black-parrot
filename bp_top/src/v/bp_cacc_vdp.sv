@@ -11,7 +11,7 @@ module bp_cacc_vdp
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
     `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache)
+    `declare_bp_cache_engine_if_widths(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
     )
@@ -96,39 +96,37 @@ module bp_cacc_vdp
   assign local_addr_lo = addr_lo;
 
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
-  bp_be_dcache_pkt_s        dcache_pkt;
-  logic                     dcache_ready_and, dcache_v;
-  logic [dword_width_gp-1:0] dcache_data;
-  logic                     dcache_pkt_v;
+  bp_be_dcache_pkt_s acache_pkt_li;
+  logic acache_ready_and_lo, acache_v_li;
+  logic [dword_width_gp-1:0] acache_data_lo;
+  logic acache_v_lo;
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
   assign cfg_bus_cast_i.dcache_mode = e_lce_mode_normal;
 
-  logic cache_req_v_o, cache_req_ready_and_i, cache_req_busy_i, cache_req_metadata_v_o,
-  data_mem_pkt_v_i, data_mem_pkt_yumi_o,
-  tag_mem_pkt_v_i, tag_mem_pkt_yumi_o,
-  stat_mem_pkt_v_i, stat_mem_pkt_yumi_o,
-  cache_req_complete_lo, cache_req_critical_lo,
-  cache_req_credits_full_lo, cache_req_credits_empty_lo;
+  `declare_bp_cache_engine_if(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache);
+  bp_acache_req_s acache_req_lo;
+  logic acache_req_v_lo, acache_req_ready_and_li, acache_req_busy_li;
+  bp_acache_req_metadata_s acache_req_metadata_lo;
+  logic acache_req_metadata_v_lo;
+  logic [paddr_width_p-1:0] acache_req_addr_lo;
+  logic acache_req_complete_lo, acache_req_critical_lo;
+  logic acache_req_credits_full_lo, acache_req_credits_empty_lo;
+  bp_acache_data_mem_pkt_s acache_data_mem_pkt_li;
+  logic acache_data_mem_pkt_v_li, acache_data_mem_pkt_yumi_lo;
+  logic [acache_block_width_p-1:0] acache_data_mem_lo;
+  bp_acache_tag_mem_pkt_s acache_tag_mem_pkt_li;
+  logic acache_tag_mem_pkt_v_li, acache_tag_mem_pkt_yumi_lo;
+  bp_acache_tag_info_s acache_tag_mem_lo;
+  bp_acache_stat_mem_pkt_s acache_stat_mem_pkt_li;
+  logic acache_stat_mem_pkt_v_li, acache_stat_mem_pkt_yumi_lo;
+  bp_acache_stat_info_s acache_stat_mem_lo;
 
-  `declare_bp_cache_engine_if(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, cache);
+  logic [ptag_width_p-1:0] acache_ptag_li;
+  logic [dword_width_gp-1:0] acache_st_data_r;
 
-  bp_cache_req_s cache_req_cast_o;
-  bp_cache_data_mem_pkt_s data_mem_pkt_i;
-  logic [acache_block_width_p-1:0] data_mem_o;
-  bp_cache_tag_mem_pkt_s tag_mem_pkt_i;
-  logic [cache_tag_info_width_lp-1:0] tag_mem_o;
-  bp_cache_stat_mem_pkt_s stat_mem_pkt_i;
-  logic [cache_stat_info_width_lp-1:0] stat_mem_o;
-  bp_cache_req_metadata_s cache_req_metadata_o;
-
-  logic [ptag_width_p-1:0] dcache_ptag;
-  logic [dword_width_gp-1:0] st_data_r;
-
-  // TODO: Actually use the late signal, but we don't really care about performance
-  //   for the purposes of this demo
   bp_be_dcache
    #(.bp_params_p(bp_params_p)
      ,.sets_p(acache_sets_p)
@@ -142,20 +140,20 @@ module bp_cacc_vdp
 
      ,.cfg_bus_i(cfg_bus_cast_i)
 
-     ,.dcache_pkt_i(dcache_pkt)
-     ,.v_i(dcache_pkt_v)
-     ,.ready_and_o(dcache_ready_and)
+     ,.dcache_pkt_i(acache_pkt_li)
+     ,.v_i(acache_v_li)
+     ,.ready_and_o(acache_ready_and_lo)
      ,.flush_i(1'b0)
 
      ,.ptag_v_i(1'b1)
-     ,.ptag_i(dcache_ptag)
+     ,.ptag_i(acache_ptag_li)
      ,.ptag_uncached_i(1'b0)
      ,.ptag_dram_i(1'b1)
-     ,.st_data_i(st_data_r)
+     ,.st_data_i(acache_st_data_r)
 
-     ,.v_o(dcache_v)
+     ,.data_o(acache_data_lo)
+     ,.v_o(acache_v_lo)
      ,.fencei_o()
-     ,.data_o(dcache_data)
      ,.ret_o()
      ,.store_o()
      ,.float_o()
@@ -165,29 +163,32 @@ module bp_cacc_vdp
      ,.tv_we_o()
 
      // D$-LCE Interface
-     ,.cache_req_complete_i(cache_req_complete_lo)
-     ,.cache_req_critical_i(cache_req_critical_lo)
-     ,.cache_req_o(cache_req_cast_o)
-     ,.cache_req_v_o(cache_req_v_o)
-     ,.cache_req_ready_and_i(cache_req_ready_and_i)
-     ,.cache_req_busy_i(cache_req_busy_i)
-     ,.cache_req_metadata_o(cache_req_metadata_o)
-     ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-     ,.cache_req_credits_full_i(cache_req_credits_full_lo)
-     ,.cache_req_credits_empty_i(cache_req_credits_empty_lo)
+     ,.cache_req_o(acache_req_lo)
+     ,.cache_req_v_o(acache_req_v_lo)
+     ,.cache_req_ready_and_i(acache_req_ready_and_li)
+     ,.cache_req_busy_i(acache_req_busy_li)
+     ,.cache_req_metadata_o(acache_req_metadata_lo)
+     ,.cache_req_metadata_v_o(acache_req_metadata_v_lo)
+     ,.cache_req_credits_full_i(acache_req_credits_full_lo)
+     ,.cache_req_credits_empty_i(acache_req_credits_empty_lo)
+     ,.cache_req_addr_i(acache_req_addr_lo)
+     ,.cache_req_critical_i(acache_req_critical_lo)
+     ,.cache_req_complete_i(acache_req_complete_lo)
 
-     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-     ,.data_mem_pkt_i(data_mem_pkt_i)
-     ,.data_mem_o(data_mem_o)
-     ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-     ,.tag_mem_pkt_i(tag_mem_pkt_i)
-     ,.tag_mem_o(tag_mem_o)
-     ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
-     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
-     ,.stat_mem_pkt_i(stat_mem_pkt_i)
-     ,.stat_mem_o(stat_mem_o)
-     ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+     ,.data_mem_pkt_v_i(acache_data_mem_pkt_v_li)
+     ,.data_mem_pkt_i(acache_data_mem_pkt_li)
+     ,.data_mem_pkt_yumi_o(acache_data_mem_pkt_yumi_lo)
+     ,.data_mem_o(acache_data_mem_lo)
+
+     ,.tag_mem_pkt_v_i(acache_tag_mem_pkt_v_li)
+     ,.tag_mem_pkt_i(acache_tag_mem_pkt_li)
+     ,.tag_mem_pkt_yumi_o(acache_tag_mem_pkt_yumi_lo)
+     ,.tag_mem_o(acache_tag_mem_lo)
+
+     ,.stat_mem_pkt_v_i(acache_stat_mem_pkt_v_li)
+     ,.stat_mem_pkt_i(acache_stat_mem_pkt_li)
+     ,.stat_mem_pkt_yumi_o(acache_stat_mem_pkt_yumi_lo)
+     ,.stat_mem_o(acache_stat_mem_lo)
      );
 
 
@@ -209,31 +210,32 @@ module bp_cacc_vdp
      ,.lce_id_i(cfg_bus_cast_i.dcache_id)
      ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
 
-     ,.cache_req_i(cache_req_cast_o)
-     ,.cache_req_v_i(cache_req_v_o)
-     ,.cache_req_ready_and_o(cache_req_ready_and_i)
-     ,.cache_req_busy_o(cache_req_busy_i)
-     ,.cache_req_metadata_i(cache_req_metadata_o)
-     ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
-     ,.cache_req_critical_o(cache_req_critical_lo)
-     ,.cache_req_complete_o(cache_req_complete_lo)
-     ,.cache_req_credits_full_o(cache_req_credits_full_lo)
-     ,.cache_req_credits_empty_o(cache_req_credits_empty_lo)
+     ,.cache_req_i(acache_req_lo)
+     ,.cache_req_v_i(acache_req_v_lo)
+     ,.cache_req_ready_and_o(acache_req_ready_and_li)
+     ,.cache_req_busy_o(acache_req_busy_li)
+     ,.cache_req_metadata_i(acache_req_metadata_lo)
+     ,.cache_req_metadata_v_i(acache_req_metadata_v_lo)
+     ,.cache_req_addr_o(acache_req_addr_lo)
+     ,.cache_req_critical_o(acache_req_critical_lo)
+     ,.cache_req_complete_o(acache_req_complete_lo)
+     ,.cache_req_credits_full_o(acache_req_credits_full_lo)
+     ,.cache_req_credits_empty_o(acache_req_credits_empty_lo)
 
-     ,.data_mem_pkt_o(data_mem_pkt_i)
-     ,.data_mem_pkt_v_o(data_mem_pkt_v_i)
-     ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_o)
-     ,.data_mem_i(data_mem_o)
+     ,.data_mem_pkt_o(acache_data_mem_pkt_li)
+     ,.data_mem_pkt_v_o(acache_data_mem_pkt_v_li)
+     ,.data_mem_pkt_yumi_i(acache_data_mem_pkt_yumi_lo)
+     ,.data_mem_i(acache_data_mem_lo)
 
-     ,.tag_mem_pkt_o(tag_mem_pkt_i)
-     ,.tag_mem_pkt_v_o(tag_mem_pkt_v_i)
-     ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_o)
-     ,.tag_mem_i(tag_mem_o)
+     ,.tag_mem_pkt_o(acache_tag_mem_pkt_li)
+     ,.tag_mem_pkt_v_o(acache_tag_mem_pkt_v_li)
+     ,.tag_mem_pkt_yumi_i(acache_tag_mem_pkt_yumi_lo)
+     ,.tag_mem_i(acache_tag_mem_lo)
 
-     ,.stat_mem_pkt_v_o(stat_mem_pkt_v_i)
-     ,.stat_mem_pkt_o(stat_mem_pkt_i)
-     ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_o)
-     ,.stat_mem_i(stat_mem_o)
+     ,.stat_mem_pkt_v_o(acache_stat_mem_pkt_v_li)
+     ,.stat_mem_pkt_o(acache_stat_mem_pkt_li)
+     ,.stat_mem_pkt_yumi_i(acache_stat_mem_pkt_yumi_lo)
+     ,.stat_mem_i(acache_stat_mem_lo)
 
      // LCE-CCE Interface
      ,.*
@@ -272,14 +274,14 @@ module bp_cacc_vdp
           len_a_cnt     <= '0;
           len_b_cnt     <= '0;
         end
-      else if (dcache_v & load & ~second_operand)
+      else if (acache_v_lo & load & ~second_operand)
         begin
-          vector_a[len_a_cnt] <= dcache_data;
+          vector_a[len_a_cnt] <= acache_data_lo;
           len_a_cnt <= len_a_cnt + 1'b1;
         end
-      else if (dcache_v & load & second_operand)
+      else if (acache_v_lo & load & second_operand)
         begin
-          vector_b[len_b_cnt] <= dcache_data;
+          vector_b[len_b_cnt] <= acache_data_lo;
           len_b_cnt <= len_b_cnt + 1'b1;
         end
     end
@@ -345,24 +347,24 @@ module bp_cacc_vdp
 
   assign data_li = csr_data_lo;
 
-  assign dcache_pkt = '{opcode: load ? e_dcache_op_ld : e_dcache_op_sd
-                        ,vaddr: load ? second_operand
-                                       ? (input_b_ptr+len_b_cnt*8)
-                                       : (input_a_ptr+len_a_cnt*8)
-                                     : res_ptr
-                        ,default: '0
-                        };
+  assign acache_pkt_li = '{opcode: load ? e_dcache_op_ld : e_dcache_op_sd
+                           ,vaddr: load ? second_operand
+                                          ? (input_b_ptr+len_b_cnt*8)
+                                          : (input_a_ptr+len_a_cnt*8)
+                                        : res_ptr
+                           ,default: '0
+                           };
 
   always_ff @(posedge clk_i) begin
-    dcache_ptag <= dcache_pkt.vaddr[vaddr_width_p-1:page_offset_width_gp];
-    st_data_r <= dot_product_res;
+    acache_ptag_li <= acache_pkt_li.vaddr[vaddr_width_p-1:page_offset_width_gp];
+    acache_st_data_r <= dot_product_res;
   end
 
   always_comb
     begin
       load = 0;
       second_operand = 0;
-      dcache_pkt_v = 0;
+      acache_v_li = 0;
       dot_product_res = '0;
 
       state_n = state_r;
@@ -375,14 +377,14 @@ module bp_cacc_vdp
           state_n = start_cmd ? e_wait_fetch : e_wait_start;
         end
         e_wait_fetch: begin
-          state_n = dcache_ready_and ? e_fetch_vec1 : e_wait_fetch;
+          state_n = acache_ready_and_lo ? e_fetch_vec1 : e_wait_fetch;
         end
         e_fetch_vec1: begin
-          dcache_pkt_v = '1;
+          acache_v_li = '1;
           state_n = e_wait_dcache_c1;
         end
         e_wait_dcache_c1: begin
-          state_n = dcache_v ? (load ? (second_operand ? e_check_vec2_len : e_check_vec1_len) : e_done) : e_wait_dcache_c2;
+          state_n = acache_v_lo ? (load ? (second_operand ? e_check_vec2_len : e_check_vec1_len) : e_done) : e_wait_dcache_c2;
         end
         e_wait_dcache_c2: begin
           //if load: load both input vectors
@@ -405,7 +407,7 @@ module bp_cacc_vdp
           state_n = e_wait_fetch;
         end
         e_done: begin
-          state_n = cache_req_credits_empty_lo ? e_reset : e_done;
+          state_n = acache_req_credits_empty_lo ? e_reset : e_done;
         end
       endcase
     end
@@ -427,3 +429,4 @@ module bp_cacc_vdp
       state_r <= state_n;
 
 endmodule
+

@@ -181,10 +181,6 @@ module bp_lce_req
   assign credits_full_o  =  cache_req_v_r && (credit_count_lo == credits_p);
   assign credits_empty_o = ~cache_req_v_r && (credit_count_lo == '0);
 
-  // align request address to BedRock data channel width for sending critical beat address
-  // note: if fill width != bedrock data width, this may be incorrect
-  wire [paddr_width_p-1:0] critical_req_addr = (cache_req_r.addr & req_addr_mask);
-
   // Request Address to CCE
   logic [cce_id_width_p-1:0] req_cce_id_lo;
   bp_me_addr_to_cce_id
@@ -280,8 +276,7 @@ module bp_lce_req
           e_miss_load: begin
             fsm_req_v_lo = cache_req_v_r & (credit_count_lo < credits_p);
             fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
-            // align address to data width and send address of critical beat
-            fsm_req_header_lo.addr = critical_req_addr;
+            fsm_req_header_lo.addr = cache_req_r.addr;
             fsm_req_header_lo.msg_type.req = e_bedrock_req_rd_miss;
             fsm_req_header_lo.payload.lru_way_id = lce_assoc_width_p'(cache_req_metadata_r.hit_or_repl_way);
             fsm_req_header_lo.payload.non_exclusive = (non_excl_reads_p == 1)
@@ -292,8 +287,7 @@ module bp_lce_req
           e_miss_store: begin
             fsm_req_v_lo = cache_req_v_r & (credit_count_lo < credits_p);
             fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
-            // align address to data width and send address of critical beat
-            fsm_req_header_lo.addr = critical_req_addr;
+            fsm_req_header_lo.addr = cache_req_r.addr;
             fsm_req_header_lo.msg_type.req = e_bedrock_req_wr_miss;
             fsm_req_header_lo.payload.lru_way_id = lce_assoc_width_p'(cache_req_metadata_r.hit_or_repl_way);
             fsm_req_header_lo.payload.non_exclusive = e_bedrock_req_excl;

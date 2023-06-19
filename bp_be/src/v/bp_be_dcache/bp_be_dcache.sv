@@ -150,6 +150,7 @@ module bp_be_dcache
    , input                                           cache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
+   , input [paddr_width_p-1:0]                       cache_req_addr_i
    , input                                           cache_req_critical_i
    , input                                           cache_req_complete_i
    // Unused
@@ -403,7 +404,7 @@ module bp_be_dcache
 
   // Snoop logic
   logic [dword_width_gp-1:0] snoop_word;
-  wire [snoop_offset_width_lp-1:0] snoop_word_offset = paddr_tv_r[3+:snoop_offset_width_lp];
+  wire [snoop_offset_width_lp-1:0] snoop_word_offset = cache_req_addr_i[3+:snoop_offset_width_lp];
   bsg_mux
    #(.width_p(dword_width_gp), .els_p(fill_width_p/dword_width_gp))
    snoop_mux
@@ -422,28 +423,35 @@ module bp_be_dcache
      ,.data_o(ld_data_tv_n)
      );
 
-  bsg_dff_en
-   #(.width_p(block_width_p))
-   ld_data_tv_reg
-    (.clk_i(clk_i)
-     ,.en_i(tv_we | cache_req_critical_i)
-     ,.data_i(ld_data_tv_n)
-     ,.data_o(ld_data_tv_r)
+  logic [paddr_width_p-1:0] paddr_tv_n;
+  bsg_mux
+   #(.width_p(paddr_width_p), .els_p(2))
+   paddr_mux
+    (.data_i({cache_req_addr_i, paddr_tl})
+     ,.sel_i(cache_req_critical_i)
+     ,.data_o(paddr_tv_n)
      );
 
   bsg_dff_en
-   #(.width_p(paddr_width_p+dword_width_gp+assoc_p+2+$bits(bp_be_dcache_decode_s)))
+   #(.width_p(paddr_width_p+block_width_p))
+   ld_data_tv_reg
+    (.clk_i(clk_i)
+     ,.en_i(tv_we | cache_req_critical_i)
+     ,.data_i({paddr_tv_n, ld_data_tv_n})
+     ,.data_o({paddr_tv_r, ld_data_tv_r})
+     );
+
+  bsg_dff_en
+   #(.width_p(dword_width_gp+assoc_p+2+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
     (.clk_i(clk_i)
      ,.en_i(tv_we)
-     ,.data_i({paddr_tl
-               ,st_data_tl
+     ,.data_i({st_data_tl
                ,bank_sel_one_hot_tl
                ,uncached_op_tl, dram_op_tl
                ,decode_tl_r
                })
-     ,.data_o({paddr_tv_r
-               ,st_data_tv_r
+     ,.data_o({st_data_tv_r
                ,bank_sel_one_hot_tv_r
                ,uncached_op_tv_r, dram_op_tv_r
                ,decode_tv_r
@@ -560,7 +568,7 @@ module bp_be_dcache
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
   wire uncached_miss_tv = uncached_op_tv_r & decode_tv_r.load_op & ~fill_tv_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_ready_and_i;
-  wire any_miss_tv      = is_miss | cached_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
+  wire any_miss_tv      = cached_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
 
   assign data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
     ? (sc_success_tv != 1'b1)
