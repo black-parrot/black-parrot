@@ -47,7 +47,7 @@ module bp_nonsynth_cosim
     , input [dpath_width_gp-1:0]              frd_data_i
 
     , input                                   cache_req_v_i
-    , input                                   cache_req_ready_and_i
+    , input                                   cache_req_yumi_i
     , input                                   cache_req_complete_i
     , input                                   cache_req_nonblocking_i
 
@@ -95,7 +95,7 @@ module bp_nonsynth_cosim
 
   logic cache_req_complete_r, cache_req_v_r;
   // We filter out for ready so that the request only tracks once
-  wire cache_req_v_li = cache_req_ready_and_i & cache_req_v_i & ~cache_req_nonblocking_i;
+  wire cache_req_v_li = cache_req_yumi_i & ~cache_req_nonblocking_i;
   bsg_dff_chain
    #(.width_p(2), .num_stages_p(2))
    cache_req_reg

@@ -103,7 +103,7 @@ module bp_fe_icache
    //   configurations which support that behavior
    , output logic [icache_req_width_lp-1:0]           cache_req_o
    , output logic                                     cache_req_v_o
-   , input                                            cache_req_ready_and_i
+   , input                                            cache_req_yumi_i
    , input                                            cache_req_busy_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
@@ -505,7 +505,7 @@ module bp_fe_icache
      };
 
   // The cache pipeline is designed to always send metadata a cycle after the request
-  wire cache_req_metadata_v = cache_req_ready_and_i & cache_req_v_o;
+  wire cache_req_metadata_v = cache_req_yumi_i & cache_req_v_o;
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
@@ -538,7 +538,7 @@ module bp_fe_icache
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
-      e_ready  : state_n = (cache_req_ready_and_i & cache_req_v_o) ? e_miss : e_ready;
+      e_ready  : state_n = cache_req_yumi_i ? e_miss : e_ready;
       e_miss   : state_n = cache_req_complete_i ? e_recover: e_miss;
       // e_recover:
       default  : state_n = e_ready;

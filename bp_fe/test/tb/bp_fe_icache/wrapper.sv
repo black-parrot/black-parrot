@@ -52,7 +52,7 @@ module wrapper
 
   // I$-LCE Interface signals
   // Miss, Management Interfaces
-  logic cache_req_ready_and_li, cache_req_busy_li;
+  logic cache_req_yumi_li, cache_req_busy_li;
   logic [icache_req_width_lp-1:0] cache_req_lo;
   logic cache_req_v_lo;
   logic [icache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
@@ -126,7 +126,7 @@ module wrapper
 
      ,.cache_req_o(cache_req_lo)
      ,.cache_req_v_o(cache_req_v_lo)
-     ,.cache_req_ready_and_i(cache_req_ready_and_li)
+     ,.cache_req_yumi_i(cache_req_yumi_li)
      ,.cache_req_busy_i(cache_req_busy_li)
      ,.cache_req_metadata_o(cache_req_metadata_lo)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_lo)
@@ -195,7 +195,7 @@ module wrapper
 
        ,.cache_req_v_i(cache_req_v_lo)
        ,.cache_req_i(cache_req_lo)
-       ,.cache_req_ready_and_o(cache_req_ready_and_li)
+       ,.cache_req_yumi_o(cache_req_yumi_li)
        ,.cache_req_busy_o(cache_req_busy_li)
        ,.cache_req_metadata_i(cache_req_metadata_lo)
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
@@ -305,7 +305,7 @@ module wrapper
 
        ,.cache_req_i(cache_req_lo)
        ,.cache_req_v_i(cache_req_v_lo)
-       ,.cache_req_ready_and_o(cache_req_ready_and_li)
+       ,.cache_req_yumi_o(cache_req_yumi_li)
        ,.cache_req_busy_o(cache_req_busy_li)
        ,.cache_req_metadata_i(cache_req_metadata_lo)
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)

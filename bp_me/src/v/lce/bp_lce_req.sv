@@ -61,7 +61,7 @@ module bp_lce_req
     // can arrive, as indicated by the metadata_v_i signal
     , input [cache_req_width_lp-1:0]                 cache_req_i
     , input                                          cache_req_v_i
-    , output logic                                   cache_req_ready_and_o
+    , output logic                                   cache_req_yumi_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
 
@@ -104,7 +104,7 @@ module bp_lce_req
    cache_req_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.set_i(cache_req_ready_and_o & cache_req_v_i)
+     ,.set_i(cache_req_yumi_o & cache_req_v_i)
      ,.clear_i(req_sent)
      ,.data_o(cache_req_v_r)
      );
@@ -114,7 +114,7 @@ module bp_lce_req
    #(.width_p($bits(bp_cache_req_s)))
    req_reg
     (.clk_i(clk_i)
-     ,.en_i(cache_req_ready_and_o & cache_req_v_i)
+     ,.en_i(cache_req_yumi_o & cache_req_v_i)
      ,.data_i(cache_req_i)
      ,.data_o(cache_req_r)
      );
@@ -205,11 +205,11 @@ module bp_lce_req
 
   // LCE should suppress messages if in reset or we are not synchronized with the CCE
   // busy being lower does not guarantee that this module will accept a valid cache request
-  // packet (refer to cache_req_ready_and_o below).
+  // packet (refer to cache_req_yumi_o below).
   assign busy_o = is_reset || (~sync_done_i && (lce_mode_i == e_lce_mode_normal));
 
   // consume cache request if the previous request has been issued or is being issued in the current cycle
-  assign cache_req_ready_and_o = (~cache_req_v_r | (cache_req_v_r & req_sent));
+  assign cache_req_yumi_o = cache_req_v_i & (~cache_req_v_r | (cache_req_v_r & req_sent));
 
   // atomic request subop determination
   bp_bedrock_wr_subop_e req_subop;

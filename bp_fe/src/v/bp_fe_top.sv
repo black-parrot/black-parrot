@@ -31,7 +31,7 @@ module bp_fe_top
 
    , output logic [icache_req_width_lp-1:0]           cache_req_o
    , output logic                                     cache_req_v_o
-   , input                                            cache_req_ready_and_i
+   , input                                            cache_req_yumi_i
    , input                                            cache_req_busy_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
@@ -251,7 +251,7 @@ module bp_fe_top
 
      ,.cache_req_o(cache_req_o)
      ,.cache_req_v_o(cache_req_v_o)
-     ,.cache_req_ready_and_i(cache_req_ready_and_i)
+     ,.cache_req_yumi_i(cache_req_yumi_i)
      ,.cache_req_busy_i(cache_req_busy_i)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)

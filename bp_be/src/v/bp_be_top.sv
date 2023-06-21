@@ -39,7 +39,7 @@ module bp_be_top
    // signals to LCE
    , output logic [dcache_req_width_lp-1:0]          cache_req_o
    , output logic                                    cache_req_v_o
-   , input                                           cache_req_ready_and_i
+   , input                                           cache_req_yumi_i
    , input                                           cache_req_busy_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
@@ -204,7 +204,7 @@ module bp_be_top
      ,.cache_req_o(cache_req_o)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_v_o(cache_req_v_o)
-     ,.cache_req_ready_and_i(cache_req_ready_and_i)
+     ,.cache_req_yumi_i(cache_req_yumi_i)
      ,.cache_req_busy_i(cache_req_busy_i)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
      ,.cache_req_addr_i(cache_req_addr_i)
