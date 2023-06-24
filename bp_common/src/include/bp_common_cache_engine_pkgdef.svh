@@ -12,6 +12,7 @@
     ,e_uc_amo           = 4'b0101
     ,e_cache_flush      = 4'b0110
     ,e_cache_clear      = 4'b0111
+    ,e_cache_backoff    = 4'b1000
   } bp_cache_req_msg_type_e;
 
   typedef enum logic [2:0]

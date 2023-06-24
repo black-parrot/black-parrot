@@ -160,7 +160,7 @@ module bp_cacc_vdp
      ,.ordered_o()
      ,.late_o()
      ,.rd_addr_o()
-     ,.tv_we_o()
+     ,.req_o()
 
      // D$-LCE Interface
      ,.cache_req_o(acache_req_lo)

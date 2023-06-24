@@ -128,7 +128,8 @@ module bp_lce
 
   // LCE Request Module
   logic req_busy_lo;
-  logic uc_store_req_complete_lo;
+  logic credit_return_lo;
+  logic backoff_lo;
   logic sync_done_lo;
   logic cache_init_done_lo;
   bp_lce_req
@@ -158,11 +159,10 @@ module bp_lce
      ,.cache_req_yumi_o(cache_req_yumi_o)
      ,.cache_req_metadata_i(cache_req_metadata_i)
      ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
-     ,.cache_req_complete_i(cache_req_complete_o)
      ,.credits_full_o(cache_req_credits_full_o)
      ,.credits_empty_o(cache_req_credits_empty_o)
-
-     ,.uc_store_req_complete_i(uc_store_req_complete_lo)
+     ,.credit_return_i(credit_return_lo)
+     ,.backoff_o(backoff_lo)
 
      ,.lce_req_header_o(lce_req_header_o)
      ,.lce_req_data_o(lce_req_data_o)
@@ -244,7 +244,8 @@ module bp_lce
      ,.cache_req_addr_o(cache_req_addr_o)
      ,.cache_req_critical_o(cache_req_critical_o)
      ,.cache_req_complete_o(cache_req_complete_o)
-     ,.uc_store_req_complete_o(uc_store_req_complete_lo)
+     ,.credit_return_o(credit_return_lo)
+     ,.backoff_i(backoff_lo)
 
      ,.data_mem_pkt_o(data_mem_pkt_o)
      ,.data_mem_pkt_v_o(data_mem_pkt_v_o)

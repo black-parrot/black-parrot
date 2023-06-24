@@ -63,10 +63,12 @@ module bp_lce_cmd
     , output logic [paddr_width_p-1:0]               cache_req_addr_o
     , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_complete_o
+
     // uncached store request complete is used by the LCE to decrement the request credit counter
     // when an uncached store complete, but is not routed to the cache because the caches do not
     // block (miss) on uncached stores
-    , output logic                                   uc_store_req_complete_o
+    , output logic                                   credit_return_o
+    , input                                          backoff_i
 
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
@@ -329,7 +331,7 @@ module bp_lce_cmd
 
     state_n = state_r;
 
-    uc_store_req_complete_o = 1'b0;
+    credit_return_o = '0;
     // raised request is fully resolved
     cache_req_complete_o = 1'b0;
     cache_req_critical_o = 1'b0;
@@ -418,11 +420,11 @@ module bp_lce_cmd
           e_bedrock_cmd_set_clear: begin
             tag_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
-            tag_mem_pkt_v_o = fsm_cmd_v_li;
+            tag_mem_pkt_v_o = fsm_cmd_v_li & ~backoff_i;
 
             stat_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
-            stat_mem_pkt_v_o = fsm_cmd_v_li;
+            stat_mem_pkt_v_o = fsm_cmd_v_li & ~backoff_i;
 
             // consume header when tag and stat packets consumed together
             fsm_cmd_yumi_lo = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
@@ -524,12 +526,13 @@ module bp_lce_cmd
             // raise request complete signal when data consumed
             cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
             cache_req_complete_o = cache_req_critical_o;
+            credit_return_o = cache_req_complete_o;
           end
 
           // Uncached Store/Req Done
           e_bedrock_cmd_uc_st_done: begin
             fsm_cmd_yumi_lo = fsm_cmd_v_li;
-            uc_store_req_complete_o = fsm_cmd_yumi_lo;
+            credit_return_o = fsm_cmd_yumi_lo;
           end
 
           // Writeback
@@ -698,10 +701,9 @@ module bp_lce_cmd
 
         // cache request is complete when coherence ack sends
         cache_req_complete_o = (fsm_resp_yumi_li & fsm_resp_last_lo);
+        credit_return_o = cache_req_complete_o;
 
-        state_n = cache_req_complete_o
-                  ? e_ready
-                  : state_r;
+        state_n = credit_return_o ? e_ready : state_r;
 
       end // e_coh_ack
 

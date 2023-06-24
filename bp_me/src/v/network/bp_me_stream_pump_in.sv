@@ -109,6 +109,10 @@ module bp_me_stream_pump_in
   wire nz_stream  = stream_size > '0;
   wire fsm_stream = fsm_stream_mask_p[msg_header_li.msg_type];
   wire msg_stream = msg_stream_mask_p[msg_header_li.msg_type];
+  // TODO: This could be dynamically adjusted depending on target
+  localparam widest_beat_width_lp =
+    `BSG_MAX(icache_fill_width_p, `BSG_MAX(dcache_fill_width_p, bedrock_fill_width_p));
+  localparam widest_beat_size_lp = `BSG_SAFE_CLOG2(widest_beat_width_lp)-1;
 
   logic cnt_up;
   bp_me_stream_pump_control
@@ -117,6 +121,7 @@ module bp_me_stream_pump_in
      ,.stream_mask_p(fsm_stream_mask_p)
      ,.data_width_p(fsm_data_width_p)
      ,.payload_width_p(payload_width_p)
+     ,.widest_beat_size_p(widest_beat_size_lp)
      )
    pump_control
     (.clk_i(clk_i)

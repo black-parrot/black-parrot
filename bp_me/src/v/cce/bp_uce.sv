@@ -88,7 +88,6 @@ module bp_uce
   localparam fill_offset_width_lp = `BSG_SAFE_CLOG2(fill_width_p>>3);
   localparam bank_sub_offset_width_lp = $clog2(fill_size_in_bank_lp);
 
-  // Block size parameterisations
   localparam bp_bedrock_msg_size_e block_msg_size_lp = (block_width_p == 512)
                                                        ? e_bedrock_msg_size_64
                                                        : (block_width_p == 256)
@@ -307,8 +306,6 @@ module bp_uce
   wire uc_amo_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
   wire uc_hit_v_r     = cache_req_v_r & cache_req_r.hit & (uc_load_v_r | uc_store_v_r | uc_amo_v_r);
 
-  assign cache_req_complete_o = cache_req_done & ~(uc_store_v_r | wt_store_v_r);
-
   wire [block_size_in_fill_lp-1:0] fill_index_shift = {{(assoc_p != 1){fsm_rev_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp}}, {(assoc_p == 1){'0}}};
 
   logic [index_width_lp-1:0] index_cnt;
@@ -422,6 +419,7 @@ module bp_uce
       stat_mem_pkt_v_o    = '0;
 
       cache_req_done = '0;
+      cache_req_complete_o = '0;
 
       fsm_fwd_header_lo = '0;
       fsm_fwd_data_lo = '0;
@@ -436,6 +434,7 @@ module bp_uce
           begin
             state_n = e_init;
           end
+
         e_init, e_clear:
           begin
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
@@ -448,10 +447,12 @@ module bp_uce
 
             index_up = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
-            cache_req_done = is_clear & (index_done & index_up);
+            cache_req_complete_o = is_clear & (index_done & index_up);
+            cache_req_done = cache_req_complete_o;
 
             state_n = (index_done & index_up) ? e_ready : state_r;
           end
+
         e_flush_read:
           begin
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_read;
@@ -460,6 +461,7 @@ module bp_uce
 
             state_n = stat_mem_pkt_yumi_i ? e_flush_scan : e_flush_read;
           end
+
         e_flush_scan:
           begin
             // Could check if |dirty_stat_r to skip index entirely
@@ -495,6 +497,7 @@ module bp_uce
                             : e_flush_scan;
               end
           end
+
         e_flush_write:
           begin
             fsm_fwd_header_lo.msg_type       = e_bedrock_mem_wr;
@@ -515,12 +518,15 @@ module bp_uce
                           ? e_flush_scan
                           : e_flush_write;
           end
+
         e_flush_fence:
           begin
-            cache_req_done = (credit_count_lo == 0);
+            cache_req_complete_o = (credit_count_lo == 0);
+            cache_req_done = cache_req_complete_o;
 
             state_n = cache_req_done ? e_ready : e_flush_fence;
           end
+
         e_ready:
           begin
             // Fire off a non-blocking request if we have one
@@ -530,12 +536,13 @@ module bp_uce
                 fsm_fwd_header_lo.addr           = cache_req_r.addr;
                 fsm_fwd_header_lo.size           = bp_bedrock_msg_size_e'(cache_req_r.size);
                 fsm_fwd_header_lo.payload.lce_id = lce_id_i;
-                fsm_fwd_header_lo.subop          = mem_wr_subop;
+                fsm_fwd_header_lo.subop          = wt_store_v_r ? e_bedrock_store : mem_wr_subop;
                 fsm_fwd_data_lo                  = {fill_width_p/dword_width_gp{cache_req_r.data}};
                 fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
                 cache_req_done = fsm_fwd_yumi_li;
               end
+
 
             // We can accept a new request as long as we send out an old one this cycle
             cache_req_yumi_o = cache_req_v_i & (~cache_req_v_r | cache_req_done);
@@ -590,7 +597,7 @@ module bp_uce
             begin
               fsm_fwd_header_lo.msg_type = e_bedrock_mem_rd;
               fsm_fwd_header_lo.addr     = cache_req_r.addr;
-              fsm_fwd_header_lo.size     = block_msg_size_lp;
+              fsm_fwd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
@@ -611,9 +618,7 @@ module bp_uce
               fsm_fwd_data_lo            = {fill_width_p/dword_width_gp{cache_req_r.data}};
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-              state_n = fsm_fwd_yumi_li
-                        ? e_uc_read_wait
-                        : e_send_critical;
+              state_n = fsm_fwd_yumi_li ? e_uc_read_wait : e_send_critical;
             end
 
         e_writeback_evict:
@@ -636,6 +641,7 @@ module bp_uce
 
             state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_writeback_read_req : e_writeback_evict;
           end
+
         e_writeback_read_req:
           begin
             // send the sub-block from L2 to cache
@@ -655,9 +661,12 @@ module bp_uce
             data_mem_pkt_v_o = load_resp_v_li;
 
             load_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
-            cache_req_done = fsm_rev_last_li & load_resp_yumi_lo;
+            cache_req_complete_o = load_resp_v_li & fsm_rev_last_li;
+            cache_req_done = load_resp_yumi_lo & cache_req_complete_o;
+
             state_n = cache_req_done ? e_writeback_write_req : e_writeback_read_req;
           end
+
         e_writeback_write_req:
           begin
             fsm_fwd_header_lo.msg_type       = e_bedrock_mem_wr;
@@ -669,6 +678,7 @@ module bp_uce
 
             state_n = (fsm_fwd_yumi_li & fsm_fwd_last_lo) ? e_ready : e_writeback_write_req;
           end
+
         e_read_wait:
           begin
             // send the sub-block from L2 to cache
@@ -688,17 +698,21 @@ module bp_uce
             data_mem_pkt_v_o = load_resp_v_li;
 
             load_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
-            cache_req_done = fsm_rev_last_li & load_resp_yumi_lo;
+            cache_req_complete_o = load_resp_v_li & fsm_rev_last_li;
+            cache_req_done = cache_req_complete_o & load_resp_yumi_lo;
+
             state_n = cache_req_done ? e_ready : e_read_wait;
           end
+
         e_uc_read_wait:
           begin
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_cast_o.data = {(fill_width_p/dword_width_gp){fsm_rev_data_li[0+:dword_width_gp]}};
             data_mem_pkt_v_o = load_resp_v_li;
 
-            cache_req_done = data_mem_pkt_yumi_i;
-            load_resp_yumi_lo = cache_req_done;
+            load_resp_yumi_lo = data_mem_pkt_yumi_i;
+            cache_req_complete_o = load_resp_v_li & fsm_rev_last_li;
+            cache_req_done = cache_req_complete_o & load_resp_yumi_lo;
 
             state_n = cache_req_done ? e_ready : e_uc_read_wait;
           end

@@ -93,6 +93,7 @@ module bp_me_xbar_stream
     end
   for (genvar i = 0; i < num_sink_p; i++)
     begin : sink_comb
+      // We just use this to indicate the end of packets for unlocking
       logic msg_last_lo;
       bp_me_stream_pump_control
        #(.bp_params_p(bp_params_p)
@@ -100,6 +101,7 @@ module bp_me_xbar_stream
          ,.block_width_p(block_width_p)
          ,.data_width_p(data_width_p)
          ,.payload_width_p(payload_width_p)
+         ,.widest_beat_size_p(e_size_1B)
          )
        pump_control
         (.clk_i(clk_i)

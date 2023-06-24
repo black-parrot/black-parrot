@@ -681,7 +681,6 @@ module testbench
               ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
 
               ,.cache_req_complete_i(cache_req_complete_o)
-              ,.uc_store_req_complete_i(uc_store_req_complete_lo)
               );
 
           bind bp_cce_pending_bits

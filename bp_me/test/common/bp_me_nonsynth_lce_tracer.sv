@@ -70,7 +70,6 @@ module bp_me_nonsynth_lce_tracer
     ,input                                                  lce_resp_ready_and_i
 
     ,input                                                  cache_req_complete_i
-    ,input                                                  uc_store_req_complete_i
   );
 
   // LCE-CCE interface structs
