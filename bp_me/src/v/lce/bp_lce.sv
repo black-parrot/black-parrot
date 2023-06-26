@@ -129,6 +129,7 @@ module bp_lce
   // LCE Request Module
   logic req_busy_lo;
   logic credit_return_lo;
+  logic cache_req_done_lo;
   logic backoff_lo;
   logic sync_done_lo;
   logic cache_init_done_lo;
@@ -162,6 +163,7 @@ module bp_lce
      ,.credits_full_o(cache_req_credits_full_o)
      ,.credits_empty_o(cache_req_credits_empty_o)
      ,.credit_return_i(credit_return_lo)
+     ,.cache_req_done_i(cache_req_done_lo)
      ,.backoff_o(backoff_lo)
 
      ,.lce_req_header_o(lce_req_header_o)
@@ -245,6 +247,7 @@ module bp_lce
      ,.cache_req_critical_o(cache_req_critical_o)
      ,.cache_req_complete_o(cache_req_complete_o)
      ,.credit_return_o(credit_return_lo)
+     ,.cache_req_done_o(cache_req_done_lo)
      ,.backoff_i(backoff_lo)
 
      ,.data_mem_pkt_o(data_mem_pkt_o)

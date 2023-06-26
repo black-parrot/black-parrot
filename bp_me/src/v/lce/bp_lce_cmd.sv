@@ -68,6 +68,7 @@ module bp_lce_cmd
     // when an uncached store complete, but is not routed to the cache because the caches do not
     // block (miss) on uncached stores
     , output logic                                   credit_return_o
+    , output logic                                   cache_req_done_o
     , input                                          backoff_i
 
     // LCE-CCE Interface
@@ -332,6 +333,7 @@ module bp_lce_cmd
     state_n = state_r;
 
     credit_return_o = '0;
+    cache_req_done_o = '0;
     // raised request is fully resolved
     cache_req_complete_o = 1'b0;
     cache_req_critical_o = 1'b0;
@@ -386,7 +388,6 @@ module bp_lce_cmd
                   : e_clear;
         cnt_clear = (state_n == e_ready);
         cnt_inc = ~cnt_clear & (tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i);
-
       end
 
       // Ready for LCE Commands
@@ -526,7 +527,8 @@ module bp_lce_cmd
             // raise request complete signal when data consumed
             cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
             cache_req_complete_o = cache_req_critical_o;
-            credit_return_o = cache_req_complete_o;
+            cache_req_done_o = fsm_cmd_yumi_lo & cache_req_complete_o;
+            credit_return_o = cache_req_done_o;
           end
 
           // Uncached Store/Req Done
@@ -700,8 +702,9 @@ module bp_lce_cmd
         fsm_resp_v_lo = 1'b1;
 
         // cache request is complete when coherence ack sends
-        cache_req_complete_o = (fsm_resp_yumi_li & fsm_resp_last_lo);
-        credit_return_o = cache_req_complete_o;
+        cache_req_complete_o = fsm_resp_v_lo & fsm_resp_last_lo;
+        cache_req_done_o = fsm_resp_yumi_li & cache_req_complete_o;
+        credit_return_o = cache_req_done_o;
 
         state_n = credit_return_o ? e_ready : state_r;
 
@@ -715,14 +718,11 @@ module bp_lce_cmd
   end
 
   // synopsys sync_set_reset "reset_i"
-  always_ff @ (posedge clk_i) begin
-    if (reset_i) begin
+  always_ff @ (posedge clk_i)
+    if (reset_i)
       state_r <= e_reset;
-    end
-    else begin
+    else
       state_r <= state_n;
-    end
-  end
 
 endmodule
 

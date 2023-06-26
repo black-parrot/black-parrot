@@ -38,8 +38,8 @@ module bp_uce
     , output logic                                   cache_req_busy_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
-    , output logic                                   cache_req_critical_o
     , output logic [paddr_width_p-1:0]               cache_req_addr_o
+    , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_credits_full_o
     , output logic                                   cache_req_credits_empty_o
@@ -447,10 +447,10 @@ module bp_uce
 
             index_up = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
-            cache_req_complete_o = is_clear & (index_done & index_up);
-            cache_req_done = cache_req_complete_o;
+            cache_req_done = (index_done & index_up);
+            cache_req_complete_o = is_clear & cache_req_done;
 
-            state_n = (index_done & index_up) ? e_ready : state_r;
+            state_n = cache_req_done ? e_ready : state_r;
           end
 
         e_flush_read:
@@ -459,7 +459,7 @@ module bp_uce
             stat_mem_pkt_cast_o.index  = index_cnt;
             stat_mem_pkt_v_o = 1'b1;
 
-            state_n = stat_mem_pkt_yumi_i ? e_flush_scan : e_flush_read;
+            state_n = stat_mem_pkt_yumi_i ? e_flush_scan : state_r;
           end
 
         e_flush_scan:
@@ -483,7 +483,9 @@ module bp_uce
                 stat_mem_pkt_cast_o.way_id = way_cnt;
                 stat_mem_pkt_v_o = 1'b1;
 
-                state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_flush_write : e_flush_scan;
+                state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
+                          ? e_flush_write
+                          : state_r;
               end
             else
               begin
@@ -521,10 +523,10 @@ module bp_uce
 
         e_flush_fence:
           begin
-            cache_req_complete_o = (credit_count_lo == 0);
-            cache_req_done = cache_req_complete_o;
+            cache_req_done = (credit_count_lo == '0);
+            cache_req_complete_o = cache_req_done;
 
-            state_n = cache_req_done ? e_ready : e_flush_fence;
+            state_n = cache_req_complete_o ? e_ready : state_r;
           end
 
         e_ready:
@@ -557,7 +559,7 @@ module bp_uce
                             : (uc_store_v_li || wt_store_v_li)
                               ? e_ready
                               : e_send_critical
-                      : e_ready;
+                      : state_r;
           end
 
         e_uc_writeback_evict:
@@ -577,7 +579,7 @@ module bp_uce
                       ? uc_store_v_r ? e_ready : e_send_critical
                       : (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
                         ? e_uc_writeback_write_req
-                        : e_uc_writeback_evict;
+                        : state_r;
           end
 
         e_uc_writeback_write_req:
@@ -589,7 +591,11 @@ module bp_uce
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-            state_n = (fsm_fwd_yumi_li & fsm_fwd_last_lo) ? uc_store_v_r ? e_ready : e_send_critical : e_uc_writeback_write_req;
+            state_n = (fsm_fwd_yumi_li & fsm_fwd_last_lo)
+                      ? uc_store_v_r
+                        ? e_ready
+                        : e_send_critical
+                      : state_r;
           end
 
         e_send_critical:
@@ -606,7 +612,7 @@ module bp_uce
                         ? cache_req_metadata_r.dirty
                           ? e_writeback_evict
                           : e_read_wait
-                        : e_send_critical;
+                        : state_r;
             end
           else if (uc_load_v_r | uc_amo_v_r)
             begin
@@ -618,7 +624,7 @@ module bp_uce
               fsm_fwd_data_lo            = {fill_width_p/dword_width_gp{cache_req_r.data}};
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-              state_n = fsm_fwd_yumi_li ? e_uc_read_wait : e_send_critical;
+              state_n = fsm_fwd_yumi_li ? e_uc_read_wait : state_r;
             end
 
         e_writeback_evict:
@@ -729,10 +735,8 @@ module bp_uce
 
   // synopsys translate_off
   always_ff @(negedge clk_i)
-    begin
-      assert(reset_i !== '0 || (writeback_p == 1) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
-        else $error("writethrough cache should not be in writeback states");
-    end
+    assert(reset_i !== '0 || (writeback_p == 1) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
+      else $error("writethrough cache should not be in writeback states");
   // synopsys translate_on
 
 endmodule

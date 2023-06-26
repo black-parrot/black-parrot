@@ -74,6 +74,7 @@ module bp_lce_req
     // this signal is raised exactly once, for a single cycle, per request completing, and it
     // can be raised at any time after the LCE request sends out
     , input                                          credit_return_i
+    , input                                          cache_req_done_i
     , output logic                                   backoff_o
 
     // LCE-CCE Interface
@@ -89,23 +90,24 @@ module bp_lce_req
   `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_i(bp_cache_req_s, cache_req);
 
-  localparam block_size_in_fill_lp = block_width_p / fill_width_p;
-  localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
-
   // cache request valid and register
   // set over clear because new request can be captured same cycle existing request sends
   // cache_req_v_r indicates if a valid request is in the buffer
-  logic cache_req_v_r;
-  logic req_done;
+  logic cache_req_v_r, nonblocking_req_sent, blocking_req_sent;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    cache_req_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.set_i(cache_req_yumi_o & cache_req_v_i)
-     ,.clear_i(req_done)
+     ,.clear_i(cache_req_done_i | nonblocking_req_sent)
      ,.data_o(cache_req_v_r)
      );
+
+  enum logic [1:0] {e_reset, e_ready, e_request} state_n, state_r;
+  wire is_reset   = (state_r == e_reset);
+  wire is_ready   = (state_r == e_ready);
+  wire is_request = (state_r == e_request);
 
   bp_cache_req_s cache_req_r;
   bsg_dff_en
@@ -163,10 +165,10 @@ module bp_lce_req
   wire miss_load_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_r = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
   wire miss_v_r       = cache_req_v_r & miss_load_v_r | miss_store_v_r;
-  wire uc_store_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
   wire uc_load_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire uc_amo_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
   wire backoff_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_cache_backoff};
+  wire uc_store_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
 
   // Outstanding request credit counter
   // one credit used per LCE request sent
@@ -248,8 +250,6 @@ module bp_lce_req
     fsm_req_header_lo.subop = req_subop;
     fsm_req_data_lo = cache_req_r.data;
 
-    fsm_req_v_lo = cache_req_v_r & ~backoff_v_r & (credit_count_lo < credits_p) & cache_init_done_i;
-  
     // Send request header when able
     // requires valid cache request and possibly valid metadata (cached requests only)
     unique case (cache_req_r.msg_type)
@@ -261,20 +261,31 @@ module bp_lce_req
       default: begin end
     endcase
 
+    // Send out in ready state only
+    fsm_req_v_lo = is_ready & cache_req_v_r & ~backoff_v_r & (credit_count_lo < credits_p);
+
     // request finishes sending when last data sends
-    req_done = backoff_v_r || (fsm_req_yumi_li & fsm_req_last_lo);
+    nonblocking_req_sent = backoff_v_r | (uc_store_v_r & fsm_req_yumi_li & fsm_req_last_lo);
+    blocking_req_sent = (miss_v_r | uc_load_v_r | uc_amo_v_r) & fsm_req_yumi_li & fsm_req_last_lo;
  
     // consume cache request if the previous request was issued or is being issued in the current cycle
-    cache_req_yumi_o = cache_req_v_i & (~cache_req_v_r | req_done);
+    cache_req_yumi_o = cache_req_v_i & (~cache_req_v_r | cache_req_done_i | nonblocking_req_sent);
   end
 
-  // synopsys translate_off
-  always_ff @(negedge clk_i) begin
-    if (cache_req_v_r & cache_req_r.msg_type inside {e_uc_load, e_uc_store, e_uc_amo}
-        & cache_req_r.size > e_size_8B)
-      $error("Uncached/atomic requests must be no larger than 64-bits");
-  end
-  // synopsys translate_on
+  always_comb
+    case (state_r)
+      e_ready  : state_n = blocking_req_sent ? e_request : state_r;
+      e_request: state_n = cache_req_done_i ? e_ready : state_r;
+      // e_reset:
+      default  : state_n = cache_init_done_i ? e_ready : state_r;
+    endcase
+
+  // synopsys sync_set_reset "reset_i"
+  always_ff @ (posedge clk_i)
+    if (reset_i)
+      state_r <= e_reset;
+    else
+      state_r <= state_n;
 
 endmodule
 
