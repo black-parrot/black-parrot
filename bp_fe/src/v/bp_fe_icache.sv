@@ -109,7 +109,7 @@ module bp_fe_icache
    , output logic                                     cache_req_metadata_v_o
    , input [paddr_width_p-1:0]                        cache_req_addr_i
    , input                                            cache_req_critical_i
-   , input                                            cache_req_complete_i
+   , input                                            cache_req_last_i
    , input                                            cache_req_credits_full_i
    , input                                            cache_req_credits_empty_i
 
@@ -161,7 +161,7 @@ module bp_fe_icache
     & (~stat_mem_pkt_v_i | stat_mem_pkt_yumi_o)
     & (~tag_mem_pkt_v_i | tag_mem_pkt_yumi_o)
     & (~data_mem_pkt_v_i | data_mem_pkt_yumi_o);
-  wire complete_recv = cache_req_complete_i
+  wire complete_recv = cache_req_last_i
     & (~stat_mem_pkt_v_i | stat_mem_pkt_yumi_o)
     & (~tag_mem_pkt_v_i | tag_mem_pkt_yumi_o)
     & (~data_mem_pkt_v_i | data_mem_pkt_yumi_o);

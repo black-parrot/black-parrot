@@ -59,10 +59,10 @@ module bp_lce_cmd
 
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
-    // cache_req_complete_o is routed to the cache to indicate a blocking request is complete
+    // cache_req_last_o is routed to the cache to indicate a blocking request is complete
     , output logic [paddr_width_p-1:0]               cache_req_addr_o
     , output logic                                   cache_req_critical_o
-    , output logic                                   cache_req_complete_o
+    , output logic                                   cache_req_last_o
 
     // uncached store request complete is used by the LCE to decrement the request credit counter
     // when an uncached store complete, but is not routed to the cache because the caches do not
@@ -335,7 +335,7 @@ module bp_lce_cmd
     credit_return_o = '0;
     cache_req_done_o = '0;
     // raised request is fully resolved
-    cache_req_complete_o = 1'b0;
+    cache_req_last_o = 1'b0;
     cache_req_critical_o = 1'b0;
     cache_req_addr_o = fsm_cmd_header_li.addr;
 
@@ -526,8 +526,8 @@ module bp_lce_cmd
 
             // raise request complete signal when data consumed
             cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
-            cache_req_complete_o = cache_req_critical_o;
-            cache_req_done_o = fsm_cmd_yumi_lo & cache_req_complete_o;
+            cache_req_last_o = cache_req_critical_o;
+            cache_req_done_o = fsm_cmd_yumi_lo & cache_req_last_o;
             credit_return_o = cache_req_done_o;
           end
 
@@ -702,8 +702,8 @@ module bp_lce_cmd
         fsm_resp_v_lo = 1'b1;
 
         // cache request is complete when coherence ack sends
-        cache_req_complete_o = fsm_resp_v_lo & fsm_resp_last_lo;
-        cache_req_done_o = fsm_resp_yumi_li & cache_req_complete_o;
+        cache_req_last_o = fsm_resp_v_lo & fsm_resp_last_lo;
+        cache_req_done_o = fsm_resp_yumi_li & cache_req_last_o;
         credit_return_o = cache_req_done_o;
 
         state_n = credit_return_o ? e_ready : state_r;

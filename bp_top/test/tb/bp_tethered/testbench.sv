@@ -382,7 +382,7 @@ module testbench
 
            ,.cache_req_yumi_i(calculator.pipe_mem.dcache.cache_req_yumi_i)
            ,.cache_req_v_i(calculator.pipe_mem.dcache.cache_req_v_o)
-           ,.cache_req_complete_i(calculator.pipe_mem.dcache.cache_req_complete_i)
+           ,.cache_req_last_i(calculator.pipe_mem.dcache.cache_req_last_i)
            ,.cache_req_nonblocking_i(calculator.pipe_mem.dcache.nonblocking_req)
 
            ,.cosim_clk_i(testbench.cosim_clk_i)
@@ -680,7 +680,7 @@ module testbench
               ,.lce_resp_v_i(lce_resp_v_o)
               ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
 
-              ,.cache_req_complete_i(cache_req_complete_o)
+              ,.cache_req_last_i(cache_req_last_o)
               );
 
           bind bp_cce_pending_bits

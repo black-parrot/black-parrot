@@ -48,7 +48,7 @@ module bp_nonsynth_cosim
 
     , input                                   cache_req_v_i
     , input                                   cache_req_yumi_i
-    , input                                   cache_req_complete_i
+    , input                                   cache_req_last_i
     , input                                   cache_req_nonblocking_i
 
     , input                                   cosim_clk_i
@@ -93,7 +93,7 @@ module bp_nonsynth_cosim
      ,.data_o({is_debug_mode_r, commit_pkt_r})
      );
 
-  logic cache_req_complete_r, cache_req_v_r;
+  logic cache_req_last_r, cache_req_v_r;
   // We filter out for ready so that the request only tracks once
   wire cache_req_v_li = cache_req_yumi_i & ~cache_req_nonblocking_i;
   bsg_dff_chain
@@ -101,8 +101,8 @@ module bp_nonsynth_cosim
    cache_req_reg
     (.clk_i(negedge_clk)
 
-     ,.data_i({cache_req_complete_i, cache_req_v_li})
-     ,.data_o({cache_req_complete_r, cache_req_v_r})
+     ,.data_i({cache_req_last_i, cache_req_v_li})
+     ,.data_o({cache_req_last_r, cache_req_v_r})
      );
 
   logic                     commit_fifo_full_lo;
@@ -210,7 +210,7 @@ module bp_nonsynth_cosim
      ,.reset_i(reset_i | freeze_i)
 
      ,.up_i(cache_req_v_r)
-     ,.down_i(cache_req_complete_r)
+     ,.down_i(cache_req_last_r)
 
      ,.count_o(req_cnt_lo)
      );

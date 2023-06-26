@@ -237,7 +237,7 @@ The stat memory contains LRU and dirty data for a block, and the packet format i
 - Replacement index
 
 When the critical data of a transaction is being sent, cache_req_critical_o will go high.
-When a transaction is completed, cache_req_complete_o will go high for one cycle.
+When the last data of a transaction is sent, cache_req_complete_o will go high.
 
 There are additional signals for available credits in the engine, used for fencing. Empty credits
 signify all downstream transactions have completed, whereas full credits signify no more

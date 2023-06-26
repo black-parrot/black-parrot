@@ -72,7 +72,7 @@ module bp_me_nonsynth_cache
     , output logic [cache_req_metadata_width_lp-1:0]        cache_req_metadata_o
     , output logic                                          cache_req_metadata_v_o
     , input                                                 cache_req_critical_i
-    , input                                                 cache_req_complete_i
+    , input                                                 cache_req_last_i
     , input                                                 cache_req_credits_full_i
     , input                                                 cache_req_credits_empty_i
 
@@ -587,7 +587,7 @@ module bp_me_nonsynth_cache
       // then, return to ready and replay the current TR command
       // note: critical tag and data signals are ignored
       e_wait: begin
-        state_n = cache_req_complete_i ? e_ready : state_r;
+        state_n = cache_req_last_i ? e_ready : state_r;
       end
 
       // wait for UC load data

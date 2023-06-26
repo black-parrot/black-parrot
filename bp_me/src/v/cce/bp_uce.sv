@@ -40,7 +40,7 @@ module bp_uce
     , input                                          cache_req_metadata_v_i
     , output logic [paddr_width_p-1:0]               cache_req_addr_o
     , output logic                                   cache_req_critical_o
-    , output logic                                   cache_req_complete_o
+    , output logic                                   cache_req_last_o
     , output logic                                   cache_req_credits_full_o
     , output logic                                   cache_req_credits_empty_o
 
@@ -419,7 +419,7 @@ module bp_uce
       stat_mem_pkt_v_o    = '0;
 
       cache_req_done = '0;
-      cache_req_complete_o = '0;
+      cache_req_last_o = '0;
 
       fsm_fwd_header_lo = '0;
       fsm_fwd_data_lo = '0;
@@ -448,7 +448,7 @@ module bp_uce
             index_up = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
             cache_req_done = (index_done & index_up);
-            cache_req_complete_o = is_clear & cache_req_done;
+            cache_req_last_o = is_clear & cache_req_done;
 
             state_n = cache_req_done ? e_ready : state_r;
           end
@@ -524,9 +524,9 @@ module bp_uce
         e_flush_fence:
           begin
             cache_req_done = (credit_count_lo == '0);
-            cache_req_complete_o = cache_req_done;
+            cache_req_last_o = cache_req_done;
 
-            state_n = cache_req_complete_o ? e_ready : state_r;
+            state_n = cache_req_last_o ? e_ready : state_r;
           end
 
         e_ready:
@@ -667,8 +667,8 @@ module bp_uce
             data_mem_pkt_v_o = load_resp_v_li;
 
             load_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
-            cache_req_complete_o = load_resp_v_li & fsm_rev_last_li;
-            cache_req_done = load_resp_yumi_lo & cache_req_complete_o;
+            cache_req_last_o = load_resp_v_li & fsm_rev_last_li;
+            cache_req_done = load_resp_yumi_lo & cache_req_last_o;
 
             state_n = cache_req_done ? e_writeback_write_req : e_writeback_read_req;
           end
@@ -704,8 +704,8 @@ module bp_uce
             data_mem_pkt_v_o = load_resp_v_li;
 
             load_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
-            cache_req_complete_o = load_resp_v_li & fsm_rev_last_li;
-            cache_req_done = cache_req_complete_o & load_resp_yumi_lo;
+            cache_req_last_o = load_resp_v_li & fsm_rev_last_li;
+            cache_req_done = cache_req_last_o & load_resp_yumi_lo;
 
             state_n = cache_req_done ? e_ready : e_read_wait;
           end
@@ -717,8 +717,8 @@ module bp_uce
             data_mem_pkt_v_o = load_resp_v_li;
 
             load_resp_yumi_lo = data_mem_pkt_yumi_i;
-            cache_req_complete_o = load_resp_v_li & fsm_rev_last_li;
-            cache_req_done = cache_req_complete_o & load_resp_yumi_lo;
+            cache_req_last_o = load_resp_v_li & fsm_rev_last_li;
+            cache_req_done = cache_req_last_o & load_resp_yumi_lo;
 
             state_n = cache_req_done ? e_ready : e_uc_read_wait;
           end

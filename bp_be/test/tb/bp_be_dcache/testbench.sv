@@ -353,7 +353,7 @@ module testbench
           ,.lce_fill_o_v_i(lce_fill_v_o)
           ,.lce_fill_o_ready_and_i(lce_fill_ready_and_i)
 
-          ,.cache_req_complete_i(cache_req_complete_o)
+          ,.cache_req_last_i(cache_req_last_o)
           ,.uc_store_req_complete_i(uc_store_req_complete_lo)
           );
 

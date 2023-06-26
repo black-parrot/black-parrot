@@ -80,7 +80,7 @@ module bp_be_pipe_mem
    , output logic                                    cache_req_metadata_v_o
    , input [paddr_width_p-1:0]                       cache_req_addr_i
    , input                                           cache_req_critical_i
-   , input                                           cache_req_complete_i
+   , input                                           cache_req_last_i
    , input                                           cache_req_credits_full_i
    , input                                           cache_req_credits_empty_i
 
@@ -330,7 +330,7 @@ module bp_be_pipe_mem
       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
       ,.cache_req_addr_i(cache_req_addr_i)
       ,.cache_req_critical_i(cache_req_critical_i)
-      ,.cache_req_complete_i(cache_req_complete_i)
+      ,.cache_req_last_i(cache_req_last_i)
       ,.cache_req_credits_full_i(cache_req_credits_full_i)
       ,.cache_req_credits_empty_i(cache_req_credits_empty_i)
 

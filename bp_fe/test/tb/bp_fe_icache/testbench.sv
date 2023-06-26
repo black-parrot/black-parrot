@@ -315,7 +315,7 @@ module testbench
           ,.lce_resp_v_i(lce_resp_v_o)
           ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
 
-          ,.cache_req_complete_i(cache_req_complete_o)
+          ,.cache_req_last_i(cache_req_last_o)
           ,.uc_store_req_complete_i(uc_store_req_complete_lo)
           );
 
