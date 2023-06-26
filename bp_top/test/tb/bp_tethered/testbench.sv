@@ -381,9 +381,8 @@ module testbench
            ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
 
            ,.cache_req_yumi_i(calculator.pipe_mem.dcache.cache_req_yumi_i)
-           ,.cache_req_v_i(calculator.pipe_mem.dcache.cache_req_v_o)
-           ,.cache_req_last_i(calculator.pipe_mem.dcache.cache_req_last_i)
            ,.cache_req_nonblocking_i(calculator.pipe_mem.dcache.nonblocking_req)
+           ,.cache_req_complete_i(calculator.pipe_mem.dcache.complete_recv)
 
            ,.cosim_clk_i(testbench.cosim_clk_i)
            ,.cosim_reset_i(testbench.cosim_reset_i)

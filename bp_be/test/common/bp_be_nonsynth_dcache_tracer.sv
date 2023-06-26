@@ -68,6 +68,7 @@ module bp_be_nonsynth_dcache_tracer
    , input bp_be_dcache_decode_s                          decode_tv_r
    , input [paddr_width_p-1:0]                            paddr_tv_r
    , input [dword_width_gp-1:0]                           st_data_tv_r
+   , input                                                snoop_tv_r
 
    , input [assoc_p-1:0]                                  data_mem_slow_read
    , input [assoc_p-1:0]                                  data_mem_slow_write
@@ -151,10 +152,14 @@ module bp_be_nonsynth_dcache_tracer
     begin
       if (ready_and_o & v_i)
         $fwrite(acc_file, "%12t | access: %p\n", $time, dcache_pkt_cast_i);
-      if (v_o & decode_tv_r.load_op)
+      if (v_o & decode_tv_r.load_op & ~snoop_tv_r)
         $fwrite(acc_file, "%12t | early load: [%x]->%x\n", $time, paddr_tv_r, data_o);
-      if (v_o & decode_tv_r.store_op)
+      if (v_o & decode_tv_r.store_op & ~snoop_tv_r)
         $fwrite(acc_file, "%12t | early store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
+      if (v_o & decode_tv_r.load_op & snoop_tv_r)
+        $fwrite(acc_file, "%12t | late load: [%x]->%x\n", $time, paddr_tv_r, data_o);
+      if (v_o & decode_tv_r.store_op & snoop_tv_r)
+        $fwrite(acc_file, "%12t | late store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
       if (wbuf_yumi_li)
         $fwrite(acc_file, "%12t | wbuf: %p\n", $time, wbuf_entry_out_cast);
 

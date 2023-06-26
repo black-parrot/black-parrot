@@ -316,7 +316,6 @@ module testbench
           ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
 
           ,.cache_req_last_i(cache_req_last_o)
-          ,.uc_store_req_complete_i(uc_store_req_complete_lo)
           );
 
     bind bp_cce_fsm

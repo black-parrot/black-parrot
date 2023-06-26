@@ -42,13 +42,13 @@ module bp_me_nonsynth_cfg_loader
    // BedRock Stream
    // TODO: convert yumi_i to ready_and_i
    , output logic [mem_fwd_header_width_lp-1:0]      mem_fwd_header_o
-   , output logic [dword_width_gp-1:0]               mem_fwd_data_o
+   , output logic [bedrock_fill_width_p-1:0]         mem_fwd_data_o
    , output logic                                    mem_fwd_v_o
    , input                                           mem_fwd_yumi_i
 
    // BedRock Stream
    , input [mem_rev_header_width_lp-1:0]             mem_rev_header_i
-   , input [dword_width_gp-1:0]                      mem_rev_data_i
+   , input [bedrock_fill_width_p-1:0]                mem_rev_data_i
    , input                                           mem_rev_v_i
    , output logic                                    mem_rev_ready_and_o
 
@@ -187,7 +187,7 @@ module bp_me_nonsynth_cfg_loader
       mem_fwd_payload                     = '0;
       mem_fwd_payload.lce_id              = lce_id_i;
       mem_fwd_cast_o.size                 = e_bedrock_msg_size_8;
-      mem_fwd_data_o                      = cfg_data_lo;
+      mem_fwd_data_o                      = {bedrock_fill_width_p/dword_width_gp{cfg_data_lo}};
       mem_fwd_cast_o.payload              = mem_fwd_payload;
     end
 

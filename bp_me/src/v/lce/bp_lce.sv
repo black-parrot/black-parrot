@@ -314,7 +314,7 @@ module bp_lce
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
   // This signal acts as a hint to the cache that the LCE is not ready for a request.
   // The cache_req_yumi_o signal actually controls whether the LCE accepts a request.
-  assign cache_req_busy_o = timeout | req_busy_lo;
+  assign cache_req_busy_o = timeout | req_busy_lo | ~cache_init_done_lo;
 
 endmodule
 

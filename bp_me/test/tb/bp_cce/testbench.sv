@@ -294,6 +294,7 @@ module testbench
   logic [num_lce_p-1:0] cache_req_v_lo, cache_req_yumi_li, cache_req_busy_li;
   bp_cache_req_metadata_s [num_lce_p-1:0] cache_req_metadata_lo;
   logic [num_lce_p-1:0] cache_req_metadata_v_lo;
+  logic [num_lce_p-1:0][paddr_width_p-1:0] cache_req_addr_li;
   logic [num_lce_p-1:0] cache_req_critical_li, cache_req_last_li;
   logic [num_lce_p-1:0] cache_req_credits_full_li, cache_req_credits_empty_li;
 
@@ -383,8 +384,9 @@ module testbench
        ,.cache_req_busy_i(cache_req_busy_li[i])
        ,.cache_req_metadata_o(cache_req_metadata_lo[i])
        ,.cache_req_metadata_v_o(cache_req_metadata_v_lo[i])
-       ,.cache_req_last_i(cache_req_last_li[i])
+       ,.cache_req_addr_i(cache_req_addr_li[i])
        ,.cache_req_critical_i(cache_req_critical_li[i])
+       ,.cache_req_last_i(cache_req_last_li[i])
        ,.cache_req_credits_full_i(cache_req_credits_full_li[i])
        ,.cache_req_credits_empty_i(cache_req_credits_empty_li[i])
 
@@ -434,6 +436,7 @@ module testbench
        ,.cache_req_busy_o(cache_req_busy_li[i])
        ,.cache_req_metadata_i(cache_req_metadata_lo[i])
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
+       ,.cache_req_addr_o(cache_req_addr_li[i])
        ,.cache_req_critical_o(cache_req_critical_li[i])
        ,.cache_req_last_o(cache_req_last_li[i])
        ,.cache_req_credits_full_o(cache_req_credits_full_li[i])
@@ -671,7 +674,6 @@ module testbench
         ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
 
         ,.cache_req_last_i(cache_req_last_o)
-        ,.uc_store_req_complete_i(uc_store_req_complete_lo)
         );
 
   bind bp_me_nonsynth_cache
@@ -842,7 +844,7 @@ module testbench
 
   // Config
   bp_bedrock_mem_fwd_header_s cfg_mem_fwd_lo;
-  logic [dword_width_gp-1:0] cfg_mem_fwd_data_lo;
+  logic [bedrock_fill_width_p-1:0] cfg_mem_fwd_data_lo;
   logic cfg_mem_fwd_v_lo, cfg_mem_fwd_ready_and_li;
   logic cfg_mem_rev_v_lo;
 
@@ -877,7 +879,7 @@ module testbench
 
   logic [coh_noc_cord_width_p-1:0] cord_li = {{coh_noc_y_cord_width_p'(1'b1)}, {coh_noc_x_cord_width_p'('0)}};
   bp_me_cfg_slice
-   #(.bp_params_p(bp_params_p), .data_width_p(dword_width_gp))
+   #(.bp_params_p(bp_params_p))
    cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

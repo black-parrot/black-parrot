@@ -199,6 +199,7 @@ module wrapper
       ,.ordered_o()
       ,.float_o()
       ,.store_o()
+      ,.req_o()
 
       ,.ptag_v_i(1'b1)
       ,.ptag_i(rolly_ptag_r[i])
@@ -207,7 +208,6 @@ module wrapper
       ,.st_data_i(st_data_i)
 
       ,.flush_i('0)
-      ,.tv_we_o()
 
       ,.cache_req_v_o(cache_req_v_lo[i])
       ,.cache_req_o(cache_req_lo[i])
