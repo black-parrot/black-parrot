@@ -41,6 +41,7 @@ module bp_be_scheduler
    , input [decode_info_width_lp-1:0]         decode_info_i
    , input                                    dispatch_v_i
    , input                                    interrupt_v_i
+   , input                                    ispec_v_i
 
    // Fetch interface
    , input [fe_queue_width_lp-1:0]            fe_queue_i
@@ -169,7 +170,8 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.v          = fe_queue_read_li || be_exc_not_instr_li;
       dispatch_pkt_cast_o.queue_v    = fe_queue_read_li;
       dispatch_pkt_cast_o.instr_v    = fe_instr_not_exc_li;
-      dispatch_pkt_cast_o.pc         = fe_queue_read_li ? issue_pkt_cast_o.pc : expected_npc_i;
+      dispatch_pkt_cast_o.ispec_v    = ispec_v_i;
+      dispatch_pkt_cast_o.pc         = expected_npc_i;
       dispatch_pkt_cast_o.instr      = issue_pkt_cast_o.instr;
       dispatch_pkt_cast_o.compressed = issue_pkt_cast_o.compressed;
       dispatch_pkt_cast_o.partial    = be_exc_not_instr_li ? be_partial : fe_partial;

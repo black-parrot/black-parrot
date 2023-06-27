@@ -23,6 +23,7 @@ module bp_be_pipe_int
   (input                                    clk_i
    , input                                  reset_i
 
+   , input                                  en_i
    , input [dispatch_pkt_width_lp-1:0]      reservation_i
    , input                                  flush_i
 
@@ -101,13 +102,13 @@ module bp_be_pipe_int
   // Shift back the ALU result from the top field for word width operations
   wire [dword_width_gp-1:0] opw_result = $signed(alu_result) >>> word_width_gp;
   assign data_o = decode.branch_v ? br_result : decode.opw_v ? opw_result : alu_result;
-  assign v_o    = reservation.v & reservation.decode.pipe_int_v;
+  assign v_o    = en_i & reservation.v & reservation.decode.pipe_int_v;
+
+  assign instr_misaligned_v_o = en_i & btaken_o & (taken_tgt[1:0] != 2'b00) & !compressed_support_p;
 
   assign branch_o = decode.branch_v;
   assign btaken_o = decode.branch_v & (decode.jump_v | alu_result[0]);
   assign npc_o = btaken_o ? taken_tgt : ntaken_tgt;
-
-  assign instr_misaligned_v_o = btaken_o & (taken_tgt[1:0] != 2'b00) & !compressed_support_p;
 
 endmodule
 

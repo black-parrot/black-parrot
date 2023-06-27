@@ -19,6 +19,12 @@
     ,e_cfg_amo_fetch_arithmetic = 3'b111
   } bp_cache_features_e;
 
+  typedef enum logic
+  {
+    e_basic = 1'b0
+    ,e_catchup = 1'b1
+  } bp_integer_support_e;
+
   typedef enum logic [1:0]
   {
     e_idiv    = 2'b00
@@ -180,6 +186,10 @@
     integer unsigned fe_queue_fifo_els;
     // Size of the cmd queue
     integer unsigned fe_cmd_fifo_els;
+    // Integer support in the system. It is a bitmask with:
+    //   bit 0: basic alu
+    //   bit 1: catchup alu
+    integer unsigned integer_support;
     // MULDIV support in the system. It is a bitmask with:
     //   bit 0: div
     //   bit 1: mul
@@ -313,6 +323,7 @@
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
+      ,integer_support   : (1 << e_basic) | (1 << e_catchup)
       ,muldiv_support    : (1 << e_idiv)
                            | (1 << e_imul)
                            | (1 << e_imulh)
@@ -371,6 +382,7 @@
 
       ,`bp_aviary_define_override(fe_queue_fifo_els, BP_FE_QUEUE_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(fe_cmd_fifo_els, BP_FE_CMD_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(integer_support, BP_INTEGER_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(muldiv_support, BP_MULDIV_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(fpu_support, BP_FPU_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(compressed_support, BP_COMPRESSED_SUPPORT, `BP_CUSTOM_BASE_CFG)

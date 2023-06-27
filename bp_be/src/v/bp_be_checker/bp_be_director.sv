@@ -80,8 +80,9 @@ module bp_be_director
   // Update the NPC on a valid instruction in ex1 or upon commit
   logic [vaddr_width_p-1:0] npc_n, npc_r;
   wire npc_w_v = commit_pkt_cast_i.npc_w_v | br_pkt_cast_i.v;
-  assign npc_n = commit_pkt_cast_i.npc_w_v ? commit_pkt_cast_i.npc : br_pkt_cast_i.npc;
-  bsg_dff_reset_en
+
+  assign npc_n = commit_pkt_cast_i.npc_w_v ? commit_pkt_cast_i.npc : br_pkt_cast_i.bspec ? issue_pkt_cast_i.pc : br_pkt_cast_i.npc;
+  bsg_dff_reset_en_bypass
    #(.width_p(vaddr_width_p))
    npc_reg
     (.clk_i(clk_i)
@@ -91,7 +92,7 @@ module bp_be_director
      ,.data_i(npc_n)
      ,.data_o(npc_r)
      );
-  assign expected_npc_o = npc_w_v ? npc_n : npc_r;
+  assign expected_npc_o = npc_r;
 
   wire npc_mismatch_v = dispatch_v_i & (expected_npc_o != issue_pkt_cast_i.pc);
   wire npc_match_v    = dispatch_v_i & (expected_npc_o == issue_pkt_cast_i.pc);

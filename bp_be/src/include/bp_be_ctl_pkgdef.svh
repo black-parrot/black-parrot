@@ -232,6 +232,7 @@
     logic dtlb_fill;
     logic _interrupt;
     logic cmd_full;
+    logic mispredict;
   }  bp_be_exception_s;
 
   typedef struct packed
@@ -252,6 +253,7 @@
   {
     logic v;
     logic queue_v;
+    logic ispec_v;
 
     bp_be_exception_s exc;
     bp_be_special_s   spec;
