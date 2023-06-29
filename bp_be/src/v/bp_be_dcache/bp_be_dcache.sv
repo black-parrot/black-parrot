@@ -510,16 +510,16 @@ module bp_be_dcache
 
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
   wire lr_hit_tv =
-    v_tv_r & decode_tv_r.lr_op & store_hit_tv & (amo_support_p[e_dcache_subop_lr]);
+    v_tv_r & decode_tv_r.lr_op & store_hit_tv & amo_support_p[e_dcache_subop_lr];
   // Succeed if the address matches and we have a store hit
   wire sc_success_tv =
-    v_tv_r & decode_tv_r.sc_op & store_hit_tv & load_reservation_match_tv & (amo_support_p[e_dcache_subop_sc]);
+    v_tv_r & decode_tv_r.sc_op & store_hit_tv & load_reservation_match_tv & amo_support_p[e_dcache_subop_sc];
   // Fail if we have a store conditional without success
   wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
 
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
-  wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~decode_tv_r.sc_op & ~store_hit_tv & writeback_p;
-  wire load_miss_tv     = decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv;
+  wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & writeback_p;
+  wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv;
   wire ldst_miss_tv     = load_miss_tv | store_miss_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
@@ -580,9 +580,9 @@ module bp_be_dcache
   logic wbuf_v_li, wbuf_v_lo, wbuf_force_lo, wbuf_yumi_li;
 
   assign wbuf_v_li = v_tv_r
-        & decode_tv_r.store_op & ~uncached_op_tv_r
-        & store_hit_tv & ~sc_fail_tv
-        & (writeback_p | cache_req_yumi_i);
+    & decode_tv_r.store_op & ~uncached_op_tv_r
+    & store_hit_tv & ~sc_fail_tv
+    & (writeback_p | cache_req_yumi_i);
 
   //
   // Atomic operations
@@ -715,7 +715,7 @@ module bp_be_dcache
   wire uncached_load_req   =  uncached_op_tv_r & ~decode_tv_r.amo_op & decode_tv_r.load_op & ~snoop_tv_r;
   wire uncached_store_req  =  uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.ret_op & ~snoop_tv_r;
   wire fencei_req          = fencei_miss_tv & (coherent_p == 0);
-  wire backoff_req         = sc_fail_tv & (coherent_p == 1);
+  wire backoff_req         = ~uncached_op_tv_r & sc_fail_tv & amo_support_p[e_dcache_subop_sc] & (coherent_p == 1);
 
   // Uncached stores and writethrough requests are non-blocking
   wire nonblocking_req     = (uncached_store_req | wt_req | backoff_req);
