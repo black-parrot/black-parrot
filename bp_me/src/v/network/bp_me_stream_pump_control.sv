@@ -28,6 +28,7 @@ module bp_me_stream_pump_control
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(data_width_p)
    , parameter `BSG_INV_PARAM(stream_mask_p)
+   , parameter `BSG_INV_PARAM(widest_beat_size_p)
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, xce)
    )
   (input                                          clk_i
@@ -70,7 +71,9 @@ module bp_me_stream_pump_control
         `BSG_MAX((1'b1 << header_cast_i.size) / bytes_lp, 1'b1) - 1'b1;
       wire stream = stream_mask_p[header_cast_i.msg_type];
       wire [width_lp-1:0] size_li = stream ? stream_size : '0;
-      wire [paddr_width_p-1:0] addr_mask = ~((1'b1 << header_cast_i.size) - 1'b1);
+      wire [paddr_width_p-1:0] req_mask = ~((1'b1 << header_cast_i.size) - 1'b1);
+      wire [paddr_width_p-1:0] max_mask = ~((1'b1 << widest_beat_size_p) - 1'b1);
+      wire [paddr_width_p-1:0] addr_mask = `BSG_MAX(req_mask, max_mask);
       wire [paddr_width_p-1:0] beat_mask = ~((1'b1 << beat_size) - 1'b1);
       wire [paddr_width_p-1:0] final_mask = `BSG_MAX(addr_mask, beat_mask);
 

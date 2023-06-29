@@ -59,13 +59,17 @@ module bp_lce_cmd
 
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
-    // cache_req_complete_o is routed to the cache to indicate a blocking request is complete
+    // cache_req_last_o is routed to the cache to indicate a blocking request is complete
+    , output logic [paddr_width_p-1:0]               cache_req_addr_o
     , output logic                                   cache_req_critical_o
-    , output logic                                   cache_req_complete_o
+    , output logic                                   cache_req_last_o
+
     // uncached store request complete is used by the LCE to decrement the request credit counter
     // when an uncached store complete, but is not routed to the cache because the caches do not
     // block (miss) on uncached stores
-    , output logic                                   uc_store_req_complete_o
+    , output logic                                   credit_return_o
+    , output logic                                   cache_req_done_o
+    , input                                          backoff_i
 
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
@@ -116,7 +120,6 @@ module bp_lce_cmd
     e_reset
     ,e_clear
     ,e_ready
-    ,e_data_to_cache
     ,e_tr
     ,e_stat_clear
     ,e_wb
@@ -329,10 +332,12 @@ module bp_lce_cmd
 
     state_n = state_r;
 
-    uc_store_req_complete_o = 1'b0;
+    credit_return_o = '0;
+    cache_req_done_o = '0;
     // raised request is fully resolved
-    cache_req_complete_o = 1'b0;
+    cache_req_last_o = 1'b0;
     cache_req_critical_o = 1'b0;
+    cache_req_addr_o = fsm_cmd_header_li.addr;
 
     // LCE-CCE Interface signals
     fsm_cmd_yumi_lo = 1'b0;
@@ -383,7 +388,6 @@ module bp_lce_cmd
                   : e_clear;
         cnt_clear = (state_n == e_ready);
         cnt_inc = ~cnt_clear & (tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i);
-
       end
 
       // Ready for LCE Commands
@@ -417,11 +421,11 @@ module bp_lce_cmd
           e_bedrock_cmd_set_clear: begin
             tag_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
-            tag_mem_pkt_v_o = fsm_cmd_v_li;
+            tag_mem_pkt_v_o = fsm_cmd_v_li & ~backoff_i;
 
             stat_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
-            stat_mem_pkt_v_o = fsm_cmd_v_li;
+            stat_mem_pkt_v_o = fsm_cmd_v_li & ~backoff_i;
 
             // consume header when tag and stat packets consumed together
             fsm_cmd_yumi_lo = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
@@ -488,11 +492,21 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.state = fsm_cmd_header_li.payload.state;
             tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:ctag_width_p];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
-            tag_mem_pkt_v_o = fsm_cmd_v_li;
+            tag_mem_pkt_v_o = fsm_cmd_v_li & fsm_cmd_new_li;
 
-            // do not consume header since it is needed to compute fill index for cache data writes
-            state_n = tag_mem_pkt_yumi_i
-                      ? e_data_to_cache
+            data_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
+            data_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
+            data_mem_pkt_cast_o.data = fsm_cmd_data_li;
+            data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
+            data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
+            data_mem_pkt_v_o = fsm_cmd_v_li;
+
+            fsm_cmd_yumi_lo = (~tag_mem_pkt_v_o | tag_mem_pkt_yumi_i) & data_mem_pkt_yumi_i;
+
+            cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
+
+            state_n = (fsm_cmd_yumi_lo & fsm_cmd_last_li)
+                      ? e_coh_ack
                       : state_r;
           end
 
@@ -512,13 +526,15 @@ module bp_lce_cmd
 
             // raise request complete signal when data consumed
             cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
-            cache_req_complete_o = cache_req_critical_o;
+            cache_req_last_o = cache_req_critical_o;
+            cache_req_done_o = fsm_cmd_yumi_lo & cache_req_last_o;
+            credit_return_o = cache_req_done_o;
           end
 
           // Uncached Store/Req Done
           e_bedrock_cmd_uc_st_done: begin
             fsm_cmd_yumi_lo = fsm_cmd_v_li;
-            uc_store_req_complete_o = fsm_cmd_yumi_lo;
+            credit_return_o = fsm_cmd_yumi_lo;
           end
 
           // Writeback
@@ -598,26 +614,6 @@ module bp_lce_cmd
 
         endcase // cmd.msg_type case
       end // e_ready
-
-      // write data from command to cache
-      // raise critical data signal only on first write
-      e_data_to_cache: begin
-        data_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
-        data_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
-        data_mem_pkt_cast_o.data = fsm_cmd_data_li;
-        data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
-        data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
-        data_mem_pkt_v_o = fsm_cmd_v_li;
-        // consume data beat when write to cache occurs
-        fsm_cmd_yumi_lo = data_mem_pkt_yumi_i;
-
-        cache_req_critical_o = fsm_cmd_v_li & fsm_cmd_critical_li;
-
-        state_n = (fsm_cmd_yumi_lo & fsm_cmd_last_li)
-                  ? e_coh_ack
-                  : state_r;
-
-      end // e_data_to_cache
 
       // Transfer
       // send e_bedrock_fill_data header to target LCE
@@ -706,11 +702,11 @@ module bp_lce_cmd
         fsm_resp_v_lo = 1'b1;
 
         // cache request is complete when coherence ack sends
-        cache_req_complete_o = (fsm_resp_yumi_li & fsm_resp_last_lo);
+        cache_req_last_o = fsm_resp_v_lo & fsm_resp_last_lo;
+        cache_req_done_o = fsm_resp_yumi_li & cache_req_last_o;
+        credit_return_o = cache_req_done_o;
 
-        state_n = cache_req_complete_o
-                  ? e_ready
-                  : state_r;
+        state_n = credit_return_o ? e_ready : state_r;
 
       end // e_coh_ack
 
@@ -722,14 +718,11 @@ module bp_lce_cmd
   end
 
   // synopsys sync_set_reset "reset_i"
-  always_ff @ (posedge clk_i) begin
-    if (reset_i) begin
+  always_ff @ (posedge clk_i)
+    if (reset_i)
       state_r <= e_reset;
-    end
-    else begin
+    else
       state_r <= state_n;
-    end
-  end
 
 endmodule
 

@@ -380,10 +380,9 @@ module testbench
            ,.frd_addr_i(scheduler.fwb_pkt_cast_i.rd_addr)
            ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
 
-           ,.cache_req_ready_and_i(calculator.pipe_mem.dcache.cache_req_ready_and_i)
-           ,.cache_req_v_i(calculator.pipe_mem.dcache.cache_req_v_o)
-           ,.cache_req_complete_i(calculator.pipe_mem.dcache.cache_req_complete_i)
+           ,.cache_req_yumi_i(calculator.pipe_mem.dcache.cache_req_yumi_i)
            ,.cache_req_nonblocking_i(calculator.pipe_mem.dcache.nonblocking_req)
+           ,.cache_req_complete_i(calculator.pipe_mem.dcache.complete_recv)
 
            ,.cosim_clk_i(testbench.cosim_clk_i)
            ,.cosim_reset_i(testbench.cosim_reset_i)
@@ -680,8 +679,7 @@ module testbench
               ,.lce_resp_v_i(lce_resp_v_o)
               ,.lce_resp_ready_and_i(lce_resp_ready_and_i)
 
-              ,.cache_req_complete_i(cache_req_complete_o)
-              ,.uc_store_req_complete_i(uc_store_req_complete_lo)
+              ,.cache_req_last_i(cache_req_last_o)
               );
 
           bind bp_cce_pending_bits

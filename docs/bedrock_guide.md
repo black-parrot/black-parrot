@@ -131,7 +131,6 @@ modules.  The BedRock protocol comprises the following signals:
 - data
 - valid
 - ready\_and
-- last
 
 The last signal is raised with data\_valid when the last beat of the message
 is being sent. The width of the data channel must be a power-of-two number of bits, in the inclusive

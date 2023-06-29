@@ -50,12 +50,13 @@ module bp_lce
     // can arrive, as indicated by the metadata_v_i signal
     , input [cache_req_width_lp-1:0]                 cache_req_i
     , input                                          cache_req_v_i
-    , output logic                                   cache_req_ready_and_o
+    , output logic                                   cache_req_yumi_o
     , output logic                                   cache_req_busy_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
+    , output logic [paddr_width_p-1:0]               cache_req_addr_o
     , output logic                                   cache_req_critical_o
-    , output logic                                   cache_req_complete_o
+    , output logic                                   cache_req_last_o
     , output logic                                   cache_req_credits_full_o
     , output logic                                   cache_req_credits_empty_o
 
@@ -127,7 +128,9 @@ module bp_lce
 
   // LCE Request Module
   logic req_busy_lo;
-  logic uc_store_req_complete_lo;
+  logic credit_return_lo;
+  logic cache_req_done_lo;
+  logic backoff_lo;
   logic sync_done_lo;
   logic cache_init_done_lo;
   bp_lce_req
@@ -154,14 +157,14 @@ module bp_lce
 
      ,.cache_req_i(cache_req_i)
      ,.cache_req_v_i(cache_req_v_i)
-     ,.cache_req_ready_and_o(cache_req_ready_and_o)
+     ,.cache_req_yumi_o(cache_req_yumi_o)
      ,.cache_req_metadata_i(cache_req_metadata_i)
      ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
-     ,.cache_req_complete_i(cache_req_complete_o)
      ,.credits_full_o(cache_req_credits_full_o)
      ,.credits_empty_o(cache_req_credits_empty_o)
-
-     ,.uc_store_req_complete_i(uc_store_req_complete_lo)
+     ,.credit_return_i(credit_return_lo)
+     ,.cache_req_done_i(cache_req_done_lo)
+     ,.backoff_o(backoff_lo)
 
      ,.lce_req_header_o(lce_req_header_o)
      ,.lce_req_data_o(lce_req_data_o)
@@ -240,9 +243,12 @@ module bp_lce
 
      ,.cache_init_done_o(cache_init_done_lo)
      ,.sync_done_o(sync_done_lo)
-     ,.cache_req_complete_o(cache_req_complete_o)
+     ,.cache_req_addr_o(cache_req_addr_o)
      ,.cache_req_critical_o(cache_req_critical_o)
-     ,.uc_store_req_complete_o(uc_store_req_complete_lo)
+     ,.cache_req_last_o(cache_req_last_o)
+     ,.credit_return_o(credit_return_lo)
+     ,.cache_req_done_o(cache_req_done_lo)
+     ,.backoff_i(backoff_lo)
 
      ,.data_mem_pkt_o(data_mem_pkt_o)
      ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
@@ -307,8 +313,8 @@ module bp_lce
   // - LCE Request module is ready to accept a request (does not account for a free credit)
   // - timout signal is low, indicating LCE isn't blocked on using data/tag/stat mem
   // This signal acts as a hint to the cache that the LCE is not ready for a request.
-  // The cache_req_ready_and_o signal actually controls whether the LCE accepts a request.
-  assign cache_req_busy_o = timeout | req_busy_lo;
+  // The cache_req_yumi_o signal actually controls whether the LCE accepts a request.
+  assign cache_req_busy_o = timeout | req_busy_lo | ~cache_init_done_lo;
 
 endmodule
 

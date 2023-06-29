@@ -35,12 +35,12 @@ module bp_be_nonsynth_dcache_tracer
 
    , input [cache_req_width_lp-1:0]                       cache_req_o
    , input                                                cache_req_v_o
-   , input                                                cache_req_ready_and_i
+   , input                                                cache_req_yumi_i
    , input                                                cache_req_busy_i
    , input [cache_req_metadata_width_lp-1:0]              cache_req_metadata_o
    , input                                                cache_req_metadata_v_o
    , input                                                cache_req_critical_i
-   , input                                                cache_req_complete_i
+   , input                                                cache_req_last_i
    // Unused
    , input                                                cache_req_credits_full_i
    , input                                                cache_req_credits_empty_i
@@ -68,6 +68,7 @@ module bp_be_nonsynth_dcache_tracer
    , input bp_be_dcache_decode_s                          decode_tv_r
    , input [paddr_width_p-1:0]                            paddr_tv_r
    , input [dword_width_gp-1:0]                           st_data_tv_r
+   , input                                                snoop_tv_r
 
    , input [assoc_p-1:0]                                  data_mem_slow_read
    , input [assoc_p-1:0]                                  data_mem_slow_write
@@ -151,21 +152,25 @@ module bp_be_nonsynth_dcache_tracer
     begin
       if (ready_and_o & v_i)
         $fwrite(acc_file, "%12t | access: %p\n", $time, dcache_pkt_cast_i);
-      if (v_o & decode_tv_r.load_op)
+      if (v_o & decode_tv_r.load_op & ~snoop_tv_r)
         $fwrite(acc_file, "%12t | early load: [%x]->%x\n", $time, paddr_tv_r, data_o);
-      if (v_o & decode_tv_r.store_op)
+      if (v_o & decode_tv_r.store_op & ~snoop_tv_r)
         $fwrite(acc_file, "%12t | early store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
+      if (v_o & decode_tv_r.load_op & snoop_tv_r)
+        $fwrite(acc_file, "%12t | late load: [%x]->%x\n", $time, paddr_tv_r, data_o);
+      if (v_o & decode_tv_r.store_op & snoop_tv_r)
+        $fwrite(acc_file, "%12t | late store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
       if (wbuf_yumi_li)
         $fwrite(acc_file, "%12t | wbuf: %p\n", $time, wbuf_entry_out_cast);
 
-      if (cache_req_ready_and_i & cache_req_v_o)
+      if (cache_req_yumi_i)
         $fwrite(eng_file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);
       if (cache_req_metadata_v_o)
         $fwrite(eng_file, "%12t | cache_req_metadata: %p\n", $time, cache_req_metadata_cast_o);
       if (cache_req_critical_i)
         $fwrite(eng_file, "%12t | cache_req_critical_i: %b \n", $time, cache_req_critical_i);
-      if (cache_req_complete_i)
-        $fwrite(eng_file, "%12t | cache_req_complete_i: %b \n", $time, cache_req_complete_i);
+      if (cache_req_last_i)
+        $fwrite(eng_file, "%12t | cache_req_last_i: %b \n", $time, cache_req_last_i);
 
       if (data_mem_pkt_yumi_o)
         $fwrite(eng_file, "%12t | data_mem_pkt: %p\n", $time, data_mem_pkt_cast_i);

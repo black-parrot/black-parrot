@@ -70,7 +70,7 @@ module bp_be_detector
 
   bp_be_dep_status_s [3:0] dep_status_r;
 
-  logic fence_haz_v, cmd_haz_v, fflags_haz_v, csr_haz_v;
+  logic fence_haz_v, cmd_haz_v, fflags_haz_v, csr_haz_v, exception_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
   logic long_haz_v;
 
@@ -225,7 +225,9 @@ module bp_be_detector
                          | (dep_status_r[2].v)
                          );
 
-      control_haz_v = fence_haz_v | csr_haz_v | fflags_haz_v | long_haz_v;
+      exception_haz_v = commit_pkt_cast_i.npc_w_v;
+
+      control_haz_v = fence_haz_v | csr_haz_v | fflags_haz_v | long_haz_v | exception_haz_v;
 
       // Combine all data hazard information
       // TODO: Parameterize away floating point data hazards without hardware support

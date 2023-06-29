@@ -161,12 +161,6 @@ module bp_cce_msg
   bp_cce_mshr_s mshr;
   assign mshr = mshr_i;
 
-  // address mask for bedrock data width aligned, critical word first operations
-  wire [paddr_width_p-1:0] addr_bedrock_mask =
-    {{(paddr_width_p-lg_bedrock_data_bytes_lp){1'b1}}
-     , {(lg_bedrock_data_bytes_lp){1'b0}}
-    };
-
   // address mask for block-aligned operations
   wire [paddr_width_p-1:0] addr_block_mask =
     {{(paddr_width_p-lg_block_size_in_bytes_lp){1'b1}}
@@ -767,7 +761,7 @@ module bp_cce_msg
               // cached read - send single beat, no data
               e_bedrock_mem_rd: begin
                 mem_fwd_v_o = ~mem_credits_empty;
-                mem_fwd_header_cast_o.addr = addr_i & addr_bedrock_mask;
+                mem_fwd_header_cast_o.addr = addr_i;
                 // set uncached bit based on uncached flag in MSHR
                 // this bit indicates if the LCE should receive the data as cached or uncached
                 // when it returns from memory
@@ -800,7 +794,7 @@ module bp_cce_msg
                 // patch through data
                 mem_fwd_data_o = lce_resp_data_i;
 
-                mem_fwd_header_cast_o.addr = addr_i & addr_bedrock_mask;
+                mem_fwd_header_cast_o.addr = addr_i;
                 // set uncached bit based on uncached flag in MSHR
                 // this bit indicates if the LCE should receive the data as cached or uncached
                 // when it returns from memory
@@ -843,7 +837,7 @@ module bp_cce_msg
             // defaults provided here, but may be overridden below
             lce_cmd_header_cast_o.payload.dst_id = lce_i;
             lce_cmd_header_cast_o.msg_type.cmd = decoded_inst_i.lce_cmd;
-            lce_cmd_header_cast_o.addr = addr_i & addr_bedrock_mask;
+            lce_cmd_header_cast_o.addr = addr_i;
             lce_cmd_data_o = mem_rev_data_i;
 
             if (decoded_inst_i.pushq_custom) begin

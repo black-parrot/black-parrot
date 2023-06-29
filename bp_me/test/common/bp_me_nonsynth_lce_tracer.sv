@@ -69,8 +69,7 @@ module bp_me_nonsynth_lce_tracer
     ,input                                                  lce_resp_v_i
     ,input                                                  lce_resp_ready_and_i
 
-    ,input                                                  cache_req_complete_i
-    ,input                                                  uc_store_req_complete_i
+    ,input                                                  cache_req_last_i
   );
 
   // LCE-CCE interface structs
@@ -201,7 +200,7 @@ module bp_me_nonsynth_lce_tracer
       end
 
 
-      if (cache_req_complete_i) begin
+      if (cache_req_last_i) begin
         cnt_up <= 1'b0;
         $fdisplay(file, "%12t |: LCE[%0d] ReqLat: %d", $time, lce_id_i, req_cnt);
       end

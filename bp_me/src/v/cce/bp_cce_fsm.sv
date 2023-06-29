@@ -440,16 +440,6 @@ module bp_cce_fsm
        ,.cacheable_addr_o(resp_pma_cacheable_addr_lo)
        );
 
-  // align request address to bedrock data width to support critical word first behavior
-  wire [paddr_width_p-1:0] paddr_aligned =
-    {mshr_r.paddr[paddr_width_p-1:lg_bedrock_data_bytes_lp]
-     , lg_bedrock_data_bytes_lp'('0)};
-
-  // align lru address to block boundary - used for block replacement
-  wire [paddr_width_p-1:0] lru_paddr_aligned =
-    {mshr_r.lru_paddr[paddr_width_p-1:lg_block_size_in_bytes_lp]
-     , lg_block_size_in_bytes_lp'('0)};
-
   enum logic [5:0] {
     e_reset
     , e_clear_dir
@@ -1403,10 +1393,10 @@ module bp_cce_fsm
           // LCE's copy of the cache block is stored at the LCE
           if (mshr_r.flags.atomic | mshr_r.flags.uncached) begin
             fsm_cmd_header_lo.payload.way_id = mshr_r.way_id;
-            fsm_cmd_header_lo.addr = paddr_aligned;
+            fsm_cmd_header_lo.addr = mshr_r.paddr;
           end else begin
             fsm_cmd_header_lo.payload.way_id = mshr_r.lru_way_id;
-            fsm_cmd_header_lo.addr = lru_paddr_aligned;
+            fsm_cmd_header_lo.addr = mshr_r.lru_paddr;
           end
 
           fsm_cmd_header_lo.payload.dst_id = mshr_r.lce_id;
@@ -1511,7 +1501,7 @@ module bp_cce_fsm
 
             fsm_cmd_v_lo = 1'b1;
             fsm_cmd_header_lo.msg_type.cmd = e_bedrock_cmd_inv;
-            fsm_cmd_header_lo.addr = paddr_aligned;
+            fsm_cmd_header_lo.addr = mshr_r.paddr;
 
             // destination and way come from sharers information
             fsm_cmd_header_lo.payload.dst_id[0+:lg_num_lce_lp] = pe_lce_id;
@@ -1521,7 +1511,7 @@ module bp_cce_fsm
             cnt_inc = fsm_cmd_yumi_li & fsm_cmd_new_lo;
             dir_w_v = cnt_inc;
             dir_cmd = e_wds_op;
-            dir_addr_li = paddr_aligned;
+            dir_addr_li = mshr_r.paddr;
             dir_lce_li = '0;
             dir_lce_li[0+:lg_num_lce_lp] = pe_lce_id;
             dir_way_li = sharers_ways_r[pe_lce_id];
@@ -1589,7 +1579,7 @@ module bp_cce_fsm
           if (~lce_cmd_busy) begin
             fsm_cmd_v_lo = 1'b1;
 
-            fsm_cmd_header_lo.addr = paddr_aligned;
+            fsm_cmd_header_lo.addr = mshr_r.paddr;
             fsm_cmd_header_lo.payload.dst_id = mshr_r.owner_lce_id;
             fsm_cmd_header_lo.payload.way_id = mshr_r.owner_way_id;
             fsm_cmd_header_lo.payload.state = e_COH_I;
@@ -1604,7 +1594,7 @@ module bp_cce_fsm
             // update state of owner in directory
             dir_w_v = fsm_cmd_yumi_li;
             dir_cmd = e_wds_op;
-            dir_addr_li = paddr_aligned;
+            dir_addr_li = mshr_r.paddr;
             dir_lce_li = mshr_r.owner_lce_id;
             dir_way_li = mshr_r.owner_way_id;
             dir_coh_state_li = e_COH_I;
@@ -1722,7 +1712,7 @@ module bp_cce_fsm
                                              // transfer & not cached in M, O, or F -> cached in E
                                              : e_bedrock_cmd_st_tr_wb;
 
-          fsm_cmd_header_lo.addr = paddr_aligned;
+          fsm_cmd_header_lo.addr = mshr_r.paddr;
 
           // either Invalidate or Downgrade Owner, depending on request type
           // write request invalidates owner (can only have 1 writer!)
@@ -1746,7 +1736,7 @@ module bp_cce_fsm
           dir_w_v = fsm_cmd_yumi_li
                     & (mshr_r.flags.write_not_read | mshr_r.flags.cached_modified | mshr_r.flags.cached_exclusive);
           dir_cmd = e_wds_op;
-          dir_addr_li = paddr_aligned;
+          dir_addr_li = mshr_r.paddr;
           dir_lce_li = mshr_r.owner_lce_id;
           dir_way_li = mshr_r.owner_way_id;
           dir_coh_state_li = mshr_r.flags.write_not_read

@@ -53,7 +53,7 @@ module bp_nonsynth_cache_tracer
    , input [cache_req_metadata_width_lp-1:0]               cache_req_metadata_o
    , input                                                 cache_req_metadata_v_o
 
-   , input                                                 cache_req_complete_i
+   , input                                                 cache_req_last_i
    // , input                                                 cache_req_critical_i
 
    // Cache data
@@ -209,7 +209,7 @@ module bp_nonsynth_cache_tracer
       if (cache_req_metadata_v_o)
         $fwrite(file, "%12t | lru_way: %x dirty: %x \n", $time, cache_req_metadata_cast_o.hit_or_repl_way, cache_req_metadata_cast_o.dirty);
 
-      if (cache_req_complete_i)
+      if (cache_req_last_i)
         $fwrite(file, "%12t | Cache request completed \n", $time);
 
       if (data_mem_pkt_v_i)

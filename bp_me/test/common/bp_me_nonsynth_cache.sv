@@ -67,12 +67,13 @@ module bp_me_nonsynth_cache
      // Cache-LCE interface
     , output logic [cache_req_width_lp-1:0]                 cache_req_o
     , output logic                                          cache_req_v_o
-    , input                                                 cache_req_ready_and_i
+    , input                                                 cache_req_yumi_i
     , input                                                 cache_req_busy_i
     , output logic [cache_req_metadata_width_lp-1:0]        cache_req_metadata_o
     , output logic                                          cache_req_metadata_v_o
+    , input [paddr_width_p-1:0]                             cache_req_addr_i
     , input                                                 cache_req_critical_i
-    , input                                                 cache_req_complete_i
+    , input                                                 cache_req_last_i
     , input                                                 cache_req_credits_full_i
     , input                                                 cache_req_credits_empty_i
 
@@ -494,7 +495,7 @@ module bp_me_nonsynth_cache
           cache_req_v_o = 1'b1;
           // metadata not used by LCE for uncached ops, but send it anyway
           cache_req_metadata_v_o = 1'b1;
-          state_n = (cache_req_ready_and_i & cache_req_v_o)
+          state_n = cache_req_yumi_i
                     ? tag_lookup_hit_lo
                       ? e_uc_hit_inv
                       : load_op
@@ -567,7 +568,7 @@ module bp_me_nonsynth_cache
         else begin
           cache_req_v_o = 1'b1;
           cache_req_metadata_v_o = 1'b1;
-          state_n = (cache_req_ready_and_i & cache_req_v_o) ? e_wait : state_r;
+          state_n = cache_req_yumi_i ? e_wait : state_r;
         end
       end // e_check_hit
 
@@ -587,7 +588,7 @@ module bp_me_nonsynth_cache
       // then, return to ready and replay the current TR command
       // note: critical tag and data signals are ignored
       e_wait: begin
-        state_n = cache_req_complete_i ? e_ready : state_r;
+        state_n = cache_req_last_i ? e_ready : state_r;
       end
 
       // wait for UC load data
