@@ -352,7 +352,7 @@ module bp_be_dcache
      ,.o(bank_sel_one_hot_tl)
      );
 
-  wire uncached_op_tl =  ptag_uncached_i | decode_tl_r.uncached_op;
+  wire uncached_op_tl =  decode_tl_r.uncached_op | (~decode_tl_r.fencei_op & ptag_uncached_i);
   wire dram_op_tl =  ptag_dram_i;
   wire [dword_width_gp-1:0] st_data_tl = st_data_i;
 
@@ -515,15 +515,16 @@ module bp_be_dcache
   wire sc_success_tv =
     v_tv_r & decode_tv_r.sc_op & store_hit_tv & load_reservation_match_tv & amo_support_p[e_dcache_subop_sc];
   // Fail if we have a store conditional without success
-  wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
+  wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv & amo_support_p[e_dcache_subop_sc];
 
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
-  wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & writeback_p;
-  wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv;
+  wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & writeback_p & ~sc_fail_tv;
+  wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv;
   wire ldst_miss_tv     = load_miss_tv | store_miss_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
+  wire uncached_miss_tv = uncached_op_tv_r & ~snoop_tv_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
-  wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | engine_miss_tv;
+  wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
 
   assign data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
     ? (sc_success_tv != 1'b1)
@@ -1020,7 +1021,7 @@ module bp_be_dcache
   // Stat Mem Control
   ///////////////////////////
   wire stat_mem_fast_read  = (v_tv_r & any_miss_tv) | tag_mem_write_hazard;
-  wire stat_mem_fast_write = (v_tv_r & ~any_miss_tv & ~uncached_op_tv_r);
+  wire stat_mem_fast_write = (v_tv_r & load_hit_tv & ~decode_tv_r.fencei_op & ~uncached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
   assign stat_mem_v_li = stat_mem_fast_read | stat_mem_fast_write

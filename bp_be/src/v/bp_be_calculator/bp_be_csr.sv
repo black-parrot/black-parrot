@@ -436,10 +436,10 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_SIP          }: csr_data_lo = mip_lo & sip_rmask_li;
                 {1'b1, `CSR_ADDR_SATP         }: csr_data_lo = satp_lo;
                 // We have no vendorid currently
-                {1'b1, `CSR_ADDR_MVENDORID    }: csr_data_lo = '0;
+                {1'b1, `CSR_ADDR_MVENDORID    }: csr_data_lo = 64'h5e5;
                 // https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md
                 //   Lucky 13 (*v*)
-                {1'b1, `CSR_ADDR_MARCHID      }: csr_data_lo = 64'd13;
+                {1'b1, `CSR_ADDR_MARCHID      }: csr_data_lo = 64'h8000000000000002; 
                 // 0: Tapeout 0, July 2019
                 // 1: Tapeout 1, June 2021
                 // 2: Tapeout 2, Sept 2022
@@ -449,7 +449,7 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_MSTATUS      }: csr_data_lo = mstatus_lo;
                 // MISA is optionally read-write, but all fields are read-only in BlackParrot
                 //   64 bit MXLEN, IMACFDSU extensions
-                {1'b1, `CSR_ADDR_MISA         }: csr_data_lo = {2'b10, 36'b0, 26'h14112d};
+                {1'b1, `CSR_ADDR_MISA         }: csr_data_lo = {2'b10, 36'b0, 26'h141129};
                 {1'b1, `CSR_ADDR_MEDELEG      }: csr_data_lo = medeleg_lo;
                 {1'b1, `CSR_ADDR_MIDELEG      }: csr_data_lo = mideleg_lo;
                 {1'b1, `CSR_ADDR_MIE          }: csr_data_lo = mie_lo;

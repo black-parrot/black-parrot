@@ -149,9 +149,9 @@ module bp_fe_icache
 
   // State machine declaration
   enum logic [1:0] {e_ready, e_miss, e_recover} state_n, state_r;
-  wire is_ready   = (state_r == e_ready);
-  wire is_miss    = (state_r == e_miss);
-  wire is_recover = (state_r == e_recover);
+  wire is_ready    = (state_r == e_ready);
+  wire is_miss     = (state_r == e_miss);
+  wire is_recover  = (state_r == e_recover);
 
   // Feedback signals between stages
   logic safe_tl_we, tl_we, safe_tv_we, tv_we;
@@ -331,72 +331,35 @@ module bp_fe_icache
   wire v_tv = is_ready & v_tv_r;
 
   logic [assoc_p-1:0] bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n;
+  logic [block_width_p-1:0] ld_data_tv_n;
   bsg_mux
-   #(.width_p(3*assoc_p), .els_p(2))
+   #(.width_p(3*assoc_p+block_width_p), .els_p(2))
    hit_mux
-    (.data_i({snoop_bank_sel_one_hot, snoop_hit, {bank_sel_one_hot_tl, way_v_tl, hit_v_tl}})
+    (.data_i({{snoop_bank_sel_one_hot, snoop_hit, snoop_data}
+              ,{bank_sel_one_hot_tl, way_v_tl, hit_v_tl, data_mem_data_lo}
+              })
      ,.sel_i(critical_recv)
-     ,.data_o({bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n})
+     ,.data_o({bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n, ld_data_tv_n})
      );
 
+  wire snoop_tv_n = critical_recv ? 1'b1 : (fencei_op_tl_r & coherent_p);
+  wire [paddr_width_p-1:0] paddr_tv_n = critical_recv ? paddr_tv_r : paddr_tl;
+  wire spec_tv_n = critical_recv ? spec_tv_r : spec_tl;
+  wire fetch_op_tv_n = critical_recv ? fetch_op_tv_r : fetch_op_tl_r;
+  wire fencei_op_tv_n = critical_recv ? fencei_op_tv_r : fencei_op_tl_r;
+  wire uncached_op_tv_n = critical_recv ? uncached_op_tv_r : fetch_uncached_tl;
   bsg_dff_reset_en
-   #(.width_p(3*assoc_p))
+   #(.width_p(block_width_p+1+3*assoc_p+paddr_width_p+4))
    hit_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(tv_we | critical_recv)
-     ,.data_i({bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n})
-     ,.data_o({bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r})
-     );
-
-  wire snoop_tv_n = complete_recv || (fencei_op_tl_r & coherent_p);
-  bsg_dff_reset_en
-   #(.width_p(1))
-   snoop_tv_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(tv_we | complete_recv)
-     ,.data_i(snoop_tv_n)
-     ,.data_o(snoop_tv_r)
-     );
-
-  // Snoop logic
-  logic [word_width_gp-1:0] snoop_word;
-  wire [snoop_offset_width_lp-1:0] snoop_word_offset = paddr_tv_r[2+:snoop_offset_width_lp];
-  bsg_mux
-   #(.width_p(word_width_gp), .els_p(fill_width_p/word_width_gp))
-   snoop_mux
-    (.data_i(data_mem_pkt_cast_i.data)
-     ,.sel_i(snoop_word_offset)
-     ,.data_o(snoop_word)
-     );
-  wire [block_width_p-1:0] snoop_data_lo = {block_width_p/word_width_gp{snoop_word}};
-
-  logic [block_width_p-1:0] ld_data_tv_n;
-  bsg_mux
-   #(.width_p(block_width_p), .els_p(2))
-   ld_data_mux
-    (.data_i({snoop_data, data_mem_data_lo})
-     ,.sel_i(critical_recv)
-     ,.data_o(ld_data_tv_n)
-     );
-
-  bsg_dff_en
-   #(.width_p(block_width_p))
-   ld_data_tv_reg
-    (.clk_i(clk_i)
-     ,.en_i(tv_we | critical_recv)
-     ,.data_i(ld_data_tv_n)
-     ,.data_o(ld_data_tv_r)
-     );
-
-  bsg_dff_en
-   #(.width_p(paddr_width_p+4))
-   tv_stage_reg
-    (.clk_i(clk_i)
-     ,.en_i(tv_we)
-     ,.data_i({paddr_tl, spec_tl, fetch_op_tl_r, fencei_op_tl_r, fetch_uncached_tl})
-     ,.data_o({paddr_tv_r, spec_tv_r, fetch_op_tv_r, fencei_op_tv_r, uncached_op_tv_r})
+     ,.data_i({ld_data_tv_n, snoop_tv_n, bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n
+               ,paddr_tv_n, spec_tv_n, fetch_op_tv_n, fencei_op_tv_n, uncached_op_tv_n
+               })
+     ,.data_o({ld_data_tv_r, snoop_tv_r, bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r
+               ,paddr_tv_r, spec_tv_r, fetch_op_tv_r, fencei_op_tv_r, uncached_op_tv_r
+               })
      );
 
   logic [lg_assoc_lp-1:0] invalid_way_tv;
@@ -540,14 +503,14 @@ module bp_fe_icache
 
   /////////////////////////////////////////////////////////////////////////////
   // State machine
-  //   e_ready  : Cache is ready to accept requests
-  //   e_miss   : Cache is waiting for a cache request to be serviced
-  //   e_recover: Reread the SRAMs to recover the updated TL state
+  //   e_ready   : Cache is ready to accept requests
+  //   e_miss    : Cache is waiting for a cache request to be serviced
+  //   e_recover : Reread the SRAMs to recover the updated TL state
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
-      e_ready  : state_n = cache_req_yumi_i ? e_miss : e_ready;
-      e_miss   : state_n = complete_recv ? e_recover: e_miss;
+      e_ready   : state_n = cache_req_yumi_i ? e_miss : state_r;
+      e_miss    : state_n = complete_recv ? e_recover : state_r;
       // e_recover:
       default  : state_n = e_ready;
     endcase
@@ -680,7 +643,7 @@ module bp_fe_icache
      ,.o(data_mem_write_bank_mask)
      );
 
-  wire data_mem_bypass = (vaddr[vaddr_width_p-1:block_offset_width_lp] == vaddr_tl_r[vaddr_width_p-1:block_offset_width_lp]) & v_tl;
+  wire data_mem_bypass = v_tl & (vaddr[vaddr_width_p-1:block_offset_width_lp] == vaddr_tl_r[vaddr_width_p-1:block_offset_width_lp]);
 
   logic [assoc_p-1:0] data_mem_fast_read, data_mem_fast_write, data_mem_slow_read, data_mem_slow_write;
   for (genvar i = 0; i < assoc_p; i++)
@@ -724,7 +687,7 @@ module bp_fe_icache
   // Stat Mem Control
   ///////////////////////////
   wire stat_mem_fast_read = (v_tv & cache_req_v_o & ~uncached_op_tv_r);
-  wire stat_mem_fast_write = (v_tv & data_v_o & ~uncached_op_tv_r);
+  wire stat_mem_fast_write = (v_tv & data_v_o & ~uncached_op_tv_r & ~fencei_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_v_i & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   assign stat_mem_pkt_yumi_o = stat_mem_pkt_v_i & ~stat_mem_fast_write & ~stat_mem_fast_read;
   assign stat_mem_v_li = stat_mem_fast_read | stat_mem_fast_write | stat_mem_pkt_yumi_o;

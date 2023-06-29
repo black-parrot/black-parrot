@@ -305,6 +305,8 @@ module bp_uce
   wire uc_store_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
   wire uc_amo_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
   wire uc_hit_v_r     = cache_req_v_r & cache_req_r.hit & (uc_load_v_r | uc_store_v_r | uc_amo_v_r);
+  wire flush_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_cache_flush};
+  wire clear_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_cache_clear};
 
   wire [block_size_in_fill_lp-1:0] fill_index_shift = {{(assoc_p != 1){fsm_rev_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp}}, {(assoc_p == 1){'0}}};
 
@@ -376,7 +378,9 @@ module bp_uce
      ,.data_o(writeback_data)
      );
 
-  assign cache_req_critical_o = load_resp_v_li & fsm_rev_v_li & fsm_rev_critical_li;
+  assign cache_req_critical_o = (load_resp_v_li & fsm_rev_v_li & fsm_rev_critical_li)
+    || (cache_req_last_o & flush_v_r)
+    || (cache_req_last_o & clear_v_r);
   assign cache_req_addr_o = fsm_rev_header_li.addr;
 
   bp_cache_req_wr_subop_e cache_wr_subop;
