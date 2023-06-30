@@ -705,7 +705,7 @@ module bp_be_dcache
   wire uncached_store_req  =  uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.ret_op & ~snoop_tv_r;
   wire fencei_req          = fencei_miss_tv & (coherent_p == 0);
   wire backoff_req         = ~uncached_op_tv_r & sc_fail_tv & (coherent_p == 1);
-  wire wt_req              = ~uncached_op_tv_r & decode_tv_r.store_op & store_hit_tv & ~sc_fail_tv & !writeback_p;
+  wire wt_req              = ~uncached_op_tv_r & decode_tv_r.store_op & ~sc_fail_tv & !writeback_p;
 
   // Uncached stores and writethrough requests are non-blocking
   wire nonblocking_req     = (uncached_store_req | wt_req | backoff_req);
