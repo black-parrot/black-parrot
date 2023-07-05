@@ -79,6 +79,7 @@
       ,l2_fill_width : 64
 
       ,muldiv_support: (1 << e_idiv) | (1 << e_imul)
+      ,fpu_support   : (1 << e_fma) | (1 << e_fdivsqrt)
 
       ,default : "inv"
       };

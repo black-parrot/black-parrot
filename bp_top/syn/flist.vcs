@@ -180,6 +180,8 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 # HardFloat files
 $HARDFLOAT_DIR/source/addRecFN.v
 $HARDFLOAT_DIR/source/compareRecFN.v
+$HARDFLOAT_DIR/source/divSqrtRecFN.v
+$HARDFLOAT_DIR/source/divSqrtRecFN_medium.v
 $HARDFLOAT_DIR/source/divSqrtRecFN_small.v
 $HARDFLOAT_DIR/source/fNToRecFN.v
 $HARDFLOAT_DIR/source/HardFloat_primitives.v

@@ -27,6 +27,13 @@
     ,e_idiv2b = 2'b11
   } bp_muldiv_support_e;
 
+  typedef enum logic [1:0]
+  {
+    e_fma         = 2'b00
+    ,e_fdivsqrt   = 2'b01
+    ,e_fdivsqrt2b = 2'b10
+  } bp_fpu_support_e;
+
   typedef enum logic [15:0]
   {
     e_sacc_none = 0
@@ -180,7 +187,9 @@
     //   bit 3: 2b iterative div
     integer unsigned muldiv_support;
     // Whether to emulate FPU
-    //   bit 0: fpu enabled
+    //   bit 0: fma
+    //   bit 1: iterative fdivsqrt
+    //   bit 2: 2b iterative fdivsqrt
     integer unsigned fpu_support;
     // Whether to enable the "c" extension.
     integer unsigned compressed_support;
@@ -308,7 +317,7 @@
                            | (1 << e_imul)
                            | (1 << e_imulh)
                            | (1 << e_idiv2b)
-      ,fpu_support       : 1
+      ,fpu_support       : (1 << e_fma) | (1 << e_fdivsqrt) | (1 << e_fdivsqrt2b)
       ,compressed_support: 1
 
       ,async_coh_clk       : 0

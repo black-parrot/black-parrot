@@ -138,8 +138,12 @@ module bp_be_pipe_long
   logic sqrt_lo, invalid_exc, infinite_exc;
   logic [2:0] frm_lo;
   bp_hardfloat_raw_dp_s fdivsqrt_raw_lo;
-  divSqrtRecFNToRaw_small
-   #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
+  localparam fdivsqrt_bits_per_iter_lp = fpu_support_p[e_fdivsqrt2b] ? 2'b10 : 2'b01;
+  divSqrtRecFNToRaw
+   #(.expWidth(dp_exp_width_gp)
+     ,.sigWidth(dp_sig_width_gp)
+     ,.bits_per_iter_p(fdivsqrt_bits_per_iter_lp)
+     )
    fdiv
     (.clock(clk_i)
      ,.nReset(~reset_i)
