@@ -78,6 +78,8 @@
       ,l2_data_width : 64
       ,l2_fill_width : 64
 
+      ,muldiv_support: (1 << e_idiv) | (1 << e_imul)
+
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_unicore_tinyparrot_cfg_p

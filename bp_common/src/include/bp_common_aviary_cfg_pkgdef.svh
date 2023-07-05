@@ -21,9 +21,10 @@
 
   typedef enum logic [1:0]
   {
-    e_div   = 2'b00
-    ,e_mul  = 2'b01
-    ,e_mulh = 2'b10
+    e_idiv    = 2'b00
+    ,e_imul   = 2'b01
+    ,e_imulh  = 2'b10
+    ,e_idiv2b = 2'b11
   } bp_muldiv_support_e;
 
   typedef enum logic [15:0]
@@ -175,7 +176,8 @@
     // MULDIV support in the system. It is a bitmask with:
     //   bit 0: div
     //   bit 1: mul
-    //   bit 2: mulh
+    //   bit 2: iterative mulh
+    //   bit 3: 2b iterative div
     integer unsigned muldiv_support;
     // Whether to emulate FPU
     //   bit 0: fpu enabled
@@ -302,7 +304,10 @@
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
-      ,muldiv_support    : (1 << e_div) | (1 << e_mul) | (1 << e_mulh)
+      ,muldiv_support    : (1 << e_idiv)
+                           | (1 << e_imul)
+                           | (1 << e_imulh)
+                           | (1 << e_idiv2b)
       ,fpu_support       : 1
       ,compressed_support: 1
 

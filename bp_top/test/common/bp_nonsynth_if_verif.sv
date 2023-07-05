@@ -74,8 +74,10 @@ module bp_nonsynth_if_verif
     $error("Error: RAS > 1 is not supported");
 
   // Core or Features
-  if (!muldiv_support_p[e_mul])
-    $error("MUL is not currently support in emulation");
+  if (!muldiv_support_p[e_imul])
+    $error("IMUL is not currently support in emulation");
+  if (!muldiv_support_p[e_idiv])
+    $error("IDIV is not currently support in emulation");
   if (!fpu_support_p)
     $error("FPU cannot currently be disabled");
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))

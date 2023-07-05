@@ -85,8 +85,9 @@ module bp_be_pipe_long
   logic idiv_v_lo;
   wire idiv_v_li = v_li & (decode.fu_op inside {e_mul_op_div, e_mul_op_divu});
   wire irem_v_li = v_li & (decode.fu_op inside {e_mul_op_rem, e_mul_op_remu});
+  localparam idiv_bits_per_iter_lp = muldiv_support_p[e_idiv2b] ? 2'b10 : 2'b01;
   bsg_idiv_iterative
-   #(.width_p(dword_width_gp))
+   #(.width_p(dword_width_gp), .bits_per_iter_p(idiv_bits_per_iter_lp))
    idiv
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
