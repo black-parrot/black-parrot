@@ -509,11 +509,11 @@ module bp_be_dcache
      );
 
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
-  wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & writeback_p & ~sc_fail_tv;
-  wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv;
+  wire store_miss_tv    = ~uncached_op_tv_r & (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & writeback_p;
+  wire load_miss_tv     = ~uncached_op_tv_r & decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv;
   wire ldst_miss_tv     = load_miss_tv | store_miss_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
-  wire uncached_miss_tv = uncached_op_tv_r & ~snoop_tv_r;
+  wire uncached_miss_tv = uncached_op_tv_r & decode_tv_r.ret_op & ~snoop_tv_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
   wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
 

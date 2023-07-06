@@ -31,7 +31,8 @@ module bp_be_ptw
    , output logic [dcache_pkt_width_lp-1:0] dcache_pkt_o
    , output logic [ptag_width_p-1:0]        dcache_ptag_o
    , output logic                           dcache_ptag_v_o
-   , input                                  dcache_ready_i
+   , input                                  dcache_ordered_i
+   , input                                  dcache_ready_and_i
 
    , input                                  dcache_v_i
    , input [dword_width_gp-1:0]             dcache_data_i
@@ -43,12 +44,13 @@ module bp_be_ptw
   `bp_cast_i(bp_be_ptw_miss_pkt_s, ptw_miss_pkt);
   `bp_cast_o(bp_be_ptw_fill_pkt_s, ptw_fill_pkt);
 
-  enum logic [2:0] {e_idle, e_send_load, e_recv_load, e_check_load, e_writeback} state_n, state_r;
-  wire is_idle  = (state_r == e_idle);
-  wire is_send  = (state_r == e_send_load);
-  wire is_recv  = (state_r == e_recv_load);
-  wire is_check = (state_r == e_check_load);
-  wire is_write = (state_r == e_writeback);
+  enum logic [2:0] {e_idle, e_ordered, e_send_load, e_recv_load, e_check_load, e_writeback} state_n, state_r;
+  wire is_idle    = (state_r == e_idle);
+  wire is_ordered = (state_r == e_ordered);
+  wire is_send    = (state_r == e_send_load);
+  wire is_recv    = (state_r == e_recv_load);
+  wire is_check   = (state_r == e_check_load);
+  wire is_write   = (state_r == e_writeback);
 
   localparam lg_page_table_depth_lp = `BSG_SAFE_CLOG2(page_table_depth_p);
   logic start;
@@ -184,24 +186,22 @@ module bp_be_ptw
   // Because internal dcache flushing is a possibility, we need to manually replay
   always_comb begin
     case(state_r)
-      e_idle      :  state_n = tlb_miss_v ? e_send_load : e_idle;
-      e_send_load :  state_n = (dcache_ready_i & dcache_v_o) ? e_recv_load : e_send_load;
+      e_idle      :  state_n = tlb_miss_v ? e_ordered : state_r;
+      e_ordered   :  state_n = dcache_ordered_i ? e_send_load : state_r;
+      e_send_load :  state_n = dcache_ready_and_i ? e_recv_load : state_r;
       e_recv_load :  state_n = dcache_v_i ? e_check_load : e_send_load;
       e_check_load:  state_n = (pte_is_leaf | page_fault_v) ? e_writeback : e_send_load;
       default: // e_writeback
-                    state_n = e_idle;
+                     state_n = e_idle;
     endcase
   end
 
   // synopsys sync_set_reset "reset_i"
-  always_ff @(posedge clk_i) begin
-    if(reset_i) begin
+  always_ff @(posedge clk_i)
+    if (reset_i)
       state_r <= e_idle;
-    end
-    else begin
+    else
       state_r <= state_n;
-    end
-  end
 
 endmodule
 

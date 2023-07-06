@@ -749,14 +749,14 @@ module testbench
                  ,.req_start_i(lce_req_v_i & (state_r == e_ready))
                  ,.req_end_i(state_r == e_ready)
                  ,.lce_req_header_i(fsm_req_header_li)
-                 ,.cmd_send_i(fsm_cmd_yumi_li)
+                 ,.cmd_send_i(fsm_cmd_ready_and_li & fsm_cmd_v_lo)
                  ,.lce_cmd_header_i(fsm_cmd_header_lo)
                  ,.resp_receive_i(fsm_resp_yumi_lo)
                  ,.lce_resp_header_i(fsm_resp_header_li)
                  ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
                  ,.mem_rev_squash_i(fsm_rev_yumi_lo & spec_bits_lo.squash & fsm_rev_last_li)
                  ,.mem_rev_header_i(fsm_rev_header_li)
-                 ,.mem_fwd_send_i(fsm_fwd_yumi_li & fsm_fwd_new_lo)
+                 ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
                  ,.mem_fwd_header_i(fsm_fwd_header_lo)
                  );
           end

@@ -285,7 +285,8 @@ module bp_be_pipe_mem
      ,.dcache_pkt_o(ptw_dcache_pkt)
      ,.dcache_ptag_o(ptw_dcache_ptag)
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
-     ,.dcache_ready_i(_dcache_ready_and_lo)
+     ,.dcache_ordered_i(dcache_ordered_lo)
+     ,.dcache_ready_and_i(dcache_ready_and_lo)
 
      ,.dcache_v_i(dcache_v)
      ,.dcache_data_i(dcache_data)
@@ -513,7 +514,7 @@ module bp_be_pipe_mem
      );
 
   assign ordered_o      = dcache_ordered_lo;
-  assign busy_o         = ~dcache_ready_and_lo | ~late_ready_lo | dcache_late_v_r;
+  assign busy_o         = ~dcache_ready_and_lo | ~late_ready_lo;
   assign ptw_busy_o     = ptw_busy;
   assign early_data_o   = dcache_data;
   assign final_data_o   = dcache_float_data;
