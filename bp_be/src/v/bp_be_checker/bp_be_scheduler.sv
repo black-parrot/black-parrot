@@ -28,6 +28,7 @@ module bp_be_scheduler
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam decode_info_width_lp = `bp_be_decode_info_width
    , localparam wb_pkt_width_lp     = `bp_be_wb_pkt_width(vaddr_width_p)
+   , localparam BP_BE_FMD_DISABLE       = `bp_be_FMD_DISABLE
    )
   (input                                      clk_i
    , input                                    reset_i
@@ -119,20 +120,24 @@ module bp_be_scheduler
      );
 
   logic [dpath_width_gp-1:0] frf_rs1, frf_rs2, frf_rs3;
-  bp_be_regfile
-  #(.bp_params_p(bp_params_p), .read_ports_p(3), .zero_x0_p(0), .data_width_p(dpath_width_gp))
-   fp_regfile
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.rd_w_v_i(fwb_pkt_cast_i.frd_w_v)
-     ,.rd_addr_i(fwb_pkt_cast_i.rd_addr)
-     ,.rd_data_i(fwb_pkt_cast_i.rd_data)
-
-     ,.rs_r_v_i({preissue_pkt.frs3_v, preissue_pkt.frs2_v, preissue_pkt.frs1_v})
-     ,.rs_addr_i({preissue_instr.rs3_addr, preissue_instr.rs2_addr, preissue_instr.rs1_addr})
-     ,.rs_data_o({frf_rs3, frf_rs2, frf_rs1})
-     );
+  generate 
+    if(!BP_BE_FMD_DISABLE)begin
+      bp_be_regfile
+      #(.bp_params_p(bp_params_p), .read_ports_p(3), .zero_x0_p(0), .data_width_p(dpath_width_gp))
+       fp_regfile
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+    
+         ,.rd_w_v_i(fwb_pkt_cast_i.frd_w_v)
+         ,.rd_addr_i(fwb_pkt_cast_i.rd_addr)
+         ,.rd_data_i(fwb_pkt_cast_i.rd_data)
+    
+         ,.rs_r_v_i({preissue_pkt.frs3_v, preissue_pkt.frs2_v, preissue_pkt.frs1_v})
+         ,.rs_addr_i({preissue_instr.rs3_addr, preissue_instr.rs2_addr, preissue_instr.rs1_addr})
+         ,.rs_data_o({frf_rs3, frf_rs2, frf_rs1})
+         );    
+    end
+  endgenerate
 
   // Decode the dispatched instruction
   bp_be_decode_s decoded_instr_lo;
