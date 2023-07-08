@@ -31,6 +31,7 @@ module bp_be_calculator_top
    , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam decode_info_width_lp    = `bp_be_decode_info_width
+   , localparam BP_BE_FMD_DISABLE       = `bp_be_FMD_DISABLE
    )
  (input                                             clk_i
   , input                                           reset_i
@@ -257,20 +258,24 @@ module bp_be_calculator_top
      );
 
   // Aux pipe: 2 cycle latency
-  bp_be_pipe_aux
-   #(.bp_params_p(bp_params_p))
-   pipe_aux
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  generate 
+    if(!BP_BE_FMD_DISABLE)begin
+      bp_be_pipe_aux
+       #(.bp_params_p(bp_params_p))
+       pipe_aux
+       (.clk_i(clk_i)
+        ,.reset_i(reset_i)
 
-     ,.reservation_i(reservation_r)
-     ,.flush_i(commit_pkt_cast_o.npc_w_v)
-     ,.frm_dyn_i(frm_dyn_lo)
+        ,.reservation_i(reservation_r)
+        ,.flush_i(commit_pkt_cast_o.npc_w_v)
+        ,.frm_dyn_i(frm_dyn_lo)
 
-     ,.data_o(pipe_aux_data_lo)
-     ,.fflags_o(pipe_aux_fflags_lo)
-     ,.v_o(pipe_aux_data_lo_v)
-     );
+        ,.data_o(pipe_aux_data_lo)
+        ,.fflags_o(pipe_aux_fflags_lo)
+        ,.v_o(pipe_aux_data_lo_v)
+       );
+    end
+  endgenerate
 
   // Memory pipe: 2/3 cycle latency
   bp_be_pipe_mem
@@ -348,44 +353,52 @@ module bp_be_calculator_top
      );
 
   // Floating point pipe: 3/4 cycle latency
-  bp_be_pipe_fma
-   #(.bp_params_p(bp_params_p))
-   pipe_fma
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  generate    
+    if(!BP_BE_FMD_DISABLE)begin
+      bp_be_pipe_fma
+      #(.bp_params_p(bp_params_p))
+      pipe_fma
+       (.clk_i(clk_i)
+        ,.reset_i(reset_i)
 
-     ,.reservation_i(reservation_r)
-     ,.flush_i(commit_pkt_cast_o.npc_w_v)
-     ,.frm_dyn_i(frm_dyn_lo)
+        ,.reservation_i(reservation_r)
+        ,.flush_i(commit_pkt_cast_o.npc_w_v)
+        ,.frm_dyn_i(frm_dyn_lo)
 
-     ,.imul_data_o(pipe_mul_data_lo)
-     ,.imul_v_o(pipe_mul_data_lo_v)
-     ,.fma_data_o(pipe_fma_data_lo)
-     ,.fma_fflags_o(pipe_fma_fflags_lo)
-     ,.fma_v_o(pipe_fma_data_lo_v)
-     );
+        ,.imul_data_o(pipe_mul_data_lo)
+        ,.imul_v_o(pipe_mul_data_lo_v)
+        ,.fma_data_o(pipe_fma_data_lo)
+        ,.fma_fflags_o(pipe_fma_fflags_lo)
+        ,.fma_v_o(pipe_fma_data_lo_v)
+        );
+    end
+  endgenerate
 
   // Variable length pipeline, used for long (potentially scoreboarded operations)
-  bp_be_pipe_long
-   #(.bp_params_p(bp_params_p))
-   pipe_long
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.reservation_i(reservation_r)
-     ,.flush_i(commit_pkt_cast_o.npc_w_v)
-     ,.ibusy_o(idiv_busy_o)
-     ,.fbusy_o(fdiv_busy_o)
-     ,.frm_dyn_i(frm_dyn_lo)
-
-     ,.iwb_pkt_o(long_iwb_pkt)
-     ,.iwb_v_o(pipe_long_idata_lo_v)
-     ,.iwb_yumi_i(pipe_long_idata_lo_yumi)
-
-     ,.fwb_pkt_o(long_fwb_pkt)
-     ,.fwb_v_o(pipe_long_fdata_lo_v)
-     ,.fwb_yumi_i(pipe_long_fdata_lo_yumi)
-     );
+  generate 
+    if(!BP_BE_FMD_DISABLE)begin
+      bp_be_pipe_long
+      #(.bp_params_p(bp_params_p))
+      pipe_long
+       (.clk_i(clk_i)
+        ,.reset_i(reset_i)
+   
+        ,.reservation_i(reservation_r)
+        ,.flush_i(commit_pkt_cast_o.npc_w_v)
+        ,.ibusy_o(idiv_busy_o)
+        ,.fbusy_o(fdiv_busy_o)
+        ,.frm_dyn_i(frm_dyn_lo)
+   
+        ,.iwb_pkt_o(long_iwb_pkt)
+        ,.iwb_v_o(pipe_long_idata_lo_v)
+        ,.iwb_yumi_i(pipe_long_idata_lo_yumi)
+   
+        ,.fwb_pkt_o(long_fwb_pkt)
+        ,.fwb_v_o(pipe_long_fdata_lo_v)
+        ,.fwb_yumi_i(pipe_long_fdata_lo_yumi)
+        );
+    end
+  endgenerate
 
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
   // Else, mux in the previous stage of the completion pipe. Since we are single issue and have

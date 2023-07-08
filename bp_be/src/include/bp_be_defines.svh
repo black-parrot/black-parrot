@@ -288,5 +288,7 @@
   `define bp_be_decode_info_width \
     (rv64_priv_width_gp+8)
 
+  `define bp_be_FMD_DISABLE 0
+
 `endif
 
