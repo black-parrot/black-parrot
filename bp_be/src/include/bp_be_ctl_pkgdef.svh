@@ -4,18 +4,6 @@
 
   typedef enum logic [5:0]
   {
-    e_ctrl_op_beq       = 6'b000000
-    ,e_ctrl_op_bne      = 6'b000001
-    ,e_ctrl_op_blt      = 6'b000010
-    ,e_ctrl_op_bltu     = 6'b000011
-    ,e_ctrl_op_bge      = 6'b000100
-    ,e_ctrl_op_bgeu     = 6'b000101
-    ,e_ctrl_op_jal      = 6'b000110
-    ,e_ctrl_op_jalr     = 6'b000111
-  } bp_be_ctrl_fu_op_e;
-
-  typedef enum logic [5:0]
-  {
     e_int_op_add        = 6'b000000
     ,e_int_op_sub       = 6'b001000
     ,e_int_op_sll       = 6'b000001
@@ -31,6 +19,8 @@
     ,e_int_op_ne        = 6'b001110
     ,e_int_op_and       = 6'b000111
     ,e_int_op_pass_src2 = 6'b001111
+    ,e_int_op_pass_one  = 6'b111110
+    ,e_int_op_pass_zero = 6'b111111
   } bp_be_int_fu_op_e;
 
   typedef enum logic [5:0]
@@ -147,13 +137,12 @@
   {
     union packed
     {
-      bp_be_ctrl_fu_op_e     ctrl_fu_op;
-      bp_be_aux_fu_op_e      aux_fu_op;
-      bp_be_int_fu_op_e      int_fu_op;
-      bp_be_dcache_fu_op_e   dcache_op;
       bp_be_csr_fu_op_e      csr_fu_op;
-      bp_be_fma_fu_op_e      fma_fu_op;
+      bp_be_int_fu_op_e      int_fu_op;
+      bp_be_aux_fu_op_e      aux_fu_op;
+      bp_be_dcache_fu_op_e   dcache_op;
       bp_be_mul_fu_op_e      mul_fu_op;
+      bp_be_fma_fu_op_e      fma_fu_op;
     }  fu_op;
   }  bp_be_fu_op_s;
 
@@ -175,21 +164,8 @@
     ,e_baddr_is_rs1 = 1'b1
   } bp_be_baddr_e;
 
-  typedef enum logic
-  {
-    e_offset_is_imm   = 1'b0
-    ,e_offset_is_zero = 1'b1
-  } bp_be_offset_e;
-
-  typedef enum logic
-  {
-    e_result_from_alu       = 1'b0
-    ,e_result_from_pc_plus4 = 1'b1
-  } bp_be_result_e;
-
   typedef struct packed
   {
-    logic                             pipe_ctl_v;
     logic                             pipe_int_v;
     logic                             pipe_mem_early_v;
     logic                             pipe_aux_v;
@@ -202,6 +178,8 @@
     logic                             irf_w_v;
     logic                             frf_w_v;
     logic                             fflags_w_v;
+    logic                             branch_v;
+    logic                             jump_v;
     logic                             dcache_r_v;
     logic                             dcache_w_v;
     logic                             late_iwb_v;

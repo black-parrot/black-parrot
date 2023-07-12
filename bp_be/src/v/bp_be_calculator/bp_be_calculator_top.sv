@@ -96,6 +96,7 @@ module bp_be_calculator_top
 
   `bp_cast_i(bp_be_dispatch_pkt_s, dispatch_pkt);
   `bp_cast_o(bp_be_commit_pkt_s, commit_pkt);
+  `bp_cast_o(bp_be_branch_pkt_s, br_pkt);
 
 
   // Pipeline stage registers
@@ -112,7 +113,7 @@ module bp_be_calculator_top
 
   bp_be_wb_pkt_s long_iwb_pkt, long_fwb_pkt;
 
-  logic pipe_ctl_instr_misaligned_lo;
+  logic pipe_int_early_instr_misaligned_lo;
 
   logic pipe_mem_dtlb_load_miss_lo, pipe_mem_dtlb_store_miss_lo;
   logic pipe_mem_dcache_load_miss_lo, pipe_mem_dcache_store_miss_lo, pipe_mem_dcache_replay_lo;
@@ -122,10 +123,13 @@ module bp_be_calculator_top
 
   logic pipe_sys_illegal_instr_lo, pipe_sys_csrw_lo;
 
-  logic pipe_ctl_data_lo_v, pipe_int_data_lo_v, pipe_aux_data_lo_v, pipe_mem_early_data_lo_v, pipe_mem_final_data_lo_v, pipe_sys_data_lo_v, pipe_mul_data_lo_v, pipe_fma_data_lo_v;
+  logic pipe_int_early_data_lo_v, pipe_aux_data_lo_v, pipe_mem_early_data_lo_v, pipe_mem_final_data_lo_v, pipe_sys_data_lo_v, pipe_mul_data_lo_v, pipe_fma_data_lo_v;
   logic pipe_long_idata_lo_v, pipe_long_idata_lo_yumi, pipe_long_fdata_lo_v, pipe_long_fdata_lo_yumi;
-  logic [dpath_width_gp-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
+  logic [dpath_width_gp-1:0] pipe_int_early_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
   rv64_fflags_s pipe_aux_fflags_lo, pipe_fma_fflags_lo;
+
+  logic [vaddr_width_p-1:0] pipe_int_early_npc_lo;
+  logic pipe_int_early_branch_lo, pipe_int_early_btaken_lo;
 
   bp_be_wb_pkt_s pipe_mem_late_iwb_pkt;
   logic pipe_mem_late_iwb_pkt_v, pipe_mem_late_iwb_pkt_yumi;
@@ -187,22 +191,6 @@ module bp_be_calculator_top
      ,.data_o(reservation_r)
      );
 
-  // Control pipe: 1 cycle latency
-  bp_be_pipe_ctl
-   #(.bp_params_p(bp_params_p))
-   pipe_ctl
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.reservation_i(reservation_r)
-     ,.flush_i(commit_pkt_cast_o.npc_w_v)
-
-     ,.data_o(pipe_ctl_data_lo)
-     ,.br_pkt_o(br_pkt_o)
-     ,.v_o(pipe_ctl_data_lo_v)
-     ,.instr_misaligned_v_o(pipe_ctl_instr_misaligned_lo)
-     );
-
   // Computation pipelines
   // System pipe: 1 cycle latency
   bp_be_pipe_sys
@@ -242,7 +230,6 @@ module bp_be_calculator_top
      ,.frm_dyn_o(frm_dyn_lo)
      );
 
-
   // Integer pipe: 1 cycle latency
   bp_be_pipe_int
    #(.bp_params_p(bp_params_p))
@@ -253,9 +240,17 @@ module bp_be_calculator_top
      ,.reservation_i(reservation_r)
      ,.flush_i(commit_pkt_cast_o.npc_w_v)
 
-     ,.data_o(pipe_int_data_lo)
-     ,.v_o(pipe_int_data_lo_v)
+     ,.data_o(pipe_int_early_data_lo)
+     ,.v_o(pipe_int_early_data_lo_v)
+     ,.npc_o(pipe_int_early_npc_lo)
+     ,.branch_o(pipe_int_early_branch_lo)
+     ,.btaken_o(pipe_int_early_btaken_lo)
+     ,.instr_misaligned_v_o(pipe_int_early_instr_misaligned_lo)
      );
+  assign br_pkt_cast_o.v      = reservation_r.v & reservation_r.queue_v & ~commit_pkt_cast_o.npc_w_v;
+  assign br_pkt_cast_o.branch = br_pkt_cast_o.v & pipe_int_early_branch_lo;
+  assign br_pkt_cast_o.btaken = br_pkt_cast_o.v & pipe_int_early_btaken_lo;
+  assign br_pkt_cast_o.npc    = pipe_int_early_npc_lo;
 
   // Aux pipe: 2 cycle latency
   bp_be_pipe_aux
@@ -408,8 +403,7 @@ module bp_be_calculator_top
         end
       // Injected instructions can carry a payload in rs2
       comp_stage_n[0].rd_data    |= injection                ? dispatch_pkt_cast_i.rs2  : '0;
-      comp_stage_n[1].rd_data    |= pipe_int_data_lo_v       ? pipe_int_data_lo         : '0;
-      comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo         : '0;
+      comp_stage_n[1].rd_data    |= pipe_int_early_data_lo_v ? pipe_int_early_data_lo   : '0;
       comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo         : '0;
       comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo   : '0;
       comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo         : '0;
@@ -474,7 +468,7 @@ module bp_be_calculator_top
           exc_stage_n[1].exc.illegal_instr      |= pipe_sys_illegal_instr_lo;
           exc_stage_n[1].spec.csrw              |= pipe_sys_csrw_lo;
 
-          exc_stage_n[1].exc.instr_misaligned   |= pipe_ctl_instr_misaligned_lo;
+          exc_stage_n[1].exc.instr_misaligned   |= pipe_int_early_instr_misaligned_lo;
 
           exc_stage_n[1].exc.dtlb_store_miss    |= pipe_mem_dtlb_store_miss_lo;
           exc_stage_n[1].exc.dtlb_load_miss     |= pipe_mem_dtlb_load_miss_lo;

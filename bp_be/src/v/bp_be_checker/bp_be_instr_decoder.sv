@@ -156,31 +156,35 @@ module bp_be_instr_decoder
           end
         `RV64_JAL_OP:
           begin
-            decode_cast_o.pipe_ctl_v = 1'b1;
+            decode_cast_o.pipe_int_v = 1'b1;
+            decode_cast_o.branch_v   = 1'b1;
+            decode_cast_o.jump_v     = 1'b1;
             decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-            decode_cast_o.fu_op      = e_ctrl_op_jal;
+            decode_cast_o.fu_op      = e_int_op_pass_one;
             decode_cast_o.baddr_sel  = e_baddr_is_pc;
           end
         `RV64_JALR_OP:
           begin
-            decode_cast_o.pipe_ctl_v = 1'b1;
+            decode_cast_o.pipe_int_v = 1'b1;
             decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-            unique casez (instr)
-              `RV64_JALR: decode_cast_o.fu_op = e_ctrl_op_jalr;
-              default : illegal_instr_o = 1'b1;
-            endcase
+            decode_cast_o.branch_v   = 1'b1;
+            decode_cast_o.jump_v     = 1'b1;
+            decode_cast_o.fu_op      = e_int_op_pass_one;
             decode_cast_o.baddr_sel  = e_baddr_is_rs1;
+
+            illegal_instr_o = ~(instr inside {`RV64_JALR});
           end
         `RV64_BRANCH_OP:
           begin
-            decode_cast_o.pipe_ctl_v = 1'b1;
+            decode_cast_o.pipe_int_v = 1'b1;
+            decode_cast_o.branch_v   = 1'b1;
             unique casez (instr)
-              `RV64_BEQ  : decode_cast_o.fu_op = e_ctrl_op_beq;
-              `RV64_BNE  : decode_cast_o.fu_op = e_ctrl_op_bne;
-              `RV64_BLT  : decode_cast_o.fu_op = e_ctrl_op_blt;
-              `RV64_BGE  : decode_cast_o.fu_op = e_ctrl_op_bge;
-              `RV64_BLTU : decode_cast_o.fu_op = e_ctrl_op_bltu;
-              `RV64_BGEU : decode_cast_o.fu_op = e_ctrl_op_bgeu;
+              `RV64_BEQ  : decode_cast_o.fu_op = e_int_op_eq;
+              `RV64_BNE  : decode_cast_o.fu_op = e_int_op_ne;
+              `RV64_BLT  : decode_cast_o.fu_op = e_int_op_slt;
+              `RV64_BGE  : decode_cast_o.fu_op = e_int_op_sge;
+              `RV64_BLTU : decode_cast_o.fu_op = e_int_op_sltu;
+              `RV64_BGEU : decode_cast_o.fu_op = e_int_op_sgeu;
               default : illegal_instr_o = 1'b1;
             endcase
             decode_cast_o.baddr_sel  = e_baddr_is_pc;
