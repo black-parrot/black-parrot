@@ -27,7 +27,6 @@ module bp_cce_inst_stall
    , input                                       pending_v_i
 
    // output queue valid&ready signals
-   , input                                       lce_cmd_v_i
    , input                                       lce_cmd_yumi_i
 
    , input                                       mem_credits_empty_i

@@ -61,7 +61,7 @@ module bp_me_stream_pump_out
    , input [xce_header_width_lp-1:0]                fsm_header_i
    , input [fsm_data_width_p-1:0]                   fsm_data_i
    , input                                          fsm_v_i
-   , output logic                                   fsm_yumi_o
+   , output logic                                   fsm_ready_and_o
 
    // FSM control signals
    // fsm_addr is the effective address of the beat
@@ -140,29 +140,21 @@ module bp_me_stream_pump_out
   assign msg_data_lo = fsm_data_i;
 
   always_comb
-    if (~fsm_stream & msg_stream & nz_stream)
-      begin
-        // 1:N
-        // send N msg beats, and ack single FSM beat on last msg beat
-        msg_v_lo = fsm_v_i;
-        fsm_yumi_o = fsm_v_i & fsm_last_o & msg_ready_and_li;
-        cnt_up = msg_v_lo & msg_ready_and_li;
-      end
-    else if (fsm_stream & ~msg_stream & nz_stream)
+    if (fsm_stream & ~msg_stream & nz_stream)
       begin
         // N:1
         // only send msg on first FSM beat
         msg_v_lo = fsm_v_i & fsm_new_o;
-        // ack all but last FSM beat silently, then ack last FSM beat when msg beat sends
-        fsm_yumi_o = fsm_v_i & (msg_ready_and_li | ~fsm_new_o);
-        cnt_up = fsm_yumi_o;
+        // ack all but first FSM beat silently
+        fsm_ready_and_o = msg_ready_and_li | ~fsm_new_o;
+        cnt_up = fsm_ready_and_o & fsm_v_i;
       end
     else
       begin
         // 1:1
         msg_v_lo = fsm_v_i;
-        fsm_yumi_o = msg_ready_and_li & msg_v_lo;
-        cnt_up  = fsm_yumi_o;
+        fsm_ready_and_o = msg_ready_and_li;
+        cnt_up  = fsm_ready_and_o & fsm_v_i;
       end
 
   // parameter checks

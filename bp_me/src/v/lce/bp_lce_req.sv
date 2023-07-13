@@ -133,7 +133,7 @@ module bp_lce_req
   bp_bedrock_lce_req_header_s fsm_req_header_lo;
   logic [paddr_width_p-1:0] fsm_req_addr_lo;
   logic [fill_width_p-1:0] fsm_req_data_lo;
-  logic fsm_req_v_lo, fsm_req_yumi_li;
+  logic fsm_req_v_lo, fsm_req_ready_and_li;
   logic fsm_req_new_lo, fsm_req_critical_lo, fsm_req_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -156,7 +156,7 @@ module bp_lce_req
      ,.fsm_addr_o(fsm_req_addr_lo)
      ,.fsm_data_i(fsm_req_data_lo)
      ,.fsm_v_i(fsm_req_v_lo)
-     ,.fsm_yumi_o(fsm_req_yumi_li)
+     ,.fsm_ready_and_o(fsm_req_ready_and_li)
      ,.fsm_new_o(fsm_req_new_lo)
      ,.fsm_critical_o(fsm_req_critical_lo)
      ,.fsm_last_o(fsm_req_last_lo)
@@ -174,7 +174,7 @@ module bp_lce_req
   // one credit used per LCE request sent
   logic [`BSG_WIDTH(credits_p)-1:0] credit_count_lo;
   wire credit_v_li = fsm_req_v_lo & fsm_req_new_lo;
-  wire credit_ready_li = fsm_req_yumi_li;
+  wire credit_ready_li = fsm_req_ready_and_li;
   wire credit_returned_li = credit_return_i;
   bsg_flow_counter
     #(.els_p(credits_p))
@@ -264,12 +264,11 @@ module bp_lce_req
     // Send out in ready state only
     fsm_req_v_lo = is_ready & cache_req_v_r & ~backoff_v_r & (credit_count_lo < credits_p);
 
-    // request finishes sending when last data sends
-    nonblocking_req_sent = backoff_v_r | (uc_store_v_r & fsm_req_yumi_li & fsm_req_last_lo);
-    blocking_req_sent = (miss_v_r | uc_load_v_r | uc_amo_v_r) & fsm_req_yumi_li & fsm_req_last_lo;
+    // request finishes sending when last data sends (single beat supported only)
+    nonblocking_req_sent = backoff_v_r | (uc_store_v_r & fsm_req_ready_and_li & fsm_req_v_lo);
+    blocking_req_sent = (miss_v_r | uc_load_v_r | uc_amo_v_r) & fsm_req_ready_and_li & fsm_req_v_lo;
  
-    // consume cache request if the previous request was issued or is being issued in the current cycle
-    cache_req_yumi_o = cache_req_v_i & (~cache_req_v_r | cache_req_done_i | nonblocking_req_sent);
+    cache_req_yumi_o = cache_req_v_i & (~cache_req_v_r | blocking_req_sent | blocking_req_sent);
   end
 
   always_comb

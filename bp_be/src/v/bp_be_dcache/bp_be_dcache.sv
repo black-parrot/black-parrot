@@ -352,7 +352,7 @@ module bp_be_dcache
      ,.o(bank_sel_one_hot_tl)
      );
 
-  wire uncached_op_tl =  ptag_uncached_i | decode_tl_r.uncached_op;
+  wire uncached_op_tl =  decode_tl_r.uncached_op | (~decode_tl_r.fencei_op & ptag_uncached_i);
   wire dram_op_tl =  ptag_dram_i;
   wire [dword_width_gp-1:0] st_data_tl = st_data_i;
 
@@ -365,7 +365,7 @@ module bp_be_dcache
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
   logic [assoc_p-1:0] load_hit_v_tv_r, store_hit_v_tv_r, way_v_tv_r, bank_sel_one_hot_tv_r;
   bp_be_dcache_decode_s decode_tv_r;
-  logic load_reservation_match_tv;
+  logic sc_success_tv, sc_fail_tv;
   wire [bindex_width_lp-1:0] paddr_bank_tv  = paddr_tv_r[byte_offset_width_lp+:bindex_width_lp];
   wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
   wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
@@ -508,26 +508,16 @@ module bp_be_dcache
      ,.data_o(final_data)
      );
 
-  // Load reserved misses if not in exclusive or modified (whether load hit or not)
-  wire lr_hit_tv =
-    v_tv_r & decode_tv_r.lr_op & store_hit_tv & (amo_support_p[e_dcache_subop_lr]);
-  // Succeed if the address matches and we have a store hit
-  wire sc_success_tv =
-    v_tv_r & decode_tv_r.sc_op & store_hit_tv & load_reservation_match_tv & (amo_support_p[e_dcache_subop_sc]);
-  // Fail if we have a store conditional without success
-  wire sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
-
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
-  wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~decode_tv_r.sc_op & ~store_hit_tv & writeback_p;
-  wire load_miss_tv     = decode_tv_r.load_op & ~decode_tv_r.sc_op & ~load_hit_tv;
+  wire store_miss_tv    = ~uncached_op_tv_r & (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & writeback_p;
+  wire load_miss_tv     = ~uncached_op_tv_r & decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv;
   wire ldst_miss_tv     = load_miss_tv | store_miss_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
+  wire uncached_miss_tv = uncached_op_tv_r & decode_tv_r.ret_op & ~snoop_tv_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
-  wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | engine_miss_tv;
+  wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
 
-  assign data_o = (decode_tv_r.sc_op & ~uncached_op_tv_r)
-    ? (sc_success_tv != 1'b1)
-    : final_data;
+  assign data_o = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : final_data;
 
   assign v_o       = v_tv_r & ~any_miss_tv;
   assign rd_addr_o = decode_tv_r.rd_addr;
@@ -580,9 +570,9 @@ module bp_be_dcache
   logic wbuf_v_li, wbuf_v_lo, wbuf_force_lo, wbuf_yumi_li;
 
   assign wbuf_v_li = v_tv_r
-        & decode_tv_r.store_op & ~uncached_op_tv_r
-        & store_hit_tv & ~sc_fail_tv
-        & (writeback_p | cache_req_yumi_i);
+    & decode_tv_r.store_op & ~uncached_op_tv_r
+    & store_hit_tv & ~sc_fail_tv
+    & (writeback_p | cache_req_yumi_i);
 
   //
   // Atomic operations
@@ -710,12 +700,12 @@ module bp_be_dcache
 
   wire load_req            = ~uncached_op_tv_r & load_miss_tv;
   wire store_req           = ~uncached_op_tv_r & store_miss_tv;
-  wire wt_req              = ~uncached_op_tv_r &  decode_tv_r.store_op & ~sc_fail_tv & !writeback_p;
-  wire uncached_amo_req    =  uncached_op_tv_r &  decode_tv_r.amo_op & decode_tv_r.ret_op & ~snoop_tv_r;
+  wire uncached_amo_req    =  uncached_op_tv_r & decode_tv_r.amo_op & decode_tv_r.ret_op & ~snoop_tv_r;
   wire uncached_load_req   =  uncached_op_tv_r & ~decode_tv_r.amo_op & decode_tv_r.load_op & ~snoop_tv_r;
   wire uncached_store_req  =  uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.ret_op & ~snoop_tv_r;
   wire fencei_req          = fencei_miss_tv & (coherent_p == 0);
-  wire backoff_req         = sc_fail_tv & (coherent_p == 1);
+  wire backoff_req         = ~uncached_op_tv_r & sc_fail_tv & (coherent_p == 1);
+  wire wt_req              = ~uncached_op_tv_r & decode_tv_r.store_op & ~sc_fail_tv & !writeback_p;
 
   // Uncached stores and writethrough requests are non-blocking
   wire nonblocking_req     = (uncached_store_req | wt_req | backoff_req);
@@ -1020,7 +1010,7 @@ module bp_be_dcache
   // Stat Mem Control
   ///////////////////////////
   wire stat_mem_fast_read  = (v_tv_r & any_miss_tv) | tag_mem_write_hazard;
-  wire stat_mem_fast_write = (v_tv_r & ~any_miss_tv & ~uncached_op_tv_r);
+  wire stat_mem_fast_write = (v_tv_r & load_hit_tv & ~decode_tv_r.fencei_op & ~uncached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
   assign stat_mem_v_li = stat_mem_fast_read | stat_mem_fast_write
@@ -1132,7 +1122,7 @@ module bp_be_dcache
       logic load_reserved_v_r;
 
       // Set reservation on successful LR, without a cache miss or upgrade request
-      wire set_reservation = lr_hit_tv;
+      wire set_reservation = v_tv_r & decode_tv_r.lr_op & store_hit_tv;
       // All SCs clear the reservation (regardless of success)
       // Invalidates from other harts which match the reservation address clear the reservation
       // Also invalidate on trap
@@ -1162,13 +1152,19 @@ module bp_be_dcache
          ,.data_o({load_reserved_tag_r, load_reserved_index_r})
          );
 
-        assign load_reservation_match_tv = load_reserved_v_r
-          & (load_reserved_index_r == paddr_index_tv)
-          & (load_reserved_tag_r == paddr_tag_tv);
+      wire load_reservation_match_tv = load_reserved_v_r
+        & (load_reserved_index_r == paddr_index_tv)
+        & (load_reserved_tag_r == paddr_tag_tv);
+
+      // Succeed if the address matches and we have a store hit
+      assign sc_success_tv = v_tv_r & decode_tv_r.sc_op & store_hit_tv & load_reservation_match_tv;
+      // Fail if we have a store conditional without success
+      assign sc_fail_tv = v_tv_r & decode_tv_r.sc_op & ~sc_success_tv;
     end
   else
     begin : no_l1_lrsc
-        assign load_reservation_match_tv = '0;
+        assign sc_fail_tv = '0;
+        assign sc_success_tv = '0;
     end
 
   /////////////////////////////////////////////////////////////////////////////
