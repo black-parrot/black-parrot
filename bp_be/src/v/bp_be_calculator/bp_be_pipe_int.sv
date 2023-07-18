@@ -20,15 +20,19 @@ module bp_be_pipe_int
 
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    )
-  (input                               clk_i
-   , input                             reset_i
+  (input                                    clk_i
+   , input                                  reset_i
 
-   , input [dispatch_pkt_width_lp-1:0] reservation_i
-   , input                             flush_i
+   , input [dispatch_pkt_width_lp-1:0]      reservation_i
+   , input                                  flush_i
 
    // Pipeline results
-   , output logic [dpath_width_gp-1:0] data_o
-   , output logic                      v_o
+   , output logic [dpath_width_gp-1:0]      data_o
+   , output logic                           v_o
+   , output logic                           branch_o
+   , output logic                           btaken_o
+   , output logic [vaddr_width_p-1:0]       npc_o
+   , output logic                           instr_misaligned_v_o
    );
 
   // Suppress unused signal warning
@@ -38,6 +42,7 @@ module bp_be_pipe_int
   bp_be_dispatch_pkt_s reservation;
   bp_be_decode_s decode;
   rv64_instr_s instr;
+  bp_be_branch_pkt_s br_pkt;
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
@@ -73,6 +78,8 @@ module bp_be_pipe_int
       e_int_op_srl       : alu_result = final_src1 >>  shamt;
       e_int_op_sra       : alu_result = $signed(final_src1) >>> shamt;
       e_int_op_pass_src2 : alu_result = final_src2;
+      e_int_op_pass_one  : alu_result = 1'b1;
+      e_int_op_pass_zero : alu_result = 1'b0;
 
       // Single bit results
       e_int_op_eq   : alu_result = (dword_width_gp)'(final_src1 == final_src2);
@@ -84,10 +91,23 @@ module bp_be_pipe_int
       default       : alu_result = '0;
     endcase
 
+  wire [vaddr_width_p-1:0] baddr = decode.baddr_sel ? rs1 : pc;
+  wire [vaddr_width_p-1:0] taken_raw = baddr + imm;
+  wire [vaddr_width_p-1:0] taken_tgt = {taken_raw[vaddr_width_p-1:1], 1'b0};
+  wire [vaddr_width_p-1:0] ntaken_tgt = pc + (reservation.compressed ? 4'd2 : 4'd4);
+
+  wire [dpath_width_gp-1:0] br_result = vaddr_width_p'($signed(ntaken_tgt));
+
   // Shift back the ALU result from the top field for word width operations
   wire [dword_width_gp-1:0] opw_result = $signed(alu_result) >>> word_width_gp;
-  assign data_o = decode.opw_v ? opw_result : alu_result;
+  assign data_o = decode.branch_v ? br_result : decode.opw_v ? opw_result : alu_result;
   assign v_o    = reservation.v & reservation.decode.pipe_int_v;
+
+  assign branch_o = decode.branch_v;
+  assign btaken_o = decode.branch_v & (decode.jump_v | alu_result[0]);
+  assign npc_o = btaken_o ? taken_tgt : ntaken_tgt;
+
+  assign instr_misaligned_v_o = btaken_o & (taken_tgt[1:0] != 2'b00) & !compressed_support_p;
 
 endmodule
 

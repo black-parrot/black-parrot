@@ -258,7 +258,6 @@ module bp_be_detector
     begin
       dep_status_n.v          = dispatch_pkt_cast_i.v;
       dep_status_n.fflags_w_v = dispatch_pkt_cast_i.decode.fflags_w_v;
-      dep_status_n.ctl_iwb_v  = dispatch_pkt_cast_i.decode.pipe_ctl_v & dispatch_pkt_cast_i.decode.irf_w_v;
       dep_status_n.int_iwb_v  = dispatch_pkt_cast_i.decode.pipe_int_v & dispatch_pkt_cast_i.decode.irf_w_v;
       dep_status_n.int_fwb_v  = dispatch_pkt_cast_i.decode.pipe_int_v & dispatch_pkt_cast_i.decode.frf_w_v;
       dep_status_n.aux_iwb_v  = dispatch_pkt_cast_i.decode.pipe_aux_v & dispatch_pkt_cast_i.decode.irf_w_v;

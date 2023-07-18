@@ -200,7 +200,7 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.instr_v    = fe_instr_not_exc_li;
       dispatch_pkt_cast_o.partial    = be_exc_not_instr_li ? be_partial : fe_partial;
       dispatch_pkt_cast_o.compressed = issue_pkt_cast_o.compressed;
-      dispatch_pkt_cast_o.pc         = expected_npc_i;
+      dispatch_pkt_cast_o.pc         = fe_queue_read_li ? issue_pkt_cast_o.pc : expected_npc_i;
       dispatch_pkt_cast_o.instr      = issue_pkt_cast_o.instr;
       // If register injection is critical, can be done after bypass
       dispatch_pkt_cast_o.frs1_v     = issue_pkt_cast_o.frs1_v;
