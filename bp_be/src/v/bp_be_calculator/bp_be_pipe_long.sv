@@ -85,8 +85,9 @@ module bp_be_pipe_long
   logic idiv_v_lo;
   wire idiv_v_li = v_li & (decode.fu_op inside {e_mul_op_div, e_mul_op_divu});
   wire irem_v_li = v_li & (decode.fu_op inside {e_mul_op_rem, e_mul_op_remu});
+  localparam idiv_bits_per_iter_lp = muldiv_support_p[e_idiv2b] ? 2'b10 : 2'b01;
   bsg_idiv_iterative
-   #(.width_p(dword_width_gp))
+   #(.width_p(dword_width_gp), .bits_per_iter_p(idiv_bits_per_iter_lp))
    idiv
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -137,8 +138,12 @@ module bp_be_pipe_long
   logic sqrt_lo, invalid_exc, infinite_exc;
   logic [2:0] frm_lo;
   bp_hardfloat_raw_dp_s fdivsqrt_raw_lo;
-  divSqrtRecFNToRaw_small
-   #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
+  localparam fdivsqrt_bits_per_iter_lp = fpu_support_p[e_fdivsqrt2b] ? 2'b10 : 2'b01;
+  divSqrtRecFNToRaw
+   #(.expWidth(dp_exp_width_gp)
+     ,.sigWidth(dp_sig_width_gp)
+     ,.bits_per_iter_p(fdivsqrt_bits_per_iter_lp)
+     )
    fdiv
     (.clock(clk_i)
      ,.nReset(~reset_i)
