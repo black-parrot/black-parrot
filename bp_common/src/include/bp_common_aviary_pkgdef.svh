@@ -12,7 +12,7 @@
       ,daddr_width: 55
       ,caddr_width: 54
 
-      ,branch_metadata_fwd_width: 49
+      ,branch_metadata_fwd_width: 50
       ,ras_idx_width            : 3
       ,btb_tag_width            : 9
       ,btb_idx_width            : 8
