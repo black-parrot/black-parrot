@@ -20,25 +20,25 @@
       ,bht_row_els              : 4
       ,ghist_width              : 2
 
-      ,icache_sets        : 64
-      ,icache_assoc       : 8
-      ,icache_block_width : 512
-      ,icache_fill_width  : 512
+      ,icache_sets        : 32
+      ,icache_assoc       : 16
+      ,icache_block_width : 1024
+      ,icache_fill_width  : 1024
 
-      ,dcache_sets        : 64
-      ,dcache_assoc       : 8
-      ,dcache_block_width : 512
-      ,dcache_fill_width  : 512
+      ,dcache_sets        : 32
+      ,dcache_assoc       : 16
+      ,dcache_block_width : 1024
+      ,dcache_fill_width  : 1024
 
-      ,bedrock_block_width : 512
-      ,bedrock_fill_width  : 512
+      ,bedrock_block_width : 1024
+      ,bedrock_fill_width  : 1024
 
       ,l2_banks            : 8
-      ,l2_data_width       : 512
+      ,l2_data_width       : 1024
       ,l2_sets             : 128
       ,l2_assoc            : 8
-      ,l2_block_width      : 512
-      ,l2_fill_width       : 512
+      ,l2_block_width      : 1024
+      ,l2_fill_width       : 1024
       ,l2_outstanding_reqs : 32
 
       ,default : "inv"
@@ -162,35 +162,35 @@
       ,bht_row_els              : 4
       ,ghist_width              : 2
 
-      ,icache_sets        : 64
-      ,icache_assoc       : 8
-      ,icache_block_width : 512
-      ,icache_fill_width  : 512
+      ,icache_sets        : 32
+      ,icache_assoc       : 16
+      ,icache_block_width : 1024
+      ,icache_fill_width  : 1024
 
-      ,dcache_sets        : 64
-      ,dcache_assoc       : 8
-      ,dcache_block_width : 512
-      ,dcache_fill_width  : 512
+      ,dcache_sets        : 32
+      ,dcache_assoc       : 16
+      ,dcache_block_width : 1024
+      ,dcache_fill_width  : 1024
 
-      ,acache_sets        : 64
-      ,acache_assoc       : 8
-      ,acache_block_width : 512
-      ,acache_fill_width  : 512
+      ,acache_sets        : 32
+      ,acache_assoc       : 16
+      ,acache_block_width : 1024
+      ,acache_fill_width  : 1024
 
-      ,bedrock_fill_width  : 512
-      ,bedrock_block_width : 512
+      ,bedrock_fill_width  : 1024
+      ,bedrock_block_width : 1024
 
       ,l2_banks            : 8
-      ,l2_data_width       : 512
+      ,l2_data_width       : 1024
       ,l2_sets             : 128
       ,l2_assoc            : 8
-      ,l2_block_width      : 512
-      ,l2_fill_width       : 512
+      ,l2_block_width      : 1024
+      ,l2_fill_width       : 1024
       ,l2_outstanding_reqs : 32
 
-      ,dma_noc_flit_width  : 512
-      ,coh_noc_flit_width  : 512
-      ,mem_noc_flit_width  : 512
+      ,dma_noc_flit_width  : 1024
+      ,coh_noc_flit_width  : 1024
+      ,mem_noc_flit_width  : 1024
 
       ,default : "inv"
       };

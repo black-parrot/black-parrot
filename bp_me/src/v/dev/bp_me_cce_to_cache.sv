@@ -33,12 +33,12 @@ module bp_me_cce_to_cache
 
    // BedRock Stream interface
    , input [mem_fwd_header_width_lp-1:0]                   mem_fwd_header_i
-   , input [l2_data_width_p-1:0]                           mem_fwd_data_i
+   , input [bedrock_fill_width_p-1:0]                      mem_fwd_data_i
    , input                                                 mem_fwd_v_i
    , output logic                                          mem_fwd_ready_and_o
 
    , output logic [mem_rev_header_width_lp-1:0]            mem_rev_header_o
-   , output logic [l2_data_width_p-1:0]                    mem_rev_data_o
+   , output logic [bedrock_fill_width_p-1:0]               mem_rev_data_o
    , output logic                                          mem_rev_v_o
    , input                                                 mem_rev_ready_and_i
 
@@ -85,7 +85,7 @@ module bp_me_cce_to_cache
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
      ,.fsm_data_width_p(l2_data_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.block_width_p(l2_block_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp | mem_rev_stream_mask_gp)
@@ -224,7 +224,7 @@ module bp_me_cce_to_cache
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.fsm_data_width_p(l2_data_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.block_width_p(l2_block_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp | mem_rev_stream_mask_gp)
@@ -333,10 +333,11 @@ module bp_me_cce_to_cache
                   e_bedrock_msg_size_2: cache_pkt.opcode = LH;
                   e_bedrock_msg_size_4: cache_pkt.opcode = LW;
                   e_bedrock_msg_size_8: cache_pkt.opcode = LD;
-                  e_bedrock_msg_size_16
-                  ,e_bedrock_msg_size_32
-                  ,e_bedrock_msg_size_64: cache_pkt.opcode = LM;
-                  default: cache_pkt.opcode = LB;
+                  //e_bedrock_msg_size_16
+                  //,e_bedrock_msg_size_32
+                  //,e_bedrock_msg_size_64
+                  //,e_bedrock_msg_size_128
+                  default: cache_pkt.opcode = LM;
                 endcase
               e_bedrock_mem_uc_wr
               ,e_bedrock_mem_wr
@@ -358,10 +359,11 @@ module bp_me_cce_to_cache
                       e_bedrock_amomaxu: cache_pkt.opcode = is_word_op ? AMOMAXU_W : AMOMAXU_D;
                       default : begin end
                     endcase
-                  e_bedrock_msg_size_16
-                  ,e_bedrock_msg_size_32
-                  ,e_bedrock_msg_size_64: cache_pkt.opcode = SM;
-                  default: cache_pkt.opcode = LB;
+                  //e_bedrock_msg_size_16
+                  //,e_bedrock_msg_size_32
+                  //,e_bedrock_msg_size_64
+                  //,e_bedrock_msg_size_128
+                  default: cache_pkt.opcode = SM;
                 endcase
               default: cache_pkt.opcode = LB;
             endcase
