@@ -70,8 +70,7 @@ module bp_nonsynth_if_verif
     $error("Error: BlackParrot is only tested with 64-bit dword width");
 
   // Front End
-  if (ras_idx_width_p > 1)
-    $error("Error: RAS > 1 is not supported");
+
 
   // Core or Features
   if (!muldiv_support_p[e_imul])
