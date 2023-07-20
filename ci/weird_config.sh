@@ -52,7 +52,8 @@ let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Build configs
-cmd_base="make -C bp_top/syn build.${SUFFIX} COSIM_P=1 DRAM=axi"
+# DWP 7/20, weird vcs bug hangs when building without dump
+cmd_base="make -C bp_top/syn build_dump.${SUFFIX} COSIM_P=1 DRAM=axi"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
 # Run the regression in parallel on each configuration

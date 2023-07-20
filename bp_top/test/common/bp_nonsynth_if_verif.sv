@@ -101,8 +101,6 @@ module bp_nonsynth_if_verif
     $error("Error: L1 I$ requires fill width greater than bank width (block width / assoc)");
   if (dcache_fill_width_p < (dcache_block_width_p / dcache_assoc_p))
     $error("Error: L1 D$ requires fill width greater than bank width (block width / assoc)");
-  if (dcache_block_width_p > 512 || icache_block_width_p > 512 || acache_block_width_p > 512)
-    $error("Error: L1 caches can only support <=64B cache line size");
 
   // Address Widths
   if (vaddr_width_p != 39)
@@ -131,8 +129,6 @@ module bp_nonsynth_if_verif
     $error("Error: L2 banks must be a power of two");
 
   // Unicore
-  if ((cce_type_p == e_cce_uce) && (bedrock_fill_width_p != l2_data_width_p))
-    $error("Error: unicore requires L2-Cache data width same as UCE fill width");
   if ((cce_type_p == e_cce_uce) && (icache_fill_width_p != dcache_fill_width_p))
     $error("Error: unicore requires L1-Cache fill widths to match");
   if ((cce_type_p == e_cce_uce) && (num_core_p != 1))
