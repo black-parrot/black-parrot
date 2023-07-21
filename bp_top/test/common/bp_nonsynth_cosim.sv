@@ -65,6 +65,8 @@ module bp_nonsynth_cosim
   import "DPI-C" context function void set_finish(int hartid);
   import "DPI-C" context function bit check_terminate();
 
+`ifndef XCELIUM
+
   wire posedge_clk =  clk_i;
   wire negedge_clk = ~clk_i;
 
@@ -314,6 +316,8 @@ module bp_nonsynth_cosim
         $display("COSIM_FAIL: commit fifo overrun, core %x", mhartid_i);
         $finish();
       end
+
+`endif
 
 endmodule
 

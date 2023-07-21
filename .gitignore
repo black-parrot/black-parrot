@@ -9,3 +9,4 @@ install/
 regress_logs/
 stack.info.*
 *.swp
+.simvision/

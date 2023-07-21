@@ -22,6 +22,8 @@ module bp_nonsynth_pc_profiler
     , input [commit_pkt_width_lp-1:0] commit_pkt
     );
 
+`ifndef XCELIUM
+
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_commit_pkt_s commit_pkt_cast_i;
   assign commit_pkt_cast_i = commit_pkt;
@@ -55,6 +57,7 @@ module bp_nonsynth_pc_profiler
   final
    foreach (histogram[key])
      $fwrite(file, "[%x] %x\n", key, histogram[key]);
+`endif
 
 endmodule
 
