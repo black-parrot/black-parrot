@@ -134,6 +134,7 @@ module bp_nonsynth_core_profiler
     , input [commit_pkt_width_lp-1:0] commit_pkt_i
     );
 
+`ifndef XCELIUM
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   localparam num_stages_p = 7;
@@ -316,6 +317,7 @@ module bp_nonsynth_core_profiler
     end
   `endif
   // synopsys translate_on
+`endif
 
 endmodule
 

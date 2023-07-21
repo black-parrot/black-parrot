@@ -23,6 +23,8 @@ module bp_nonsynth_branch_profiler
     , input                       commit_v_i
     );
 
+`ifndef XCELIUM
+
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
   bp_fe_cmd_s fe_cmd;
@@ -138,6 +140,8 @@ module bp_nonsynth_branch_profiler
       foreach (branch_histo[key])
         $fwrite(file, "[%x] %d %d %d\n", key, branch_histo[key], miss_histo[key], (miss_histo[key]*100)/branch_histo[key]);
     end
+
+`endif
 
 endmodule
 
