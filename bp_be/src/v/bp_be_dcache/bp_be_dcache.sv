@@ -127,6 +127,7 @@ module bp_be_dcache
    , input                                           ptag_dram_i
    , input [dword_width_gp-1:0]                      st_data_i
    , input                                           flush_i
+   , output logic                                    tv_we_o
 
    // Cycle 2: "Tag Verify"
    // Data (or miss result) comes out of the cache
@@ -138,7 +139,6 @@ module bp_be_dcache
    , output logic                                    ret_o
    , output logic                                    late_o
    , output logic                                    store_o
-   , output logic                                    req_o
 
    // Cache Engine Interface
    // This is considered the "slow path", handling uncached requests
@@ -317,10 +317,11 @@ module bp_be_dcache
      );
 
   // Save stage information
-  bsg_dff
+  bsg_dff_en
    #(.width_p(vaddr_width_p+$bits(bp_be_dcache_decode_s)))
    tl_stage_reg
     (.clk_i(clk_i)
+     ,.en_i(tl_we)
      ,.data_i({vaddr, decode_lo})
      ,.data_o({vaddr_tl_r, decode_tl_r})
      );
@@ -378,9 +379,10 @@ module bp_be_dcache
    v_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i(tv_we | critical_recv)
+     ,.data_i(tv_we | critical_recv | engine_hazard)
      ,.data_o(v_tv_r)
      );
+  assign tv_we_o = tv_we;
 
   logic [assoc_p-1:0] way_v_tv_n, store_hit_tv_n, load_hit_tv_n;
   logic [block_width_p-1:0] ld_data_tv_n;
@@ -403,10 +405,11 @@ module bp_be_dcache
      );
 
   wire snoop_tv_n = critical_recv;
-  bsg_dff
+  bsg_dff_en
    #(.width_p(1+3*assoc_p+paddr_width_p+block_width_p+dword_width_gp+assoc_p+1+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
     (.clk_i(clk_i)
+     ,.en_i(tv_we | critical_recv)
      ,.data_i({snoop_tv_n, way_v_tv_n, store_hit_tv_n, load_hit_tv_n, paddr_tv_n, ld_data_tv_n
                ,st_data_tv_n, bank_sel_one_hot_tv_n, uncached_op_tv_n, decode_tv_n})
      ,.data_o({snoop_tv_r, way_v_tv_r, store_hit_v_tv_r, load_hit_v_tv_r, paddr_tv_r, ld_data_tv_r
@@ -526,7 +529,6 @@ module bp_be_dcache
   assign late_o    = snoop_tv_r;
   assign ret_o     = decode_tv_r.ret_op;
   assign store_o   = decode_tv_r.store_op;
-  assign req_o     = cache_req_yumi_i;
 
   ///////////////////////////
   // Stat Mem Storage

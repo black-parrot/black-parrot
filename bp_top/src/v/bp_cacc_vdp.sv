@@ -150,6 +150,7 @@ module bp_cacc_vdp
      ,.ptag_uncached_i(1'b0)
      ,.ptag_dram_i(1'b1)
      ,.st_data_i(acache_st_data_r)
+     ,.tv_we_o()
 
      ,.data_o(acache_data_lo)
      ,.v_o(acache_v_lo)
@@ -160,7 +161,6 @@ module bp_cacc_vdp
      ,.ordered_o()
      ,.late_o()
      ,.rd_addr_o()
-     ,.req_o()
 
      // D$-LCE Interface
      ,.cache_req_o(acache_req_lo)
