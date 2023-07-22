@@ -142,66 +142,66 @@ module bp_be_detector
         end
 
       // Detect scoreboard hazards
-      irs1_sb_raw_haz_v = (issue_pkt_cast_i.irs1_v & irs_match_lo[0]);
-      irs2_sb_raw_haz_v = (issue_pkt_cast_i.irs2_v & irs_match_lo[1]);
-      ird_sb_waw_haz_v = (issue_pkt_cast_i.iwb_v & ird_match_lo);
+      irs1_sb_raw_haz_v = (issue_pkt_cast_i.decode.irs1_r_v & irs_match_lo[0]);
+      irs2_sb_raw_haz_v = (issue_pkt_cast_i.decode.irs2_r_v & irs_match_lo[1]);
+      ird_sb_waw_haz_v = (issue_pkt_cast_i.decode.irf_w_v & ird_match_lo);
 
-      frs1_sb_raw_haz_v = (issue_pkt_cast_i.frs1_v & frs_match_lo[0]);
-      frs2_sb_raw_haz_v = (issue_pkt_cast_i.frs2_v & frs_match_lo[1]);
-      frs3_sb_raw_haz_v = (issue_pkt_cast_i.frs3_v & frs_match_lo[2]);
+      frs1_sb_raw_haz_v = (issue_pkt_cast_i.decode.frs1_r_v & frs_match_lo[0]);
+      frs2_sb_raw_haz_v = (issue_pkt_cast_i.decode.frs2_r_v & frs_match_lo[1]);
+      frs3_sb_raw_haz_v = (issue_pkt_cast_i.decode.frs3_r_v & frs_match_lo[2]);
 
-      frd_sb_waw_haz_v = (issue_pkt_cast_i.fwb_v & frd_match_lo);
+      frd_sb_waw_haz_v = (issue_pkt_cast_i.decode.frf_w_v & frd_match_lo);
 
       // Detect integer and float data hazards for EX1
-      irs1_data_haz_v[0] = (issue_pkt_cast_i.irs1_v & rs1_match_vector[0])
+      irs1_data_haz_v[0] = (issue_pkt_cast_i.decode.irs1_r_v & rs1_match_vector[0])
                            & (dep_status_r[0].aux_iwb_v | dep_status_r[0].mul_iwb_v | dep_status_r[0].emem_iwb_v | dep_status_r[0].fmem_iwb_v);
 
-      irs2_data_haz_v[0] = (issue_pkt_cast_i.irs2_v & rs2_match_vector[0])
+      irs2_data_haz_v[0] = (issue_pkt_cast_i.decode.irs2_r_v & rs2_match_vector[0])
                            & (dep_status_r[0].aux_iwb_v | dep_status_r[0].mul_iwb_v | dep_status_r[0].emem_iwb_v | dep_status_r[0].fmem_iwb_v);
 
-      frs1_data_haz_v[0] = (issue_pkt_cast_i.frs1_v & rs1_match_vector[0])
+      frs1_data_haz_v[0] = (issue_pkt_cast_i.decode.frs1_r_v & rs1_match_vector[0])
                            & (dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v);
 
-      frs2_data_haz_v[0] = (issue_pkt_cast_i.frs2_v & rs2_match_vector[0])
+      frs2_data_haz_v[0] = (issue_pkt_cast_i.decode.frs2_r_v & rs2_match_vector[0])
                            & (dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v);
 
-      frs3_data_haz_v[0] = (issue_pkt_cast_i.frs3_v & rs3_match_vector[0])
+      frs3_data_haz_v[0] = (issue_pkt_cast_i.decode.frs3_r_v & rs3_match_vector[0])
                            & (dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v);
 
       // Detect integer and float data hazards for EX2
-      irs1_data_haz_v[1] = (issue_pkt_cast_i.irs1_v & rs1_match_vector[1])
+      irs1_data_haz_v[1] = (issue_pkt_cast_i.decode.irs1_r_v & rs1_match_vector[1])
                            & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
 
-      irs2_data_haz_v[1] = (issue_pkt_cast_i.irs2_v & rs2_match_vector[1])
+      irs2_data_haz_v[1] = (issue_pkt_cast_i.decode.irs2_r_v & rs2_match_vector[1])
                            & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v);
 
-      frs1_data_haz_v[1] = (issue_pkt_cast_i.frs1_v & rs1_match_vector[1])
+      frs1_data_haz_v[1] = (issue_pkt_cast_i.decode.frs1_r_v & rs1_match_vector[1])
                            & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
-      frs2_data_haz_v[1] = (issue_pkt_cast_i.frs2_v & rs2_match_vector[1])
+      frs2_data_haz_v[1] = (issue_pkt_cast_i.decode.frs2_r_v & rs2_match_vector[1])
                            & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
-      frs3_data_haz_v[1] = (issue_pkt_cast_i.frs3_v & rs3_match_vector[1])
+      frs3_data_haz_v[1] = (issue_pkt_cast_i.decode.frs3_r_v & rs3_match_vector[1])
                            & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v);
 
       irs1_data_haz_v[2] = '0;
 
       irs2_data_haz_v[2] = '0;
 
-      frs1_data_haz_v[2] = (issue_pkt_cast_i.frs1_v & rs1_match_vector[2])
+      frs1_data_haz_v[2] = (issue_pkt_cast_i.decode.frs1_r_v & rs1_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
-      frs2_data_haz_v[2] = (issue_pkt_cast_i.frs2_v & rs2_match_vector[2])
+      frs2_data_haz_v[2] = (issue_pkt_cast_i.decode.frs2_r_v & rs2_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
-      frs3_data_haz_v[2] = (issue_pkt_cast_i.frs3_v & rs3_match_vector[2])
+      frs3_data_haz_v[2] = (issue_pkt_cast_i.decode.frs3_r_v & rs3_match_vector[2])
                            & (dep_status_r[2].fma_fwb_v);
 
-      fence_haz_v        = issue_pkt_cast_i.fence_v & ~mem_ordered_i;
+      fence_haz_v        = issue_pkt_cast_i.decode.fence_v & ~mem_ordered_i;
       cmd_haz_v          = cmd_full_i;
 
       // TODO: Pessimistic, could have a separate fflags r/w_v
-      fflags_haz_v = issue_pkt_cast_i.csr_v
+      fflags_haz_v = (issue_pkt_cast_i.decode.csr_r_v | issue_pkt_cast_i.decode.csr_w_v)
                      & ((dep_status_r[0].fflags_w_v)
                         | (dep_status_r[1].fflags_w_v)
                         | (dep_status_r[2].fflags_w_v)
@@ -213,13 +213,13 @@ module bp_be_detector
       //   executing instructions on trap, and only pause on dependency in
       //   EX4, rather than any instruction. Most likely not a huge
       //   performance problem at the moment.
-      long_haz_v = issue_pkt_cast_i.long_v
+      long_haz_v = issue_pkt_cast_i.decode.pipe_long_v
                    & ((dep_status_r[0].v)
                       | (dep_status_r[1].v)
                       | (dep_status_r[2].v)
                       );
 
-      csr_haz_v     = issue_pkt_cast_i.csr_v
+      csr_haz_v     = (issue_pkt_cast_i.decode.csr_r_v | issue_pkt_cast_i.decode.csr_w_v)
                       & ((dep_status_r[0].v)
                          | (dep_status_r[1].v)
                          | (dep_status_r[2].v)
@@ -242,9 +242,10 @@ module bp_be_detector
       // Combine all structural hazard information
       struct_haz_v = ptw_busy_i
                      | cmd_haz_v
-                     | (mem_busy_i & issue_pkt_cast_i.mem_v)
-                     | (fdiv_busy_i & issue_pkt_cast_i.long_v)
-                     | (idiv_busy_i & issue_pkt_cast_i.long_v);
+                     | (mem_busy_i & issue_pkt_cast_i.decode.pipe_mem_early_v)
+                     | (mem_busy_i & issue_pkt_cast_i.decode.pipe_mem_final_v)
+                     | (fdiv_busy_i & issue_pkt_cast_i.decode.pipe_long_v)
+                     | (idiv_busy_i & issue_pkt_cast_i.decode.pipe_long_v);
     end
 
   // Dispatch if we have a valid issue. Don't stall on data hazards for exceptions
