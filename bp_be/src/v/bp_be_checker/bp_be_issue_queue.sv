@@ -9,6 +9,7 @@ module bp_be_issue_queue
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
+   , localparam decode_info_width_lp = `bp_be_decode_info_width
    , localparam preissue_pkt_width_lp = `bp_be_preissue_pkt_width
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    )
@@ -28,6 +29,7 @@ module bp_be_issue_queue
    , input                                     fe_queue_v_i
    , output logic                              fe_queue_ready_and_o
 
+   , input [decode_info_width_lp-1:0]          decode_info_i
    , output logic [preissue_pkt_width_lp-1:0]  preissue_pkt_o
    , output logic [issue_pkt_width_lp-1:0]     issue_pkt_o
    );
@@ -248,73 +250,66 @@ module bp_be_issue_queue
   wire upper = compressed_support_p & rptr_r[0];
   wire [vaddr_width_p-1:0] issue_pc = upper ? (fe_queue_lo.pc + 2'b10) : fe_queue_lo.pc;
 
+  // Decode the dispatched instruction
+  bp_be_decode_s decoded_instr_lo;
+  logic [dword_width_gp-1:0] decoded_imm_lo;
+  logic illegal_instr_lo;
+  logic ecall_m_lo, ecall_s_lo, ecall_u_lo;
+  logic ebreak_lo, dbreak_lo;
+  logic dret_lo, mret_lo, sret_lo;
+  logic wfi_lo, sfence_vma_lo;
+  bp_be_instr_decoder
+   #(.bp_params_p(bp_params_p))
+   instr_decoder
+    (.preissue_pkt_i(preissue_pkt_r)
+     ,.decode_info_i(decode_info_i)
+
+     ,.decode_o(decoded_instr_lo)
+     ,.imm_o(decoded_imm_lo)
+
+     ,.illegal_instr_o(illegal_instr_lo)
+     ,.ecall_m_o(ecall_m_lo)
+     ,.ecall_s_o(ecall_s_lo)
+     ,.ecall_u_o(ecall_u_lo)
+     ,.ebreak_o(ebreak_lo)
+     ,.dbreak_o(dbreak_lo)
+     ,.dret_o(dret_lo)
+     ,.mret_o(mret_lo)
+     ,.sret_o(sret_lo)
+     ,.wfi_o(wfi_lo)
+     ,.sfence_vma_o(sfence_vma_lo)
+     );
+
   wire issue_pkt_v = ~empty & ~inject & ~suppress;
+  wire issue_instr_v = issue_pkt_cast_o.instr_v;
   always_comb
     begin
       issue_pkt_cast_o = '0;
 
       issue_pkt_cast_o.v                    = issue_pkt_v;
-      issue_pkt_cast_o.instr_v              = issue_pkt_v & (fe_queue_lo.msg_type == e_instr_fetch);
-      issue_pkt_cast_o.itlb_miss_v          = issue_pkt_v & (fe_queue_lo.msg_type == e_itlb_miss);
-      issue_pkt_cast_o.instr_access_fault_v = issue_pkt_v & (fe_queue_lo.msg_type == e_instr_access_fault);
-      issue_pkt_cast_o.instr_page_fault_v   = issue_pkt_v & (fe_queue_lo.msg_type == e_instr_page_fault);
-      issue_pkt_cast_o.icache_miss_v        = issue_pkt_v & (fe_queue_lo.msg_type == e_icache_miss);
+      issue_pkt_cast_o.instr_v              = (fe_queue_lo.msg_type == e_instr_fetch);
+      issue_pkt_cast_o.itlb_miss            = (fe_queue_lo.msg_type == e_itlb_miss);
+      issue_pkt_cast_o.instr_access_fault   = (fe_queue_lo.msg_type == e_instr_access_fault);
+      issue_pkt_cast_o.instr_page_fault     = (fe_queue_lo.msg_type == e_instr_page_fault);
+      issue_pkt_cast_o.icache_miss          = (fe_queue_lo.msg_type == e_icache_miss);
+      issue_pkt_cast_o.illegal_instr        = illegal_instr_lo;
+      issue_pkt_cast_o.ecall_m              = ecall_m_lo;
+      issue_pkt_cast_o.ecall_s              = ecall_s_lo;
+      issue_pkt_cast_o.ecall_u              = ecall_u_lo;
+      issue_pkt_cast_o.ebreak               = ebreak_lo;
+      issue_pkt_cast_o.dbreak               = dbreak_lo;
+      issue_pkt_cast_o.dret                 = dret_lo;
+      issue_pkt_cast_o.mret                 = mret_lo;
+      issue_pkt_cast_o.sret                 = sret_lo;
+      issue_pkt_cast_o.wfi                  = wfi_lo;
+      issue_pkt_cast_o.sfence_vma           = sfence_vma_lo;
 
       issue_pkt_cast_o.pc                   = issue_pc;
       issue_pkt_cast_o.instr                = issue_instr;
-      issue_pkt_cast_o.compressed           = issue_pkt_cast_o.instr_v & preissue_pkt_r.compressed;
       issue_pkt_cast_o.partial              = fe_queue_lo.partial;
+      issue_pkt_cast_o.decode               = decoded_instr_lo;
+      issue_pkt_cast_o.imm                  = decoded_imm_lo;
       issue_pkt_cast_o.branch_metadata_fwd  = fe_queue_lo.branch_metadata_fwd;
-
-      issue_pkt_cast_o.irs1_v               = issue_pkt_cast_o.instr_v & preissue_pkt_r.irs1_v;
-      issue_pkt_cast_o.irs2_v               = issue_pkt_cast_o.instr_v & preissue_pkt_r.irs2_v;
-      issue_pkt_cast_o.frs1_v               = issue_pkt_cast_o.instr_v & preissue_pkt_r.frs1_v;
-      issue_pkt_cast_o.frs2_v               = issue_pkt_cast_o.instr_v & preissue_pkt_r.frs2_v;
-      issue_pkt_cast_o.frs3_v               = issue_pkt_cast_o.instr_v & preissue_pkt_r.frs3_v;
-
-      issue_pkt_cast_o.csr_v   = issue_pkt_cast_o.instr_v
-        & issue_instr.opcode inside {`RV64_SYSTEM_OP};
-      issue_pkt_cast_o.mem_v   = issue_pkt_cast_o.instr_v
-        & issue_instr.opcode inside {`RV64_FLOAD_OP, `RV64_FSTORE_OP
-                                     ,`RV64_LOAD_OP, `RV64_STORE_OP
-                                     ,`RV64_AMO_OP, `RV64_SYSTEM_OP
-                                     };
-      issue_pkt_cast_o.fence_v = issue_pkt_cast_o.instr_v
-        & issue_instr inside {`RV64_FENCE, `RV64_FENCE_I, `RV64_SFENCE_VMA};
-      issue_pkt_cast_o.long_v  = issue_pkt_cast_o.instr_v
-        & issue_instr inside {`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
-                              ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
-                              ,`RV64_FDIV_S, `RV64_FDIV_D, `RV64_FSQRT_S, `RV64_FSQRT_D
-                              ,`RV64_MULH, `RV64_MULHU, `RV64_MULHSU
-                              };
-
-      // Decide whether to write to regfile (used for stalls)
-      unique casez (issue_instr.opcode)
-        `RV64_LUI_OP, `RV64_AUIPC_OP, `RV64_JAL_OP, `RV64_JALR_OP
-        ,`RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_OP, `RV64_SYSTEM_OP
-        ,`RV64_OP_IMM_32_OP, `RV64_OP_32_OP, `RV64_AMO_OP:
-          begin
-            issue_pkt_cast_o.iwb_v = issue_pkt_v & (issue_instr.rd_addr != '0);
-          end
-
-        `RV64_FLOAD_OP, `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FNMADD_OP:
-          begin
-            issue_pkt_cast_o.fwb_v = issue_pkt_v;
-          end
-
-        `RV64_FP_OP:
-          unique casez (issue_instr)
-            `RV64_FCVT_WS, `RV64_FCVT_LS, `RV64_FCVT_WUS, `RV64_FCVT_LUS,
-            `RV64_FCVT_WD, `RV64_FCVT_LD, `RV64_FCVT_WUD, `RV64_FCVT_LUD,
-            `RV64_FMV_XW, `RV64_FMV_XD, `RV64_FLT_S, `RV64_FLT_D,
-            `RV64_FLE_S, `RV64_FLE_D, `RV64_FCLASS_S, `RV64_FCLASS_D:
-              begin
-                issue_pkt_cast_o.iwb_v = issue_pkt_v & (issue_instr.rd_addr != '0);
-              end
-            default: issue_pkt_cast_o.fwb_v = issue_pkt_v;
-          endcase
-        default: begin end
-      endcase
     end
 
 endmodule

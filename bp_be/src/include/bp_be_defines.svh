@@ -33,26 +33,29 @@
     {                                                                                              \
       logic                                    v;                                                  \
       logic                                    instr_v;                                            \
-      logic                                    itlb_miss_v;                                        \
-      logic                                    instr_access_fault_v;                               \
-      logic                                    instr_page_fault_v;                                 \
-      logic                                    icache_miss_v;                                      \
+      logic                                    itlb_miss;                                          \
+      logic                                    instr_access_fault;                                 \
+      logic                                    instr_page_fault;                                   \
+      logic                                    icache_miss;                                        \
+      logic                                    illegal_instr;                                      \
+      logic                                    ecall_m;                                            \
+      logic                                    ecall_s;                                            \
+      logic                                    ecall_u;                                            \
+      logic                                    ebreak;                                             \
+      logic                                    dbreak;                                             \
+      logic                                    dret;                                               \
+      logic                                    mret;                                               \
+      logic                                    sret;                                               \
+      logic                                    wfi;                                                \
+      logic                                    sfence_vma;                                         \
+                                                                                                   \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
-      logic                                    partial;                                            \
       logic                                    compressed;                                         \
+      logic                                    partial;                                            \
+      bp_be_decode_s                           decode;                                             \
+      logic [dpath_width_gp-1:0]               imm;                                                \
       logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                \
-      logic                                    csr_v;                                              \
-      logic                                    mem_v;                                              \
-      logic                                    fence_v;                                            \
-      logic                                    long_v;                                             \
-      logic                                    irs1_v;                                             \
-      logic                                    irs2_v;                                             \
-      logic                                    frs1_v;                                             \
-      logic                                    frs2_v;                                             \
-      logic                                    frs3_v;                                             \
-      logic                                    iwb_v;                                              \
-      logic                                    fwb_v;                                              \
     }  bp_be_issue_pkt_s;                                                                          \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -60,18 +63,13 @@
       logic                                    v;                                                  \
       logic                                    queue_v;                                            \
       logic                                    instr_v;                                            \
-      logic                                    compressed;                                         \
-      logic                                    partial;                                            \
+      logic                                    ispec_v;                                            \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
+      logic                                    compressed;                                         \
+      logic                                    partial;                                            \
       bp_be_decode_s                           decode;                                             \
                                                                                                    \
-      logic                                    irs1_v;                                             \
-      logic                                    frs1_v;                                             \
-      logic                                    irs2_v;                                             \
-      logic                                    frs2_v;                                             \
-      logic                                    irs3_v;                                             \
-      logic                                    frs3_v;                                             \
       logic [dpath_width_gp-1:0]               rs1;                                                \
       logic [dpath_width_gp-1:0]               rs2;                                                \
       logic [dpath_width_gp-1:0]               imm;                                                \
@@ -82,18 +80,21 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic                              v;                                                        \
-      logic                              fflags_w_v;                                               \
-      logic                              ctl_iwb_v;                                                \
       logic                              aux_iwb_v;                                                \
       logic                              aux_fwb_v;                                                \
-      logic                              int_iwb_v;                                                \
-      logic                              int_fwb_v;                                                \
+      logic                              eint_iwb_v;                                               \
+      logic                              eint_fwb_v;                                               \
+      logic                              fint_iwb_v;                                               \
+      logic                              fint_fwb_v;                                               \
       logic                              emem_iwb_v;                                               \
       logic                              emem_fwb_v;                                               \
       logic                              fmem_iwb_v;                                               \
       logic                              fmem_fwb_v;                                               \
       logic                              mul_iwb_v;                                                \
+      logic                              mul_fwb_v;                                                \
+      logic                              fma_iwb_v;                                                \
       logic                              fma_fwb_v;                                                \
+      logic                              fflags_w_v;                                               \
                                                                                                    \
       logic [rv64_reg_addr_width_gp-1:0] rd_addr;                                                  \
     }  bp_be_dep_status_s;                                                                         \
@@ -103,6 +104,7 @@
       logic                     v;                                                                 \
       logic                     branch;                                                            \
       logic                     btaken;                                                            \
+      logic                     bspec;                                                             \
       logic [vaddr_width_p-1:0] npc;                                                               \
     }  bp_be_branch_pkt_s;                                                                         \
                                                                                                    \
@@ -236,13 +238,13 @@
     (6+rv64_instr_width_gp)
 
   `define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-    (7+vaddr_width_mp+instr_width_gp+branch_metadata_fwd_width_mp+12)
+    (7+vaddr_width_mp+instr_width_gp+$bits(bp_be_decode_s)+dpath_width_gp+branch_metadata_fwd_width_mp+12)
 
   `define bp_be_dispatch_pkt_width(vaddr_width_mp) \
-    (3                                                                                             \
+    (4                                                                                             \
      + vaddr_width_mp                                                                              \
      + rv64_instr_width_gp                                                                         \
-     + 7                                                                                           \
+     + 1                                                                                           \
      + 3 * dpath_width_gp                                                                          \
      + $bits(bp_be_decode_s)                                                                       \
      + 1                                                                                           \
@@ -251,10 +253,10 @@
      )
 
   `define bp_be_dep_status_width \
-    (13 + rv64_reg_addr_width_gp)
+    (15 + rv64_reg_addr_width_gp)
 
   `define bp_be_branch_pkt_width(vaddr_width_mp) \
-    (3 + vaddr_width_mp)
+    (4 + vaddr_width_mp)
 
   `define bp_be_retire_pkt_width(vaddr_width_mp) \
     (4 + dpath_width_gp + 2*vaddr_width_mp + instr_width_gp + 1 + $bits(bp_be_exception_s) + $bits(bp_be_special_s))

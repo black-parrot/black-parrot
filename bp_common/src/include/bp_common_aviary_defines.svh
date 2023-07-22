@@ -107,6 +107,7 @@
                                                                                                    \
     , localparam fe_queue_fifo_els_p  = proc_param_lp.fe_queue_fifo_els                            \
     , localparam fe_cmd_fifo_els_p    = proc_param_lp.fe_cmd_fifo_els                              \
+    , localparam integer_support_p    = proc_param_lp.integer_support                              \
     , localparam muldiv_support_p     = proc_param_lp.muldiv_support                               \
     , localparam fpu_support_p        = proc_param_lp.fpu_support                                  \
     , localparam compressed_support_p = proc_param_lp.compressed_support                           \
@@ -206,6 +207,7 @@
                                                                                                    \
           ,`bp_aviary_parameter_override(fe_queue_fifo_els, override_cfg_mp, default_cfg_mp)       \
           ,`bp_aviary_parameter_override(fe_cmd_fifo_els, override_cfg_mp, default_cfg_mp)         \
+          ,`bp_aviary_parameter_override(integer_support, override_cfg_mp, default_cfg_mp)         \
           ,`bp_aviary_parameter_override(muldiv_support, override_cfg_mp, default_cfg_mp)          \
           ,`bp_aviary_parameter_override(fpu_support, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(compressed_support, override_cfg_mp, default_cfg_mp)      \

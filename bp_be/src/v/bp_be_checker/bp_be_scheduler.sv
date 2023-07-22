@@ -41,6 +41,7 @@ module bp_be_scheduler
    , input [decode_info_width_lp-1:0]         decode_info_i
    , input                                    dispatch_v_i
    , input                                    interrupt_v_i
+   , input                                    ispec_v_i
 
    // Fetch interface
    , input [fe_queue_width_lp-1:0]            fe_queue_i
@@ -96,6 +97,7 @@ module bp_be_scheduler
      ,.fe_queue_v_i(fe_queue_v_i)
      ,.fe_queue_ready_and_o(fe_queue_ready_and_o)
 
+     ,.decode_info_i(decode_info_i)
      ,.preissue_pkt_o(preissue_pkt)
      ,.issue_pkt_o(issue_pkt_cast_o)
      );
@@ -134,36 +136,6 @@ module bp_be_scheduler
      ,.rs_data_o({frf_rs3, frf_rs2, frf_rs1})
      );
 
-  // Decode the dispatched instruction
-  bp_be_decode_s decoded_instr_lo;
-  logic [dword_width_gp-1:0] decoded_imm_lo;
-  logic illegal_instr_lo;
-  logic ecall_m_lo, ecall_s_lo, ecall_u_lo;
-  logic ebreak_lo, dbreak_lo;
-  logic dret_lo, mret_lo, sret_lo;
-  logic wfi_lo, sfence_vma_lo;
-  bp_be_instr_decoder
-   #(.bp_params_p(bp_params_p))
-   instr_decoder
-    (.instr_i(issue_pkt_cast_o.instr)
-     ,.decode_info_i(decode_info_i)
-
-     ,.decode_o(decoded_instr_lo)
-     ,.imm_o(decoded_imm_lo)
-
-     ,.illegal_instr_o(illegal_instr_lo)
-     ,.ecall_m_o(ecall_m_lo)
-     ,.ecall_s_o(ecall_s_lo)
-     ,.ecall_u_o(ecall_u_lo)
-     ,.ebreak_o(ebreak_lo)
-     ,.dbreak_o(dbreak_lo)
-     ,.dret_o(dret_lo)
-     ,.mret_o(mret_lo)
-     ,.sret_o(sret_lo)
-     ,.wfi_o(wfi_lo)
-     ,.sfence_vma_o(sfence_vma_lo)
-     );
-
   // Prioritization is:
   //   1) ptw_fill_pkt, since there is no backpressure
   //   3) unfreeze request
@@ -198,21 +170,16 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.v          = fe_queue_read_li || be_exc_not_instr_li;
       dispatch_pkt_cast_o.queue_v    = fe_queue_read_li;
       dispatch_pkt_cast_o.instr_v    = fe_instr_not_exc_li;
-      dispatch_pkt_cast_o.partial    = be_exc_not_instr_li ? be_partial : fe_partial;
-      dispatch_pkt_cast_o.compressed = issue_pkt_cast_o.compressed;
-      dispatch_pkt_cast_o.pc         = fe_queue_read_li ? issue_pkt_cast_o.pc : expected_npc_i;
+      dispatch_pkt_cast_o.ispec_v    = ispec_v_i;
+      dispatch_pkt_cast_o.pc         = expected_npc_i;
       dispatch_pkt_cast_o.instr      = issue_pkt_cast_o.instr;
+      dispatch_pkt_cast_o.compressed = issue_pkt_cast_o.compressed;
+      dispatch_pkt_cast_o.partial    = be_exc_not_instr_li ? be_partial : fe_partial;
       // If register injection is critical, can be done after bypass
-      dispatch_pkt_cast_o.frs1_v     = issue_pkt_cast_o.frs1_v;
-      dispatch_pkt_cast_o.irs1_v     = issue_pkt_cast_o.irs1_v;
-      dispatch_pkt_cast_o.rs1        = be_exc_not_instr_li ? be_exc_vaddr_li : fe_exc_not_instr_li ? fe_exc_vaddr_li : issue_pkt_cast_o.frs1_v ? frf_rs1 : irf_rs1;
-      dispatch_pkt_cast_o.frs2_v     = issue_pkt_cast_o.frs2_v;
-      dispatch_pkt_cast_o.irs2_v     = issue_pkt_cast_o.irs2_v;
-      dispatch_pkt_cast_o.rs2        = be_exc_not_instr_li ? be_exc_data_li  : fe_exc_not_instr_li ? '0 : issue_pkt_cast_o.frs2_v ? frf_rs2 : irf_rs2;
-      dispatch_pkt_cast_o.frs3_v     = issue_pkt_cast_o.frs3_v;
-      dispatch_pkt_cast_o.irs3_v     = 1'b0;
-      dispatch_pkt_cast_o.imm        = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt_cast_o.frs3_v ? frf_rs3 : decoded_imm_lo;
-      dispatch_pkt_cast_o.decode     = (fe_exc_not_instr_li | be_exc_not_instr_li | illegal_instr_lo) ? '0 : decoded_instr_lo;
+      dispatch_pkt_cast_o.rs1        = be_exc_not_instr_li ? be_exc_vaddr_li : fe_exc_not_instr_li ? fe_exc_vaddr_li : issue_pkt_cast_o.decode.frs1_r_v ? frf_rs1 : irf_rs1;
+      dispatch_pkt_cast_o.rs2        = be_exc_not_instr_li ? be_exc_data_li  : fe_exc_not_instr_li ? '0 : issue_pkt_cast_o.decode.frs2_r_v ? frf_rs2 : irf_rs2;
+      dispatch_pkt_cast_o.imm        = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt_cast_o.decode.frs3_r_v ? frf_rs3 : issue_pkt_cast_o.imm;
+      dispatch_pkt_cast_o.decode     = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt_cast_o.decode;
 
       dispatch_pkt_cast_o.exception.instr_page_fault |= be_exc_not_instr_li & ptw_instr_page_fault_v;
       dispatch_pkt_cast_o.exception.load_page_fault  |= be_exc_not_instr_li & ptw_load_page_fault_v;
@@ -222,22 +189,22 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.exception.unfreeze         |= be_exc_not_instr_li & unfreeze_v;
       dispatch_pkt_cast_o.exception._interrupt       |= be_exc_not_instr_li & interrupt_v;
 
-      dispatch_pkt_cast_o.exception.instr_access_fault |= fe_exc_not_instr_li & issue_pkt_cast_o.instr_access_fault_v;
-      dispatch_pkt_cast_o.exception.instr_page_fault   |= fe_exc_not_instr_li & issue_pkt_cast_o.instr_page_fault_v;
-      dispatch_pkt_cast_o.exception.itlb_miss          |= fe_exc_not_instr_li & issue_pkt_cast_o.itlb_miss_v;
-      dispatch_pkt_cast_o.exception.icache_miss        |= fe_exc_not_instr_li & issue_pkt_cast_o.icache_miss_v;
+      dispatch_pkt_cast_o.exception.instr_access_fault |= fe_exc_not_instr_li & issue_pkt_cast_o.instr_access_fault;
+      dispatch_pkt_cast_o.exception.instr_page_fault   |= fe_exc_not_instr_li & issue_pkt_cast_o.instr_page_fault;
+      dispatch_pkt_cast_o.exception.itlb_miss          |= fe_exc_not_instr_li & issue_pkt_cast_o.itlb_miss;
+      dispatch_pkt_cast_o.exception.icache_miss        |= fe_exc_not_instr_li & issue_pkt_cast_o.icache_miss;
 
-      dispatch_pkt_cast_o.exception.illegal_instr |= fe_instr_not_exc_li & illegal_instr_lo;
-      dispatch_pkt_cast_o.exception.ecall_m       |= fe_instr_not_exc_li & ecall_m_lo;
-      dispatch_pkt_cast_o.exception.ecall_s       |= fe_instr_not_exc_li & ecall_s_lo;
-      dispatch_pkt_cast_o.exception.ecall_u       |= fe_instr_not_exc_li & ecall_u_lo;
-      dispatch_pkt_cast_o.exception.ebreak        |= fe_instr_not_exc_li & ebreak_lo;
-      dispatch_pkt_cast_o.special.dbreak          |= fe_instr_not_exc_li & dbreak_lo;
-      dispatch_pkt_cast_o.special.dret            |= fe_instr_not_exc_li & dret_lo;
-      dispatch_pkt_cast_o.special.mret            |= fe_instr_not_exc_li & mret_lo;
-      dispatch_pkt_cast_o.special.sret            |= fe_instr_not_exc_li & sret_lo;
-      dispatch_pkt_cast_o.special.wfi             |= fe_instr_not_exc_li & wfi_lo;
-      dispatch_pkt_cast_o.special.sfence_vma      |= fe_instr_not_exc_li & sfence_vma_lo;
+      dispatch_pkt_cast_o.exception.illegal_instr |= fe_instr_not_exc_li & issue_pkt_cast_o.illegal_instr;
+      dispatch_pkt_cast_o.exception.ecall_m       |= fe_instr_not_exc_li & issue_pkt_cast_o.ecall_m;
+      dispatch_pkt_cast_o.exception.ecall_s       |= fe_instr_not_exc_li & issue_pkt_cast_o.ecall_s;
+      dispatch_pkt_cast_o.exception.ecall_u       |= fe_instr_not_exc_li & issue_pkt_cast_o.ecall_u;
+      dispatch_pkt_cast_o.exception.ebreak        |= fe_instr_not_exc_li & issue_pkt_cast_o.ebreak;
+      dispatch_pkt_cast_o.special.dbreak          |= fe_instr_not_exc_li & issue_pkt_cast_o.dbreak;
+      dispatch_pkt_cast_o.special.dret            |= fe_instr_not_exc_li & issue_pkt_cast_o.dret;
+      dispatch_pkt_cast_o.special.mret            |= fe_instr_not_exc_li & issue_pkt_cast_o.mret;
+      dispatch_pkt_cast_o.special.sret            |= fe_instr_not_exc_li & issue_pkt_cast_o.sret;
+      dispatch_pkt_cast_o.special.wfi             |= fe_instr_not_exc_li & issue_pkt_cast_o.wfi;
+      dispatch_pkt_cast_o.special.sfence_vma      |= fe_instr_not_exc_li & issue_pkt_cast_o.sfence_vma;
     end
 
 endmodule

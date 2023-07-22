@@ -175,11 +175,17 @@
     logic                             pipe_fma_v;
     logic                             pipe_long_v;
 
+    logic                             irs1_r_v;
+    logic                             irs2_r_v;
+    logic                             frs1_r_v;
+    logic                             frs2_r_v;
+    logic                             frs3_r_v;
     logic                             irf_w_v;
     logic                             frf_w_v;
     logic                             fflags_w_v;
     logic                             branch_v;
     logic                             jump_v;
+    logic                             fence_v;
     logic                             dcache_r_v;
     logic                             dcache_w_v;
     logic                             late_iwb_v;
@@ -226,6 +232,7 @@
     logic dtlb_fill;
     logic _interrupt;
     logic cmd_full;
+    logic mispredict;
   }  bp_be_exception_s;
 
   typedef struct packed
@@ -246,6 +253,7 @@
   {
     logic v;
     logic queue_v;
+    logic ispec_v;
 
     bp_be_exception_s exc;
     bp_be_special_s   spec;

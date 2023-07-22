@@ -22,11 +22,11 @@ module bp_be_instr_decoder
    `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam instr_width_lp = rv64_instr_width_gp
    , localparam decode_width_lp = $bits(bp_be_decode_s)
    , localparam decode_info_width_lp = `bp_be_decode_info_width
+   , localparam preissue_pkt_width_lp = `bp_be_preissue_pkt_width
    )
-  (input [instr_width_lp-1:0]           instr_i
+  (input [preissue_pkt_width_lp-1:0]    preissue_pkt_i
    , input [decode_info_width_lp-1:0]   decode_info_i
 
    , output logic [decode_width_lp-1:0] decode_o
@@ -46,18 +46,22 @@ module bp_be_instr_decoder
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  rv64_instr_fmatype_s instr;
-  bp_be_decode_s decode_cast_o;
-  bp_be_decode_info_s decode_info_cast_i;
+  `bp_cast_i(bp_be_preissue_pkt_s, preissue_pkt);
+  `bp_cast_i(bp_be_decode_info_s, decode_info);
+  `bp_cast_o(bp_be_decode_s, decode);
 
-  assign instr              = instr_i;
-  assign decode_info_cast_i = decode_info_i;
-  assign decode_o           = decode_cast_o;
+  rv64_instr_fmatype_s instr;
+  assign instr = preissue_pkt_cast_i.instr;
 
   // Decode logic
   always_comb
     begin
       decode_cast_o = '0;
+      decode_cast_o.irs1_r_v = preissue_pkt_cast_i.irs1_v;
+      decode_cast_o.irs2_r_v = preissue_pkt_cast_i.irs2_v;
+      decode_cast_o.frs1_r_v = preissue_pkt_cast_i.frs1_v;
+      decode_cast_o.frs2_r_v = preissue_pkt_cast_i.frs2_v;
+      decode_cast_o.frs3_r_v = preissue_pkt_cast_i.frs3_v;
 
       illegal_instr_o = '0;
       ecall_m_o       = '0;
@@ -253,6 +257,7 @@ module bp_be_instr_decoder
           end
         `RV64_MISC_MEM_OP:
           begin
+            decode_cast_o.fence_v = 1'b1;
             unique casez (instr)
               `RV64_FENCE   : begin end
               `RV64_FENCE_I :
@@ -305,6 +310,7 @@ module bp_be_instr_decoder
                 end
               `RV64_SFENCE_VMA:
                 begin
+                  decode_cast_o.fence_v = 1'b1;
                   illegal_instr_o = (decode_info_cast_i.tvm & (decode_info_cast_i.priv_mode == `PRIV_MODE_S))
                     | (~decode_info_cast_i.debug_mode & (decode_info_cast_i.priv_mode < `PRIV_MODE_S));
                   sfence_vma_o = ~illegal_instr_o;
