@@ -287,12 +287,12 @@ module bp_be_issue_queue
       issue_pkt_cast_o = '0;
 
       issue_pkt_cast_o.v                    = issue_pkt_v;
-      issue_pkt_cast_o.instr_v              = (fe_queue_lo.msg_type == e_instr_fetch);
+      issue_pkt_cast_o.instr_v              = (fe_queue_lo.msg_type == e_instr_fetch) & ~illegal_instr_lo;
       issue_pkt_cast_o.itlb_miss            = (fe_queue_lo.msg_type == e_itlb_miss);
       issue_pkt_cast_o.instr_access_fault   = (fe_queue_lo.msg_type == e_instr_access_fault);
       issue_pkt_cast_o.instr_page_fault     = (fe_queue_lo.msg_type == e_instr_page_fault);
       issue_pkt_cast_o.icache_miss          = (fe_queue_lo.msg_type == e_icache_miss);
-      issue_pkt_cast_o.illegal_instr        = illegal_instr_lo;
+      issue_pkt_cast_o.illegal_instr        = (fe_queue_lo.msg_type == e_instr_fetch) &  illegal_instr_lo;
       issue_pkt_cast_o.ecall_m              = ecall_m_lo;
       issue_pkt_cast_o.ecall_s              = ecall_s_lo;
       issue_pkt_cast_o.ecall_u              = ecall_u_lo;

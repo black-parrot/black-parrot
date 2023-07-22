@@ -193,8 +193,8 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.exception.instr_page_fault   |= fe_exc_not_instr_li & issue_pkt_cast_o.instr_page_fault;
       dispatch_pkt_cast_o.exception.itlb_miss          |= fe_exc_not_instr_li & issue_pkt_cast_o.itlb_miss;
       dispatch_pkt_cast_o.exception.icache_miss        |= fe_exc_not_instr_li & issue_pkt_cast_o.icache_miss;
+      dispatch_pkt_cast_o.exception.illegal_instr      |= fe_exc_not_instr_li & issue_pkt_cast_o.illegal_instr;
 
-      dispatch_pkt_cast_o.exception.illegal_instr |= fe_instr_not_exc_li & issue_pkt_cast_o.illegal_instr;
       dispatch_pkt_cast_o.exception.ecall_m       |= fe_instr_not_exc_li & issue_pkt_cast_o.ecall_m;
       dispatch_pkt_cast_o.exception.ecall_s       |= fe_instr_not_exc_li & issue_pkt_cast_o.ecall_s;
       dispatch_pkt_cast_o.exception.ecall_u       |= fe_instr_not_exc_li & issue_pkt_cast_o.ecall_u;

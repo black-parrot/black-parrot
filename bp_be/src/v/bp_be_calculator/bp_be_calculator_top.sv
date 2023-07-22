@@ -306,6 +306,7 @@ module bp_be_calculator_top
       assign pipe_int_catchup_data_lo = '0;
       assign pipe_int_catchup_data_lo_v = '0;
       assign pipe_int_catchup_mispredict_lo = '0;
+      assign pipe_int_catchup_instr_misaligned_lo = '0;
     end
 
   // Aux pipe: 2 cycle latency
