@@ -194,7 +194,6 @@ module bp_core_lite
      ,.timeout_max_limit_p(4)
      ,.credits_p(coh_noc_max_credits_p)
      ,.non_excl_reads_p(1)
-     ,.metadata_latency_p(1)
      )
    fe_lce
     (.clk_i(posedge_clk)
@@ -289,7 +288,6 @@ module bp_core_lite
      ,.ctag_width_p(dcache_ctag_width_p)
      ,.timeout_max_limit_p(4)
      ,.credits_p(coh_noc_max_credits_p)
-     ,.metadata_latency_p(1)
      )
    be_lce
     (.clk_i(negedge_clk)

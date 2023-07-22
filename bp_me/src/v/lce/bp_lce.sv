@@ -28,9 +28,6 @@ module bp_lce
    , parameter credits_p = coh_noc_max_credits_p
    // issue non-exclusive read requests
    , parameter non_excl_reads_p = 0
-   // latency of request metadata in cycles, must be 0 or 1
-   // BP caches' metadata arrives cycle after request, by default
-   , parameter `BSG_INV_PARAM(metadata_latency_p)
    , parameter `BSG_INV_PARAM(ctag_width_p)
 
    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
@@ -45,7 +42,7 @@ module bp_lce
     , input bp_lce_mode_e                            lce_mode_i
 
     // Cache-LCE Interface
-    // valid->yumi; metadata is valid only at metadata_latency_p cycles after request valid
+    // valid->yumi; metadata is valid once after request valid
     // metadata arrives in the same cycle as req, or any cycle after, but before the next request
     // can arrive, as indicated by the metadata_v_i signal
     , input [cache_req_width_lp-1:0]                 cache_req_i
@@ -120,8 +117,6 @@ module bp_lce
   // LCE only supports single data beat for requests
   if (fill_width_p < dword_width_gp)
     $error("fill width must be greater or equal than cache request data width");
-  if ((metadata_latency_p > 1))
-    $error("metadata needs to arrive <2 cycles after the request");
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
@@ -142,7 +137,6 @@ module bp_lce
      ,.ctag_width_p(ctag_width_p)
      ,.credits_p(credits_p)
      ,.non_excl_reads_p(non_excl_reads_p)
-     ,.metadata_latency_p(metadata_latency_p)
      )
    request
     (.clk_i(clk_i)

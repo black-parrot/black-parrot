@@ -49,6 +49,7 @@ module bp_be_pipe_mem
    , output logic                         cache_store_miss_v_o
    , output logic                         cache_replay_v_o
    , output logic                         fencei_clean_v_o
+   , output logic                         fencei_dirty_v_o
    , output logic                         load_misaligned_v_o
    , output logic                         load_access_fault_v_o
    , output logic                         load_page_fault_v_o
@@ -167,7 +168,7 @@ module bp_be_pipe_mem
   logic [reg_addr_width_gp-1:0] dcache_rd_addr;
   logic                     dcache_ret, dcache_store, dcache_late, dcache_fencei, dcache_v;
   logic                     dcache_float;
-  logic                     dcache_tv_we;
+  logic                     dcache_req;
 
   logic load_access_fault_v, store_access_fault_v;
   logic load_page_fault_v, store_page_fault_v;
@@ -312,7 +313,6 @@ module bp_be_pipe_mem
       ,.ptag_dram_i(dcache_ptag_dram)
       ,.st_data_i(dcache_st_data)
       ,.flush_i(flush_i)
-      ,.tv_we_o(dcache_tv_we)
 
       ,.v_o(dcache_v)
       ,.data_o(dcache_data)
@@ -322,6 +322,7 @@ module bp_be_pipe_mem
       ,.float_o(dcache_float)
       ,.ret_o(dcache_ret)
       ,.store_o(dcache_store)
+      ,.req_o(dcache_req)
 
       // D$-LCE Interface
       ,.cache_req_o(cache_req_cast_o)
@@ -420,15 +421,6 @@ module bp_be_pipe_mem
      ,.data_o(dtlb_r_v_r)
      );
 
-  logic dcache_tv_r;
-  bsg_dff
-   #(.width_p(1))
-   dcache_v_r
-    (.clk_i(negedge_clk)
-     ,.data_i(dcache_tv_we)
-     ,.data_o(dcache_tv_r)
-     );
-
   assign tlb_load_miss_v_o      = dtlb_r_v_r & tlb_load_miss_v;
   assign tlb_store_miss_v_o     = dtlb_r_v_r & tlb_store_miss_v;
 
@@ -439,13 +431,12 @@ module bp_be_pipe_mem
   assign store_misaligned_v_o   = dtlb_r_v_r & store_misaligned_v;
   assign load_misaligned_v_o    = dtlb_r_v_r & load_misaligned_v;
 
-  assign fencei_clean_v_o       = early_v_r &  dcache_tv_r &  dcache_v & dcache_fencei;
-  assign cache_store_miss_v_o   = early_v_r &  dcache_tv_r & ~dcache_v & dcache_store;
-  assign cache_load_miss_v_o    = early_v_r &  dcache_tv_r & ~dcache_v & dcache_ret;
+  assign fencei_clean_v_o       = early_v_r &   dcache_v &              dcache_fencei;
+  assign fencei_dirty_v_o       = early_v_r &  ~dcache_v & dcache_req & dcache_fencei;
+  assign cache_store_miss_v_o   = early_v_r &  ~dcache_v & dcache_req & dcache_store;
+  assign cache_load_miss_v_o    = early_v_r &  ~dcache_v & dcache_req & dcache_ret;
 
-  wire fencei_dirty = early_v_r &  dcache_tv_r & ~dcache_v & dcache_fencei;
-  wire cache_fail   = early_v_r & ~dcache_tv_r;
-  assign cache_replay_v_o = cache_fail | fencei_dirty;
+  assign cache_replay_v_o       = early_v_r & ~dcache_v & ~dcache_req;
 
   // Save the data coming out the D$ so we can recode it for floating-point loads
   logic [dword_width_gp-1:0] dcache_data_r;

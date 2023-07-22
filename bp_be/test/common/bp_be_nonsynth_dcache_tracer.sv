@@ -190,29 +190,29 @@ module bp_be_nonsynth_dcache_tracer
       if (|data_mem_fast_read)
         $fwrite(mem_file, "%12t | data_mem_fast_read: %b\n", $time, data_mem_fast_read);
       if (|data_mem_fast_write)
-        $fwrite(mem_file, "%12t | data_mem_fast_read: %b\n", $time, data_mem_fast_write);
+        $fwrite(mem_file, "%12t | data_mem_fast_write: %b\n", $time, data_mem_fast_write);
       if (|data_mem_slow_read)
         $fwrite(mem_file, "%12t | data_mem_slow_read: %b\n", $time, data_mem_slow_read);
       if (|data_mem_slow_write)
-        $fwrite(mem_file, "%12t | data_mem_slow_read: %b\n", $time, data_mem_slow_write);
+        $fwrite(mem_file, "%12t | data_mem_slow_write: %b\n", $time, data_mem_slow_write);
 
       if (tag_mem_fast_read)
         $fwrite(mem_file, "%12t | tag_mem_fast_read : %b\n", $time, tag_mem_fast_read);
       if (tag_mem_fast_write)
-        $fwrite(mem_file, "%12t | tag_mem_fast_read : %b\n", $time, tag_mem_fast_write);
+        $fwrite(mem_file, "%12t | tag_mem_fast_write : %b\n", $time, tag_mem_fast_write);
       if (tag_mem_slow_read)
         $fwrite(mem_file, "%12t | tag_mem_slow_read : %b\n", $time, tag_mem_slow_read);
       if (tag_mem_slow_write)
-        $fwrite(mem_file, "%12t | tag_mem_slow_read : %b\n", $time, tag_mem_slow_write);
+        $fwrite(mem_file, "%12t | tag_mem_slow_write : %b\n", $time, tag_mem_slow_write);
 
       if (stat_mem_fast_read)
         $fwrite(mem_file, "%12t | stat_mem_fast_read: %b\n", $time, stat_mem_fast_read);
       if (stat_mem_fast_write)
-        $fwrite(mem_file, "%12t | stat_mem_fast_read: %b\n", $time, stat_mem_fast_write);
+        $fwrite(mem_file, "%12t | stat_mem_fast_write: %b\n", $time, stat_mem_fast_write);
       if (stat_mem_slow_read)
         $fwrite(mem_file, "%12t | stat_mem_slow_read: %b\n", $time, stat_mem_slow_read);
       if (stat_mem_slow_write)
-        $fwrite(mem_file, "%12t | stat_mem_slow_read: %b\n", $time, stat_mem_slow_write);
+        $fwrite(mem_file, "%12t | stat_mem_slow_write: %b\n", $time, stat_mem_slow_write);
     end
 
 endmodule
