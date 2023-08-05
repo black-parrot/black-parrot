@@ -21,10 +21,18 @@
 
   typedef enum logic [1:0]
   {
-    e_div   = 2'b00
-    ,e_mul  = 2'b01
-    ,e_mulh = 2'b10
+    e_idiv   = 2'b00
+    ,e_imul  = 2'b01
+    ,e_imulh = 2'b10
+    ,e_idiv2b = 2'b11
   } bp_muldiv_support_e;
+
+  typedef enum logic [1:0]
+  {
+    e_fma         = 2'b00
+    ,e_fdivsqrt   = 2'b01
+    ,e_fdivsqrt2b = 2'b10
+  } bp_fpu_support_e;
 
   typedef enum logic [15:0]
   {
@@ -303,8 +311,8 @@
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
-      ,muldiv_support    : (1 << e_div) | (1 << e_mul) | (1 << e_mulh)
-      ,fpu_support       : 1
+      ,muldiv_support    : (1 << e_idiv) | (1 << e_imul) | (1 << e_imulh) | (1 << e_idiv2b)
+      ,fpu_support       : (1 << e_fma) | (1 << e_fdivsqrt) | (1 << e_fdivsqrt2b)
       ,compressed_support: 1
 
       ,async_coh_clk       : 0
