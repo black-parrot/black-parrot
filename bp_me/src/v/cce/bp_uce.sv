@@ -357,7 +357,7 @@ module bp_uce
      ,.reset_i(reset_i)
 
      // credit consumed when memory command sends
-     ,.v_i(fsm_fwd_v_lo & fsm_fwd_last_lo)
+     ,.v_i(fsm_fwd_v_lo & fsm_fwd_new_lo)
      ,.ready_i(fsm_fwd_ready_and_li)
 
      // credit returned when memory response fully consumed
