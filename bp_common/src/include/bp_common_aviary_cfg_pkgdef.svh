@@ -7,16 +7,17 @@
   localparam lg_max_cfgs = $clog2(max_cfgs);
 
   // Configuration enums
-  typedef enum logic [2:0]
+  typedef enum logic [3:0]
   {
-    e_cfg_enabled               = 3'b000
-    ,e_cfg_coherent             = 3'b001
-    ,e_cfg_writeback            = 3'b010
-    ,e_cfg_word_tracking        = 3'b011
-    ,e_cfg_lr_sc                = 3'b100
-    ,e_cfg_amo_swap             = 3'b101
-    ,e_cfg_amo_fetch_logic      = 3'b110
-    ,e_cfg_amo_fetch_arithmetic = 3'b111
+    e_cfg_enabled               = 4'b0000
+    ,e_cfg_coherent             = 4'b0001
+    ,e_cfg_writeback            = 4'b0010
+    ,e_cfg_word_tracking        = 4'b0011
+    ,e_cfg_lr_sc                = 4'b0100
+    ,e_cfg_amo_swap             = 4'b0101
+    ,e_cfg_amo_fetch_logic      = 4'b0110
+    ,e_cfg_amo_fetch_arithmetic = 4'b0111
+    ,e_cfg_hit_under_miss       = 4'b1000
   } bp_cache_features_e;
 
   typedef enum logic
@@ -285,6 +286,7 @@
                               | (1 << e_cfg_amo_swap)
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)
+                              | (1 << e_cfg_hit_under_miss)
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512

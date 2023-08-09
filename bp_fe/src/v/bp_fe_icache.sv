@@ -350,7 +350,7 @@ module bp_fe_icache
   wire uncached_op_tv_n = critical_recv ? uncached_op_tv_r : fetch_uncached_tl;
   bsg_dff_reset_en
    #(.width_p(block_width_p+1+3*assoc_p+paddr_width_p+4))
-   hit_tv_reg
+   tv_stage_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(tv_we | critical_recv)

@@ -95,6 +95,7 @@ module bp_be_dcache
                                         | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amominu)
                                         | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amomaxu)
                                         )
+   , parameter hit_under_miss_p = dcache_features_p[e_cfg_hit_under_miss]
    , parameter sets_p         = dcache_sets_p
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
@@ -189,18 +190,14 @@ module bp_be_dcache
     ? (bindex_width_lp+byte_offset_width_lp)
     : byte_offset_width_lp;
 
-  // State machine declaration
-  enum logic {e_ready, e_miss} state_n, state_r;
-  wire is_ready  = (state_r == e_ready);
-  wire is_miss   = (state_r == e_miss);
-
   // Global signals
   logic tl_we, tv_we;
   logic safe_tl_we, safe_tv_we;
   logic v_tl_r, v_tv_r;
   logic gdirty_r;
   logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, engine_hazard;
-  logic blocking_sent, nonblocking_sent;
+  logic blocking_req, blocking_sent;
+  logic nonblocking_req, nonblocking_sent;
 
   wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard | blocking_hazard | engine_hazard;
   wire critical_recv = cache_req_critical_i
@@ -213,13 +210,18 @@ module bp_be_dcache
     & (~data_mem_pkt_v_i | data_mem_pkt_yumi_o);
 
   // Snoop signals
-  logic snoop_uncached_op_r;
-  logic [dword_width_gp-1:0] snoop_st_data_r;
-  bp_be_dcache_decode_s snoop_decode_r;
   logic [block_width_p-1:0] snoop_data;
   logic [paddr_width_p-1:0] snoop_addr;
   logic [2:0][assoc_p-1:0] snoop_hit;
   logic [assoc_p-1:0] snoop_bank_sel_one_hot;
+
+  // Fill signals
+  logic fill_snoop_v, fill_pending_r, fill_secondary_r, fill_uncached_r;
+  logic [dword_width_gp-1:0] fill_st_data_r;
+  bp_be_dcache_decode_s fill_decode_r;
+  logic [sindex_width_lp-1:0] fill_index_r;
+  logic [assoc_p-1:0] fill_hit_r;
+  logic [assoc_p-1:0] fill_bank_mask_r;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
@@ -359,13 +361,14 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   // TV Stage
   /////////////////////////////////////////////////////////////////////////////
-  logic uncached_op_tv_r, snoop_tv_r;
+  logic uncached_op_tv_r, snoop_tv_r, pending_tv_r;
   logic [paddr_width_p-1:0] paddr_tv_r;
   logic [dword_width_gp-1:0] st_data_tv_r;
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
   logic [assoc_p-1:0] load_hit_v_tv_r, store_hit_v_tv_r, way_v_tv_r, bank_sel_one_hot_tv_r;
   bp_be_dcache_decode_s decode_tv_r;
   logic sc_success_tv, sc_fail_tv;
+
   wire [bindex_width_lp-1:0] paddr_bank_tv  = paddr_tv_r[byte_offset_width_lp+:bindex_width_lp];
   wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
   wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
@@ -392,24 +395,25 @@ module bp_be_dcache
   bsg_mux
    #(.width_p(3*assoc_p+block_width_p+paddr_width_p+dword_width_gp+assoc_p+1+$bits(bp_be_dcache_decode_s)), .els_p(2))
    tv_snoop_mux
-    (.data_i({{snoop_hit, snoop_data, snoop_addr
-               ,snoop_st_data_r, snoop_bank_sel_one_hot, snoop_uncached_op_r, snoop_decode_r}
-              ,{way_v_tl, store_hit_tl, load_hit_tl, data_mem_data_lo, paddr_tl
-                ,st_data_tl, bank_sel_one_hot_tl, uncached_op_tl, decode_tl_r}
+    (.data_i({{snoop_hit, snoop_data, snoop_addr, snoop_bank_sel_one_hot
+               ,fill_st_data_r, fill_uncached_r, fill_decode_r}
+              ,{way_v_tl, store_hit_tl, load_hit_tl, data_mem_data_lo, paddr_tl, bank_sel_one_hot_tl
+                ,st_data_tl, uncached_op_tl, decode_tl_r}
               })
-     ,.sel_i(critical_recv)
-     ,.data_o({way_v_tv_n, store_hit_tv_n, load_hit_tv_n, ld_data_tv_n, paddr_tv_n
-               ,st_data_tv_n, bank_sel_one_hot_tv_n, uncached_op_tv_n, decode_tv_n})
+     ,.sel_i(fill_snoop_v)
+     ,.data_o({way_v_tv_n, store_hit_tv_n, load_hit_tv_n, ld_data_tv_n, paddr_tv_n, bank_sel_one_hot_tv_n
+               ,st_data_tv_n, uncached_op_tv_n, decode_tv_n})
      );
 
+  wire pending_tv_n = fill_pending_r;
   wire snoop_tv_n = critical_recv;
   bsg_dff
-   #(.width_p(1+3*assoc_p+paddr_width_p+block_width_p+dword_width_gp+assoc_p+1+$bits(bp_be_dcache_decode_s)))
+   #(.width_p(2+3*assoc_p+paddr_width_p+block_width_p+dword_width_gp+assoc_p+1+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
     (.clk_i(clk_i)
-     ,.data_i({snoop_tv_n, way_v_tv_n, store_hit_tv_n, load_hit_tv_n, paddr_tv_n, ld_data_tv_n
+     ,.data_i({pending_tv_n, snoop_tv_n, way_v_tv_n, store_hit_tv_n, load_hit_tv_n, paddr_tv_n, ld_data_tv_n
                ,st_data_tv_n, bank_sel_one_hot_tv_n, uncached_op_tv_n, decode_tv_n})
-     ,.data_o({snoop_tv_r, way_v_tv_r, store_hit_v_tv_r, load_hit_v_tv_r, paddr_tv_r, ld_data_tv_r
+     ,.data_o({pending_tv_r, snoop_tv_r, way_v_tv_r, store_hit_v_tv_r, load_hit_v_tv_r, paddr_tv_r, ld_data_tv_r
                ,st_data_tv_r, bank_sel_one_hot_tv_r, uncached_op_tv_r, decode_tv_r})
      );
 
@@ -495,13 +499,16 @@ module bp_be_dcache
      );
 
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
-  wire store_miss_tv    = ~uncached_op_tv_r & (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & writeback_p;
-  wire load_miss_tv     = ~uncached_op_tv_r & decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv;
+  wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & ~nonblocking_req & writeback_p;
+  wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv & ~nonblocking_req;
   wire ldst_miss_tv     = load_miss_tv | store_miss_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
-  wire uncached_miss_tv = uncached_op_tv_r & decode_tv_r.ret_op & ~snoop_tv_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
-  wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | uncached_miss_tv | engine_miss_tv;
+  wire fill_miss_tv     = pending_tv_r & ~snoop_tv_r
+    &   (fill_index_r == paddr_index_tv)
+    &   (fill_hit_r == load_hit_v_tv_r)
+    & ~|(fill_bank_mask_r & bank_sel_one_hot_tv_r);
+  wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | engine_miss_tv | fill_miss_tv;
 
   assign data_o = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : final_data;
 
@@ -554,7 +561,7 @@ module bp_be_dcache
   ///////////////////////////
   `declare_bp_be_dcache_wbuf_entry_s(caddr_width_p, assoc_p);
   bp_be_dcache_wbuf_entry_s wbuf_entry_in, wbuf_entry_out;
-  logic wbuf_v_li, wbuf_v_lo, wbuf_force_lo, wbuf_yumi_li;
+  logic wbuf_v_li, wbuf_v_lo, wbuf_force_lo, wbuf_snoop_match_lo, wbuf_yumi_li;
 
   assign wbuf_v_li = v_tv_r
     & decode_tv_r.store_op & ~uncached_op_tv_r
@@ -655,10 +662,17 @@ module bp_be_dcache
      );
   assign wbuf_entry_in.caddr = paddr_tv_r;
   assign wbuf_entry_in.way_id = store_hit_way_tv;
+  assign wbuf_entry_in.snoop = snoop_tv_r;
 
   wire [caddr_width_p-1:0] ld_addr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_gp]};
   bp_be_dcache_wbuf
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.sets_p(dcache_sets_p)
+     ,.assoc_p(dcache_assoc_p)
+     ,.block_width_p(dcache_block_width_p)
+     ,.fill_width_p(dcache_fill_width_p)
+     ,.ctag_width_p(dcache_ctag_width_p)
+     )
    wbuf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -671,8 +685,17 @@ module bp_be_dcache
      ,.yumi_i(wbuf_yumi_li)
      ,.wbuf_entry_o(wbuf_entry_out)
 
-     ,.load_addr_i(ld_addr_tl)
-     ,.load_data_i(ld_data_dword_raw)
+     ,.tag_mem_pkt_i(tag_mem_pkt_i)
+     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+     ,.data_mem_pkt_i(data_mem_pkt_i)
+     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+     ,.stat_mem_pkt_i(stat_mem_pkt_i)
+     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+     ,.snoop_match_o(wbuf_snoop_match_lo)
+
+     ,.v_tl_i(v_tl_r)
+     ,.addr_tl_i(ld_addr_tl)
+     ,.data_tv_i(ld_data_dword_raw)
      ,.data_merged_o(ld_data_dword_merged)
      );
   wire [bindex_width_lp-1:0] wbuf_entry_out_bank_offset = wbuf_entry_out.caddr[byte_offset_width_lp+:bindex_width_lp];
@@ -695,12 +718,12 @@ module bp_be_dcache
   wire wt_req              = ~uncached_op_tv_r & decode_tv_r.store_op & ~sc_fail_tv & !writeback_p;
 
   // Uncached stores and writethrough requests are non-blocking
-  wire nonblocking_req     = (uncached_store_req | wt_req | backoff_req);
-  wire blocking_req        = (fencei_req | load_req | store_req | uncached_amo_req | uncached_load_req);
+  assign nonblocking_req   = (uncached_store_req | wt_req | backoff_req);
+  assign blocking_req      = (fencei_req | load_req | store_req | uncached_amo_req | uncached_load_req);
   assign nonblocking_sent  = nonblocking_req & cache_req_yumi_i;
   assign blocking_sent     = blocking_req & cache_req_yumi_i;
 
-  assign cache_req_v_o = v_tv_r & (blocking_req | nonblocking_req);
+  assign cache_req_v_o = v_tv_r & ~fill_pending_r & (blocking_req | nonblocking_req);
 
   assign blocking_hazard = cache_req_v_o & blocking_req;
   assign engine_hazard   = cache_req_v_o & ~cache_req_yumi_i;
@@ -762,14 +785,14 @@ module bp_be_dcache
         cache_req_cast_o.msg_type = e_wt_store;
     end
 
-  wire cache_req_metadata_v = cache_req_yumi_i;
+  wire cache_req_metadata_v_n = cache_req_yumi_i;
   bsg_dff_reset
    #(.width_p(1))
    cache_req_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(cache_req_metadata_v)
+     ,.data_i(cache_req_metadata_v_n)
      ,.data_o(cache_req_metadata_v_o)
      );
 
@@ -800,27 +823,8 @@ module bp_be_dcache
   assign cache_req_metadata_cast_o.hit_or_repl_way = hit_or_repl_way;
   assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[hit_or_repl_way];
 
-  /////////////////////////////////////////////////////////////////////////////
-  // State machine
-  //   e_ready  : Cache is ready to accept requests
-  //   e_miss   : Cache is waiting for a miss to be serviced
-  /////////////////////////////////////////////////////////////////////////////
-  always_comb
-    case (state_r)
-      e_ready : state_n = blocking_sent ? e_miss : e_ready;
-      e_miss  : state_n = complete_recv ? e_ready : e_miss;
-      default: state_n = e_ready;
-    endcase
-
-  // synopsys sync_set_reset "reset_i"
-  always_ff @(posedge clk_i)
-    if (reset_i)
-      state_r <= e_ready;
-    else
-      state_r <= state_n;
-
-  assign ready_and_o = is_ready & ~cache_req_busy_i;
-  assign ordered_o = is_ready & ~v_tl_r & ~v_tv_r & cache_req_credits_empty_i;
+  assign ready_and_o = ~cache_req_busy_i & ~fill_secondary_r;
+  assign ordered_o = ~v_tl_r & ~v_tv_r & cache_req_credits_empty_i;
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Control
@@ -842,7 +846,10 @@ module bp_be_dcache
     : tag_mem_fast_read
       ? vaddr_index
       : tag_mem_pkt_cast_i.index;
-  assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_fast_write;
+  assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i
+    & ~tag_mem_fast_read
+    & ~tag_mem_fast_write
+    & ~wbuf_snoop_match_lo;
 
   logic [assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode
@@ -948,7 +955,7 @@ module bp_be_dcache
         & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write) & data_mem_write_bank_mask[i];
       assign data_mem_slow_read[i] = data_mem_pkt_yumi_o
         & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_read);
-      assign data_mem_fast_read[i] = safe_tl_we & decode_lo.load_op & ~data_mem_force_write[i];
+      assign data_mem_fast_read[i] = safe_tl_we & decode_lo.load_op;
       assign data_mem_fast_write[i] = wbuf_yumi_li & wbuf_bank_sel_one_hot[i];
 
       assign data_mem_v_li[i] = data_mem_fast_read[i]
@@ -973,20 +980,17 @@ module bp_be_dcache
         ? {num_dwords_per_bank_lp{wbuf_entry_out.data}}
         : data_mem_pkt_data_li[i];
     end
-  assign wbuf_yumi_li = wbuf_v_lo & |{~data_mem_fast_read & wbuf_bank_sel_one_hot};
+  assign wbuf_yumi_li = wbuf_v_lo && (~|{data_mem_fast_read & wbuf_bank_sel_one_hot} || wbuf_force_lo);
   // If we didn't read all banks, this could be more efficient
-  assign data_mem_write_hazard = (safe_tl_we & decode_lo.load_op) & |data_mem_force_write;
+  assign data_mem_write_hazard = |{data_mem_fast_read & data_mem_force_write};
 
-  // As an optimization, we could snoop the data_mem_pkt to see if there are any matching entries
-  //   in the write buffer, so that the write buffer will only drain if it is full, or if there is
-  //   a snoop match. However, this is a critical path, so we drain the write buffer on invalidations.
-  // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
-  // TODO: With blocking TL and TV, we really should implement snooping for performance
-  assign data_mem_pkt_yumi_o = (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached)
-    ? data_mem_pkt_v_i
-    : data_mem_pkt_v_i & ~|data_mem_fast_read
+  assign data_mem_pkt_yumi_o = data_mem_pkt_v_i
+      & ~{|data_mem_fast_read & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_read)}
+      & ~{|data_mem_fast_write & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_read)}
+      & ~|{data_mem_fast_read & data_mem_write_bank_mask}
+      & ~|{data_mem_fast_write & data_mem_write_bank_mask}
       & ~(v_tl_r & decode_tl_r.store_op)
-      & ~(wbuf_v_lo & ~snoop_tv_r);
+      & ~(wbuf_snoop_match_lo);
 
   logic [lg_assoc_lp-1:0] data_mem_pkt_way_r;
   bsg_dff
@@ -1009,7 +1013,7 @@ module bp_be_dcache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read  = (v_tv_r & any_miss_tv) | tag_mem_write_hazard;
+  wire stat_mem_fast_read  = (v_tv_r & any_miss_tv & cache_req_metadata_v_n) | tag_mem_write_hazard;
   wire stat_mem_fast_write = (v_tv_r & load_hit_tv & ~decode_tv_r.fencei_op & ~uncached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
@@ -1019,7 +1023,11 @@ module bp_be_dcache
   assign stat_mem_addr_li = (stat_mem_fast_write | stat_mem_fast_read)
     ? paddr_tv_r[block_offset_width_lp+:sindex_width_lp]
     : stat_mem_pkt_cast_i.index;
-  assign stat_mem_pkt_yumi_o = stat_mem_pkt_v_i & ~stat_mem_fast_read & ~stat_mem_fast_write;
+  assign stat_mem_pkt_yumi_o =
+    stat_mem_pkt_v_i
+    & ~stat_mem_fast_read
+    & ~stat_mem_fast_write
+    & ~(wbuf_snoop_match_lo & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read));
 
   logic [`BSG_SAFE_MINUS(assoc_p, 2):0] lru_decode_data_lo;
   logic [`BSG_SAFE_MINUS(assoc_p, 2):0] lru_decode_mask_lo;
@@ -1065,7 +1073,7 @@ module bp_be_dcache
       // For a non-coherent writethrough write-no-allocate cache, we set the dirty regardless of hit
       // For a coherent cache, we never set the dirty bit as the coherence system should handle it
       wire set_dirty = wbuf_v_li;
-      wire clear_dirty = complete_recv & snoop_decode_r.fencei_op;
+      wire clear_dirty = complete_recv & fill_decode_r.fencei_op;
       bsg_dff_reset_set_clear
        #(.width_p(1))
        gdirty_reg
@@ -1170,15 +1178,6 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   // Snoop Logic
   /////////////////////////////////////////////////////////////////////////////
-  bsg_dff_en
-   #(.width_p(1+dword_width_gp+$bits(bp_be_dcache_decode_s)))
-   snoop_metadata_reg
-    (.clk_i(clk_i)
-     ,.en_i(blocking_sent)
-     ,.data_i({uncached_op_tv_r, st_data_tv_r, decode_tv_r})
-     ,.data_o({snoop_uncached_op_r, snoop_st_data_r, snoop_decode_r})
-     );
-
   wire [assoc_p-1:0] pseudo_hit =
     (data_mem_pkt_v_i << data_mem_pkt_cast_i.way_id) | (tag_mem_pkt_v_i << tag_mem_pkt_cast_i.way_id);
   assign snoop_hit = {3{pseudo_hit}};
@@ -1192,6 +1191,93 @@ module bp_be_dcache
     (.i(snoop_bank)
      ,.o(snoop_bank_sel_one_hot)
      );
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Nonblocking Fill Logic
+  /////////////////////////////////////////////////////////////////////////////
+  if (hit_under_miss_p)
+    begin : hum
+      bsg_dff_reset_set_clear
+       #(.width_p(1))
+       fill_pending_reg
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+         ,.set_i(blocking_sent)
+         ,.clear_i(complete_recv)
+         ,.data_o(fill_pending_r)
+         );
+
+      bsg_dff_reset_set_clear
+       #(.width_p(1), .clear_over_set_p(1))
+       fill_secondary_reg
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+         ,.set_i(fill_pending_r & any_miss_tv)
+         ,.clear_i(complete_recv)
+         ,.data_o(fill_secondary_r)
+         );
+
+      logic [assoc_p-1:0] fill_bank_mask_n, fill_hit_n;
+      wire [assoc_p-1:0] fill_bank_mask_nn = (fill_bank_mask_n | data_mem_pkt_fill_mask_expanded);
+      wire [assoc_p-1:0] fill_hit_nn = (1'b1 << data_mem_pkt_cast_i.way_id);
+      wire fill_v = data_mem_pkt_yumi_o & data_mem_pkt_cast_i.opcode == e_cache_data_mem_write;
+      bsg_dff_reset_en
+       #(.width_p(2*assoc_p))
+       fill_reg
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i | blocking_sent)
+         ,.en_i(fill_v)
+         ,.data_i({fill_bank_mask_nn, fill_hit_nn})
+         ,.data_o({fill_bank_mask_n, fill_hit_n})
+         );
+
+      // Could instead determine fill_hit during load_hit/store_hit calculation
+      bsg_dff_chain
+       #(.width_p(2*assoc_p), .num_stages_p(2))
+       fill_buffer_reg
+        (.clk_i(clk_i)
+         ,.data_i({fill_bank_mask_n, fill_hit_n})
+         ,.data_o({fill_bank_mask_r, fill_hit_r})
+         );
+
+      wire fill_uncached_n = uncached_op_tv_r;
+      wire [dword_width_gp-1:0] fill_st_data_n = st_data_tv_r;
+      wire [$bits(bp_be_dcache_decode_s)-1:0] fill_decode_n = decode_tv_r;
+      wire [sindex_width_lp-1:0] fill_index_n = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
+      bsg_dff_en
+       #(.width_p(sindex_width_lp+1+dword_width_gp+$bits(bp_be_dcache_decode_s)))
+       fill_metadata_reg
+        (.clk_i(clk_i)
+         ,.en_i(blocking_sent)
+         ,.data_i({fill_index_n, fill_uncached_n, fill_st_data_n, fill_decode_n})
+         ,.data_o({fill_index_r, fill_uncached_r, fill_st_data_r, fill_decode_r})
+         );
+
+      assign fill_snoop_v = critical_recv;
+    end
+  else
+    begin : nhum
+      bsg_dff_reset_set_clear
+       #(.width_p(1))
+       fill_pending_reg
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+         ,.set_i(blocking_sent)
+         ,.clear_i(complete_recv)
+         ,.data_o(fill_pending_r)
+         );
+      assign fill_secondary_r = fill_pending_r;
+
+      assign fill_bank_mask_r = '0;
+      assign fill_hit_r = '0;
+      assign fill_index_r = '0;
+
+      assign fill_uncached_r = uncached_op_tv_r;
+      assign fill_st_data_r = st_data_tv_r;
+      assign fill_decode_r = decode_tv_r;
+
+      assign fill_snoop_v = blocking_sent | fill_pending_r;
+    end
 
   // synopsys translate_off
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
