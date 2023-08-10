@@ -189,7 +189,7 @@ module bp_be_ptw
       e_idle      :  state_n = tlb_miss_v ? e_ordered : state_r;
       e_ordered   :  state_n = dcache_ordered_i ? e_send_load : state_r;
       e_send_load :  state_n = dcache_ready_and_i ? e_recv_load : state_r;
-      e_recv_load :  state_n = dcache_v_i ? e_check_load : e_send_load;
+      e_recv_load :  state_n = dcache_v_i ? e_check_load : e_ordered;
       e_check_load:  state_n = (pte_is_leaf | page_fault_v) ? e_writeback : e_send_load;
       default: // e_writeback
                      state_n = e_idle;

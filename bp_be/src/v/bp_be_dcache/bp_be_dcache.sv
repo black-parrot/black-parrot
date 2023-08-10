@@ -127,7 +127,6 @@ module bp_be_dcache
    , input                                           ptag_dram_i
    , input [dword_width_gp-1:0]                      st_data_i
    , input                                           flush_i
-   , output logic                                    tv_we_o
 
    // Cycle 2: "Tag Verify"
    // Data (or miss result) comes out of the cache
@@ -139,6 +138,7 @@ module bp_be_dcache
    , output logic                                    ret_o
    , output logic                                    late_o
    , output logic                                    store_o
+   , output logic                                    req_o
 
    // Cache Engine Interface
    // This is considered the "slow path", handling uncached requests
@@ -317,11 +317,10 @@ module bp_be_dcache
      );
 
   // Save stage information
-  bsg_dff_en
+  bsg_dff
    #(.width_p(vaddr_width_p+$bits(bp_be_dcache_decode_s)))
    tl_stage_reg
     (.clk_i(clk_i)
-     ,.en_i(tl_we)
      ,.data_i({vaddr, decode_lo})
      ,.data_o({vaddr_tl_r, decode_tl_r})
      );
@@ -379,10 +378,9 @@ module bp_be_dcache
    v_tv_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i(tv_we | critical_recv | engine_hazard)
+     ,.data_i(tv_we | critical_recv)
      ,.data_o(v_tv_r)
      );
-  assign tv_we_o = tv_we;
 
   logic [assoc_p-1:0] way_v_tv_n, store_hit_tv_n, load_hit_tv_n;
   logic [block_width_p-1:0] ld_data_tv_n;
@@ -405,30 +403,15 @@ module bp_be_dcache
      );
 
   wire snoop_tv_n = critical_recv;
-  bsg_dff_en
+  bsg_dff
    #(.width_p(1+3*assoc_p+paddr_width_p+block_width_p+dword_width_gp+assoc_p+1+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
     (.clk_i(clk_i)
-     ,.en_i(tv_we | critical_recv)
      ,.data_i({snoop_tv_n, way_v_tv_n, store_hit_tv_n, load_hit_tv_n, paddr_tv_n, ld_data_tv_n
                ,st_data_tv_n, bank_sel_one_hot_tv_n, uncached_op_tv_n, decode_tv_n})
      ,.data_o({snoop_tv_r, way_v_tv_r, store_hit_v_tv_r, load_hit_v_tv_r, paddr_tv_r, ld_data_tv_r
                ,st_data_tv_r, bank_sel_one_hot_tv_r, uncached_op_tv_r, decode_tv_r})
      );
-
-  logic invalid_exist_tv;
-  logic [lg_assoc_lp-1:0] invalid_way_tv;
-  bsg_priority_encode
-   #(.width_p(assoc_p), .lo_to_hi_p(1))
-    pe_invalid
-    (.i(~way_v_tv_r)
-     ,.v_o(invalid_exist_tv)
-     ,.addr_o(invalid_way_tv)
-     );
-
-  // If there is invalid way, then it take priority over LRU way.
-  logic [lg_assoc_lp-1:0] lru_encode;
-  wire [lg_assoc_lp-1:0] lru_way_li = invalid_exist_tv ? invalid_way_tv : lru_encode;
 
   logic [lg_assoc_lp-1:0] store_hit_way_tv;
   logic store_hit_tv;
@@ -529,6 +512,7 @@ module bp_be_dcache
   assign late_o    = snoop_tv_r;
   assign ret_o     = decode_tv_r.ret_op;
   assign store_o   = decode_tv_r.store_op;
+  assign req_o     = cache_req_yumi_i;
 
   ///////////////////////////
   // Stat Mem Storage
@@ -557,6 +541,7 @@ module bp_be_dcache
     ,.data_o(stat_mem_data_lo)
     );
 
+  logic [lg_assoc_lp-1:0] lru_encode;
   bsg_lru_pseudo_tree_encode
    #(.ways_p(assoc_p))
    lru_encoder
@@ -790,14 +775,27 @@ module bp_be_dcache
 
   logic metadata_hit_r;
   logic [lg_assoc_lp-1:0] metadata_hit_index_r;
+  logic [assoc_p-1:0] metadata_way_v_r;
   bsg_dff
-   #(.width_p(1+lg_assoc_lp))
+   #(.width_p(assoc_p+1+lg_assoc_lp))
    cached_hit_reg
     (.clk_i(clk_i)
-     ,.data_i({load_hit_tv, load_hit_way_tv})
-     ,.data_o({metadata_hit_r, metadata_hit_index_r})
+     ,.data_i({way_v_tv_r, load_hit_tv, load_hit_way_tv})
+     ,.data_o({metadata_way_v_r, metadata_hit_r, metadata_hit_index_r})
      );
 
+  logic metadata_invalid_exist;
+  logic [lg_assoc_lp-1:0] metadata_invalid_way;
+  bsg_priority_encode
+   #(.width_p(assoc_p), .lo_to_hi_p(1))
+    pe_invalid
+    (.i(~metadata_way_v_r)
+     ,.v_o(metadata_invalid_exist)
+     ,.addr_o(metadata_invalid_way)
+     );
+
+  // If there is invalid way, then it takes priority over LRU way.
+  wire [lg_assoc_lp-1:0] lru_way_li = metadata_invalid_exist ? metadata_invalid_way : lru_encode;
   wire [assoc_p-1:0] hit_or_repl_way = metadata_hit_r ? metadata_hit_index_r : lru_way_li;
   assign cache_req_metadata_cast_o.hit_or_repl_way = hit_or_repl_way;
   assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[hit_or_repl_way];

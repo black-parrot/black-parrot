@@ -190,7 +190,6 @@ module wrapper
       ,.v_i(rolly_yumi_li[i])
       ,.ready_and_o(dcache_ready_and_lo[i])
 
-      ,.tv_we_o()
       ,.data_o(data_o[i])
       ,.v_o(v_o[i])
       ,.fencei_o()
@@ -200,6 +199,7 @@ module wrapper
       ,.ordered_o()
       ,.float_o()
       ,.store_o()
+      ,.req_o()
 
       ,.ptag_v_i(1'b1)
       ,.ptag_i(rolly_ptag_r[i])
@@ -247,7 +247,6 @@ module wrapper
              ,.fill_width_p(fill_width_p)
              ,.timeout_max_limit_p(4)
              ,.credits_p(coh_noc_max_credits_p)
-             ,.metadata_latency_p(1)
              ,.ctag_width_p(dcache_ctag_width_p)
              )
            dcache_lce
@@ -321,7 +320,6 @@ module wrapper
             ,.sets_p(sets_p)
             ,.block_width_p(block_width_p)
             ,.fill_width_p(fill_width_p)
-            ,.metadata_latency_p(1)
             ,.ctag_width_p(dcache_ctag_width_p)
             ,.writeback_p(!wt_p)
             )

@@ -421,7 +421,6 @@ module testbench
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
        ,.ctag_width_p(icache_ctag_width_p)
-       ,.metadata_latency_p(0)
        )
      lce
       (.clk_i(clk_i)

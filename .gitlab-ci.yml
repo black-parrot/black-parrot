@@ -59,14 +59,6 @@ check-design:
   script:
     - $CI_PROJECT_DIR/ci/check_design.sh $CI_CORES
 
-surelog:
-  <<: *job_definition
-  stage: check
-  tags:
-    - bsg
-  script:
-    - $CI_PROJECT_DIR/ci/surelog.sh $CI_CORES
-
 yosys:
   <<: *job_definition
   stage: check
@@ -151,6 +143,14 @@ l2e-verilator:
     - verilator
   script:
     - $CI_PROJECT_DIR/ci/l2e_config.sh verilator $CI_CORES
+
+surelog:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - bsg
+  script:
+    - $CI_PROJECT_DIR/ci/surelog.sh $CI_CORES
 
 me-regress-verilator:
   <<: *job_definition
