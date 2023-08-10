@@ -494,7 +494,7 @@ module bp_me_nonsynth_cache
         if (uc_op) begin
           cache_req_v_o = 1'b1;
           // metadata not used by LCE for uncached ops, but send it anyway
-          cache_req_metadata_v_o = 1'b1;
+          cache_req_metadata_v_o = cache_req_yumi_i;
           state_n = cache_req_yumi_i
                     ? tag_lookup_hit_lo
                       ? e_uc_hit_inv
@@ -567,7 +567,7 @@ module bp_me_nonsynth_cache
         // cached miss
         else begin
           cache_req_v_o = 1'b1;
-          cache_req_metadata_v_o = 1'b1;
+          cache_req_metadata_v_o = cache_req_yumi_i;
           state_n = cache_req_yumi_i ? e_wait : state_r;
         end
       end // e_check_hit

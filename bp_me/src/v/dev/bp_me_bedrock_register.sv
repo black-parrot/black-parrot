@@ -95,7 +95,7 @@ module bp_me_bedrock_register
   logic v_r;
   wire wr_not_rd  = (mem_fwd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
   wire rd_not_wr  = (mem_fwd_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd});
-  wire v_n = mem_rev_ready_and_i & mem_fwd_v_li & ~v_r;
+  wire v_n = mem_fwd_v_li & ~v_r;
   logic [els_p-1:0] r_v_r;
   bsg_dff_reset_set_clear
    #(.width_p(1+els_p), .clear_over_set_p(1))
@@ -119,9 +119,9 @@ module bp_me_bedrock_register
 
   for (genvar i = 0; i < els_p; i++)
     begin : dec
-      wire addr_match = (mem_fwd_header_li.addr[0+:reg_addr_width_p] inside {base_addr_p[i]});
-      assign r_v_o[i] = v_n & addr_match & ~wr_not_rd;
-      assign w_v_o[i] = v_n & addr_match &  wr_not_rd;
+      wire addr_match = mem_fwd_v_li & (mem_fwd_header_li.addr[0+:reg_addr_width_p] inside {base_addr_p[i]});
+      assign r_v_o[i] = ~v_r & addr_match & ~wr_not_rd;
+      assign w_v_o[i] = ~v_r & addr_match &  wr_not_rd;
     end
 
   assign addr_o = mem_fwd_header_li.addr[0+:reg_addr_width_p];
