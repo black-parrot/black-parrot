@@ -989,7 +989,7 @@ module bp_be_dcache
       & ~{|data_mem_fast_write & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_read)}
       & ~|{data_mem_fast_read & data_mem_write_bank_mask}
       & ~|{data_mem_fast_write & data_mem_write_bank_mask}
-      & ~(v_tl_r & decode_tl_r.store_op)
+      & ~(v_tl_r & cache_req_critical_i)
       & ~(wbuf_snoop_match_lo);
 
   logic [lg_assoc_lp-1:0] data_mem_pkt_way_r;

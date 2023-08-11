@@ -203,7 +203,6 @@ module bp_nonsynth_cosim
 
   // We don't need to cross domains explicitly here, because using the slower clock is conservative
   logic [`BSG_WIDTH(128)-1:0] req_cnt_lo;
-  wire req_v_lo = (req_cnt_lo == '0);
   bsg_counter_up_down
    #(.max_val_p(128), .init_val_p(0), .max_step_p(1))
    req_counter
@@ -215,6 +214,7 @@ module bp_nonsynth_cosim
 
      ,.count_o(req_cnt_lo)
      );
+  wire req_v_lo = ~cache_req_v_r & (req_cnt_lo == '0);
 
   assign commit_fifo_yumi_li = commit_fifo_v_lo & ((~commit_ird_w_v_r | ird_fifo_v_lo[commit_instr_r.rd_addr])
                                                    & (~commit_frd_w_v_r | frd_fifo_v_lo[commit_instr_r.rd_addr])
