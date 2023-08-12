@@ -564,7 +564,7 @@ module bp_be_dcache
   logic wbuf_v_li, wbuf_v_lo, wbuf_force_lo, wbuf_snoop_match_lo, wbuf_yumi_li;
 
   assign wbuf_v_li = v_tv_r
-    & decode_tv_r.store_op & ~sc_fail_tv & ~uncached_op_tv_r
+    & decode_tv_r.store_op & store_hit_tv & ~sc_fail_tv & ~uncached_op_tv_r
     & ~any_miss_tv;
 
   //
