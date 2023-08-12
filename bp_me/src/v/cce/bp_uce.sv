@@ -646,7 +646,7 @@ module bp_uce
             tag_mem_pkt_cast_o.way_id = fsm_rev_header_li.payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             tag_mem_pkt_cast_o.state  = e_COH_M;
             tag_mem_pkt_cast_o.tag    = fsm_rev_addr_li[block_offset_width_lp+index_width_lp+:ctag_width_p];
-            tag_mem_pkt_v_o = load_resp_v_li & fsm_rev_new_li;
+            tag_mem_pkt_v_o = load_resp_v_li & fsm_rev_last_li;
 
             data_mem_pkt_cast_o.opcode     = e_cache_data_mem_write;
             data_mem_pkt_cast_o.index      = fsm_rev_addr_li[block_offset_width_lp+:index_width_lp];
@@ -685,7 +685,7 @@ module bp_uce
             tag_mem_pkt_cast_o.way_id = fsm_rev_header_li.payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             tag_mem_pkt_cast_o.state  = e_COH_M;
             tag_mem_pkt_cast_o.tag    = fsm_rev_addr_li[block_offset_width_lp+index_width_lp+:ctag_width_p];
-            tag_mem_pkt_v_o = load_resp_v_li & fsm_rev_new_li;
+            tag_mem_pkt_v_o = load_resp_v_li & fsm_rev_last_li;
 
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
             data_mem_pkt_cast_o.index  = fsm_rev_addr_li[block_offset_width_lp+:index_width_lp];

@@ -1218,15 +1218,19 @@ module bp_be_dcache
          );
 
       logic [assoc_p-1:0] fill_bank_mask_n, fill_hit_n;
-      wire [assoc_p-1:0] fill_bank_mask_nn = (fill_bank_mask_n | data_mem_pkt_fill_mask_expanded);
-      wire [assoc_p-1:0] fill_hit_nn = (1'b1 << data_mem_pkt_cast_i.way_id);
       wire fill_v = data_mem_pkt_yumi_o & data_mem_pkt_cast_i.opcode == e_cache_data_mem_write;
+      wire [assoc_p-1:0] fill_bank_mask_nn = fill_v
+        ? (fill_bank_mask_n | data_mem_pkt_fill_mask_expanded)
+        : '0;
+      wire [assoc_p-1:0] fill_hit_nn = fill_v
+        ? (1'b1 << data_mem_pkt_cast_i.way_id)
+        : '1;
       bsg_dff_reset_en
        #(.width_p(2*assoc_p))
        fill_reg
         (.clk_i(clk_i)
-         ,.reset_i(reset_i | blocking_sent)
-         ,.en_i(fill_v)
+         ,.reset_i(reset_i)
+         ,.en_i(fill_v | blocking_sent)
          ,.data_i({fill_bank_mask_nn, fill_hit_nn})
          ,.data_o({fill_bank_mask_n, fill_hit_n})
          );
