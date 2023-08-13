@@ -148,9 +148,9 @@ module bp_be_dcache_wbuf
   wire tag_hit1_n = bypass_word_addr == wbuf_entry_el1_r.caddr[byte_offset_width_lp+:word_addr_width_lp];
   wire tag_hit2_n = bypass_word_addr == wbuf_entry_cast_i.caddr[byte_offset_width_lp+:word_addr_width_lp];
 
-  wire tag_hit0 = tag_hit0_n & el0_valid;
-  wire tag_hit1 = tag_hit1_n & el1_valid;
-  wire tag_hit2 = tag_hit2_n & v_i;
+  wire tag_hit0 = v_tl_i & tag_hit0_n & el0_valid;
+  wire tag_hit1 = v_tl_i & tag_hit1_n & el1_valid;
+  wire tag_hit2 = v_tl_i & tag_hit2_n & v_i;
 
   wire [data_mask_width_lp-1:0] tag_hit0x4 = {data_mask_width_lp{tag_hit0}};
   wire [data_mask_width_lp-1:0] tag_hit1x4 = {data_mask_width_lp{tag_hit1}};
