@@ -176,7 +176,7 @@ module bp_nonsynth_cosim
       wire deallocate = commit_frd_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
       bsg_async_fifo
        #(.width_p(dpath_width_gp), .lg_size_p(10))
-       ird_fifo
+       frd_fifo
         (.w_clk_i(posedge_clk)
          ,.w_reset_i(reset_i)
          ,.w_enq_i(fill)
@@ -201,6 +201,11 @@ module bp_nonsynth_cosim
          );
     end
 
+  wire [dword_width_gp-1:0] commit_ird_li = ird_data_r[commit_instr_r.rd_addr];
+  wire [dword_width_gp-1:0] commit_frd_li = frd_raw_li[commit_instr_r.rd_addr];
+  wire commit_ird_v_lo = ird_fifo_v_lo[commit_instr_r.rd_addr];
+  wire commit_frd_v_lo = frd_fifo_v_lo[commit_instr_r.rd_addr];
+
   // We don't need to cross domains explicitly here, because using the slower clock is conservative
   logic [`BSG_WIDTH(128)-1:0] req_cnt_lo;
   bsg_counter_up_down
@@ -216,8 +221,8 @@ module bp_nonsynth_cosim
      );
   wire req_v_lo = ~cache_req_v_r & (req_cnt_lo == '0);
 
-  assign commit_fifo_yumi_li = commit_fifo_v_lo & ((~commit_ird_w_v_r | ird_fifo_v_lo[commit_instr_r.rd_addr])
-                                                   & (~commit_frd_w_v_r | frd_fifo_v_lo[commit_instr_r.rd_addr])
+  assign commit_fifo_yumi_li = commit_fifo_v_lo & ((~commit_ird_w_v_r | commit_ird_v_lo)
+                                                   & (~commit_frd_w_v_r | commit_frd_v_lo)
                                                    & (~commit_req_v_r | req_v_lo)
                                                    );
   wire commit_iwb_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
@@ -302,9 +307,9 @@ module bp_nonsynth_cosim
       begin
         $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, instr_cnt);
         if (instret_v_r & commit_ird_w_v_r)
-          $fwrite(file, "%x %x", commit_instr_r.rd_addr, ird_data_r[commit_instr_r.rd_addr]);
+          $fwrite(file, "%x %x", commit_instr_r.rd_addr, commit_ird_li);
         if (instret_v_r & commit_frd_w_v_r)
-          $fwrite(file, "%x %x", commit_instr_r.rd_addr, frd_raw_li[commit_instr_r.rd_addr]);
+          $fwrite(file, "%x %x", commit_instr_r.rd_addr, commit_frd_li);
         if (trap_v_r)
           $fwrite(file, "   %x %x <- trap", cause_r, mstatus_r);
         $fwrite(file, "\n");

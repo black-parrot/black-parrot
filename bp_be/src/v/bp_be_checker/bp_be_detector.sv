@@ -158,13 +158,12 @@ module bp_be_detector
       // Detect scoreboard hazards
       irs1_sb_raw_haz_v = (issue_pkt_cast_i.decode.irs1_r_v & irs_match_lo[0]);
       irs2_sb_raw_haz_v = (issue_pkt_cast_i.decode.irs2_r_v & irs_match_lo[1]);
-      ird_sb_waw_haz_v = (issue_pkt_cast_i.decode.irf_w_v & ird_match_lo);
+      ird_sb_waw_haz_v = ((issue_pkt_cast_i.decode.irf_w_v | issue_pkt_cast_i.decode.late_iwb_v) & ird_match_lo);
 
       frs1_sb_raw_haz_v = (issue_pkt_cast_i.decode.frs1_r_v & frs_match_lo[0]);
       frs2_sb_raw_haz_v = (issue_pkt_cast_i.decode.frs2_r_v & frs_match_lo[1]);
       frs3_sb_raw_haz_v = (issue_pkt_cast_i.decode.frs3_r_v & frs_match_lo[2]);
-
-      frd_sb_waw_haz_v = (issue_pkt_cast_i.decode.frf_w_v & frd_match_lo);
+      frd_sb_waw_haz_v = ((issue_pkt_cast_i.decode.frf_w_v | issue_pkt_cast_i.decode.late_fwb_v) & frd_match_lo);
 
       // Detect integer and float data hazards for EX1
       irs1_data_haz_v[0] = (issue_pkt_cast_i.decode.irs1_r_v & rs1_match_vector[0])
