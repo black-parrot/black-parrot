@@ -112,6 +112,7 @@ module bp_cacc_vdp
   bp_acache_req_metadata_s acache_req_metadata_lo;
   logic acache_req_metadata_v_lo;
   logic [paddr_width_p-1:0] acache_req_addr_lo;
+  logic [dword_width_gp-1:0] acache_req_data_lo;
   logic acache_req_last_lo, acache_req_critical_lo;
   logic acache_req_credits_full_lo, acache_req_credits_empty_lo;
   bp_acache_data_mem_pkt_s acache_data_mem_pkt_li;
@@ -172,6 +173,7 @@ module bp_cacc_vdp
      ,.cache_req_credits_full_i(acache_req_credits_full_lo)
      ,.cache_req_credits_empty_i(acache_req_credits_empty_lo)
      ,.cache_req_addr_i(acache_req_addr_lo)
+     ,.cache_req_data_i(acache_req_data_lo)
      ,.cache_req_critical_i(acache_req_critical_lo)
      ,.cache_req_last_i(acache_req_last_lo)
 
@@ -216,6 +218,7 @@ module bp_cacc_vdp
      ,.cache_req_metadata_i(acache_req_metadata_lo)
      ,.cache_req_metadata_v_i(acache_req_metadata_v_lo)
      ,.cache_req_addr_o(acache_req_addr_lo)
+     ,.cache_req_data_o(acache_req_data_lo)
      ,.cache_req_critical_o(acache_req_critical_lo)
      ,.cache_req_last_o(acache_req_last_lo)
      ,.cache_req_credits_full_o(acache_req_credits_full_lo)

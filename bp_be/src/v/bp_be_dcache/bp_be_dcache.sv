@@ -152,6 +152,7 @@ module bp_be_dcache
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
    , input [paddr_width_p-1:0]                       cache_req_addr_i
+   , input [dword_width_gp-1:0]                      cache_req_data_i
    , input                                           cache_req_critical_i
    , input                                           cache_req_last_i
    // Unused
@@ -211,14 +212,14 @@ module bp_be_dcache
     & (~data_mem_pkt_v_i | data_mem_pkt_yumi_o);
 
   // Snoop signals
-  logic [block_width_p-1:0] snoop_data;
+  logic [block_width_p-1:0] snoop_ld_data;
   logic [paddr_width_p-1:0] snoop_addr;
+  logic [dword_width_gp-1:0] snoop_st_data;
   logic [2:0][assoc_p-1:0] snoop_hit;
   logic [assoc_p-1:0] snoop_bank_sel_one_hot;
 
   // Fill signals
   logic fill_snoop_v, fill_pending_r, fill_secondary_r, fill_uncached_r;
-  logic [dword_width_gp-1:0] fill_st_data_r;
   bp_be_dcache_decode_s fill_decode_r;
   logic [sindex_width_lp-1:0] fill_index_r;
   logic [assoc_p-1:0] fill_hit_r;
@@ -394,16 +395,17 @@ module bp_be_dcache
   logic uncached_op_tv_n;
   bp_be_dcache_decode_s decode_tv_n;
   bsg_mux
-   #(.width_p(3*assoc_p+block_width_p+paddr_width_p+dword_width_gp+assoc_p+1+$bits(bp_be_dcache_decode_s)), .els_p(2))
+   #(.width_p(3*assoc_p+block_width_p+dword_width_gp+paddr_width_p+assoc_p+1+$bits(bp_be_dcache_decode_s)), .els_p(2))
    tv_snoop_mux
-    (.data_i({{snoop_hit, snoop_data, snoop_addr, snoop_bank_sel_one_hot
-               ,fill_st_data_r, fill_uncached_r, fill_decode_r}
-              ,{way_v_tl, store_hit_tl, load_hit_tl, data_mem_data_lo, paddr_tl, bank_sel_one_hot_tl
-                ,st_data_tl, uncached_op_tl, decode_tl_r}
+    (.data_i({{snoop_hit, snoop_ld_data, snoop_st_data, snoop_addr, snoop_bank_sel_one_hot
+               ,fill_uncached_r, fill_decode_r}
+              ,{way_v_tl, store_hit_tl, load_hit_tl, data_mem_data_lo, st_data_tl, paddr_tl, bank_sel_one_hot_tl
+                ,uncached_op_tl, decode_tl_r}
               })
      ,.sel_i(fill_snoop_v)
-     ,.data_o({way_v_tv_n, store_hit_tv_n, load_hit_tv_n, ld_data_tv_n, paddr_tv_n, bank_sel_one_hot_tv_n
-               ,st_data_tv_n, uncached_op_tv_n, decode_tv_n})
+     ,.data_o({way_v_tv_n, store_hit_tv_n, load_hit_tv_n, ld_data_tv_n, st_data_tv_n, paddr_tv_n, bank_sel_one_hot_tv_n
+               ,uncached_op_tv_n, decode_tv_n
+               })
      );
 
   wire pending_tv_n = fill_pending_r;
@@ -1176,9 +1178,10 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   wire [assoc_p-1:0] pseudo_hit =
     (data_mem_pkt_v_i << data_mem_pkt_cast_i.way_id) | (tag_mem_pkt_v_i << tag_mem_pkt_cast_i.way_id);
-  assign snoop_hit = {3{pseudo_hit}};
-  assign snoop_data = data_mem_data_li;
-  assign snoop_addr = cache_req_addr_i;
+  assign snoop_hit     = {3{pseudo_hit}};
+  assign snoop_ld_data = data_mem_data_li;
+  assign snoop_st_data = cache_req_data_i;
+  assign snoop_addr    = cache_req_addr_i;
 
   wire [bindex_width_lp-1:0] snoop_bank = cache_req_addr_i[byte_offset_width_lp+:bindex_width_lp];
   bsg_decode
@@ -1203,19 +1206,20 @@ module bp_be_dcache
          ,.data_o(fill_pending_r)
          );
 
+      wire fill_secondary = (v_tv_r & fill_pending_r & any_miss_tv) | (v_tl_r & fill_hazard);
       bsg_dff_reset_set_clear
        #(.width_p(1), .clear_over_set_p(1))
        fill_secondary_reg
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
-         ,.set_i(v_tv_r & fill_pending_r & any_miss_tv)
+         ,.set_i(fill_secondary)
          ,.clear_i(complete_recv)
          ,.data_o(fill_secondary_r)
          );
 
       wire fill_v = data_mem_pkt_yumi_o & data_mem_pkt_cast_i.opcode == e_cache_data_mem_write;
       wire [assoc_p-1:0] fill_bank_mask_n = fill_v
-        ? (fill_bank_mask_n | data_mem_pkt_fill_mask_expanded)
+        ? (fill_bank_mask_r | data_mem_pkt_fill_mask_expanded)
         : '0;
       wire [assoc_p-1:0] fill_hit_n = fill_v
         ? (1'b1 << data_mem_pkt_cast_i.way_id)
@@ -1231,20 +1235,20 @@ module bp_be_dcache
          );
 
       wire fill_uncached_n = uncached_op_tv_r;
-      wire [dword_width_gp-1:0] fill_st_data_n = st_data_tv_r;
       wire [$bits(bp_be_dcache_decode_s)-1:0] fill_decode_n = decode_tv_r;
       wire [sindex_width_lp-1:0] fill_index_n = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
       bsg_dff_en
-       #(.width_p(sindex_width_lp+1+dword_width_gp+$bits(bp_be_dcache_decode_s)))
+       #(.width_p(sindex_width_lp+1+$bits(bp_be_dcache_decode_s)))
        fill_metadata_reg
         (.clk_i(clk_i)
          ,.en_i(blocking_sent)
-         ,.data_i({fill_index_n, fill_uncached_n, fill_st_data_n, fill_decode_n})
-         ,.data_o({fill_index_r, fill_uncached_r, fill_st_data_r, fill_decode_r})
+         ,.data_i({fill_index_n, fill_uncached_n, fill_decode_n})
+         ,.data_o({fill_index_r, fill_uncached_r, fill_decode_r})
          );
 
       assign fill_snoop_v = critical_recv;
-      assign fill_hazard = fill_pending_r
+      assign fill_hazard = v_tl_r
+        &    fill_pending_r
         &  |(fill_index_r == vaddr_index_tl)
         &  |(fill_hit_r & load_hit_tl)
         & ~|(fill_bank_mask_r & bank_sel_one_hot_tl);
@@ -1267,7 +1271,6 @@ module bp_be_dcache
       assign fill_index_r = '0;
 
       assign fill_uncached_r = uncached_op_tv_r;
-      assign fill_st_data_r = st_data_tv_r;
       assign fill_decode_r = decode_tv_r;
 
       assign fill_snoop_v = blocking_sent | fill_pending_r;

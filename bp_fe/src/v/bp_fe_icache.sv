@@ -108,6 +108,7 @@ module bp_fe_icache
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
    , input [paddr_width_p-1:0]                        cache_req_addr_i
+   , input [dword_width_gp-1:0]                       cache_req_data_i
    , input                                            cache_req_critical_i
    , input                                            cache_req_last_i
    , input                                            cache_req_credits_full_i

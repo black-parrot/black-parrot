@@ -28,6 +28,7 @@ module bp_core_minimal
    , output logic [icache_req_metadata_width_lp-1:0] icache_req_metadata_o
    , output logic                                    icache_req_metadata_v_o
    , input [paddr_width_p-1:0]                       icache_req_addr_i
+   , input [dword_width_gp-1:0]                      icache_req_data_i
    , input                                           icache_req_critical_i
    , input                                           icache_req_last_i
    , input                                           icache_req_credits_full_i
@@ -57,6 +58,7 @@ module bp_core_minimal
    , output logic [dcache_req_metadata_width_lp-1:0] dcache_req_metadata_o
    , output logic                                    dcache_req_metadata_v_o
    , input [paddr_width_p-1:0]                       dcache_req_addr_i
+   , input [dword_width_gp-1:0]                      dcache_req_data_i
    , input                                           dcache_req_critical_i
    , input                                           dcache_req_last_i
    , input                                           dcache_req_credits_full_i
@@ -117,6 +119,7 @@ module bp_core_minimal
      ,.cache_req_metadata_o(icache_req_metadata_o)
      ,.cache_req_metadata_v_o(icache_req_metadata_v_o)
      ,.cache_req_addr_i(icache_req_addr_i)
+     ,.cache_req_data_i(icache_req_data_i)
      ,.cache_req_critical_i(icache_req_critical_i)
      ,.cache_req_last_i(icache_req_last_i)
      ,.cache_req_credits_full_i(icache_req_credits_full_i)
@@ -161,6 +164,7 @@ module bp_core_minimal
      ,.cache_req_metadata_o(dcache_req_metadata_o)
      ,.cache_req_metadata_v_o(dcache_req_metadata_v_o)
      ,.cache_req_addr_i(dcache_req_addr_i)
+     ,.cache_req_data_i(dcache_req_data_i)
      ,.cache_req_critical_i(dcache_req_critical_i)
      ,.cache_req_last_i(dcache_req_last_i)
      ,.cache_req_credits_full_i(dcache_req_credits_full_i)

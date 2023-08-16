@@ -38,6 +38,7 @@ module bp_uce
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
     , output logic [paddr_width_p-1:0]               cache_req_addr_o
+    , output logic [dword_width_gp-1:0]              cache_req_data_o
     , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_last_o
     , output logic                                   cache_req_credits_full_o
@@ -280,7 +281,8 @@ module bp_uce
      ,.fsm_critical_o(fsm_rev_critical_li)
      ,.fsm_last_o(fsm_rev_last_li)
      );
-  assign cache_req_addr_o = fsm_rev_header_li.addr;
+  assign cache_req_addr_o = cache_req_r.addr;
+  assign cache_req_data_o = cache_req_r.data;
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
   wire flush_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};

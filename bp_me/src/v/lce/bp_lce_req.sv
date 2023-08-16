@@ -61,6 +61,8 @@ module bp_lce_req
     , output logic                                   cache_req_yumi_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
+    , output logic [paddr_width_p-1:0]               cache_req_addr_o
+    , output logic [dword_width_gp-1:0]              cache_req_data_o
 
     // LCE-Cache Interface
     , output logic                                   credits_full_o
@@ -110,6 +112,8 @@ module bp_lce_req
      ,.v_o(cache_req_v_r)
      ,.yumi_i(cache_req_done)
      );
+  assign cache_req_addr_o = cache_req_r.addr;
+  assign cache_req_data_o = cache_req_r.data;
 
   bp_cache_req_metadata_s cache_req_metadata, cache_req_metadata_r;
   logic cache_req_metadata_v_r;
