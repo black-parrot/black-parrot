@@ -195,11 +195,12 @@ module bp_be_dcache
   logic safe_tl_we, safe_tv_we;
   logic v_tl_r, v_tv_r;
   logic gdirty_r;
-  logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, engine_hazard;
+  logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, engine_hazard, fill_hazard;
   logic blocking_req, blocking_sent;
   logic nonblocking_req, nonblocking_sent;
 
-  wire flush_self = flush_i | tag_mem_write_hazard | data_mem_write_hazard | blocking_hazard | engine_hazard;
+  wire flush_tv = flush_i | tag_mem_write_hazard | blocking_hazard | engine_hazard | fill_hazard;
+  wire flush_tl = flush_tv | tag_mem_write_hazard | data_mem_write_hazard;
   wire critical_recv = cache_req_critical_i
     & (~stat_mem_pkt_v_i | stat_mem_pkt_yumi_o)
     & (~tag_mem_pkt_v_i | tag_mem_pkt_yumi_o)
@@ -307,7 +308,7 @@ module bp_be_dcache
   logic [vaddr_width_p-1:0] vaddr_tl_r;
 
   assign safe_tl_we = ready_and_o & v_i;
-  assign tl_we = safe_tl_we & ~flush_self;
+  assign tl_we = safe_tl_we & ~flush_tl;
   bsg_dff_reset
    #(.width_p(1))
    v_tl_reg
@@ -375,7 +376,7 @@ module bp_be_dcache
 
   // fencei does not require a ptag
   assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
-  assign tv_we = safe_tv_we & ~flush_self;
+  assign tv_we = safe_tv_we & ~flush_tv;
   bsg_dff_reset
    #(.width_p(1))
    v_tv_reg
@@ -504,11 +505,7 @@ module bp_be_dcache
   wire ldst_miss_tv     = load_miss_tv | store_miss_tv;
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
-  wire fill_miss_tv     = pending_tv_r & ~snoop_tv_r
-    &   (fill_index_r == paddr_index_tv)
-    &   (fill_hit_r == load_hit_v_tv_r)
-    & ~|(fill_bank_mask_r & bank_sel_one_hot_tv_r);
-  wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | engine_miss_tv | fill_miss_tv;
+  wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | engine_miss_tv;
 
   assign data_o = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : final_data;
 
@@ -1012,7 +1009,7 @@ module bp_be_dcache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read  = (v_tv_r & any_miss_tv & cache_req_metadata_v_n) | tag_mem_write_hazard;
+  wire stat_mem_fast_read  = (v_tv_r & cache_req_metadata_v_n);
   wire stat_mem_fast_write = (v_tv_r & load_hit_tv & ~decode_tv_r.fencei_op & ~uncached_op_tv_r);
   wire stat_mem_slow_write = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   wire stat_mem_slow_read  = stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
@@ -1216,12 +1213,11 @@ module bp_be_dcache
          ,.data_o(fill_secondary_r)
          );
 
-      logic [assoc_p-1:0] fill_bank_mask_n, fill_hit_n;
       wire fill_v = data_mem_pkt_yumi_o & data_mem_pkt_cast_i.opcode == e_cache_data_mem_write;
-      wire [assoc_p-1:0] fill_bank_mask_nn = fill_v
+      wire [assoc_p-1:0] fill_bank_mask_n = fill_v
         ? (fill_bank_mask_n | data_mem_pkt_fill_mask_expanded)
         : '0;
-      wire [assoc_p-1:0] fill_hit_nn = fill_v
+      wire [assoc_p-1:0] fill_hit_n = fill_v
         ? (1'b1 << data_mem_pkt_cast_i.way_id)
         : '1;
       bsg_dff_reset_en
@@ -1230,15 +1226,6 @@ module bp_be_dcache
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
          ,.en_i(fill_v | blocking_sent)
-         ,.data_i({fill_bank_mask_nn, fill_hit_nn})
-         ,.data_o({fill_bank_mask_n, fill_hit_n})
-         );
-
-      // Could instead determine fill_hit during load_hit/store_hit calculation
-      bsg_dff_chain
-       #(.width_p(2*assoc_p), .num_stages_p(2))
-       fill_buffer_reg
-        (.clk_i(clk_i)
          ,.data_i({fill_bank_mask_n, fill_hit_n})
          ,.data_o({fill_bank_mask_r, fill_hit_r})
          );
@@ -1257,6 +1244,10 @@ module bp_be_dcache
          );
 
       assign fill_snoop_v = critical_recv;
+      assign fill_hazard = fill_pending_r
+        &  |(fill_index_r == vaddr_index_tl)
+        &  |(fill_hit_r & load_hit_tl)
+        & ~|(fill_bank_mask_r & bank_sel_one_hot_tl);
     end
   else
     begin : nhum
@@ -1280,6 +1271,7 @@ module bp_be_dcache
       assign fill_decode_r = decode_tv_r;
 
       assign fill_snoop_v = blocking_sent | fill_pending_r;
+      assign fill_hazard = '0;
     end
 
   // synopsys translate_off

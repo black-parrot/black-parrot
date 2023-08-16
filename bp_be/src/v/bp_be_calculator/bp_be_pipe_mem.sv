@@ -166,8 +166,9 @@ module bp_be_pipe_mem
 
   logic [dword_width_gp-1:0] dcache_data;
   logic [reg_addr_width_gp-1:0] dcache_rd_addr;
-  logic                     dcache_ret, dcache_store, dcache_late, dcache_fencei, dcache_v, dcache_req;
+  logic                     dcache_ret, dcache_store, dcache_late, dcache_fencei, dcache_v;
   logic                     dcache_float;
+  logic                     dcache_req;
 
   logic load_access_fault_v, store_access_fault_v;
   logic load_page_fault_v, store_page_fault_v;
@@ -286,10 +287,9 @@ module bp_be_pipe_mem
      ,.dcache_pkt_o(ptw_dcache_pkt)
      ,.dcache_ptag_o(ptw_dcache_ptag)
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
-     ,.dcache_ordered_i(dcache_ordered_lo)
      ,.dcache_ready_and_i(dcache_ready_and_lo)
 
-     ,.dcache_v_i(dcache_v)
+     ,.dcache_v_i(dcache_v & ~dcache_late)
      ,.dcache_data_i(dcache_data)
      );
 

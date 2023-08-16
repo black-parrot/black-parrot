@@ -492,7 +492,7 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.state = fsm_cmd_header_li.payload.state;
             tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:ctag_width_p];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
-            tag_mem_pkt_v_o = fsm_cmd_v_li & fsm_cmd_last_li;
+            tag_mem_pkt_v_o = fsm_cmd_v_li & fsm_cmd_new_li;
 
             data_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             data_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
