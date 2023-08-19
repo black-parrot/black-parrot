@@ -166,6 +166,29 @@ module bp_be_csr
 
   assign irq_waiting_o = |interrupt_icode_dec_li;
 
+  // Holding MISA value on different Configuration
+  logic [25:0] MISA_val;
+
+  always_comb
+    begin
+      if((fpu_support_p == 1) && (muldiv_support_p == 0))
+        begin
+          MISA_val = 26'h141105;
+        end
+      if((fpu_support_p == 0) && (muldiv_support_p == 1))
+        begin
+          MISA_val = 26'h14012d;
+        end
+      if((fpu_support_p == 0) && (muldiv_support_p == 0))
+        begin
+          MISA_val = 26'h140105;
+        end
+      if((fpu_support_p == 1) && (muldiv_support_p == 1))
+        begin
+          MISA_val = 26'h14112d;
+        end        
+    end
+
   rv64_exception_dec_s exception_dec_li;
   assign exception_dec_li =
       '{instr_misaligned    : retire_pkt_cast_i.exception.instr_misaligned
@@ -449,7 +472,7 @@ module bp_be_csr
                 {1'b1, `CSR_ADDR_MSTATUS      }: csr_data_lo = mstatus_lo;
                 // MISA is optionally read-write, but all fields are read-only in BlackParrot
                 //   64 bit MXLEN, IMACFDSU extensions
-                {1'b1, `CSR_ADDR_MISA         }: csr_data_lo = {2'b10, 36'b0, 26'h14112d};
+                {1'b1, `CSR_ADDR_MISA         }: csr_data_lo = {2'b10, 36'b0, MISA_val};
                 {1'b1, `CSR_ADDR_MEDELEG      }: csr_data_lo = medeleg_lo;
                 {1'b1, `CSR_ADDR_MIDELEG      }: csr_data_lo = mideleg_lo;
                 {1'b1, `CSR_ADDR_MIE          }: csr_data_lo = mie_lo;
@@ -662,6 +685,7 @@ module bp_be_csr
       // Set FS to dirty if: fflags set, frf written, fcsr written
       mstatus_li.fs |= {2{(csr_w_v_li & csr_fany_li & ~csr_illegal_instr_o)}};
       mstatus_li.fs |= {2{(retire_pkt_cast_i.instret & instr_fany_li)}};
+      mstatus_li.fs |= {2{(fpu_support_p)}};
     end
 
   assign irq_pending_o = (~dcsr_lo.step | dcsr_lo.stepie)

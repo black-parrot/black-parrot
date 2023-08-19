@@ -211,6 +211,7 @@ module bp_be_instr_decoder
             decode_cast_o.ops_v      = instr inside {`RV64_FL_W};
 
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
+            illegal_instr_o = ~fpu_support_p;
 
             unique casez (instr)
               `RV64_FL_W: decode_cast_o.fu_op = e_dcache_op_flw;
@@ -240,6 +241,7 @@ module bp_be_instr_decoder
             decode_cast_o.fflags_w_v = 1'b1;
 
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
+            illegal_instr_o = ~fpu_support_p;
 
             unique casez (instr)
               `RV64_FS_W : decode_cast_o.fu_op = e_dcache_op_fsw;
@@ -325,6 +327,7 @@ module bp_be_instr_decoder
         `RV64_FP_OP:
           begin
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
+            illegal_instr_o = ~fpu_support_p;
             unique casez (instr)
               `RV64_FCVT_SD, `RV64_FCVT_DS:
                 begin
@@ -551,6 +554,7 @@ module bp_be_instr_decoder
             endcase
 
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
+            illegal_instr_o = ~fpu_support_p;
           end
 
         `RV64_AMO_OP:
