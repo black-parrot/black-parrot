@@ -505,6 +505,7 @@ module bp_be_dcache
   wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & ~nonblocking_req & writeback_p;
   wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv & ~nonblocking_req;
   wire ldst_miss_tv     = load_miss_tv | store_miss_tv;
+
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
   wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | engine_miss_tv;
