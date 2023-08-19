@@ -148,7 +148,7 @@ module bp_be_dcache
    , output logic [dcache_req_width_lp-1:0]          cache_req_o
    , output logic                                    cache_req_v_o
    , input                                           cache_req_yumi_i
-   , input                                           cache_req_busy_i
+   , input                                           cache_req_lock_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
    , input [paddr_width_p-1:0]                       cache_req_addr_i
@@ -821,7 +821,7 @@ module bp_be_dcache
   assign cache_req_metadata_cast_o.hit_or_repl_way = hit_or_repl_way;
   assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[hit_or_repl_way];
 
-  assign ready_and_o = ~cache_req_busy_i & ~fill_secondary_r;
+  assign ready_and_o = ~cache_req_lock_i & ~fill_secondary_r;
   assign ordered_o = ~v_tl_r & ~v_tv_r & cache_req_credits_empty_i;
 
   /////////////////////////////////////////////////////////////////////////////

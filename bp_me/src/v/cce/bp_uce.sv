@@ -34,7 +34,7 @@ module bp_uce
     , input [cache_req_width_lp-1:0]                 cache_req_i
     , input                                          cache_req_v_i
     , output logic                                   cache_req_yumi_o
-    , output logic                                   cache_req_busy_o
+    , output logic                                   cache_req_lock_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
     , output logic [paddr_width_p-1:0]               cache_req_addr_o
@@ -403,7 +403,7 @@ module bp_uce
   // We ack mem_revs for stores no matter what, so load_resp_yumi_lo is for other responses
   logic load_resp_yumi_lo;
   assign fsm_rev_yumi_lo = load_resp_yumi_lo | store_resp_v_li;
-  assign cache_req_busy_o = is_reset | is_init;
+  assign cache_req_lock_o = is_reset | is_init | flush_v_r | clear_v_r;
   always_comb
     begin
       cache_req_yumi_o = '0;

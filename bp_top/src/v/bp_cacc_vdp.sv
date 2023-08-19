@@ -108,7 +108,7 @@ module bp_cacc_vdp
 
   `declare_bp_cache_engine_if(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache);
   bp_acache_req_s acache_req_lo;
-  logic acache_req_v_lo, acache_req_yumi_li, acache_req_busy_li;
+  logic acache_req_v_lo, acache_req_yumi_li, acache_req_lock_li;
   bp_acache_req_metadata_s acache_req_metadata_lo;
   logic acache_req_metadata_v_lo;
   logic [paddr_width_p-1:0] acache_req_addr_lo;
@@ -167,7 +167,7 @@ module bp_cacc_vdp
      ,.cache_req_o(acache_req_lo)
      ,.cache_req_v_o(acache_req_v_lo)
      ,.cache_req_yumi_i(acache_req_yumi_li)
-     ,.cache_req_busy_i(acache_req_busy_li)
+     ,.cache_req_lock_i(acache_req_lock_li)
      ,.cache_req_metadata_o(acache_req_metadata_lo)
      ,.cache_req_metadata_v_o(acache_req_metadata_v_lo)
      ,.cache_req_credits_full_i(acache_req_credits_full_lo)
@@ -214,7 +214,7 @@ module bp_cacc_vdp
      ,.cache_req_i(acache_req_lo)
      ,.cache_req_v_i(acache_req_v_lo)
      ,.cache_req_yumi_o(acache_req_yumi_li)
-     ,.cache_req_busy_o(acache_req_busy_li)
+     ,.cache_req_lock_o(acache_req_lock_li)
      ,.cache_req_metadata_i(acache_req_metadata_lo)
      ,.cache_req_metadata_v_i(acache_req_metadata_v_lo)
      ,.cache_req_addr_o(acache_req_addr_lo)

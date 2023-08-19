@@ -291,7 +291,7 @@ module testbench
   `declare_bp_cache_engine_if(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache);
 
   bp_cache_req_s [num_lce_p-1:0] cache_req_lo;
-  logic [num_lce_p-1:0] cache_req_v_lo, cache_req_yumi_li, cache_req_busy_li;
+  logic [num_lce_p-1:0] cache_req_v_lo, cache_req_yumi_li, cache_req_lock_li;
   bp_cache_req_metadata_s [num_lce_p-1:0] cache_req_metadata_lo;
   logic [num_lce_p-1:0] cache_req_metadata_v_lo;
   logic [num_lce_p-1:0][paddr_width_p-1:0] cache_req_addr_li;
@@ -382,7 +382,7 @@ module testbench
        ,.cache_req_o(cache_req_lo[i])
        ,.cache_req_v_o(cache_req_v_lo[i])
        ,.cache_req_yumi_i(cache_req_yumi_li[i])
-       ,.cache_req_busy_i(cache_req_busy_li[i])
+       ,.cache_req_lock_i(cache_req_lock_li[i])
        ,.cache_req_metadata_o(cache_req_metadata_lo[i])
        ,.cache_req_metadata_v_o(cache_req_metadata_v_lo[i])
        ,.cache_req_addr_i(cache_req_addr_li[i])
@@ -434,7 +434,7 @@ module testbench
        ,.cache_req_i(cache_req_lo[i])
        ,.cache_req_v_i(cache_req_v_lo[i])
        ,.cache_req_yumi_o(cache_req_yumi_li[i])
-       ,.cache_req_busy_o(cache_req_busy_li[i])
+       ,.cache_req_lock_o(cache_req_lock_li[i])
        ,.cache_req_metadata_i(cache_req_metadata_lo[i])
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
        ,.cache_req_addr_o(cache_req_addr_li[i])
