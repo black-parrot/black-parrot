@@ -350,47 +350,49 @@ module bp_be_calculator_top
      );
 
   // Floating point pipe: 3/4 cycle latency
-  if(muldiv_support_p)begin
-  bp_be_pipe_fma
-   #(.bp_params_p(bp_params_p))
-   pipe_fma
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  if(muldiv_support_p)
+   begin
+    bp_be_pipe_fma
+     #(.bp_params_p(bp_params_p))
+      pipe_fma
+       (.clk_i(clk_i)
+        ,.reset_i(reset_i)
 
-     ,.reservation_i(reservation_r)
-     ,.flush_i(commit_pkt_cast_o.npc_w_v)
-     ,.frm_dyn_i(frm_dyn_lo)
+        ,.reservation_i(reservation_r)
+        ,.flush_i(commit_pkt_cast_o.npc_w_v)
+        ,.frm_dyn_i(frm_dyn_lo)
 
-     ,.imul_data_o(pipe_mul_data_lo)
-     ,.imul_v_o(pipe_mul_data_lo_v)
-     ,.fma_data_o(pipe_fma_data_lo)
-     ,.fma_fflags_o(pipe_fma_fflags_lo)
-     ,.fma_v_o(pipe_fma_data_lo_v)
-     );
+        ,.imul_data_o(pipe_mul_data_lo)
+        ,.imul_v_o(pipe_mul_data_lo_v)
+        ,.fma_data_o(pipe_fma_data_lo)
+        ,.fma_fflags_o(pipe_fma_fflags_lo)
+        ,.fma_v_o(pipe_fma_data_lo_v)
+      );
   end
 
   // Variable length pipeline, used for long (potentially scoreboarded operations)
-  if(fpu_support_p)begin
-  bp_be_pipe_long
-   #(.bp_params_p(bp_params_p))
-   pipe_long
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  if(fpu_support_p)
+   begin
+    bp_be_pipe_long
+     #(.bp_params_p(bp_params_p))
+      pipe_long
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
 
-     ,.reservation_i(reservation_r)
-     ,.flush_i(commit_pkt_cast_o.npc_w_v)
-     ,.ibusy_o(idiv_busy_o)
-     ,.fbusy_o(fdiv_busy_o)
-     ,.frm_dyn_i(frm_dyn_lo)
+       ,.reservation_i(reservation_r)
+       ,.flush_i(commit_pkt_cast_o.npc_w_v)
+       ,.ibusy_o(idiv_busy_o)
+       ,.fbusy_o(fdiv_busy_o)
+       ,.frm_dyn_i(frm_dyn_lo)
 
-     ,.iwb_pkt_o(long_iwb_pkt)
-     ,.iwb_v_o(pipe_long_idata_lo_v)
-     ,.iwb_yumi_i(pipe_long_idata_lo_yumi)
+       ,.iwb_pkt_o(long_iwb_pkt)
+       ,.iwb_v_o(pipe_long_idata_lo_v)
+       ,.iwb_yumi_i(pipe_long_idata_lo_yumi)
 
-     ,.fwb_pkt_o(long_fwb_pkt)
-     ,.fwb_v_o(pipe_long_fdata_lo_v)
-     ,.fwb_yumi_i(pipe_long_fdata_lo_yumi)
-     );
+       ,.fwb_pkt_o(long_fwb_pkt)
+       ,.fwb_v_o(pipe_long_fdata_lo_v)
+       ,.fwb_yumi_i(pipe_long_fdata_lo_yumi)
+       );
   end
 
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
