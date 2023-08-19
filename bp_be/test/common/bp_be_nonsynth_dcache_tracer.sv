@@ -36,7 +36,7 @@ module bp_be_nonsynth_dcache_tracer
    , input [cache_req_width_lp-1:0]                       cache_req_o
    , input                                                cache_req_v_o
    , input                                                cache_req_yumi_i
-   , input                                                cache_req_busy_i
+   , input                                                cache_req_lock_i
    , input [cache_req_metadata_width_lp-1:0]              cache_req_metadata_o
    , input                                                cache_req_metadata_v_o
    , input                                                cache_req_critical_i

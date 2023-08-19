@@ -34,10 +34,11 @@ module bp_uce
     , input [cache_req_width_lp-1:0]                 cache_req_i
     , input                                          cache_req_v_i
     , output logic                                   cache_req_yumi_o
-    , output logic                                   cache_req_busy_o
+    , output logic                                   cache_req_lock_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
     , output logic [paddr_width_p-1:0]               cache_req_addr_o
+    , output logic [dword_width_gp-1:0]              cache_req_data_o
     , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_last_o
     , output logic                                   cache_req_credits_full_o
@@ -280,7 +281,8 @@ module bp_uce
      ,.fsm_critical_o(fsm_rev_critical_li)
      ,.fsm_last_o(fsm_rev_last_li)
      );
-  assign cache_req_addr_o = fsm_rev_header_li.addr;
+  assign cache_req_addr_o = cache_req_r.addr;
+  assign cache_req_data_o = cache_req_r.data;
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
   wire flush_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
@@ -399,12 +401,9 @@ module bp_uce
     end
 
   // We ack mem_revs for stores no matter what, so load_resp_yumi_lo is for other responses
-  wire load_resp_yumi_lo =  load_resp_v_li
-    && (~tag_mem_pkt_v_o | tag_mem_pkt_yumi_i)
-    && (~data_mem_pkt_v_o | data_mem_pkt_yumi_i)
-    && (~stat_mem_pkt_v_o | stat_mem_pkt_yumi_i);
+  logic load_resp_yumi_lo;
   assign fsm_rev_yumi_lo = load_resp_yumi_lo | store_resp_v_li;
-  assign cache_req_busy_o = is_reset | is_init;
+  assign cache_req_lock_o = is_reset | is_init | flush_v_r | clear_v_r;
   always_comb
     begin
       cache_req_yumi_o = '0;
@@ -426,6 +425,8 @@ module bp_uce
       fsm_fwd_header_lo = '0;
       fsm_fwd_data_lo = '0;
       fsm_fwd_v_lo = '0;
+
+      load_resp_yumi_lo = '0;
 
       state_n = state_r;
 
@@ -655,6 +656,8 @@ module bp_uce
             data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
             data_mem_pkt_v_o = load_resp_v_li;
 
+            load_resp_yumi_lo = (~fsm_rev_new_li | tag_mem_pkt_yumi_i) && data_mem_pkt_yumi_i;
+
             cache_req_critical_o = load_resp_v_li & fsm_rev_critical_li;
             cache_req_last_o = load_resp_v_li & fsm_rev_last_li;
 
@@ -694,6 +697,8 @@ module bp_uce
             data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
             data_mem_pkt_v_o = load_resp_v_li;
 
+            load_resp_yumi_lo = (~fsm_rev_new_li | tag_mem_pkt_yumi_i) && data_mem_pkt_yumi_i;
+
             cache_req_critical_o = load_resp_v_li & fsm_rev_critical_li;
             cache_req_last_o = load_resp_v_li & fsm_rev_last_li;
             cache_req_done = cache_req_last_o & load_resp_yumi_lo;
@@ -706,6 +711,8 @@ module bp_uce
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_cast_o.data = {(fill_width_p/dword_width_gp){fsm_rev_data_li[0+:dword_width_gp]}};
             data_mem_pkt_v_o = load_resp_v_li;
+
+            load_resp_yumi_lo = data_mem_pkt_yumi_i;
 
             cache_req_critical_o = load_resp_v_li & fsm_rev_critical_li;
             cache_req_last_o = load_resp_v_li & fsm_rev_last_li;

@@ -32,63 +32,64 @@ module bp_be_calculator_top
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam decode_info_width_lp    = `bp_be_decode_info_width
    )
- (input                                             clk_i
-  , input                                           reset_i
+  (input                                             clk_i
+   , input                                           reset_i
 
-  , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
 
-  // Calculator - Checker interface
-  , input [dispatch_pkt_width_lp-1:0]               dispatch_pkt_i
+   // Calculator - Checker interface
+   , input [dispatch_pkt_width_lp-1:0]               dispatch_pkt_i
 
-  , output logic                                    idiv_busy_o
-  , output logic                                    fdiv_busy_o
-  , output logic                                    mem_busy_o
-  , output logic                                    mem_ordered_o
-  , output logic                                    ptw_busy_o
-  , output logic [decode_info_width_lp-1:0]         decode_info_o
-  , input                                           cmd_full_n_i
+   , output logic                                    idiv_busy_o
+   , output logic                                    fdiv_busy_o
+   , output logic                                    mem_busy_o
+   , output logic                                    mem_ordered_o
+   , output logic                                    ptw_busy_o
+   , output logic [decode_info_width_lp-1:0]         decode_info_o
+   , input                                           cmd_full_n_i
 
-  , output logic [commit_pkt_width_lp-1:0]          commit_pkt_o
-  , output logic [branch_pkt_width_lp-1:0]          br_pkt_o
-  , output logic [wb_pkt_width_lp-1:0]              iwb_pkt_o
-  , output logic [wb_pkt_width_lp-1:0]              fwb_pkt_o
-  , output logic [ptw_fill_pkt_width_lp-1:0]        ptw_fill_pkt_o
+   , output logic [commit_pkt_width_lp-1:0]          commit_pkt_o
+   , output logic [branch_pkt_width_lp-1:0]          br_pkt_o
+   , output logic [wb_pkt_width_lp-1:0]              iwb_pkt_o
+   , output logic [wb_pkt_width_lp-1:0]              fwb_pkt_o
+   , output logic [ptw_fill_pkt_width_lp-1:0]        ptw_fill_pkt_o
 
-  , input                                           debug_irq_i
-  , input                                           timer_irq_i
-  , input                                           software_irq_i
-  , input                                           m_external_irq_i
-  , input                                           s_external_irq_i
-  , output logic                                    irq_waiting_o
-  , output logic                                    irq_pending_o
+   , input                                           debug_irq_i
+   , input                                           timer_irq_i
+   , input                                           software_irq_i
+   , input                                           m_external_irq_i
+   , input                                           s_external_irq_i
+   , output logic                                    irq_waiting_o
+   , output logic                                    irq_pending_o
 
-  , output logic [dcache_req_width_lp-1:0]          cache_req_o
-  , output logic                                    cache_req_v_o
-  , input                                           cache_req_yumi_i
-  , input                                           cache_req_busy_i
-  , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
-  , output logic                                    cache_req_metadata_v_o
-  , input [paddr_width_p-1:0]                       cache_req_addr_i
-  , input                                           cache_req_critical_i
-  , input                                           cache_req_last_i
-  , input                                           cache_req_credits_full_i
-  , input                                           cache_req_credits_empty_i
+   , output logic [dcache_req_width_lp-1:0]          cache_req_o
+   , output logic                                    cache_req_v_o
+   , input                                           cache_req_yumi_i
+   , input                                           cache_req_lock_i
+   , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
+   , output logic                                    cache_req_metadata_v_o
+   , input [paddr_width_p-1:0]                       cache_req_addr_i
+   , input [dword_width_gp-1:0]                      cache_req_data_i
+   , input                                           cache_req_critical_i
+   , input                                           cache_req_last_i
+   , input                                           cache_req_credits_full_i
+   , input                                           cache_req_credits_empty_i
 
-  , input                                           data_mem_pkt_v_i
-  , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
-  , output logic                                    data_mem_pkt_yumi_o
-  , output logic [dcache_block_width_p-1:0]         data_mem_o
+   , input                                           data_mem_pkt_v_i
+   , input [dcache_data_mem_pkt_width_lp-1:0]        data_mem_pkt_i
+   , output logic                                    data_mem_pkt_yumi_o
+   , output logic [dcache_block_width_p-1:0]         data_mem_o
 
-  , input                                           tag_mem_pkt_v_i
-  , input [dcache_tag_mem_pkt_width_lp-1:0]         tag_mem_pkt_i
-  , output logic                                    tag_mem_pkt_yumi_o
-  , output logic [dcache_tag_info_width_lp-1:0]     tag_mem_o
+   , input                                           tag_mem_pkt_v_i
+   , input [dcache_tag_mem_pkt_width_lp-1:0]         tag_mem_pkt_i
+   , output logic                                    tag_mem_pkt_yumi_o
+   , output logic [dcache_tag_info_width_lp-1:0]     tag_mem_o
 
-  , input                                           stat_mem_pkt_v_i
-  , input [dcache_stat_mem_pkt_width_lp-1:0]        stat_mem_pkt_i
-  , output logic                                    stat_mem_pkt_yumi_o
-  , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
-  );
+   , input                                           stat_mem_pkt_v_i
+   , input [dcache_stat_mem_pkt_width_lp-1:0]        stat_mem_pkt_i
+   , output logic                                    stat_mem_pkt_yumi_o
+   , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
+   );
 
   // Declare parameterizable structs
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -348,10 +349,11 @@ module bp_be_calculator_top
      ,.cache_req_o(cache_req_o)
      ,.cache_req_v_o(cache_req_v_o)
      ,.cache_req_yumi_i(cache_req_yumi_i)
-     ,.cache_req_busy_i(cache_req_busy_i)
+     ,.cache_req_lock_i(cache_req_lock_i)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
      ,.cache_req_addr_i(cache_req_addr_i)
+     ,.cache_req_data_i(cache_req_data_i)
      ,.cache_req_critical_i(cache_req_critical_i)
      ,.cache_req_last_i(cache_req_last_i)
      ,.cache_req_credits_full_i(cache_req_credits_full_i)

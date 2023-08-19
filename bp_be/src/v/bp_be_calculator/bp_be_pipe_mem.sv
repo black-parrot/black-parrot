@@ -76,10 +76,11 @@ module bp_be_pipe_mem
    , output logic [dcache_req_width_lp-1:0]          cache_req_o
    , output logic                                    cache_req_v_o
    , input                                           cache_req_yumi_i
-   , input                                           cache_req_busy_i
+   , input                                           cache_req_lock_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
    , input [paddr_width_p-1:0]                       cache_req_addr_i
+   , input [dword_width_gp-1:0]                      cache_req_data_i
    , input                                           cache_req_critical_i
    , input                                           cache_req_last_i
    , input                                           cache_req_credits_full_i
@@ -287,10 +288,9 @@ module bp_be_pipe_mem
      ,.dcache_pkt_o(ptw_dcache_pkt)
      ,.dcache_ptag_o(ptw_dcache_ptag)
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
-     ,.dcache_ordered_i(dcache_ordered_lo)
      ,.dcache_ready_and_i(dcache_ready_and_lo)
 
-     ,.dcache_v_i(dcache_v)
+     ,.dcache_v_i(dcache_v & ~dcache_late)
      ,.dcache_data_i(dcache_data)
      );
 
@@ -328,10 +328,11 @@ module bp_be_pipe_mem
       ,.cache_req_o(cache_req_cast_o)
       ,.cache_req_v_o(cache_req_v_o)
       ,.cache_req_yumi_i(cache_req_yumi_i)
-      ,.cache_req_busy_i(cache_req_busy_i)
+      ,.cache_req_lock_i(cache_req_lock_i)
       ,.cache_req_metadata_o(cache_req_metadata_o)
       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
       ,.cache_req_addr_i(cache_req_addr_i)
+      ,.cache_req_data_i(cache_req_data_i)
       ,.cache_req_critical_i(cache_req_critical_i)
       ,.cache_req_last_i(cache_req_last_i)
       ,.cache_req_credits_full_i(cache_req_credits_full_i)
@@ -431,12 +432,13 @@ module bp_be_pipe_mem
   assign store_misaligned_v_o   = dtlb_r_v_r & store_misaligned_v;
   assign load_misaligned_v_o    = dtlb_r_v_r & load_misaligned_v;
 
-  assign fencei_clean_v_o       = early_v_r &   dcache_v &              dcache_fencei;
-  assign fencei_dirty_v_o       = early_v_r &  ~dcache_v & dcache_req & dcache_fencei;
-  assign cache_store_miss_v_o   = early_v_r &  ~dcache_v & dcache_req & dcache_store;
-  assign cache_load_miss_v_o    = early_v_r &  ~dcache_v & dcache_req & dcache_ret;
+  assign fencei_clean_v_o       = early_v_r & ~dcache_req &  dcache_v & dcache_fencei;
+  assign fencei_dirty_v_o       = early_v_r &  dcache_req & ~dcache_v & dcache_fencei;
+  assign cache_store_miss_v_o   = early_v_r &  dcache_req & ~dcache_v & dcache_store;
+  assign cache_load_miss_v_o    = early_v_r &  dcache_req & ~dcache_v & dcache_ret;
 
-  assign cache_replay_v_o       = early_v_r & ~dcache_v & ~dcache_req;
+  wire cache_fail = early_v_r & ~dcache_v & ~dcache_req;
+  assign cache_replay_v_o = cache_fail | fencei_dirty_v_o;
 
   // Save the data coming out the D$ so we can recode it for floating-point loads
   logic [dword_width_gp-1:0] dcache_data_r;
