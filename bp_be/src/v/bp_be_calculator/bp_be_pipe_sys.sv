@@ -155,7 +155,7 @@ module bp_be_pipe_sys
       retire_npartial_r <= reservation.partial;
       retire_partial_r  <= retire_npartial_r;
 
-      retire_ncompressed_r <= reservation.compressed;
+      retire_ncompressed_r <= reservation.decode.compressed;
       retire_compressed_r  <= retire_ncompressed_r;
     end
 

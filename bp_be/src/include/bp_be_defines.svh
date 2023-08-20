@@ -51,7 +51,6 @@
                                                                                                    \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
-      logic                                    compressed;                                         \
       logic                                    partial;                                            \
       bp_be_decode_s                           decode;                                             \
       logic [dpath_width_gp-1:0]               imm;                                                \
@@ -66,7 +65,6 @@
       logic                                    ispec_v;                                            \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
-      logic                                    compressed;                                         \
       logic                                    partial;                                            \
       bp_be_decode_s                           decode;                                             \
                                                                                                    \
@@ -238,7 +236,7 @@
     (6+rv64_instr_width_gp)
 
   `define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-    (7+vaddr_width_mp+instr_width_gp+$bits(bp_be_decode_s)+dpath_width_gp+branch_metadata_fwd_width_mp+12)
+    (7+vaddr_width_mp+instr_width_gp+$bits(bp_be_decode_s)+dpath_width_gp+branch_metadata_fwd_width_mp+11)
 
   `define bp_be_dispatch_pkt_width(vaddr_width_mp) \
     (4                                                                                             \
@@ -247,7 +245,6 @@
      + 1                                                                                           \
      + 3 * dpath_width_gp                                                                          \
      + $bits(bp_be_decode_s)                                                                       \
-     + 1                                                                                           \
      + $bits(bp_be_exception_s)                                                                    \
      + $bits(bp_be_special_s)                                                                      \
      )

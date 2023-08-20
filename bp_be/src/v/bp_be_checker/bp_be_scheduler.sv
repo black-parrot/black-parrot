@@ -74,7 +74,7 @@ module bp_be_scheduler
   wire fe_queue_deq_skip_li  = !commit_pkt_cast_i.compressed | commit_pkt_cast_i.partial;
   wire fe_queue_roll_li      = commit_pkt_cast_i.npc_w_v;
   wire fe_queue_read_li      = dispatch_v_i & ~poison_isd_i;
-  wire fe_queue_read_skip_li = !dispatch_pkt_cast_o.compressed | dispatch_pkt_cast_o.partial;
+  wire fe_queue_read_skip_li = !dispatch_pkt_cast_o.decode.compressed | dispatch_pkt_cast_o.partial;
   wire fe_queue_inject_li    = ptw_fill_pkt_cast_i.v | unfreeze_i | interrupt_v_i;
 
   bp_be_preissue_pkt_s preissue_pkt;
@@ -173,7 +173,6 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.ispec_v    = ispec_v_i;
       dispatch_pkt_cast_o.pc         = expected_npc_i;
       dispatch_pkt_cast_o.instr      = issue_pkt_cast_o.instr;
-      dispatch_pkt_cast_o.compressed = issue_pkt_cast_o.compressed;
       dispatch_pkt_cast_o.partial    = be_exc_not_instr_li ? be_partial : fe_partial;
       // If register injection is critical, can be done after bypass
       dispatch_pkt_cast_o.rs1        = be_exc_not_instr_li ? be_exc_vaddr_li : fe_exc_not_instr_li ? fe_exc_vaddr_li : issue_pkt_cast_o.decode.frs1_r_v ? frf_rs1 : irf_rs1;

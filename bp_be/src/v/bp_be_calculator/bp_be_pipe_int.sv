@@ -95,7 +95,7 @@ module bp_be_pipe_int
   wire [vaddr_width_p-1:0] baddr = decode.baddr_sel ? rs1 : pc;
   wire [vaddr_width_p-1:0] taken_raw = baddr + imm;
   wire [vaddr_width_p-1:0] taken_tgt = {taken_raw[vaddr_width_p-1:1], 1'b0};
-  wire [vaddr_width_p-1:0] ntaken_tgt = pc + (reservation.compressed ? 4'd2 : 4'd4);
+  wire [vaddr_width_p-1:0] ntaken_tgt = pc + (decode.compressed ? 4'd2 : 4'd4);
 
   wire [dpath_width_gp-1:0] br_result = vaddr_width_p'($signed(ntaken_tgt));
 
