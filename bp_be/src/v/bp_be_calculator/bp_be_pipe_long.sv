@@ -62,22 +62,28 @@ module bp_be_pipe_long
   logic [dword_width_gp-1:0] imulh_result_lo;
   logic imulh_ready_lo, imulh_v_lo;
   wire imulh_v_li = v_li & (decode.fu_op inside {e_mul_op_mulh, e_mul_op_mulhsu, e_mul_op_mulhu});
-  bsg_imul_iterative
-   #(.width_p(dword_width_gp))
-   imulh
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-    ,.v_i(imulh_v_li)
-    ,.ready_o(imulh_ready_lo)
-    ,.opA_i(op_a)
-    ,.signed_opA_i(signed_opA_li)
-    ,.opB_i(op_b)
-    ,.signed_opB_i(signed_opB_li)
-    ,.gets_high_part_i(1'b1)
-    ,.v_o(imulh_v_lo)
-    ,.result_o(imulh_result_lo)
-    ,.yumi_i(imulh_v_lo & iwb_yumi_i)
-    );
+
+  generate
+    if(muldiv_support_p[e_imulh])
+      begin
+        bsg_imul_iterative
+         #(.width_p(dword_width_gp))
+         imulh
+          (.clk_i(clk_i)
+          ,.reset_i(reset_i)
+          ,.v_i(imulh_v_li)
+          ,.ready_o(imulh_ready_lo)
+          ,.opA_i(op_a)
+          ,.signed_opA_i(signed_opA_li)
+          ,.opB_i(op_b)
+          ,.signed_opB_i(signed_opB_li)
+          ,.gets_high_part_i(1'b1)
+          ,.v_o(imulh_v_lo)
+          ,.result_o(imulh_result_lo)
+          ,.yumi_i(imulh_v_lo & iwb_yumi_i)
+          );
+      end
+  endgenerate
 
   // We actual could exit early here
   logic [dword_width_gp-1:0] quotient_lo, remainder_lo;
@@ -85,42 +91,54 @@ module bp_be_pipe_long
   logic idiv_v_lo;
   wire idiv_v_li = v_li & (decode.fu_op inside {e_mul_op_div, e_mul_op_divu});
   wire irem_v_li = v_li & (decode.fu_op inside {e_mul_op_rem, e_mul_op_remu});
-  bsg_idiv_iterative
-   #(.width_p(dword_width_gp))
-   idiv
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
 
-     ,.dividend_i(op_a)
-     ,.divisor_i(op_b)
-     ,.signed_div_i(signed_div_li)
-     ,.v_i(idiv_v_li | irem_v_li)
-     ,.ready_and_o(idiv_ready_and_lo)
+  generate
+    if(muldiv_support_p[e_idiv])
+      begin
+        bsg_idiv_iterative
+        #(.width_p(dword_width_gp))
+        idiv
+         (.clk_i(clk_i)
+          ,.reset_i(reset_i)
 
-     ,.quotient_o(quotient_lo)
-     ,.remainder_o(remainder_lo)
-     ,.v_o(idiv_v_lo)
-     ,.yumi_i(idiv_v_lo & iwb_yumi_i)
-     );
+          ,.dividend_i(op_a)
+          ,.divisor_i(op_b)
+          ,.signed_div_i(signed_div_li)
+          ,.v_i(idiv_v_li | irem_v_li)
+          ,.ready_and_o(idiv_ready_and_lo)
+
+          ,.quotient_o(quotient_lo)
+          ,.remainder_o(remainder_lo)
+          ,.v_o(idiv_v_lo)
+          ,.yumi_i(idiv_v_lo & iwb_yumi_i)
+          );
+      end
+  endgenerate
+
   wire [word_width_gp-1:0] quotient_w_lo = quotient_lo[0+:word_width_gp];
   wire [word_width_gp-1:0] remainder_w_lo = remainder_lo[0+:word_width_gp];
 
   bp_be_fp_reg_s frs1, frs2;
-  bp_be_nan_unbox
-   #(.bp_params_p(bp_params_p))
-   frs1_unbox
-    (.reg_i(reservation.rs1)
-     ,.unbox_i(decode.ops_v)
-     ,.reg_o(frs1)
-     );
+  generate
+    if(|muldiv_support_p)
+      begin
+        bp_be_nan_unbox
+         #(.bp_params_p(bp_params_p))
+         frs1_unbox
+          (.reg_i(reservation.rs1)
+           ,.unbox_i(decode.ops_v)
+           ,.reg_o(frs1)
+           );
 
-  bp_be_nan_unbox
-   #(.bp_params_p(bp_params_p))
-   frs2_unbox
-    (.reg_i(reservation.rs2)
-     ,.unbox_i(decode.ops_v)
-     ,.reg_o(frs2)
-     );
+        bp_be_nan_unbox
+         #(.bp_params_p(bp_params_p))
+         frs2_unbox
+          (.reg_i(reservation.rs2)
+           ,.unbox_i(decode.ops_v)
+           ,.reg_o(frs2)
+           );
+    end
+  endgenerate
 
   //
   // Control bits for the FPU
@@ -137,87 +155,109 @@ module bp_be_pipe_long
   logic sqrt_lo, invalid_exc, infinite_exc;
   logic [2:0] frm_lo;
   bp_hardfloat_raw_dp_s fdivsqrt_raw_lo;
-  divSqrtRecFNToRaw_small
-   #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
-   fdiv
-    (.clock(clk_i)
-     ,.nReset(~reset_i)
-     ,.control(control_li)
 
-     ,.inReady(fdiv_ready_and_lo)
-     ,.inValid(fdiv_v_li | fsqrt_v_li)
-     ,.sqrtOp(fsqrt_v_li)
-     ,.a(frs1.rec)
-     ,.b(frs2.rec)
-     ,.roundingMode(frm_li)
+  generate
+    if(fpu_support_p[e_fdivsqrt])
+      begin
+        divSqrtRecFNToRaw_small
+         #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
+         fdiv
+          (.clock(clk_i)
+           ,.nReset(~reset_i)
+           ,.control(control_li)
 
-     ,.outValid(fdivsqrt_v_lo)
-     ,.sqrtOpOut(sqrt_lo)
-     ,.roundingModeOut(frm_lo)
-     ,.invalidExc(invalid_exc)
-     ,.infiniteExc(infinite_exc)
+           ,.inReady(fdiv_ready_and_lo)
+           ,.inValid(fdiv_v_li | fsqrt_v_li)
+           ,.sqrtOp(fsqrt_v_li)
+           ,.a(frs1.rec)
+           ,.b(frs2.rec)
+           ,.roundingMode(frm_li)
 
-     ,.out_isNaN(fdivsqrt_raw_lo.is_nan)
-     ,.out_isInf(fdivsqrt_raw_lo.is_inf)
-     ,.out_isZero(fdivsqrt_raw_lo.is_zero)
-     ,.out_sign(fdivsqrt_raw_lo.sign)
-     ,.out_sExp(fdivsqrt_raw_lo.sexp)
-     ,.out_sig(fdivsqrt_raw_lo.sig)
-     );
+           ,.outValid(fdivsqrt_v_lo)
+           ,.sqrtOpOut(sqrt_lo)
+           ,.roundingModeOut(frm_lo)
+           ,.invalidExc(invalid_exc)
+           ,.infiniteExc(infinite_exc)
+
+           ,.out_isNaN(fdivsqrt_raw_lo.is_nan)
+           ,.out_isInf(fdivsqrt_raw_lo.is_inf)
+           ,.out_isZero(fdivsqrt_raw_lo.is_zero)
+           ,.out_sign(fdivsqrt_raw_lo.sign)
+           ,.out_sExp(fdivsqrt_raw_lo.sexp)
+           ,.out_sig(fdivsqrt_raw_lo.sig)
+           );
+      end
+  endgenerate
 
   logic opw_v_r, ops_v_r;
   bp_be_fu_op_s fu_op_r;
   logic [reg_addr_width_gp-1:0] rd_addr_r;
   rv64_frm_e frm_r;
-  bsg_dff_reset_en
-   #(.width_p($bits(rv64_frm_e)+reg_addr_width_gp+$bits(bp_be_fu_op_s)+2))
-   wb_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(v_li)
+  generate
+    if(|muldiv_support_p)
+      begin
+        bsg_dff_reset_en
+         #(.width_p($bits(rv64_frm_e)+reg_addr_width_gp+$bits(bp_be_fu_op_s)+2))
+         wb_reg
+          (.clk_i(clk_i)
+           ,.reset_i(reset_i)
+           ,.en_i(v_li)
 
-     ,.data_i({frm_li, instr.t.fmatype.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
-     ,.data_o({frm_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
-     );
+           ,.data_i({frm_li, instr.t.fmatype.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
+           ,.data_o({frm_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
+           );
+    end
+  endgenerate
 
   logic [dp_rec_width_gp-1:0] fdivsqrt_result_dp, fdivsqrt_result_sp;
   rv64_fflags_s fdivsqrt_fflags_dp, fdivsqrt_fflags_sp;
-  roundRawFNtoRecFN_mixed
-   #(.fullExpWidth(dp_exp_width_gp)
-     ,.fullSigWidth(dp_sig_width_gp)
-     ,.midExpWidth(sp_exp_width_gp)
-     ,.midSigWidth(sp_sig_width_gp)
-     ,.outExpWidth(dp_exp_width_gp)
-     ,.outSigWidth(dp_sig_width_gp)
-     )
-   round_mixed
-    (.control(control_li)
-     ,.invalidExc(invalid_exc)
-     ,.infiniteExc(infinite_exc)
-     ,.in_isNaN(fdivsqrt_raw_lo.is_nan)
-     ,.in_isInf(fdivsqrt_raw_lo.is_inf)
-     ,.in_isZero(fdivsqrt_raw_lo.is_zero)
-     ,.in_sign(fdivsqrt_raw_lo.sign)
-     ,.in_sExp(fdivsqrt_raw_lo.sexp)
-     ,.in_sig(fdivsqrt_raw_lo.sig)
-     ,.roundingMode(frm_r)
-     ,.fullOut(fdivsqrt_result_dp)
-     ,.fullExceptionFlags(fdivsqrt_fflags_dp)
-     ,.midOut(fdivsqrt_result_sp)
-     ,.midExceptionFlags(fdivsqrt_fflags_sp)
-     );
+
+  generate
+    if(fpu_support_p)
+      begin
+        roundRawFNtoRecFN_mixed
+         #(.fullExpWidth(dp_exp_width_gp)
+           ,.fullSigWidth(dp_sig_width_gp)
+           ,.midExpWidth(sp_exp_width_gp)
+           ,.midSigWidth(sp_sig_width_gp)
+           ,.outExpWidth(dp_exp_width_gp)
+           ,.outSigWidth(dp_sig_width_gp)
+           )
+         round_mixed
+          (.control(control_li)
+           ,.invalidExc(invalid_exc)
+           ,.infiniteExc(infinite_exc)
+           ,.in_isNaN(fdivsqrt_raw_lo.is_nan)
+           ,.in_isInf(fdivsqrt_raw_lo.is_inf)
+           ,.in_isZero(fdivsqrt_raw_lo.is_zero)
+           ,.in_sign(fdivsqrt_raw_lo.sign)
+           ,.in_sExp(fdivsqrt_raw_lo.sexp)
+           ,.in_sig(fdivsqrt_raw_lo.sig)
+           ,.roundingMode(frm_r)
+           ,.fullOut(fdivsqrt_result_dp)
+           ,.fullExceptionFlags(fdivsqrt_fflags_dp)
+           ,.midOut(fdivsqrt_result_sp)
+           ,.midExceptionFlags(fdivsqrt_fflags_sp)
+           );
+      end
+  endgenerate
 
   logic imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(4))
-   wb_v_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  generate
+    if(|muldiv_support_p)
+      begin
+        bsg_dff_reset_set_clear
+         #(.width_p(4))
+         wb_v_reg
+          (.clk_i(clk_i)
+           ,.reset_i(reset_i)
 
-     ,.set_i({imulh_v_lo, idiv_v_lo, fdivsqrt_v_lo, v_li})
-     ,.clear_i({v_li, v_li, v_li, (iwb_yumi_i | fwb_yumi_i)})
-     ,.data_o({imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
-     );
+           ,.set_i({imulh_v_lo, idiv_v_lo, fdivsqrt_v_lo, v_li})
+           ,.clear_i({v_li, v_li, v_li, (iwb_yumi_i | fwb_yumi_i)})
+           ,.data_o({imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
+           );
+    end
+  endgenerate 
 
   bp_be_fp_reg_s fdivsqrt_sp_reg_lo, fdivsqrt_dp_reg_lo, frd_data_lo;
   rv64_fflags_s fflags_lo;
@@ -269,6 +309,19 @@ module bp_be_pipe_long
   always @(negedge clk_i)
     begin
       assert (reset_i !== 0 || ~v_li || ~rd_w_v_r) else $error("Long pipe structural hazard");
+    end
+
+  always_comb
+    begin
+      if(!fpu_support_p)
+        begin
+          ibusy_o     =   'b0;
+          fbusy_o     =   'b0;
+          iwb_pkt_o   =   'b0;
+          iwb_v_o     =   'b0;
+          fwb_pkt_o   =   'b0;
+          fwb_v_o     =   'b0;
+        end
     end
 
   // synopsys translate_on

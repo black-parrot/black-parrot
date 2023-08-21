@@ -311,8 +311,8 @@
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
-      ,muldiv_support    : (1 << e_idiv) | (1 << e_imul) | (1 << e_imulh) | (1 << e_idiv2b)
-      ,fpu_support       : (1 << e_fma) | (1 << e_fdivsqrt) | (1 << e_fdivsqrt2b)
+      ,muldiv_support    : 0//(1 << e_idiv) | (1 << e_imul) | (1 << e_imulh) | (1 << e_idiv2b)
+      ,fpu_support       : 0//(1 << e_fma) | (1 << e_fdivsqrt) | (1 << e_fdivsqrt2b)
       ,compressed_support: 1
 
       ,async_coh_clk       : 0

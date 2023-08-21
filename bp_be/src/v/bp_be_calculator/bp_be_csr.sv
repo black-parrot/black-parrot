@@ -171,22 +171,7 @@ module bp_be_csr
 
   always_comb
     begin
-      if((fpu_support_p == 1) && (muldiv_support_p == 0))
-        begin
-          MISA_val = 26'h141105;
-        end
-      if((fpu_support_p == 0) && (muldiv_support_p == 1))
-        begin
-          MISA_val = 26'h14012d;
-        end
-      if((fpu_support_p == 0) && (muldiv_support_p == 0))
-        begin
-          MISA_val = 26'h140105;
-        end
-      if((fpu_support_p == 1) && (muldiv_support_p == 1))
-        begin
-          MISA_val = 26'h14112d;
-        end        
+      MISA_val = (~((!fpu_support_p) << 3) & ~((!fpu_support_p) << 5) & ~((!muldiv_support_p) << 12)) & 26'h14112d;        
     end
 
   rv64_exception_dec_s exception_dec_li;
@@ -678,14 +663,18 @@ module bp_be_csr
       mip_li.msip = software_irq_i;
       mip_li.meip = m_external_irq_i;
 
-      // Accumulate FFLAGS if we're not writing them this cycle
-      if (~(csr_w_v_li & csr_cmd_cast_i.csr_addr inside {`CSR_ADDR_FFLAGS, `CSR_ADDR_FCSR}))
-        fcsr_li.fflags |= fflags_acc_i;
+      if(fpu_support_p)begin
+        // Accumulate FFLAGS if we're not writing them this cycle
+        if (~(csr_w_v_li & csr_cmd_cast_i.csr_addr inside {`CSR_ADDR_FFLAGS, `CSR_ADDR_FCSR}))
+          fcsr_li.fflags |= fflags_acc_i;
 
-      // Set FS to dirty if: fflags set, frf written, fcsr written
-      mstatus_li.fs |= {2{(csr_w_v_li & csr_fany_li & ~csr_illegal_instr_o)}};
-      mstatus_li.fs |= {2{(retire_pkt_cast_i.instret & instr_fany_li)}};
-      mstatus_li.fs |= {2{(fpu_support_p)}};
+        // Set FS to dirty if: fflags set, frf written, fcsr written
+        mstatus_li.fs |= {2{(csr_w_v_li & csr_fany_li & ~csr_illegal_instr_o)}};
+        mstatus_li.fs |= {2{(retire_pkt_cast_i.instret & instr_fany_li)}};
+      end
+      else begin
+        mstatus_li.fs = 'b0;
+      end
     end
 
   assign irq_pending_o = (~dcsr_lo.step | dcsr_lo.stepie)

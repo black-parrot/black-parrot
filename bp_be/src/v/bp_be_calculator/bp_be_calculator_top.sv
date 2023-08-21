@@ -257,22 +257,20 @@ module bp_be_calculator_top
      );
 
   // Aux pipe: 2 cycle latency
-  if(fpu_support_p)begin
-    bp_be_pipe_aux
-     #(.bp_params_p(bp_params_p))
-     pipe_aux
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+  bp_be_pipe_aux
+   #(.bp_params_p(bp_params_p))
+   pipe_aux
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-      ,.reservation_i(reservation_r)
-      ,.flush_i(commit_pkt_cast_o.npc_w_v)
-      ,.frm_dyn_i(frm_dyn_lo)
+     ,.reservation_i(reservation_r)
+     ,.flush_i(commit_pkt_cast_o.npc_w_v)
+     ,.frm_dyn_i(frm_dyn_lo)
 
-      ,.data_o(pipe_aux_data_lo)
-      ,.fflags_o(pipe_aux_fflags_lo)
-      ,.v_o(pipe_aux_data_lo_v)
-      );
-  end
+     ,.data_o(pipe_aux_data_lo)
+     ,.fflags_o(pipe_aux_fflags_lo)
+     ,.v_o(pipe_aux_data_lo_v)
+     );
 
   // Memory pipe: 2/3 cycle latency
   bp_be_pipe_mem
@@ -350,50 +348,44 @@ module bp_be_calculator_top
      );
 
   // Floating point pipe: 3/4 cycle latency
-  if(muldiv_support_p)
-   begin
-    bp_be_pipe_fma
-     #(.bp_params_p(bp_params_p))
-      pipe_fma
-       (.clk_i(clk_i)
-        ,.reset_i(reset_i)
+  bp_be_pipe_fma
+   #(.bp_params_p(bp_params_p))
+   pipe_fma
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-        ,.reservation_i(reservation_r)
-        ,.flush_i(commit_pkt_cast_o.npc_w_v)
-        ,.frm_dyn_i(frm_dyn_lo)
+     ,.reservation_i(reservation_r)
+     ,.flush_i(commit_pkt_cast_o.npc_w_v)
+     ,.frm_dyn_i(frm_dyn_lo)
 
-        ,.imul_data_o(pipe_mul_data_lo)
-        ,.imul_v_o(pipe_mul_data_lo_v)
-        ,.fma_data_o(pipe_fma_data_lo)
-        ,.fma_fflags_o(pipe_fma_fflags_lo)
-        ,.fma_v_o(pipe_fma_data_lo_v)
-      );
-  end
+     ,.imul_data_o(pipe_mul_data_lo)
+     ,.imul_v_o(pipe_mul_data_lo_v)
+     ,.fma_data_o(pipe_fma_data_lo)
+     ,.fma_fflags_o(pipe_fma_fflags_lo)
+     ,.fma_v_o(pipe_fma_data_lo_v)
+     );
 
   // Variable length pipeline, used for long (potentially scoreboarded operations)
-  if(fpu_support_p)
-   begin
-    bp_be_pipe_long
-     #(.bp_params_p(bp_params_p))
-      pipe_long
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+  bp_be_pipe_long
+   #(.bp_params_p(bp_params_p))
+   pipe_long
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-       ,.reservation_i(reservation_r)
-       ,.flush_i(commit_pkt_cast_o.npc_w_v)
-       ,.ibusy_o(idiv_busy_o)
-       ,.fbusy_o(fdiv_busy_o)
-       ,.frm_dyn_i(frm_dyn_lo)
+     ,.reservation_i(reservation_r)
+     ,.flush_i(commit_pkt_cast_o.npc_w_v)
+     ,.ibusy_o(idiv_busy_o)
+     ,.fbusy_o(fdiv_busy_o)
+     ,.frm_dyn_i(frm_dyn_lo)
 
-       ,.iwb_pkt_o(long_iwb_pkt)
-       ,.iwb_v_o(pipe_long_idata_lo_v)
-       ,.iwb_yumi_i(pipe_long_idata_lo_yumi)
+     ,.iwb_pkt_o(long_iwb_pkt)
+     ,.iwb_v_o(pipe_long_idata_lo_v)
+     ,.iwb_yumi_i(pipe_long_idata_lo_yumi)
 
-       ,.fwb_pkt_o(long_fwb_pkt)
-       ,.fwb_v_o(pipe_long_fdata_lo_v)
-       ,.fwb_yumi_i(pipe_long_fdata_lo_yumi)
-       );
-  end
+     ,.fwb_pkt_o(long_fwb_pkt)
+     ,.fwb_v_o(pipe_long_fdata_lo_v)
+     ,.fwb_yumi_i(pipe_long_fdata_lo_yumi)
+     );
 
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
   // Else, mux in the previous stage of the completion pipe. Since we are single issue and have
@@ -418,13 +410,13 @@ module bp_be_calculator_top
       comp_stage_n[1].rd_data    |= pipe_ctl_data_lo_v       ? pipe_ctl_data_lo         : '0;
       comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v       ? pipe_sys_data_lo         : '0;
       comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v ? pipe_mem_early_data_lo   : '0;
-      comp_stage_n[2].rd_data    |= fpu_support_p            ? (pipe_aux_data_lo_v       ? pipe_aux_data_lo         : '0):'0;
+      comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v       ? pipe_aux_data_lo         : '0;
       comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v ? pipe_mem_final_data_lo   : '0;
-      comp_stage_n[3].rd_data    |= muldiv_support_p         ? (pipe_mul_data_lo_v       ? pipe_mul_data_lo         : '0):'0;
-      comp_stage_n[4].rd_data    |= muldiv_support_p         ? (pipe_fma_data_lo_v       ? pipe_fma_data_lo         : '0):'0;
+      comp_stage_n[3].rd_data    |= pipe_mul_data_lo_v       ? pipe_mul_data_lo         : '0;
+      comp_stage_n[4].rd_data    |= pipe_fma_data_lo_v       ? pipe_fma_data_lo         : '0;
 
-      comp_stage_n[2].fflags     |= fpu_support_p            ? (pipe_aux_data_lo_v       ? pipe_aux_fflags_lo       : '0):'0;
-      comp_stage_n[4].fflags     |= muldiv_support_p         ? (pipe_fma_data_lo_v       ? pipe_fma_fflags_lo       : '0):'0;
+      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v       ? pipe_aux_fflags_lo       : '0;
+      comp_stage_n[4].fflags     |= pipe_fma_data_lo_v       ? pipe_fma_fflags_lo       : '0;
 
       comp_stage_n[0].ird_w_v    &= exc_stage_n[0].v;
       comp_stage_n[1].ird_w_v    &= exc_stage_n[1].v;
