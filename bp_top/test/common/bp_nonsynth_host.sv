@@ -176,20 +176,32 @@ module bp_nonsynth_host
 
   localparam bootrom_els_p = 1024;
   localparam lg_bootrom_els_lp = `BSG_SAFE_CLOG2(bootrom_els_p);
-  // bit helps with x pessimism with undersized bootrom
-  bit [lg_bootrom_els_lp-1:0] bootrom_addr_li;
   bit [dword_width_gp-1:0] bootrom_data_lo;
+  bit [lg_bootrom_els_lp-1:0] bootrom_addr_li;
+  bit [7:0] bootrom_mem [0:8*bootrom_els_p-1];
+
+  initial $readmemh("bootrom.mem", bootrom_mem);
   assign bootrom_addr_li = addr_lo[3+:lg_bootrom_els_lp];
-  bsg_nonsynth_test_rom
-   #(.filename_p("bootrom.mem")
-     ,.data_width_p(dword_width_gp)
-     ,.addr_width_p(lg_bootrom_els_lp)
-     ,.hex_not_bin_p(1)
-     )
-   bootrom
-    (.addr_i(bootrom_addr_li)
-     ,.data_o(bootrom_data_lo)
-     );
+
+  wire [7:0] test0 = bootrom_mem[bootrom_addr_li+0];
+  wire [7:0] test1 = bootrom_mem[bootrom_addr_li+1];
+  wire [7:0] test2 = bootrom_mem[bootrom_addr_li+2];
+  wire [7:0] test3 = bootrom_mem[bootrom_addr_li+3];
+  wire [7:0] test4 = bootrom_mem[bootrom_addr_li+4];
+  wire [7:0] test5 = bootrom_mem[bootrom_addr_li+5];
+  wire [7:0] test6 = bootrom_mem[bootrom_addr_li+6];
+  wire [7:0] test7 = bootrom_mem[bootrom_addr_li+7];
+
+  assign bootrom_data_lo = {
+    bootrom_mem[8*bootrom_addr_li+7]
+    ,bootrom_mem[8*bootrom_addr_li+6]
+    ,bootrom_mem[8*bootrom_addr_li+5]
+    ,bootrom_mem[8*bootrom_addr_li+4]
+    ,bootrom_mem[8*bootrom_addr_li+3]
+    ,bootrom_mem[8*bootrom_addr_li+2]
+    ,bootrom_mem[8*bootrom_addr_li+1]
+    ,bootrom_mem[8*bootrom_addr_li+0]
+    };
 
   // Convert to little endian
   wire [dword_width_gp-1:0] bootrom_data_reverse = {<<8{bootrom_data_lo}};
@@ -198,7 +210,7 @@ module bp_nonsynth_host
   bsg_bus_pack
    #(.in_width_p(dword_width_gp))
    bootrom_pack
-    (.data_i(bootrom_data_reverse)
+    (.data_i(bootrom_data_lo)
      ,.size_i(size_lo)
      ,.sel_i(addr_lo[0+:3])
      ,.data_o(bootrom_final_lo)
@@ -209,7 +221,7 @@ module bp_nonsynth_host
   logic [lg_param_els_lp-1:0] paramrom_addr_li;
   logic [word_width_gp-1:0] paramrom_data_lo;
   // Reverse address to index in reverse struct order
-  assign paramrom_addr_li = param_els_lp-1'b1-addr_lo[2+:lg_bootrom_els_lp];
+  assign paramrom_addr_li = param_els_lp-1'b1-addr_lo[2+:lg_param_els_lp];
   bsg_rom_param
    #(.data_p(proc_param_lp)
      ,.data_width_p($bits(proc_param_lp))

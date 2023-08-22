@@ -95,7 +95,7 @@ $(SIM_DIR)/bootrom.riscv: $(BP_SDK_PROG_DIR)/bootrom/bootrom.riscv
 	cp $< $@
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
-	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 $< $@
+	$(RISCV_OBJCOPY) -O verilog $< $@
 	$(SED) -i "s/@0011/@0000/g" $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, xcelium.d)

@@ -96,7 +96,7 @@ $(SIM_DIR)/bootrom.riscv: $(BP_SDK_PROG_DIR)/bootrom/bootrom.riscv
 	cp $< $@
 
 $(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
-	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 $< $@
+	$(RISCV_OBJCOPY) -O verilog $< $@
 	$(SED) -i "s/@0011/@0000/g" $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
@@ -121,7 +121,7 @@ $(SIM_DIR)/run_samplev: $(SIM_COLLATERAL)
 	$(SED) -i "s/@8/@0/g" $(@D)/prog.mem
 	$(RISCV_OBJCOPY) -I binary -O elf64-littleriscv -B riscv $(@D)/prog.bootram $(@D)/bootrom.riscv
 	$(RISCV_OBJDUMP) -D $(@D)/bootrom.riscv > $(@D)/bootrom.dump
-	$(RISCV_OBJCOPY) -O verilog --verilog-data-width=8 $(@D)/bootrom.riscv $(@D)/bootrom.mem
+	$(RISCV_OBJCOPY) -O verilog $(@D)/bootrom.riscv $(@D)/bootrom.mem
 	$(RISCV_OBJCOPY) -O binary $(@D)/bootrom.riscv $(@D)/bootrom.bin
 	cd $(@D); \
 		python $(MEM2NBF) $(NBF_INPUTS) > prog.nbf
