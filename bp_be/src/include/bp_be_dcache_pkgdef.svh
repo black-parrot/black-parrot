@@ -27,6 +27,7 @@
     logic                         float_op;
     logic                         ptw_op;
     logic                         cache_op;
+    logic                         block_op;
     logic                         double_op;
     logic                         word_op;
     logic                         half_op;
@@ -36,6 +37,10 @@
     logic                         sc_op;
     logic                         amo_op;
     logic                         clean_op;
+    logic                         inval_op;
+    logic                         bclean_op;
+    logic                         binval_op;
+    logic                         bzero_op;
     bp_be_amo_subop_e             amo_subop;
     logic [reg_addr_width_gp-1:0] rd_addr;
   }  bp_be_dcache_decode_s;

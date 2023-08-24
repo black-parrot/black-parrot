@@ -195,6 +195,7 @@ module bp_fe_top
      ,.r_instr_i(1'b1)
      ,.r_load_i('0)
      ,.r_store_i('0)
+     ,.r_cbo_i('0)
      ,.r_eaddr_i(r_eaddr_li)
      ,.r_size_i(r_size_li)
 

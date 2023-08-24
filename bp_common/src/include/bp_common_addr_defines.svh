@@ -23,6 +23,5 @@
   `define bp_addr_align(addr_mp, num_bytes_mp) \
     ((addr_mp >> $clog2(num_bytes_mp)) << $clog2(num_bytes_mp))
 
-
 `endif
 

@@ -37,6 +37,7 @@ module bp_mmu
    , input                                            r_store_i
    , input [dword_width_gp-1:0]                       r_eaddr_i
    , input [1:0]                                      r_size_i
+   , input                                            r_cbo_i
 
    , output logic                                     r_v_o
    , output logic [ptag_width_p-1:0]                  r_ptag_o
@@ -62,25 +63,25 @@ module bp_mmu
   // This logic only works for 8-byte words max.
   logic r_misaligned;
   always_comb
-    case (r_size_i)
-      2'b01: r_misaligned = |r_eaddr_i[0+:1];
-      2'b10: r_misaligned = |r_eaddr_i[0+:2];
-      2'b11: r_misaligned = |r_eaddr_i[0+:3];
+    case ({r_cbo_i, r_size_i})
+      {1'b0, 2'b01}: r_misaligned = |r_eaddr_i[0+:1];
+      {1'b0, 2'b10}: r_misaligned = |r_eaddr_i[0+:2];
+      {1'b0, 2'b11}: r_misaligned = |r_eaddr_i[0+:3];
       default: r_misaligned = '0;
     endcase
 
-  logic r_instr_r, r_load_r, r_store_r, r_misaligned_r, trans_en_r;
+  logic r_instr_r, r_load_r, r_store_r, r_cbo_r, r_misaligned_r, trans_en_r;
   logic [etag_width_p-1:0] r_etag_r;
   wire [etag_width_p-1:0] r_etag_li = r_eaddr_i[dword_width_gp-1-:etag_width_p];
   bsg_dff_reset_en
-   #(.width_p(5+etag_width_p))
+   #(.width_p(6+etag_width_p))
    read_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(r_v_i)
 
-     ,.data_i({trans_en_i, r_misaligned, r_instr_i, r_load_i, r_store_i, r_etag_li})
-     ,.data_o({trans_en_r, r_misaligned_r, r_instr_r, r_load_r, r_store_r, r_etag_r})
+     ,.data_i({trans_en_i, r_misaligned, r_instr_i, r_load_i, r_store_i, r_cbo_i, r_etag_li})
+     ,.data_o({trans_en_r, r_misaligned_r, r_instr_r, r_load_r, r_store_r, r_cbo_r, r_etag_r})
      );
 
   logic r_v_r;
@@ -170,11 +171,12 @@ module bp_mmu
   // Fault if hio bit is not enabled and we're accessing that hio
   wire hio_fault_v = (r_instr_r & ptag_lo[ptag_width_p-1-:hio_width_p] != '0)
     || (ptag_lo[ptag_width_p-1-:hio_width_p] & ~hio_mask_i);
+  wire cached_fault_v = r_cbo_r & ptag_uncached_lo;
 
   // Access faults
   wire instr_access_fault_v = r_instr_r & hio_fault_v;
   wire load_access_fault_v  = r_load_r  & hio_fault_v;
-  wire store_access_fault_v = r_store_r & hio_fault_v;
+  wire store_access_fault_v = r_store_r & (hio_fault_v | cached_fault_v);
   wire any_access_fault_v   = |{instr_access_fault_v, load_access_fault_v, store_access_fault_v};
 
   // Page faults
