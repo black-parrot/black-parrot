@@ -208,7 +208,7 @@ module bp_be_director
           fe_cmd_li.opcode = e_op_icache_fence;
           fe_cmd_li.npc = commit_pkt_cast_i.npc;
 
-          fe_cmd_v_li = 1'b1;
+          fe_cmd_v_li = !icache_features_p[e_cfg_coherent];
         end
       else if (commit_pkt_cast_i.icache_miss)
         begin

@@ -112,6 +112,8 @@ module bp_uce
     ,e_clean_scan
     ,e_clean_write
     ,e_clean_fence
+    ,e_bclean_evict
+    ,e_bclean_writeback_req
     ,e_ready
     ,e_uc_writeback_evict
     ,e_uc_writeback_write_req
@@ -286,17 +288,23 @@ module bp_uce
   assign cache_req_data_o = cache_req_r.data;
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
-  wire clean_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clean};
-  wire inval_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_inval};
-  wire wt_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
-  wire uc_load_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
-  wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
-  wire uc_amo_v_li        = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
-  wire uc_hit_v_li        = cache_req_v_i & cache_req_cast_i.hit & (uc_load_v_li | uc_store_v_li | uc_amo_v_li);
-  wire nonblocking_v_li   = (~uc_hit_v_li | !writeback_p) & (uc_store_v_li | wt_store_v_li);
+  wire miss_load_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_load};
+  wire miss_store_v_li  = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_store};
+  wire miss_v_li        = cache_req_v_i & miss_load_v_li | miss_store_v_li;
+  wire wt_store_v_li    = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
+  wire uc_load_v_li     = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
+  wire uc_store_v_li    = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
+  wire uc_amo_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
+  wire uc_evict_v_li    = (uc_load_v_li | uc_store_v_li | uc_amo_v_li) & writeback_p & cache_req_cast_i.hit;
+  wire inval_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_inval};
+  wire clean_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clean};
+  wire flush_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
+  wire binval_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_binval};
+  wire bclean_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_bclean};
+  wire nonblocking_v_li = cache_req_v_i & (uc_store_v_li | wt_store_v_li) & ~uc_evict_v_li;
 
-  wire store_resp_v_li    = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
-  wire load_resp_v_li     = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_amo};
+  wire store_resp_v_li  = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
+  wire load_resp_v_li   = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_amo};
 
   wire miss_load_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
@@ -305,12 +313,15 @@ module bp_uce
   wire uc_load_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire uc_store_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
   wire uc_amo_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
-  wire uc_hit_v_r      = cache_req_v_r & cache_req_r.hit & (uc_load_v_r | uc_store_v_r | uc_amo_v_r);
-  wire clean_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_clean};
+  wire uc_evict_v_r    = (uc_load_v_r | uc_store_v_r | uc_amo_v_r) & writeback_p & cache_req_r.hit;
   wire inval_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_inval};
-  wire nonblocking_v_r = cache_req_v_r & (~uc_hit_v_r | !writeback_p) & (uc_store_v_r | wt_store_v_r);
+  wire clean_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_clean};
+  wire flush_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_flush};
+  wire binval_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_cache_binval};
+  wire bclean_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_cache_bclean};
+  wire nonblocking_v_r = cache_req_v_r & (uc_store_v_r | wt_store_v_r) & ~uc_evict_v_r;
 
-  wire [block_size_in_fill_lp-1:0] fill_index_shift = {{(assoc_p != 1){fsm_rev_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp}}, {(assoc_p == 1){'0}}};
+  wire [block_size_in_fill_lp-1:0] fill_index_shift = (assoc_p > 1) ? (fsm_rev_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp) : '0;
 
   logic [index_width_lp-1:0] index_cnt;
   logic index_clear, index_up;
@@ -402,7 +413,7 @@ module bp_uce
   // We ack mem_revs for stores no matter what, so load_resp_yumi_lo is for other responses
   logic load_resp_yumi_lo;
   assign fsm_rev_yumi_lo = load_resp_yumi_lo | store_resp_v_li;
-  assign cache_req_lock_o = is_reset | is_init | clean_v_r | inval_v_r;
+  assign cache_req_lock_o = is_reset | is_init | inval_v_r | clean_v_r | flush_v_r;
   always_comb
     begin
       cache_req_yumi_o = '0;
@@ -462,7 +473,13 @@ module bp_uce
             stat_mem_pkt_cast_o.index  = index_cnt;
             stat_mem_pkt_v_o = 1'b1;
 
-            state_n = stat_mem_pkt_yumi_i ? e_clean_scan : state_r;
+            tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_inval;
+            tag_mem_pkt_cast_o.index = index_cnt;
+            tag_mem_pkt_v_o = flush_v_r;
+
+            state_n = (stat_mem_pkt_yumi_i & (~tag_mem_pkt_v_o | tag_mem_pkt_yumi_i))
+                      ? e_clean_scan
+                      : state_r;
           end
 
         e_clean_scan:
@@ -541,20 +558,48 @@ module bp_uce
             state_n = cache_req_last_o ? e_ready : state_r;
           end
 
+        e_bclean_evict:
+          begin
+            data_mem_pkt_cast_o.opcode     = e_cache_data_mem_read;
+            data_mem_pkt_cast_o.index      = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+            data_mem_pkt_cast_o.way_id     = cache_req_metadata.hit_or_repl_way;
+            data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
+            data_mem_pkt_v_o = 1'b1;
+
+            state_n = data_mem_pkt_yumi_i ? e_bclean_writeback_req : state_r;
+          end
+
+        e_bclean_writeback_req:
+          begin
+            fsm_fwd_header_lo.msg_type       = e_bedrock_mem_wr;
+            fsm_fwd_header_lo.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
+            fsm_fwd_header_lo.size           = block_msg_size_lp;
+            fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
+            fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+            fsm_fwd_data_lo                  = writeback_data;
+            fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
+
+            cache_req_done = ~cache_req_metadata.dirty || (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo);
+
+            state_n = cache_req_done ? e_ready : state_r;
+          end
+
         e_ready:
           begin
             cache_req_yumi_o = cache_req_v_i & cache_req_ready_lo & (~cache_req_v_r |  nonblocking_v_li);
 
             state_n = cache_req_yumi_o
-                      ? clean_v_li
+                      ? (flush_v_li | clean_v_li)
                         ? e_clean_read
                         : inval_v_li
                           ? e_inval
-                          : (uc_hit_v_li & (writeback_p == 1))
-                            ? e_uc_writeback_evict
-                            : (uc_store_v_li || wt_store_v_li)
-                              ? e_ready
-                              : e_send_critical
+                          : bclean_v_li
+                            ? e_bclean_evict
+                            : uc_evict_v_li
+                              ? e_uc_writeback_evict
+                              : (uc_load_v_li || uc_amo_v_li || miss_v_li)
+                                ? e_send_critical
+                                : e_ready
                       : state_r;
           end
 
@@ -748,7 +793,7 @@ module bp_uce
           fsm_fwd_data_lo                  = {fill_width_p/dword_width_gp{cache_req_r.data}};
           fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-          cache_req_done = fsm_fwd_ready_and_li & fsm_fwd_v_lo;
+          cache_req_done = fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo;
         end
     end
 

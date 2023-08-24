@@ -176,6 +176,17 @@ module bp_be_issue_queue
             preissue_pkt_cast_o.irs1_v = preissue_v;
             preissue_pkt_cast_o.irs2_v = preissue_v;
           end
+        `RV64_MISC_MEM_OP:
+          casez (preissue_pkt_cast_o.instr)
+            `RV64_CBO_ZERO
+            ,`RV64_CBO_CLEAN
+            ,`RV64_CBO_INVAL
+            ,`RV64_CBO_FLUSH:
+               begin
+                 preissue_pkt_cast_o.irs1_v = preissue_v;
+                 preissue_pkt_cast_o.irs2_v = preissue_v;
+               end
+          endcase
         `RV64_FLOAD_OP:
           begin
             preissue_pkt_cast_o.irs1_v = preissue_v;

@@ -37,7 +37,6 @@ module bp_be_dcache_decoder
     // Atomic op decoding
     decode_cast_o.lr_op = dcache_pkt.opcode inside {e_dcache_op_lrw, e_dcache_op_lrd};
     decode_cast_o.sc_op = dcache_pkt.opcode inside {e_dcache_op_scw, e_dcache_op_scd};
-    decode_cast_o.clean_op = dcache_pkt.opcode inside {e_dcache_op_clean};
 
     // Atomic subop decoding
     unique casez (dcache_pkt.opcode)
@@ -56,19 +55,25 @@ module bp_be_dcache_decoder
     endcase
 
     decode_cast_o.amo_op = (decode_cast_o.amo_subop != e_dcache_subop_none);
+    decode_cast_o.binval_op = dcache_pkt.opcode inside {e_dcache_op_binval, e_dcache_op_bflush};
+    decode_cast_o.bclean_op = dcache_pkt.opcode inside {e_dcache_op_bclean, e_dcache_op_bflush};
+    decode_cast_o.bzero_op = dcache_pkt.opcode inside {e_dcache_op_bzero};
+
+    decode_cast_o.inval_op = dcache_pkt.opcode inside {e_dcache_op_inval, e_dcache_op_flush};
+    decode_cast_o.clean_op = dcache_pkt.opcode inside {e_dcache_op_clean, e_dcache_op_flush};
 
     decode_cast_o.uncached_op =
       ((!amo_support_p[e_dcache_subop_lr]) && (decode_cast_o.lr_op))
-      || ((!amo_support_p[e_dcache_subop_sc]) && (decode_cast_o.sc_op))
-      || ((!amo_support_p[e_dcache_subop_amoswap]) && decode_cast_o.amo_subop == e_dcache_subop_amoswap)
-      || ((!amo_support_p[e_dcache_subop_amoadd]) && decode_cast_o.amo_subop == e_dcache_subop_amoadd)
-      || ((!amo_support_p[e_dcache_subop_amomin]) && decode_cast_o.amo_subop == e_dcache_subop_amomin)
-      || ((!amo_support_p[e_dcache_subop_amomax]) && decode_cast_o.amo_subop == e_dcache_subop_amomax)
-      || ((!amo_support_p[e_dcache_subop_amominu]) && decode_cast_o.amo_subop == e_dcache_subop_amominu)
-      || ((!amo_support_p[e_dcache_subop_amomaxu]) && decode_cast_o.amo_subop == e_dcache_subop_amomaxu)
-      || ((!amo_support_p[e_dcache_subop_amoxor]) && decode_cast_o.amo_subop == e_dcache_subop_amoxor)
-      || ((!amo_support_p[e_dcache_subop_amoand]) && decode_cast_o.amo_subop == e_dcache_subop_amoand)
-      || ((!amo_support_p[e_dcache_subop_amoor]) && decode_cast_o.amo_subop == e_dcache_subop_amoor);
+       || ((!amo_support_p[e_dcache_subop_sc]) && (decode_cast_o.sc_op))
+       || ((!amo_support_p[e_dcache_subop_amoswap]) && decode_cast_o.amo_subop == e_dcache_subop_amoswap)
+       || ((!amo_support_p[e_dcache_subop_amoadd]) && decode_cast_o.amo_subop == e_dcache_subop_amoadd)
+       || ((!amo_support_p[e_dcache_subop_amomin]) && decode_cast_o.amo_subop == e_dcache_subop_amomin)
+       || ((!amo_support_p[e_dcache_subop_amomax]) && decode_cast_o.amo_subop == e_dcache_subop_amomax)
+       || ((!amo_support_p[e_dcache_subop_amominu]) && decode_cast_o.amo_subop == e_dcache_subop_amominu)
+       || ((!amo_support_p[e_dcache_subop_amomaxu]) && decode_cast_o.amo_subop == e_dcache_subop_amomaxu)
+       || ((!amo_support_p[e_dcache_subop_amoxor]) && decode_cast_o.amo_subop == e_dcache_subop_amoxor)
+       || ((!amo_support_p[e_dcache_subop_amoand]) && decode_cast_o.amo_subop == e_dcache_subop_amoand)
+       || ((!amo_support_p[e_dcache_subop_amoor]) && decode_cast_o.amo_subop == e_dcache_subop_amoor);
 
     decode_cast_o.load_op = (decode_cast_o.amo_op | decode_cast_o.lr_op) || dcache_pkt.opcode inside
       {e_dcache_op_flw, e_dcache_op_fld
@@ -77,10 +82,17 @@ module bp_be_dcache_decoder
        };
 
     decode_cast_o.store_op = (decode_cast_o.amo_op & ~decode_cast_o.lr_op) || dcache_pkt.opcode inside
-      {e_dcache_op_sd, e_dcache_op_sw, e_dcache_op_sh, e_dcache_op_sb, e_dcache_op_fsw, e_dcache_op_fsd};
+      {e_dcache_op_sd, e_dcache_op_sw, e_dcache_op_sh, e_dcache_op_sb
+       ,e_dcache_op_fsw, e_dcache_op_fsd
+       ,e_dcache_op_bzero
+       };
 
     // Size decoding
     unique case (dcache_pkt.opcode)
+      e_dcache_op_inval, e_dcache_op_clean, e_dcache_op_flush:
+                                                       decode_cast_o.cache_op  = 1'b1;
+      e_dcache_op_bzero, e_dcache_op_binval, e_dcache_op_bclean, e_dcache_op_bflush:
+                                                       decode_cast_o.block_op  = 1'b1;
       e_dcache_op_lb, e_dcache_op_lbu, e_dcache_op_sb: decode_cast_o.byte_op   = 1'b1;
       e_dcache_op_lh, e_dcache_op_lhu, e_dcache_op_sh: decode_cast_o.half_op   = 1'b1;
       e_dcache_op_amoswapw, e_dcache_op_amoaddw, e_dcache_op_amoxorw

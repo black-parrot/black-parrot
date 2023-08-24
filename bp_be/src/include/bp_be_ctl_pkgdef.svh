@@ -93,7 +93,13 @@
     ,e_dcache_op_amominud = 6'b100000
     ,e_dcache_op_amomaxud = 6'b100001
 
+    ,e_dcache_op_bzero    = 6'b110000
+    ,e_dcache_op_bclean   = 6'b110001
+    ,e_dcache_op_binval   = 6'b110010
+    ,e_dcache_op_bflush   = 6'b110100
+    ,e_dcache_op_inval    = 6'b111101
     ,e_dcache_op_clean    = 6'b111110
+    ,e_dcache_op_flush    = 6'b111111
   } bp_be_dcache_fu_op_e;
 
   typedef enum logic [5:0]
@@ -190,6 +196,7 @@
     logic                             fence_v;
     logic                             dcache_r_v;
     logic                             dcache_w_v;
+    logic                             dcache_cbo_v;
     logic                             csr_w_v;
     logic                             csr_r_v;
     logic                             mem_v;

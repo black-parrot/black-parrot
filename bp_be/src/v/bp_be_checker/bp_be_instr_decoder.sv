@@ -265,14 +265,80 @@ module bp_be_instr_decoder
           end
         `RV64_MISC_MEM_OP:
           begin
-            decode_cast_o.fence_v = 1'b1;
             unique casez (instr)
-              `RV64_FENCE   : begin end
+              `RV64_FENCE   :
+                begin
+                  decode_cast_o.fence_v = 1'b1;
+                end
               `RV64_FENCE_I :
                 begin
                   decode_cast_o.pipe_mem_early_v = !dcache_features_p[e_cfg_coherent];
                   decode_cast_o.fu_op            = e_dcache_op_clean;
                   fencei_o                       = 1'b1;
+                end
+              `RV64_CMO_INVAL_ALL:
+                begin
+                  decode_cast_o.pipe_mem_early_v = 1'b1;
+                  decode_cast_o.fu_op            = e_dcache_op_inval;
+                  // TODO: Implement for multicore
+                  illegal_instr_o = dcache_features_p[e_cfg_coherent];
+                end
+              `RV64_CMO_CLEAN_ALL:
+                begin
+                  decode_cast_o.pipe_mem_early_v = 1'b1;
+                  decode_cast_o.fu_op            = e_dcache_op_clean;
+                  // TODO: Implement for multicore
+                  illegal_instr_o = dcache_features_p[e_cfg_coherent];
+                end
+              `RV64_CMO_FLUSH_ALL:
+                begin
+                  decode_cast_o.pipe_mem_early_v = 1'b1;
+                  decode_cast_o.fu_op            = e_dcache_op_flush;
+                  // TODO: Implement for multicore
+                  illegal_instr_o = dcache_features_p[e_cfg_coherent];
+                end
+              `RV64_CBO_ZERO:
+                begin
+                  decode_cast_o.pipe_mem_early_v = 1'b1;
+                  decode_cast_o.dcache_cbo_v     = 1'b1;
+                  decode_cast_o.dcache_w_v       = 1'b1;
+                  decode_cast_o.fu_op            = e_dcache_op_bzero;
+                end
+              `RV64_CBO_CLEAN:
+                begin
+                  decode_cast_o.pipe_mem_early_v = 1'b1;
+                  decode_cast_o.dcache_cbo_v     = 1'b1;
+                  decode_cast_o.fu_op            = e_dcache_op_bclean;
+                  // TODO: Implement for ucode
+                  illegal_instr_o = (cce_type_p == e_cce_ucode);
+                end
+              `RV64_CBO_INVAL:
+                begin
+                  decode_cast_o.pipe_mem_early_v = 1'b1;
+                  decode_cast_o.dcache_cbo_v     = 1'b1;
+                  decode_cast_o.fu_op            = e_dcache_op_binval;
+                  // TODO: Implement for ucode
+                  illegal_instr_o = (cce_type_p == e_cce_ucode);
+                end
+              `RV64_CBO_FLUSH:
+                begin
+                  decode_cast_o.pipe_mem_early_v = 1'b1;
+                  decode_cast_o.dcache_cbo_v     = 1'b1;
+                  decode_cast_o.fu_op            = e_dcache_op_bflush;
+                  // TODO: Implement for ucode
+                  illegal_instr_o = (cce_type_p == e_cce_ucode);
+                end
+              `RV64_CMO_PREFETCHI:
+                begin
+                  // NOP for now
+                end
+              `RV64_CMO_PREFETCHR:
+                begin
+                  // NOP for now
+                end
+              `RV64_CMO_PREFETCHW:
+                begin
+                  // NOP for now
                 end
               default : illegal_instr_o = 1'b1;
             endcase

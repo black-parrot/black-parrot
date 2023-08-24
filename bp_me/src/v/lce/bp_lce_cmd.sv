@@ -60,6 +60,7 @@ module bp_lce_cmd
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
     // cache_req_last_o is routed to the cache to indicate a blocking request is complete
+    , output logic [paddr_width_p-1:0]               cache_req_addr_o
     , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_last_o
 
@@ -332,8 +333,9 @@ module bp_lce_cmd
     state_n = state_r;
 
     credit_return_o = '0;
-    cache_req_done_o = '0;
     // raised request is fully resolved
+    cache_req_done_o = '0;
+    cache_req_addr_o = fsm_cmd_header_li.addr;
     cache_req_last_o = 1'b0;
     cache_req_critical_o = 1'b0;
 

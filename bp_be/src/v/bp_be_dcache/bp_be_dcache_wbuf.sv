@@ -208,14 +208,11 @@ module bp_be_dcache_wbuf
   wire snoop_stat_match = v_tl_i & stat_mem_pkt_v_i
     & (addr_tl_i[block_offset_width_lp+:sindex_width_lp] == stat_mem_pkt_cast_i.index);
   wire snoop_el0_match = el0_valid & ~wbuf_entry_cast_i.snoop & data_mem_pkt_v_i
-    & (wbuf_entry_el0_r.caddr[block_offset_width_lp+:sindex_width_lp] == data_mem_pkt_cast_i.index)
-    & (wbuf_entry_el0_r.way_id == data_mem_pkt_cast_i.way_id);
+    & (wbuf_entry_el0_r.caddr[block_offset_width_lp+:sindex_width_lp] == data_mem_pkt_cast_i.index);
   wire snoop_el1_match = el1_valid & ~wbuf_entry_el1_r.snoop & data_mem_pkt_v_i
-    & (wbuf_entry_el1_r.caddr[block_offset_width_lp+:sindex_width_lp] == data_mem_pkt_cast_i.index)
-    & (wbuf_entry_el1_r.way_id == data_mem_pkt_cast_i.way_id);
+    & (wbuf_entry_el1_r.caddr[block_offset_width_lp+:sindex_width_lp] == data_mem_pkt_cast_i.index);
   wire snoop_el2_match = v_i & ~wbuf_entry_cast_i.snoop & data_mem_pkt_v_i
-    & (wbuf_entry_cast_i.caddr[block_offset_width_lp+:sindex_width_lp] == data_mem_pkt_cast_i.index)
-    & (wbuf_entry_cast_i.way_id == data_mem_pkt_cast_i.way_id);
+    & (wbuf_entry_cast_i.caddr[block_offset_width_lp+:sindex_width_lp] == data_mem_pkt_cast_i.index);
 
   assign snoop_match_o = snoop_tag_match | snoop_stat_match | snoop_el0_match | snoop_el1_match | snoop_el2_match;
 

@@ -157,12 +157,11 @@ module bp_lce
      ,.cache_req_yumi_o(cache_req_yumi_o)
      ,.cache_req_metadata_i(cache_req_metadata_i)
      ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
+     ,.cache_req_data_o(cache_req_data_o)
      ,.credits_full_o(cache_req_credits_full_o)
      ,.credits_empty_o(cache_req_credits_empty_o)
      ,.credit_return_i(credit_return_lo)
      ,.cache_req_done_i(cache_req_done_lo)
-     ,.cache_req_addr_o(cache_req_addr_o)
-     ,.cache_req_data_o(cache_req_data_o)
      ,.backoff_o(backoff_lo)
 
      ,.lce_req_header_o(lce_req_header_o)
@@ -242,6 +241,7 @@ module bp_lce
 
      ,.cache_init_done_o(cache_init_done_lo)
      ,.sync_done_o(sync_done_lo)
+     ,.cache_req_addr_o(cache_req_addr_o)
      ,.cache_req_critical_o(cache_req_critical_o)
      ,.cache_req_last_o(cache_req_last_o)
      ,.credit_return_o(credit_return_lo)
