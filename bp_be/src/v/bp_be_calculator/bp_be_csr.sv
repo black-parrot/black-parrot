@@ -417,13 +417,13 @@ module bp_be_csr
           else if (priv_mode_r < csr_cmd_cast_i.csr_addr[9:8])
             csr_illegal_instr_o = 1'b1;
           else if (~|mstatus_lo.fs & (csr_cmd_cast_i.csr_addr inside {`CSR_ADDR_FCSR, `CSR_ADDR_FFLAGS, `CSR_ADDR_FRM}))
-            csr_illegal_instr_o = 1'b1;
+            csr_illegal_instr_o = (|fpu_support_p) ? 1'b1 : 1'b0;
           else
             begin
               unique casez ({csr_r_v_li, csr_cmd_cast_i.csr_addr})
-                {1'b1, `CSR_ADDR_FFLAGS       }: csr_data_lo = fcsr_lo.fflags | fflags_acc_i;
-                {1'b1, `CSR_ADDR_FRM          }: csr_data_lo = fcsr_lo.frm;
-                {1'b1, `CSR_ADDR_FCSR         }: csr_data_lo = fcsr_lo | fflags_acc_i;
+                {1'b1, `CSR_ADDR_FFLAGS       }: csr_data_lo = (|fpu_support_p) ? fcsr_lo.fflags | fflags_acc_i : 'b0;
+                {1'b1, `CSR_ADDR_FRM          }: csr_data_lo = (|fpu_support_p) ? fcsr_lo.frm : 'b0;
+                {1'b1, `CSR_ADDR_FCSR         }: csr_data_lo = (|fpu_support_p) ? fcsr_lo | fflags_acc_i  : 'b0;
                 {1'b1, `CSR_ADDR_CYCLE        }: csr_data_lo = mcycle_lo;
                 // Time must be done by trapping, since we can't stall at this point
                 {1'b1, `CSR_ADDR_INSTRET      }: csr_data_lo = minstret_lo;
@@ -663,7 +663,7 @@ module bp_be_csr
       mip_li.msip = software_irq_i;
       mip_li.meip = m_external_irq_i;
 
-      if(fpu_support_p)begin
+      if(|fpu_support_p)begin
         // Accumulate FFLAGS if we're not writing them this cycle
         if (~(csr_w_v_li & csr_cmd_cast_i.csr_addr inside {`CSR_ADDR_FFLAGS, `CSR_ADDR_FCSR}))
           fcsr_li.fflags |= fflags_acc_i;

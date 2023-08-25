@@ -45,26 +45,24 @@ module bp_be_pipe_aux
   wire [dword_width_gp-1:0] rs1 = reservation.rs1;
   wire [dword_width_gp-1:0] rs2 = reservation.rs2;
 
-  generate
-    if(|fpu_support_p)
-      begin
-        bp_be_nan_unbox
-         #(.bp_params_p(bp_params_p))
-         frs1_unbox
-          (.reg_i(reservation.rs1)
-           ,.unbox_i(decode.ops_v & !(decode.fu_op inside {e_aux_op_fmvi}))
-           ,.reg_o(frs1)
-           );
+  if(|fpu_support_p)
+    begin
+      bp_be_nan_unbox
+       #(.bp_params_p(bp_params_p))
+       frs1_unbox
+        (.reg_i(reservation.rs1)
+         ,.unbox_i(decode.ops_v & !(decode.fu_op inside {e_aux_op_fmvi}))
+         ,.reg_o(frs1)
+         );
 
-        bp_be_nan_unbox
-         #(.bp_params_p(bp_params_p))
-         frs2_unbox
-          (.reg_i(reservation.rs2)
-           ,.unbox_i(decode.ops_v)
-           ,.reg_o(frs2)
-           );
-      end
-    endgenerate
+      bp_be_nan_unbox
+       #(.bp_params_p(bp_params_p))
+       frs2_unbox
+        (.reg_i(reservation.rs2)
+         ,.unbox_i(decode.ops_v)
+         ,.reg_o(frs2)
+         );
+    end
 
   //
   // Control bits for the FPU
@@ -79,24 +77,22 @@ module bp_be_pipe_aux
   //
   logic [dword_width_gp-1:0] frs1_raw;
   logic [dword_width_gp-1:0] frs2_raw;
-  generate
-    if(|fpu_support_p)
-      begin
-        bp_be_reg_to_fp
-         #(.bp_params_p(bp_params_p))
-         frs1_rec2raw
-          (.reg_i(frs1)
-           ,.raw_o(frs1_raw)
-           );
-        
-        bp_be_reg_to_fp
-         #(.bp_params_p(bp_params_p))
-         frs2_rec2raw
-          (.reg_i(frs2)
-           ,.raw_o(frs2_raw)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      bp_be_reg_to_fp
+       #(.bp_params_p(bp_params_p))
+       frs1_rec2raw
+        (.reg_i(frs1)
+         ,.raw_o(frs1_raw)
+         );
+      
+      bp_be_reg_to_fp
+       #(.bp_params_p(bp_params_p))
+       frs2_rec2raw
+        (.reg_i(frs2)
+         ,.raw_o(frs2_raw)
+         );
+  end
 
   //
   // Move Float -> Int
@@ -117,17 +113,15 @@ module bp_be_pipe_aux
 
   bp_be_fp_reg_s imvf_result;
   rv64_fflags_s imvf_fflags;
-  generate
-    if(|fpu_support_p)
-      begin
-        bp_be_fp_to_reg
-         #(.bp_params_p(bp_params_p))
-         fp_to_reg
-          (.raw_i(imvf_src)
-           ,.reg_o(imvf_result)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      bp_be_fp_to_reg
+       #(.bp_params_p(bp_params_p))
+       fp_to_reg
+        (.raw_i(imvf_src)
+         ,.reg_o(imvf_result)
+         );
+  end
   assign imvf_fflags = '0;
 
   //
@@ -141,62 +135,56 @@ module bp_be_pipe_aux
 
   logic [dp_rec_width_gp-1:0] i2d_out;
   rv64_fflags_s i2d_fflags;
-  generate
-    if(|fpu_support_p)
-      begin
-        iNToRecFN
-         #(.intWidth(dword_width_gp)
-           ,.expWidth(dp_exp_width_gp)
-           ,.sigWidth(dp_sig_width_gp)
-           )
-         i2d
-          (.control(control_li)
-           ,.signedIn(signed_i2f)
-           ,.in(i2f_src)
-           ,.roundingMode(frm_li)
-           ,.out(i2d_out)
-           ,.exceptionFlags(i2d_fflags)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      iNToRecFN
+       #(.intWidth(dword_width_gp)
+         ,.expWidth(dp_exp_width_gp)
+         ,.sigWidth(dp_sig_width_gp)
+         )
+       i2d
+        (.control(control_li)
+         ,.signedIn(signed_i2f)
+         ,.in(i2f_src)
+         ,.roundingMode(frm_li)
+         ,.out(i2d_out)
+         ,.exceptionFlags(i2d_fflags)
+         );
+  end
 
   logic [sp_rec_width_gp-1:0] i2s_out;
   rv64_fflags_s i2s_fflags;
-  generate
-    if(|fpu_support_p)
-      begin
-        iNToRecFN
-         #(.intWidth(dword_width_gp)
-           ,.expWidth(sp_exp_width_gp)
-           ,.sigWidth(sp_sig_width_gp)
-           )
-         i2s
-          (.control(control_li)
-           ,.signedIn(signed_i2f)
-           ,.in(i2f_src)
-           ,.roundingMode(frm_li)
-           ,.out(i2s_out)
-           ,.exceptionFlags(i2s_fflags)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      iNToRecFN
+       #(.intWidth(dword_width_gp)
+         ,.expWidth(sp_exp_width_gp)
+         ,.sigWidth(sp_sig_width_gp)
+         )
+       i2s
+        (.control(control_li)
+         ,.signedIn(signed_i2f)
+         ,.in(i2f_src)
+         ,.roundingMode(frm_li)
+         ,.out(i2s_out)
+         ,.exceptionFlags(i2s_fflags)
+         );
+  end
 
   logic [dp_rec_width_gp-1:0] i2s2d_out;
-  generate
-    if(|fpu_support_p)
-      begin
-        recFNToRecFN_unsafe
-         #(.inExpWidth(sp_exp_width_gp)
-           ,.inSigWidth(sp_sig_width_gp)
-           ,.outExpWidth(dp_exp_width_gp)
-           ,.outSigWidth(dp_sig_width_gp)
-           )
-         i2s2d
-          (.in(i2s_out)
-           ,.out(i2s2d_out)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      recFNToRecFN_unsafe
+       #(.inExpWidth(sp_exp_width_gp)
+         ,.inSigWidth(sp_sig_width_gp)
+         ,.outExpWidth(dp_exp_width_gp)
+         ,.outSigWidth(dp_sig_width_gp)
+         )
+       i2s2d
+        (.in(i2s_out)
+         ,.out(i2s2d_out)
+         );
+  end
 
   assign i2f_result = '{tag: decode.ops_v ? e_fp_sp : e_fp_full, rec: decode.ops_v ? i2s2d_out : i2d_out};
   assign i2f_fflags = decode.ops_v ? i2s_fflags : i2d_fflags;
@@ -211,41 +199,37 @@ module bp_be_pipe_aux
   logic [dword_width_gp-1:0] f2dw_out;
   rv64_iflags_s f2dw_iflags;
   wire signed_f2i = (decode.fu_op inside {e_aux_op_f2i, e_aux_op_fmvi});
-  generate
-    if(|fpu_support_p)
-      begin
-        recFNToIN
-         #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp), .intWidth(dword_width_gp))
-         f2dw
-          (.control(control_li)
-           ,.in(frs1.rec)
-           ,.roundingMode(frm_li)
-           ,.signedOut(signed_f2i)
-           ,.out(f2dw_out)
-           ,.intExceptionFlags(f2dw_iflags)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      recFNToIN
+       #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp), .intWidth(dword_width_gp))
+       f2dw
+        (.control(control_li)
+         ,.in(frs1.rec)
+         ,.roundingMode(frm_li)
+         ,.signedOut(signed_f2i)
+         ,.out(f2dw_out)
+         ,.intExceptionFlags(f2dw_iflags)
+         );
+  end
 
   // It's possible we can do away with this int converter and manually
   //   check for inexact exceptions.
   logic [word_width_gp-1:0] f2w_out;
   rv64_iflags_s f2w_iflags;
-  generate
-    if(|fpu_support_p)
-      begin
-        recFNToIN
-         #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp), .intWidth(word_width_gp))
-         f2w
-          (.control(control_li)
-           ,.in(frs1.rec)
-           ,.roundingMode(frm_li)
-           ,.signedOut(signed_f2i)
-           ,.out(f2w_out)
-           ,.intExceptionFlags(f2w_iflags)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      recFNToIN
+       #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp), .intWidth(word_width_gp))
+       f2w
+        (.control(control_li)
+         ,.in(frs1.rec)
+         ,.roundingMode(frm_li)
+         ,.signedOut(signed_f2i)
+         ,.out(f2w_out)
+         ,.intExceptionFlags(f2w_iflags)
+         );
+  end
 
   assign f2i_result = decode.opw_v
                       ? {{word_width_gp{f2w_out[word_width_gp-1]}}, f2w_out}
@@ -272,78 +256,70 @@ module bp_be_pipe_aux
   logic frs1_sign;
   logic [dp_exp_width_gp+1:0] frs1_sexp;
   logic [dp_sig_width_gp:0] frs1_sig;
-  generate
-    if(|fpu_support_p)
-      begin
-        recFNToRawFN
-         #(.expWidth(dp_exp_width_gp) ,.sigWidth(dp_sig_width_gp))
-         frs1_class
-          (.in(frs1.rec)
-           ,.isNaN(frs1_is_nan)
-           ,.isInf(frs1_is_inf)
-           ,.isZero(frs1_is_zero)
-           ,.sign(frs1_sign)
-           ,.sExp(frs1_sexp)
-           ,.sig(frs1_sig)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      recFNToRawFN
+       #(.expWidth(dp_exp_width_gp) ,.sigWidth(dp_sig_width_gp))
+       frs1_class
+        (.in(frs1.rec)
+         ,.isNaN(frs1_is_nan)
+         ,.isInf(frs1_is_inf)
+         ,.isZero(frs1_is_zero)
+         ,.sign(frs1_sign)
+         ,.sExp(frs1_sexp)
+         ,.sig(frs1_sig)
+         );
+  end
   wire frs1_is_sub = decode.ops_v
                      ? ~|frs1_raw[sp_sig_width_gp-1+:sp_exp_width_gp] & |frs1_raw[0+:sp_sig_width_gp-1]
                      : ~|frs1_raw[dp_sig_width_gp-1+:dp_exp_width_gp] & |frs1_raw[0+:dp_sig_width_gp-1];
 
   logic frs1_is_snan;
-  generate
-    if(|fpu_support_p)
-      begin
-        isSigNaNRecFN
-         #(.expWidth(dp_exp_width_gp)
-           ,.sigWidth(dp_sig_width_gp)
-           )
-         frs1_sig_nan
-          (.in(frs1.rec)
-           ,.isSigNaN(frs1_is_snan)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      isSigNaNRecFN
+       #(.expWidth(dp_exp_width_gp)
+         ,.sigWidth(dp_sig_width_gp)
+         )
+       frs1_sig_nan
+        (.in(frs1.rec)
+         ,.isSigNaN(frs1_is_snan)
+         );
+  end
 
   logic frs2_is_nan, frs2_is_inf, frs2_is_zero;
   logic frs2_sign;
   logic [dp_exp_width_gp+1:0] frs2_sexp;
-  generate
-    if(|fpu_support_p)
-      begin
-        recFNToRawFN
-         #(.expWidth(dp_exp_width_gp) ,.sigWidth(dp_sig_width_gp))
-         frs2_class
-          (.in(frs2.rec)
-           ,.isNaN(frs2_is_nan)
-           ,.isInf(frs2_is_inf)
-           ,.isZero(frs2_is_zero)
-           ,.sign(frs2_sign)
-           ,.sExp(frs2_sexp)
-           ,.sig()
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      recFNToRawFN
+       #(.expWidth(dp_exp_width_gp) ,.sigWidth(dp_sig_width_gp))
+       frs2_class
+        (.in(frs2.rec)
+         ,.isNaN(frs2_is_nan)
+         ,.isInf(frs2_is_inf)
+         ,.isZero(frs2_is_zero)
+         ,.sign(frs2_sign)
+         ,.sExp(frs2_sexp)
+         ,.sig()
+         );
+  end
   wire frs2_is_sub = decode.ops_v
                      ? ~|frs2_raw[sp_sig_width_gp-1+:sp_exp_width_gp] & |frs2_raw[0+:sp_sig_width_gp-1]
                      : ~|frs2_raw[dp_sig_width_gp-1+:dp_exp_width_gp] & |frs2_raw[0+:dp_sig_width_gp-1];
 
   logic frs2_is_snan;
-  generate
-    if(|fpu_support_p)
-      begin
-        isSigNaNRecFN
-         #(.expWidth(dp_exp_width_gp)
-           ,.sigWidth(dp_sig_width_gp)
-           )
-         frs2_sig_nan
-          (.in(frs2.rec)
-           ,.isSigNaN(frs2_is_snan)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      isSigNaNRecFN
+       #(.expWidth(dp_exp_width_gp)
+         ,.sigWidth(dp_sig_width_gp)
+         )
+       frs2_sig_nan
+        (.in(frs2.rec)
+         ,.isSigNaN(frs2_is_snan)
+         );
+  end
 
   rv64_fclass_s fclass_result;
   rv64_fflags_s fclass_fflags;
@@ -370,41 +346,37 @@ module bp_be_pipe_aux
   // DP->SP conversion is a rounding operation
   logic [sp_rec_width_gp-1:0] dp2sp_round;
   rv64_fflags_s dp2sp_fflags;
-  generate
-    if(|fpu_support_p)
-      begin
-        recFNToRecFN
-         #(.inExpWidth(dp_exp_width_gp)
-           ,.inSigWidth(dp_sig_width_gp)
-           ,.outExpWidth(sp_exp_width_gp)
-           ,.outSigWidth(sp_sig_width_gp)
-           )
-         f2f_round
-          (.control(control_li)
-           ,.in(frs1.rec)
-           ,.roundingMode(frm_li)
-           ,.out(dp2sp_round)
-           ,.exceptionFlags(dp2sp_fflags)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      recFNToRecFN
+       #(.inExpWidth(dp_exp_width_gp)
+         ,.inSigWidth(dp_sig_width_gp)
+         ,.outExpWidth(sp_exp_width_gp)
+         ,.outSigWidth(sp_sig_width_gp)
+         )
+       f2f_round
+        (.control(control_li)
+         ,.in(frs1.rec)
+         ,.roundingMode(frm_li)
+         ,.out(dp2sp_round)
+         ,.exceptionFlags(dp2sp_fflags)
+         );
+    end
 
   logic [dp_rec_width_gp-1:0] dp2sp_result;
-  generate
-    if(|fpu_support_p)
-      begin
-        recFNToRecFN_unsafe
-         #(.inExpWidth(sp_exp_width_gp)
-           ,.inSigWidth(sp_sig_width_gp)
-           ,.outExpWidth(dp_exp_width_gp)
-           ,.outSigWidth(dp_sig_width_gp)
-           )
-         f2f_recover
-          (.in(dp2sp_round)
-           ,.out(dp2sp_result)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      recFNToRecFN_unsafe
+       #(.inExpWidth(sp_exp_width_gp)
+         ,.inSigWidth(sp_sig_width_gp)
+         ,.outExpWidth(dp_exp_width_gp)
+         ,.outSigWidth(dp_sig_width_gp)
+         )
+       f2f_recover
+        (.in(dp2sp_round)
+         ,.out(dp2sp_result)
+         );
+  end
 
   // SP->DP conversion is a NOP, except for canonicalizing NaNs
   logic [dp_rec_width_gp-1:0] sp2dp_result;
@@ -442,17 +414,15 @@ module bp_be_pipe_aux
       fsgnj_raw[frd_signbit] = sgn_lo;
     end
 
-  generate
-    if(|fpu_support_p)
-      begin    
-        bp_be_fp_to_reg
-         #(.bp_params_p(bp_params_p))
-         fsgnj_fp_to_reg
-          (.raw_i(fsgnj_raw)
-           ,.reg_o(fsgnj_result)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin    
+      bp_be_fp_to_reg
+       #(.bp_params_p(bp_params_p))
+       fsgnj_fp_to_reg
+        (.raw_i(fsgnj_raw)
+         ,.reg_o(fsgnj_result)
+         );
+    end
   assign fsgnj_fflags = '0;
 
   //
@@ -468,23 +438,21 @@ module bp_be_pipe_aux
   wire is_fmax_li = (decode.fu_op == e_aux_op_fmax);
   wire is_fmin_li = (decode.fu_op == e_aux_op_fmin);
   wire signaling_li = is_flt_li | is_fle_li;
-  generate
-    if(|fpu_support_p)
-      begin
-        compareRecFN
-         #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
-         fcmp
-          (.a(frs1.rec)
-           ,.b(frs2.rec)
-           ,.signaling(signaling_li)
-           ,.lt(flt_lo)
-           ,.eq(feq_lo)
-           ,.gt(fgt_lo)
-           ,.unordered(unordered_lo)
-           ,.exceptionFlags(fcmp_fflags)
-           );
-      end
-    endgenerate
+  if(|fpu_support_p)
+    begin
+      compareRecFN
+       #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
+       fcmp
+        (.a(frs1.rec)
+         ,.b(frs2.rec)
+         ,.signaling(signaling_li)
+         ,.lt(flt_lo)
+         ,.eq(feq_lo)
+         ,.gt(fgt_lo)
+         ,.unordered(unordered_lo)
+         ,.exceptionFlags(fcmp_fflags)
+         );
+  end
   wire fle_lo = ~fgt_lo;
   wire fcmp_out = (is_feq_li & feq_lo) | (is_flt_li & flt_lo) | (is_fle_li & (flt_lo | feq_lo));
   assign fcmp_result = '{tag: decode.ops_v ? e_fp_sp : e_fp_full, rec: fcmp_out};
@@ -575,23 +543,21 @@ module bp_be_pipe_aux
     end
 
   wire faux_v_li = reservation.v & reservation.decode.pipe_aux_v;
-  generate
-    if(|fpu_support_p)
-      begin
-        bsg_dff_chain
-         #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)+1), .num_stages_p(1))
-         retiming_chain
-          (.clk_i(clk_i)
+  if(|fpu_support_p)
+    begin
+      bsg_dff_chain
+       #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)+1), .num_stages_p(1))
+       retiming_chain
+        (.clk_i(clk_i)
 
-           ,.data_i({faux_fflags, faux_result, faux_v_li})
-           ,.data_o({fflags_o, data_o, v_o})
-           );
-      end
-    endgenerate
+         ,.data_i({faux_fflags, faux_result, faux_v_li})
+         ,.data_o({fflags_o, data_o, v_o})
+         );
+  end
 
     always_comb
       begin
-        if(!fpu_support_p)
+        if(~|fpu_support_p)
           begin
             fflags_o  =   'b0;
             data_o    =   'b0;

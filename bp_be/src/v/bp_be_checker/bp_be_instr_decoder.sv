@@ -77,7 +77,10 @@ module bp_be_instr_decoder
         `RV64_OP_OP, `RV64_OP_32_OP:
           begin
             if (instr inside {`RV64_MUL, `RV64_MULW})
+            begin
               decode_cast_o.pipe_mul_v = 1'b1;
+              illegal_instr_o = (|muldiv_support_p) ? illegal_instr_o : 1'b1;
+            end
             else if (instr inside {`RV64_MULH, `RV64_MULHSU, `RV64_MULHU
                                    ,`RV64_DIV, `RV64_DIVU, `RV64_DIVW, `RV64_DIVUW
                                    ,`RV64_REM, `RV64_REMU, `RV64_REMW, `RV64_REMUW
@@ -85,6 +88,7 @@ module bp_be_instr_decoder
               begin
                 decode_cast_o.pipe_long_v = 1'b1;
                 decode_cast_o.late_iwb_v  = (instr.rd_addr != '0);
+                illegal_instr_o = (|muldiv_support_p) ? illegal_instr_o : 1'b1;
               end
             else
               decode_cast_o.pipe_int_v = 1'b1;

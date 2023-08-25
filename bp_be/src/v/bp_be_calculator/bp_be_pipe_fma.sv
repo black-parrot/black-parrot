@@ -60,34 +60,32 @@ module bp_be_pipe_fma
   wire [dword_width_gp-1:0] rs1 = decode.opw_v ? (reservation.rs1 << word_width_gp) : reservation.rs1;
   wire [dword_width_gp-1:0] rs2 = reservation.rs2;
 
-  generate
-    if(|fpu_support_p)
-      begin
-        bp_be_nan_unbox
-         #(.bp_params_p(bp_params_p))
-         frs1_unbox
-          (.reg_i(reservation.rs1)
-           ,.unbox_i(decode.ops_v)
-           ,.reg_o(frs1)
-           );
+  if(|fpu_support_p)
+    begin
+      bp_be_nan_unbox
+       #(.bp_params_p(bp_params_p))
+       frs1_unbox
+        (.reg_i(reservation.rs1)
+         ,.unbox_i(decode.ops_v)
+         ,.reg_o(frs1)
+         );
 
-        bp_be_nan_unbox
-         #(.bp_params_p(bp_params_p))
-         frs2_unbox
-          (.reg_i(reservation.rs2)
-           ,.unbox_i(decode.ops_v)
-           ,.reg_o(frs2)
-           );
+      bp_be_nan_unbox
+       #(.bp_params_p(bp_params_p))
+       frs2_unbox
+        (.reg_i(reservation.rs2)
+         ,.unbox_i(decode.ops_v)
+         ,.reg_o(frs2)
+         );
 
-        bp_be_nan_unbox
-         #(.bp_params_p(bp_params_p))
-         frs3_unbox
-          (.reg_i(reservation.imm)
-           ,.unbox_i(decode.ops_v)
-           ,.reg_o(frs3)
-           );
-    end
-  endgenerate
+      bp_be_nan_unbox
+       #(.bp_params_p(bp_params_p))
+       frs3_unbox
+        (.reg_i(reservation.imm)
+         ,.unbox_i(decode.ops_v)
+         ,.reg_o(frs3)
+         );
+  end
 
   //
   // Control bits for the FPU
@@ -162,67 +160,61 @@ module bp_be_pipe_fma
   rv64_frm_e frm_r;
   logic ops_v_r;
 
-  generate
-    if(fpu_support_p[e_fma])
-      begin
-        bsg_dff_chain
-         #(.width_p($bits(rv64_frm_e)+1), .num_stages_p(fma_pipeline_stages_lp[0]+fma_pipeline_stages_lp[1]))
-         fma_info_chain
-          (.clk_i(clk_i)
-           ,.data_i({frm_li, decode.ops_v})
-           ,.data_o({frm_r, ops_v_r})
-           );
-      end
-    endgenerate
+  if(fpu_support_p[e_fma])
+    begin
+      bsg_dff_chain
+       #(.width_p($bits(rv64_frm_e)+1), .num_stages_p(fma_pipeline_stages_lp[0]+fma_pipeline_stages_lp[1]))
+       fma_info_chain
+        (.clk_i(clk_i)
+         ,.data_i({frm_li, decode.ops_v})
+         ,.data_o({frm_r, ops_v_r})
+         );
+  end
 
   logic opw_v_r;
 
-  generate
-    if(muldiv_support_p[e_imul])
-      begin
-        bsg_dff_chain
-         #(.width_p(1), .num_stages_p(fma_pipeline_stages_lp[0]))
-         mul_info_chain
-          (.clk_i(clk_i)
-           ,.data_i(decode.opw_v)
-           ,.data_o(opw_v_r)
-           );
-      end
-    endgenerate
+  if(muldiv_support_p[e_imul])
+    begin
+      bsg_dff_chain
+       #(.width_p(1), .num_stages_p(fma_pipeline_stages_lp[0]))
+       mul_info_chain
+        (.clk_i(clk_i)
+         ,.data_i(decode.opw_v)
+         ,.data_o(opw_v_r)
+         );
+  end
 
   logic invalid_exc, is_nan, is_inf, is_zero, fma_out_sign;
   logic [dword_width_gp-1:0] imul_out;
   bp_hardfloat_raw_dp_s fma_raw_lo;
 
-  generate
-    if(muldiv_support_p[e_imul])
-      begin
-        mulAddRecFNToRaw
-         #(.expWidth(dp_exp_width_gp)
-           ,.sigWidth(dp_sig_width_gp)
-           ,.pipelineStages(fma_pipeline_stages_lp[0])
-           ,.imulEn(1)
-           )
-         fma
-          (.clock(clk_i),
-           .control(control_li)
-           ,.op(fma_op_li)
-           ,.a(fma_a_li)
-           ,.b(fma_b_li)
-           ,.c(fma_c_li)
-           ,.roundingMode(frm_li)
+  if(muldiv_support_p[e_imul])
+    begin
+      mulAddRecFNToRaw
+       #(.expWidth(dp_exp_width_gp)
+         ,.sigWidth(dp_sig_width_gp)
+         ,.pipelineStages(fma_pipeline_stages_lp[0])
+         ,.imulEn(1)
+         )
+       fma
+        (.clock(clk_i),
+         .control(control_li)
+         ,.op(fma_op_li)
+         ,.a(fma_a_li)
+         ,.b(fma_b_li)
+         ,.c(fma_c_li)
+         ,.roundingMode(frm_li)
 
-           ,.invalidExc(invalid_exc)
-           ,.out_isNaN(fma_raw_lo.is_nan)
-           ,.out_isInf(fma_raw_lo.is_inf)
-           ,.out_isZero(fma_raw_lo.is_zero)
-           ,.out_sign(fma_raw_lo.sign)
-           ,.out_sExp(fma_raw_lo.sexp)
-           ,.out_sig(fma_raw_lo.sig)
-           ,.out_imul(imul_out)
-           );
-      end
-    endgenerate
+         ,.invalidExc(invalid_exc)
+         ,.out_isNaN(fma_raw_lo.is_nan)
+         ,.out_isInf(fma_raw_lo.is_inf)
+         ,.out_isZero(fma_raw_lo.is_zero)
+         ,.out_sign(fma_raw_lo.sign)
+         ,.out_sExp(fma_raw_lo.sexp)
+         ,.out_sig(fma_raw_lo.sig)
+         ,.out_imul(imul_out)
+         );
+    end
 
   wire [dpath_width_gp-1:0] imulw_out    = $signed(imul_out) >>> word_width_gp;
   wire [dpath_width_gp-1:0] imul_result = opw_v_r ? imulw_out : imul_out;
@@ -240,35 +232,33 @@ module bp_be_pipe_fma
   logic [dp_rec_width_gp-1:0] fma_result_dp, fma_result_sp;
   rv64_fflags_s fma_fflags_dp, fma_fflags_sp;
 
-  generate
-    if(fpu_support_p[e_fma])
-      begin
-        roundRawFNtoRecFN_mixed
-         #(.fullExpWidth(dp_exp_width_gp)
-           ,.fullSigWidth(dp_sig_width_gp)
-           ,.midExpWidth(sp_exp_width_gp)
-           ,.midSigWidth(sp_sig_width_gp)
-           ,.outExpWidth(dp_exp_width_gp)
-           ,.outSigWidth(dp_sig_width_gp)
-           )
-         round_mixed
-          (.control(control_li)
-           ,.invalidExc(invalid_exc_r)
-           ,.infiniteExc('0)
-           ,.in_isNaN(fma_raw_r.is_nan)
-           ,.in_isInf(fma_raw_r.is_inf)
-           ,.in_isZero(fma_raw_r.is_zero)
-           ,.in_sign(fma_raw_r.sign)
-           ,.in_sExp(fma_raw_r.sexp)
-           ,.in_sig(fma_raw_r.sig)
-           ,.roundingMode(frm_r)
-           ,.fullOut(fma_result_dp)
-           ,.fullExceptionFlags(fma_fflags_dp)
-           ,.midOut(fma_result_sp)
-           ,.midExceptionFlags(fma_fflags_sp)
-           );
-      end
-    endgenerate
+  if(fpu_support_p[e_fma])
+    begin
+      roundRawFNtoRecFN_mixed
+       #(.fullExpWidth(dp_exp_width_gp)
+         ,.fullSigWidth(dp_sig_width_gp)
+         ,.midExpWidth(sp_exp_width_gp)
+         ,.midSigWidth(sp_sig_width_gp)
+         ,.outExpWidth(dp_exp_width_gp)
+         ,.outSigWidth(dp_sig_width_gp)
+         )
+       round_mixed
+        (.control(control_li)
+         ,.invalidExc(invalid_exc_r)
+         ,.infiniteExc('0)
+         ,.in_isNaN(fma_raw_r.is_nan)
+         ,.in_isInf(fma_raw_r.is_inf)
+         ,.in_isZero(fma_raw_r.is_zero)
+         ,.in_sign(fma_raw_r.sign)
+         ,.in_sExp(fma_raw_r.sexp)
+         ,.in_sig(fma_raw_r.sig)
+         ,.roundingMode(frm_r)
+         ,.fullOut(fma_result_dp)
+         ,.fullExceptionFlags(fma_fflags_dp)
+         ,.midOut(fma_result_sp)
+         ,.midExceptionFlags(fma_fflags_sp)
+         );
+    end
 
   bp_be_fp_reg_s fma_sp_reg_lo, fma_dp_reg_lo, frd_data_lo;
   rv64_fflags_s fflags_lo;
@@ -281,67 +271,59 @@ module bp_be_pipe_fma
       {fflags_lo, frd_data_lo} = {fma_fflags_dp, fma_dp_reg_lo};
 
   // TODO: Can combine the registers here if DC doesn't do it automatically
-  generate
-    if(muldiv_support_p[e_imul])
-      begin
-        bsg_dff_chain
-         #(.width_p(dpath_width_gp), .num_stages_p(imul_retime_latency_lp-1))
-         imul_retiming_chain
-          (.clk_i(clk_i)
+  if(muldiv_support_p[e_imul])
+    begin
+      bsg_dff_chain
+       #(.width_p(dpath_width_gp), .num_stages_p(imul_retime_latency_lp-1))
+       imul_retiming_chain
+        (.clk_i(clk_i)
 
-           ,.data_i({imul_result})
-           ,.data_o({imul_data_o})
-           );
-      end
-    endgenerate
+         ,.data_i({imul_result})
+         ,.data_o({imul_data_o})
+         );
+    end
 
-  generate
-    if(fpu_support_p[e_fma])
-      begin
-        bsg_dff_chain
-         #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)), .num_stages_p(fma_retime_latency_lp-1))
-         fma_retiming_chain
-          (.clk_i(clk_i)
+  if(fpu_support_p[e_fma])
+    begin
+      bsg_dff_chain
+       #(.width_p($bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s)), .num_stages_p(fma_retime_latency_lp-1))
+       fma_retiming_chain
+        (.clk_i(clk_i)
 
-           ,.data_i({fflags_lo, frd_data_lo})
-           ,.data_o({fma_fflags_o, fma_data_o})
-           );
-      end
-    endgenerate
+         ,.data_i({fflags_lo, frd_data_lo})
+         ,.data_o({fma_fflags_o, fma_data_o})
+         );
+    end
 
   wire imul_v_li = reservation.v & reservation.decode.pipe_mul_v;
-  generate
-    if(muldiv_support_p[e_imul])
-      begin
-        bsg_dff_chain
-         #(.width_p(1), .num_stages_p(imul_latency_lp-1))
-         imul_v_chain
-          (.clk_i(clk_i)
+  if(muldiv_support_p[e_imul])
+    begin
+      bsg_dff_chain
+       #(.width_p(1), .num_stages_p(imul_latency_lp-1))
+       imul_v_chain
+        (.clk_i(clk_i)
 
-           ,.data_i(imul_v_li)
-           ,.data_o(imul_v_o)
-           );
-      end
-    endgenerate
+         ,.data_i(imul_v_li)
+         ,.data_o(imul_v_o)
+         );
+    end
 
   wire fma_v_li = reservation.v & reservation.decode.pipe_fma_v;
-  generate
-    if(fpu_support_p[e_fma])
-      begin
-        bsg_dff_chain
-         #(.width_p(1), .num_stages_p(fma_latency_lp-1))
-         fma_v_chain
-          (.clk_i(clk_i)
+  if(fpu_support_p[e_fma])
+    begin
+      bsg_dff_chain
+       #(.width_p(1), .num_stages_p(fma_latency_lp-1))
+       fma_v_chain
+        (.clk_i(clk_i)
 
-           ,.data_i(fma_v_li)
-           ,.data_o(fma_v_o)
-           );
-      end
-    endgenerate
+         ,.data_i(fma_v_li)
+         ,.data_o(fma_v_o)
+         );
+    end
 
   always_comb
     begin
-      if(!fpu_support_p)
+      if(~|fpu_support_p)
         begin
           imul_data_o   =  'b0;
           imul_v_o      =  'b0;
