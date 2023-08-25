@@ -321,7 +321,8 @@
       ,l2_assoc            : 8
       ,l2_block_width      : 512
       ,l2_fill_width       : 128
-      ,l2_outstanding_reqs : 6
+      // Set to L2 pipeline depth
+      ,l2_outstanding_reqs : 3
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4

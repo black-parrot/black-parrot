@@ -40,8 +40,8 @@ module bp_core
    , input [cce_instr_width_gp-1:0]                      cce_ucode_data_i
 
    // Memory side connection
-   , input [mem_noc_did_width_p-1:0]                      my_did_i
-   , input [mem_noc_did_width_p-1:0]                      host_did_i
+   , input [mem_noc_did_width_p-1:0]                     my_did_i
+   , input [mem_noc_did_width_p-1:0]                     host_did_i
    , input [coh_noc_cord_width_p-1:0]                    my_cord_i
 
    , output logic [1:0][lce_req_header_width_lp-1:0]     lce_req_header_o
@@ -95,10 +95,37 @@ module bp_core
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
-  `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
-  `bp_cast_o(bp_bedrock_mem_rev_header_s, mem_rev_header);
-  bp_cfg_bus_s cfg_bus_lo;
 
+  // Only CCE acts as a proc for multicore
+  localparam cce_proc_id_lp     =                      0;
+  localparam num_proc_lp        = cce_proc_id_lp     + 1;
+  localparam lg_num_proc_lp     = `BSG_SAFE_CLOG2(num_proc_lp);
+
+  localparam cfg_dev_id_lp      =                      0;
+  localparam clint_dev_id_lp    = cfg_dev_id_lp      + 1;
+  localparam l2s_dev_base_id_lp = clint_dev_id_lp    + 1;
+  localparam loopback_dev_id_lp = l2s_dev_base_id_lp + l2_banks_p;
+  localparam num_dev_lp         = loopback_dev_id_lp + 1;
+  localparam lg_num_dev_lp      = `BSG_SAFE_CLOG2(num_dev_lp);
+
+  // {CCE}
+  bp_bedrock_mem_fwd_header_s [num_proc_lp-1:0] proc_fwd_header_lo;
+  logic [num_proc_lp-1:0][bedrock_fill_width_p-1:0] proc_fwd_data_lo;
+  logic [num_proc_lp-1:0] proc_fwd_v_lo, proc_fwd_ready_and_li;
+  bp_bedrock_mem_rev_header_s [num_proc_lp-1:0] proc_rev_header_li;
+  logic [num_proc_lp-1:0][bedrock_fill_width_p-1:0] proc_rev_data_li;
+  logic [num_proc_lp-1:0] proc_rev_v_li, proc_rev_ready_and_lo;
+
+  // Device-side CCE-Mem network connections
+  // {LOOPBACK, L2, CLINT, CFG}
+  bp_bedrock_mem_fwd_header_s [num_dev_lp-1:0] dev_fwd_header_li;
+  logic [num_dev_lp-1:0][bedrock_fill_width_p-1:0] dev_fwd_data_li;
+  logic [num_dev_lp-1:0] dev_fwd_v_li, dev_fwd_ready_and_lo;
+  bp_bedrock_mem_rev_header_s [num_dev_lp-1:0] dev_rev_header_lo;
+  logic [num_dev_lp-1:0][bedrock_fill_width_p-1:0] dev_rev_data_lo;
+  logic [num_dev_lp-1:0] dev_rev_v_lo, dev_rev_ready_and_li;
+
+  bp_cfg_bus_s cfg_bus_lo;
   logic debug_irq_li, timer_irq_li, software_irq_li, m_external_irq_li, s_external_irq_li;
   bp_core_lite
    #(.bp_params_p(bp_params_p))
@@ -140,14 +167,113 @@ module bp_core
      ,.s_external_irq_i(s_external_irq_li)
      );
 
-  // Device-side CCE-Mem network connections
-  // dev_fwd[3:0] = {CCE loopback, CLINT, CFG, memory (cache)}
-  bp_bedrock_mem_fwd_header_s [3:0] dev_fwd_header_li;
-  logic [3:0][bedrock_fill_width_p-1:0] dev_fwd_data_li;
-  logic [3:0] dev_fwd_v_li, dev_fwd_ready_and_lo;
-  bp_bedrock_mem_rev_header_s [3:0] dev_rev_header_lo;
-  logic [3:0][bedrock_fill_width_p-1:0] dev_rev_data_lo;
-  logic [3:0] dev_rev_v_lo, dev_rev_ready_and_li;
+  // CCE drives all local memory requests
+  assign proc_fwd_header_lo[cce_proc_id_lp] = mem_fwd_header_i;
+  assign proc_fwd_data_lo[cce_proc_id_lp] = mem_fwd_data_i;
+  assign proc_fwd_v_lo[cce_proc_id_lp] = mem_fwd_v_i;
+  assign mem_fwd_ready_and_o = proc_fwd_ready_and_li[cce_proc_id_lp];
+
+  assign mem_rev_header_o = proc_rev_header_li[cce_proc_id_lp];
+  assign mem_rev_data_o = proc_rev_data_li[cce_proc_id_lp];
+  assign mem_rev_v_o = proc_rev_v_li[cce_proc_id_lp];
+  assign proc_rev_ready_and_lo[cce_proc_id_lp] = mem_rev_ready_and_i;
+
+  // Select destination of CCE-Mem command from CCE
+  logic [num_proc_lp-1:0][lg_num_dev_lp-1:0] proc_fwd_dst_lo;
+  for (genvar i = 0; i < num_proc_lp; i++)
+    begin : fwd_dest
+      bp_local_addr_s local_addr;
+      assign local_addr = proc_fwd_header_lo[i].addr;
+      wire [dev_id_width_gp-1:0] device_fwd_li = local_addr.dev;
+      wire is_local        = (local_addr < dram_base_addr_gp);
+
+      wire is_cfg_fwd      = is_local & (device_fwd_li == cfg_dev_gp);
+      wire is_clint_fwd    = is_local & (device_fwd_li == clint_dev_gp);
+
+      wire is_l2s_fwd      = ~is_local;
+      wire is_loopback_fwd = is_local & ~is_cfg_fwd & ~is_clint_fwd & ~is_l2s_fwd;
+
+      localparam l2_block_offset_width_lp = `BSG_SAFE_CLOG2(l2_block_width_p/8);
+      localparam lg_l2_sets_lp            = `BSG_SAFE_CLOG2(l2_sets_p);
+      localparam lg_num_cce_lp            = `BSG_SAFE_CLOG2(num_cce_p);
+      localparam lg_l2_banks_lp           = `BSG_SAFE_CLOG2(l2_banks_p);
+      localparam l2_bank_offset_width_lp  = (num_cce_p > 1) ? l2_block_offset_width_lp+lg_num_cce_lp : l2_block_offset_width_lp;
+      logic [l2_banks_p-1:0] is_l2s_bank_fwd;
+      wire [lg_l2_banks_lp-1:0] bank_id = (l2_banks_p > 1) ? local_addr[l2_bank_offset_width_lp+:lg_l2_banks_lp] : '0;
+      bsg_decode_with_v
+       #(.num_out_p(l2_banks_p))
+       bank_decode
+        (.i(bank_id)
+         ,.v_i(is_l2s_fwd)
+         ,.o(is_l2s_bank_fwd)
+         );
+
+      wire [num_dev_lp-1:0] proc_fwd_dst_sel =
+        (is_cfg_fwd << cfg_dev_id_lp)
+        | (is_clint_fwd << clint_dev_id_lp)
+        | (is_l2s_bank_fwd << l2s_dev_base_id_lp)
+        | (is_loopback_fwd << loopback_dev_id_lp);
+
+      bsg_encode_one_hot
+       #(.width_p(num_dev_lp), .lo_to_hi_p(1))
+       fwd_pe
+        (.i(proc_fwd_dst_sel)
+         ,.addr_o(proc_fwd_dst_lo[i])
+         ,.v_o()
+         );
+    end
+
+  bp_me_xbar_stream
+   #(.bp_params_p(bp_params_p)
+     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
+     ,.payload_width_p(mem_fwd_payload_width_lp)
+     ,.stream_mask_p(mem_fwd_stream_mask_gp)
+     ,.num_source_p(num_proc_lp)
+     ,.num_sink_p(num_dev_lp)
+     )
+   fwd_xbar
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.msg_header_i(proc_fwd_header_lo)
+     ,.msg_data_i(proc_fwd_data_lo)
+     ,.msg_v_i(proc_fwd_v_lo)
+     ,.msg_ready_and_o(proc_fwd_ready_and_li)
+     ,.msg_dst_i(proc_fwd_dst_lo)
+
+     ,.msg_header_o(dev_fwd_header_li)
+     ,.msg_data_o(dev_fwd_data_li)
+     ,.msg_v_o(dev_fwd_v_li)
+     ,.msg_ready_and_i(dev_fwd_ready_and_lo)
+     );
+
+  // All CCE-Mem network responses go to the CCE on this tile (id = 0 in xbar)
+  wire [num_dev_lp-1:0][lg_num_proc_lp-1:0] dev_rev_dst_lo = '0;
+  bp_me_xbar_stream
+   #(.bp_params_p(bp_params_p)
+     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
+     ,.payload_width_p(mem_rev_payload_width_lp)
+     ,.stream_mask_p(mem_rev_stream_mask_gp)
+     ,.num_source_p(num_dev_lp)
+     ,.num_sink_p(num_proc_lp)
+     )
+   rev_xbar
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.msg_header_i(dev_rev_header_lo)
+     ,.msg_data_i(dev_rev_data_lo)
+     ,.msg_v_i(dev_rev_v_lo)
+     ,.msg_ready_and_o(dev_rev_ready_and_li)
+     ,.msg_dst_i(dev_rev_dst_lo)
+
+     ,.msg_header_o(proc_rev_header_li)
+     ,.msg_data_o(proc_rev_data_li)
+     ,.msg_v_o(proc_rev_v_li)
+     ,.msg_ready_and_i(proc_rev_ready_and_lo)
+     );
 
   // Config
   bp_me_cfg_slice
@@ -156,15 +282,15 @@ module bp_core
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_fwd_header_i(dev_fwd_header_li[1])
-     ,.mem_fwd_data_i(dev_fwd_data_li[1])
-     ,.mem_fwd_v_i(dev_fwd_v_li[1])
-     ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[1])
+     ,.mem_fwd_header_i(dev_fwd_header_li[cfg_dev_id_lp])
+     ,.mem_fwd_data_i(dev_fwd_data_li[cfg_dev_id_lp])
+     ,.mem_fwd_v_i(dev_fwd_v_li[cfg_dev_id_lp])
+     ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[cfg_dev_id_lp])
 
-     ,.mem_rev_header_o(dev_rev_header_lo[1])
-     ,.mem_rev_data_o(dev_rev_data_lo[1])
-     ,.mem_rev_v_o(dev_rev_v_lo[1])
-     ,.mem_rev_ready_and_i(dev_rev_ready_and_li[1])
+     ,.mem_rev_header_o(dev_rev_header_lo[cfg_dev_id_lp])
+     ,.mem_rev_data_o(dev_rev_data_lo[cfg_dev_id_lp])
+     ,.mem_rev_v_o(dev_rev_v_lo[cfg_dev_id_lp])
+     ,.mem_rev_ready_and_i(dev_rev_ready_and_li[cfg_dev_id_lp])
 
      ,.cfg_bus_o(cfg_bus_lo)
      ,.did_i(my_did_i)
@@ -179,6 +305,7 @@ module bp_core
      );
   assign cfg_bus_o = cfg_bus_lo;
 
+
   // CLINT
   bp_me_clint_slice
    #(.bp_params_p(bp_params_p))
@@ -188,15 +315,15 @@ module bp_core
      ,.reset_i(reset_i)
      ,.cfg_bus_i(cfg_bus_lo)
 
-     ,.mem_fwd_header_i(dev_fwd_header_li[2])
-     ,.mem_fwd_data_i(dev_fwd_data_li[2])
-     ,.mem_fwd_v_i(dev_fwd_v_li[2])
-     ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[2])
+     ,.mem_fwd_header_i(dev_fwd_header_li[clint_dev_id_lp])
+     ,.mem_fwd_data_i(dev_fwd_data_li[clint_dev_id_lp])
+     ,.mem_fwd_v_i(dev_fwd_v_li[clint_dev_id_lp])
+     ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[clint_dev_id_lp])
 
-     ,.mem_rev_header_o(dev_rev_header_lo[2])
-     ,.mem_rev_data_o(dev_rev_data_lo[2])
-     ,.mem_rev_v_o(dev_rev_v_lo[2])
-     ,.mem_rev_ready_and_i(dev_rev_ready_and_li[2])
+     ,.mem_rev_header_o(dev_rev_header_lo[clint_dev_id_lp])
+     ,.mem_rev_data_o(dev_rev_data_lo[clint_dev_id_lp])
+     ,.mem_rev_v_o(dev_rev_v_lo[clint_dev_id_lp])
+     ,.mem_rev_ready_and_i(dev_rev_ready_and_li[clint_dev_id_lp])
 
      ,.debug_irq_o(debug_irq_li)
      ,.timer_irq_o(timer_irq_li)
@@ -205,6 +332,39 @@ module bp_core
      ,.s_external_irq_o(s_external_irq_li)
      );
 
+  // CCE-Mem network to L2 Cache adapter
+  for (genvar i = 0; i < l2_banks_p; i++)
+    begin : bank
+      bp_me_cache_slice
+       #(.bp_params_p(bp_params_p))
+       l2s
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.mem_fwd_header_i(dev_fwd_header_li[l2s_dev_base_id_lp+i])
+         ,.mem_fwd_data_i(dev_fwd_data_li[l2s_dev_base_id_lp+i])
+         ,.mem_fwd_v_i(dev_fwd_v_li[l2s_dev_base_id_lp+i])
+         ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[l2s_dev_base_id_lp+i])
+
+         ,.mem_rev_header_o(dev_rev_header_lo[l2s_dev_base_id_lp+i])
+         ,.mem_rev_data_o(dev_rev_data_lo[l2s_dev_base_id_lp+i])
+         ,.mem_rev_v_o(dev_rev_v_lo[l2s_dev_base_id_lp+i])
+         ,.mem_rev_ready_and_i(dev_rev_ready_and_li[l2s_dev_base_id_lp+i])
+
+         ,.dma_pkt_o(dma_pkt_o[i])
+         ,.dma_pkt_v_o(dma_pkt_v_o[i])
+         ,.dma_pkt_ready_and_i(dma_pkt_ready_and_i[i])
+
+         ,.dma_data_i(dma_data_i[i])
+         ,.dma_data_v_i(dma_data_v_i[i])
+         ,.dma_data_ready_and_o(dma_data_ready_and_o[i])
+
+         ,.dma_data_o(dma_data_o[i])
+         ,.dma_data_v_o(dma_data_v_o[i])
+         ,.dma_data_ready_and_i(dma_data_ready_and_i[i])
+         );
+    end
+
   // Loopback
   bp_me_loopback
    #(.bp_params_p(bp_params_p))
@@ -212,119 +372,15 @@ module bp_core
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_fwd_header_i(dev_fwd_header_li[3])
-     ,.mem_fwd_data_i(dev_fwd_data_li[3])
-     ,.mem_fwd_v_i(dev_fwd_v_li[3])
-     ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[3])
+     ,.mem_fwd_header_i(dev_fwd_header_li[loopback_dev_id_lp])
+     ,.mem_fwd_data_i(dev_fwd_data_li[loopback_dev_id_lp])
+     ,.mem_fwd_v_i(dev_fwd_v_li[loopback_dev_id_lp])
+     ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[loopback_dev_id_lp])
 
-     ,.mem_rev_header_o(dev_rev_header_lo[3])
-     ,.mem_rev_data_o(dev_rev_data_lo[3])
-     ,.mem_rev_v_o(dev_rev_v_lo[3])
-     ,.mem_rev_ready_and_i(dev_rev_ready_and_li[3])
-     );
-
-  // Select destination of CCE-Mem command from CCE
-  logic [`BSG_SAFE_CLOG2(4)-1:0] mem_fwd_dst_lo;
-  bp_local_addr_s local_addr;
-  assign local_addr = mem_fwd_header_cast_i.addr;
-  wire [dev_id_width_gp-1:0] device_fwd_li = local_addr.dev;
-  wire local_fwd_li    = (mem_fwd_header_cast_i.addr < dram_base_addr_gp);
-
-  wire is_cfg_fwd      = local_fwd_li & (device_fwd_li == cfg_dev_gp);
-  wire is_clint_fwd    = local_fwd_li & (device_fwd_li == clint_dev_gp);
-  wire is_cache_fwd    = local_fwd_li & (device_fwd_li == cache_dev_gp);
-  wire is_l2_fwd       = ~local_fwd_li || is_cache_fwd;
-  wire is_loopback_fwd = local_fwd_li & ~is_cfg_fwd & ~is_clint_fwd & ~is_l2_fwd;
-
-  bsg_encode_one_hot
-   #(.width_p(4), .lo_to_hi_p(1))
-   fwd_pe
-    (.i({is_loopback_fwd, is_clint_fwd, is_cfg_fwd, is_l2_fwd})
-     ,.addr_o(mem_fwd_dst_lo)
-     ,.v_o()
-     );
-
-  // All CCE-Mem network responses go to the CCE on this tile (id = 0 in xbar)
-  wire [3:0] dev_rev_dst_lo = '0;
-
-  bp_me_xbar_stream
-   #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
-     ,.payload_width_p(mem_fwd_payload_width_lp)
-     ,.stream_mask_p(mem_fwd_stream_mask_gp)
-     ,.num_source_p(1)
-     ,.num_sink_p(4)
-     )
-   fwd_xbar
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.msg_header_i(mem_fwd_header_cast_i)
-     ,.msg_data_i(mem_fwd_data_i)
-     ,.msg_v_i(mem_fwd_v_i)
-     ,.msg_ready_and_o(mem_fwd_ready_and_o)
-     ,.msg_dst_i(mem_fwd_dst_lo)
-
-     ,.msg_header_o(dev_fwd_header_li)
-     ,.msg_data_o(dev_fwd_data_li)
-     ,.msg_v_o(dev_fwd_v_li)
-     ,.msg_ready_and_i(dev_fwd_ready_and_lo)
-     );
-
-  bp_me_xbar_stream
-   #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
-     ,.payload_width_p(mem_rev_payload_width_lp)
-     ,.stream_mask_p(mem_rev_stream_mask_gp)
-     ,.num_source_p(4)
-     ,.num_sink_p(1)
-     )
-   rev_xbar
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.msg_header_i(dev_rev_header_lo)
-     ,.msg_data_i(dev_rev_data_lo)
-     ,.msg_v_i(dev_rev_v_lo)
-     ,.msg_ready_and_o(dev_rev_ready_and_li)
-     ,.msg_dst_i(dev_rev_dst_lo)
-
-     ,.msg_header_o(mem_rev_header_cast_o)
-     ,.msg_data_o(mem_rev_data_o)
-     ,.msg_v_o(mem_rev_v_o)
-     ,.msg_ready_and_i(mem_rev_ready_and_i)
-     );
-
-  // CCE-Mem network to L2 Cache adapter
-  bp_me_cache_slice
-   #(.bp_params_p(bp_params_p))
-   l2s
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.mem_fwd_header_i(dev_fwd_header_li[0])
-     ,.mem_fwd_data_i(dev_fwd_data_li[0])
-     ,.mem_fwd_v_i(dev_fwd_v_li[0])
-     ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[0])
-
-     ,.mem_rev_header_o(dev_rev_header_lo[0])
-     ,.mem_rev_data_o(dev_rev_data_lo[0])
-     ,.mem_rev_v_o(dev_rev_v_lo[0])
-     ,.mem_rev_ready_and_i(dev_rev_ready_and_li[0])
-
-     ,.dma_pkt_o(dma_pkt_o)
-     ,.dma_pkt_v_o(dma_pkt_v_o)
-     ,.dma_pkt_ready_and_i(dma_pkt_ready_and_i)
-
-     ,.dma_data_i(dma_data_i)
-     ,.dma_data_v_i(dma_data_v_i)
-     ,.dma_data_ready_and_o(dma_data_ready_and_o)
-
-     ,.dma_data_o(dma_data_o)
-     ,.dma_data_v_o(dma_data_v_o)
-     ,.dma_data_ready_and_i(dma_data_ready_and_i)
+     ,.mem_rev_header_o(dev_rev_header_lo[loopback_dev_id_lp])
+     ,.mem_rev_data_o(dev_rev_data_lo[loopback_dev_id_lp])
+     ,.mem_rev_v_o(dev_rev_v_lo[loopback_dev_id_lp])
+     ,.mem_rev_ready_and_i(dev_rev_ready_and_li[loopback_dev_id_lp])
      );
 
 endmodule

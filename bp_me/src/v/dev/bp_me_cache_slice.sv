@@ -38,27 +38,27 @@ module bp_me_cache_slice
    , input                                               mem_rev_ready_and_i
 
    // DRAM interface
-   , output logic [l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
-   , output logic [l2_banks_p-1:0]                       dma_pkt_v_o
-   , input [l2_banks_p-1:0]                              dma_pkt_ready_and_i
+   , output logic [dma_pkt_width_lp-1:0]                 dma_pkt_o
+   , output logic                                        dma_pkt_v_o
+   , input                                               dma_pkt_ready_and_i
 
-   , input [l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
-   , input [l2_banks_p-1:0]                              dma_data_v_i
-   , output logic [l2_banks_p-1:0]                       dma_data_ready_and_o
+   , input [l2_fill_width_p-1:0]                         dma_data_i
+   , input                                               dma_data_v_i
+   , output logic                                        dma_data_ready_and_o
 
-   , output logic [l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
-   , output logic [l2_banks_p-1:0]                       dma_data_v_o
-   , input [l2_banks_p-1:0]                              dma_data_ready_and_i
+   , output logic [l2_fill_width_p-1:0]                  dma_data_o
+   , output logic                                        dma_data_v_o
+   , input                                               dma_data_ready_and_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
 
   `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
-  bsg_cache_pkt_s [l2_banks_p-1:0] cache_pkt_li;
-  logic [l2_banks_p-1:0] cache_pkt_v_li, cache_pkt_yumi_lo;
-  logic [l2_banks_p-1:0][l2_data_width_p-1:0] cache_data_lo;
-  logic [l2_banks_p-1:0] cache_data_v_lo, cache_data_yumi_li;
+  bsg_cache_pkt_s  cache_pkt_li;
+  logic cache_pkt_v_li, cache_pkt_yumi_lo;
+  logic [l2_data_width_p-1:0] cache_data_lo;
+  logic cache_data_v_lo, cache_data_yumi_li;
 
   // TODO: Buffering can be reduced by only saving headers per stream
   bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
@@ -82,9 +82,9 @@ module bp_me_cache_slice
      ,.yumi_i(mem_fwd_ready_and_lo & mem_fwd_v_li)
      );
 
-  bp_me_cce_to_cache
+  bp_me_cache_controller
    #(.bp_params_p(bp_params_p))
-   cce_to_cache
+   cache_controller
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -107,54 +107,51 @@ module bp_me_cache_slice
      ,.cache_data_yumi_o(cache_data_yumi_li)
      );
 
-  for (genvar i = 0; i < l2_banks_p; i++)
-    begin : bank
-      bsg_cache
-       #(.addr_width_p(daddr_width_p)
-         ,.data_width_p(l2_data_width_p)
-         ,.dma_data_width_p(l2_fill_width_p)
-         ,.block_size_in_words_p(l2_block_size_in_words_p)
-         ,.sets_p(l2_sets_p)
-         ,.ways_p(l2_assoc_p)
-         ,.amo_support_p(((l2_features_p[e_cfg_amo_swap]) << e_cache_amo_swap)
-                         | ((l2_features_p[e_cfg_amo_fetch_logic]) << e_cache_amo_xor)
-                         | ((l2_features_p[e_cfg_amo_fetch_logic]) << e_cache_amo_and)
-                         | ((l2_features_p[e_cfg_amo_fetch_logic]) << e_cache_amo_or)
-                         | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_add)
-                         | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_min)
-                         | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_max)
-                         | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_minu)
-                         | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_maxu)
-                         )
-        ,.word_tracking_p(l2_features_p[e_cfg_word_tracking])
-        )
-       cache
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+  bsg_cache
+   #(.addr_width_p(daddr_width_p)
+     ,.data_width_p(l2_data_width_p)
+     ,.dma_data_width_p(l2_fill_width_p)
+     ,.block_size_in_words_p(l2_block_size_in_words_p)
+     ,.sets_p(l2_sets_p)
+     ,.ways_p(l2_assoc_p)
+     ,.amo_support_p(((l2_features_p[e_cfg_amo_swap]) << e_cache_amo_swap)
+                     | ((l2_features_p[e_cfg_amo_fetch_logic]) << e_cache_amo_xor)
+                     | ((l2_features_p[e_cfg_amo_fetch_logic]) << e_cache_amo_and)
+                     | ((l2_features_p[e_cfg_amo_fetch_logic]) << e_cache_amo_or)
+                     | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_add)
+                     | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_min)
+                     | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_max)
+                     | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_minu)
+                     | ((l2_features_p[e_cfg_amo_fetch_arithmetic]) << e_cache_amo_maxu)
+                     )
+    ,.word_tracking_p(l2_features_p[e_cfg_word_tracking])
+    )
+   cache
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-         ,.cache_pkt_i(cache_pkt_li[i])
-         ,.v_i(cache_pkt_v_li[i])
-         ,.yumi_o(cache_pkt_yumi_lo[i])
+     ,.cache_pkt_i(cache_pkt_li)
+     ,.v_i(cache_pkt_v_li)
+     ,.yumi_o(cache_pkt_yumi_lo)
 
-         ,.data_o(cache_data_lo[i])
-         ,.v_o(cache_data_v_lo[i])
-         ,.yumi_i(cache_data_yumi_li[i])
+     ,.data_o(cache_data_lo)
+     ,.v_o(cache_data_v_lo)
+     ,.yumi_i(cache_data_yumi_li)
 
-         ,.dma_pkt_o(dma_pkt_o[i])
-         ,.dma_pkt_v_o(dma_pkt_v_o[i])
-         ,.dma_pkt_yumi_i(dma_pkt_ready_and_i[i] & dma_pkt_v_o[i])
+     ,.dma_pkt_o(dma_pkt_o)
+     ,.dma_pkt_v_o(dma_pkt_v_o)
+     ,.dma_pkt_yumi_i(dma_pkt_ready_and_i & dma_pkt_v_o)
 
-         ,.dma_data_i(dma_data_i[i])
-         ,.dma_data_v_i(dma_data_v_i[i])
-         ,.dma_data_ready_o(dma_data_ready_and_o[i])
+     ,.dma_data_i(dma_data_i)
+     ,.dma_data_v_i(dma_data_v_i)
+     ,.dma_data_ready_o(dma_data_ready_and_o)
 
-         ,.dma_data_o(dma_data_o[i])
-         ,.dma_data_v_o(dma_data_v_o[i])
-         ,.dma_data_yumi_i(dma_data_ready_and_i[i] & dma_data_v_o[i])
+     ,.dma_data_o(dma_data_o)
+     ,.dma_data_v_o(dma_data_v_o)
+     ,.dma_data_yumi_i(dma_data_ready_and_i & dma_data_v_o)
 
-         ,.v_we_o()
-         );
-    end
+     ,.v_we_o()
+     );
 
 endmodule
 
