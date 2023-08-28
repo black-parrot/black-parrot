@@ -298,7 +298,7 @@ module bp_be_csr
         ? retire_pkt_cast_i.npc
         : apc_r;
 
-  assign apc_n = (enter_debug | commit_pkt_cast_o.unfreeze) ? debug_halt_pc : core_npc;
+  assign apc_n = (enter_debug | cfg_bus_cast_i.freeze) ? debug_halt_pc : core_npc;
 
   assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
   bsg_dff_reset
@@ -691,12 +691,12 @@ module bp_be_csr
   assign commit_pkt_cast_o.exception         = exception_v_lo;
   // Debug mode acts as a pseudo-interrupt
   assign commit_pkt_cast_o._interrupt        = interrupt_v_lo | enter_debug;
-  assign commit_pkt_cast_o.fencei            = retire_pkt_cast_i.special.fencei_clean;
+  assign commit_pkt_cast_o.fencei            = retire_pkt_cast_i.special.fencei;
   assign commit_pkt_cast_o.sfence            = retire_pkt_cast_i.special.sfence_vma;
   assign commit_pkt_cast_o.wfi               = retire_pkt_cast_i.special.wfi;
   assign commit_pkt_cast_o.eret              = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};
   assign commit_pkt_cast_o.csrw              = retire_pkt_cast_i.special.csrw;
-  assign commit_pkt_cast_o.unfreeze          = retire_pkt_cast_i.exception.unfreeze;
+  assign commit_pkt_cast_o.resume            = retire_pkt_cast_i.exception.resume;
   assign commit_pkt_cast_o.itlb_miss         = retire_pkt_cast_i.exception.itlb_miss;
   assign commit_pkt_cast_o.icache_miss       = retire_pkt_cast_i.exception.icache_miss;
   assign commit_pkt_cast_o.dtlb_store_miss   = retire_pkt_cast_i.exception.dtlb_store_miss;

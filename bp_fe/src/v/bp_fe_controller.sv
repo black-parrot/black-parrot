@@ -76,13 +76,12 @@ module bp_fe_controller
   `bp_cast_o(bp_fe_icache_pkt_s, icache_pkt);
 
   // FSM
-  enum logic [2:0] {e_reset, e_wait, e_run, e_fence, e_resume} state_n, state_r;
+  enum logic [1:0] {e_reset, e_wait, e_run, e_resume} state_n, state_r;
 
   // Decoded state signals
   wire is_reset    = (state_r == e_reset);
   wire is_wait     = (state_r == e_wait);
   wire is_run      = (state_r == e_run);
-  wire is_fence    = (state_r == e_fence);
   wire is_resume   = (state_r == e_resume);
 
   wire state_reset_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
@@ -115,7 +114,7 @@ module bp_fe_controller
 
   wire cmd_nonreset_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_state_reset);
   wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
-  wire cmd_immediate_v  = fe_cmd_v_i & (pc_redirect_v | icache_fill_response_v | wait_v);
+  wire cmd_immediate_v  = fe_cmd_v_i & (pc_redirect_v | icache_fill_response_v | wait_v | icache_fence_v);
   wire cmd_complex_v    = fe_cmd_v_i & ~cmd_immediate_v & cmd_nonattaboy_v;
 
   assign redirect_v_o               = cmd_nonattaboy_v & if1_we_o;
@@ -142,8 +141,8 @@ module bp_fe_controller
 
   assign icache_pkt_cast_o =
     '{vaddr: next_pc_i
-      ,op  : is_fence ? e_icache_fencei : e_icache_fetch
-      ,spec: !icache_fill_response_v && !is_fence
+      ,op  : icache_fence_v ? e_icache_inval : e_icache_fetch
+      ,spec: !icache_fill_response_v && !icache_fence_v
       };
   assign icache_force_o = cmd_nonattaboy_v | ovr_i;
   assign poison_if1_o = if2_exception_v_i;
@@ -178,19 +177,17 @@ module bp_fe_controller
             itlb_r_v_o = icache_yumi_i;
             itlb_w_v_o = itlb_fill_response_v;
             itlb_flush_v_o = itlb_fence_v;
-            state_n = wait_v
+            state_n = (wait_v | icache_fence_v)
                       ? e_wait
-                      : icache_fence_v
-                        ? e_fence
-                        : cmd_complex_v
-                          ? e_resume
-                          : cmd_immediate_v
-                            ? e_run
-                            : if2_exception_v_i
-                              ? e_wait
-                              : if1_we_o
-                                ? e_run
-                                : state_r;
+                      : cmd_complex_v
+                        ? e_resume
+                        : cmd_immediate_v
+                          ? e_run
+                          : if2_exception_v_i
+                            ? e_wait
+                            : if1_we_o
+                              ? e_run
+                              : state_r;
           end
         e_resume:
           begin
@@ -198,11 +195,6 @@ module bp_fe_controller
             if1_we_o = icache_yumi_i;
             itlb_r_v_o = icache_yumi_i;
             state_n = if1_we_o ? e_run : e_resume;
-          end
-        e_fence:
-          begin
-            icache_v_o = fe_cmd_v_i;
-            state_n = icache_yumi_i ? e_resume : e_fence;
           end
         default: begin end
       endcase

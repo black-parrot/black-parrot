@@ -145,10 +145,10 @@ module bp_nonsynth_cache_tracer
       op = "[uncached load]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_store)
       op = "[uncached store]";
-    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_cache_flush)
-      op = "[fencei req]";
-    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_cache_clear)
-      op = "[fencei req]";
+    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_cache_clean)
+      op = "[clean req]";
+    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_cache_inval)
+      op = "[inval req]";
     else
       op = "[null]";
   end

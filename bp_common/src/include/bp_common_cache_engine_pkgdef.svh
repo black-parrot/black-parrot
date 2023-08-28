@@ -10,8 +10,8 @@
     ,e_uc_load          = 4'b0011
     ,e_uc_store         = 4'b0100
     ,e_uc_amo           = 4'b0101
-    ,e_cache_flush      = 4'b0110
-    ,e_cache_clear      = 4'b0111
+    ,e_cache_inval      = 4'b0110
+    ,e_cache_clean      = 4'b0111
     ,e_cache_backoff    = 4'b1000
   } bp_cache_req_msg_type_e;
 

@@ -41,6 +41,7 @@ module bp_be_instr_decoder
    , output logic                       sret_o
    , output logic                       wfi_o
    , output logic                       sfence_vma_o
+   , output logic                       fencei_o
 
    , output logic [dword_width_gp-1:0]  imm_o
    );
@@ -76,6 +77,7 @@ module bp_be_instr_decoder
       sret_o          = '0;
       wfi_o           = '0;
       sfence_vma_o    = '0;
+      fencei_o        = '0;
 
       imm_o           = '0;
 
@@ -265,7 +267,8 @@ module bp_be_instr_decoder
               `RV64_FENCE_I :
                 begin
                   decode_cast_o.pipe_mem_early_v = 1'b1;
-                  decode_cast_o.fu_op            = e_dcache_op_fencei;
+                  decode_cast_o.fu_op            = e_dcache_op_clean;
+                  fencei_o                       = ~illegal_instr_o;
                 end
               default : illegal_instr_o = 1'b1;
             endcase

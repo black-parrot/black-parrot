@@ -93,7 +93,7 @@
     ,e_dcache_op_amominud = 6'b100000
     ,e_dcache_op_amomaxud = 6'b100001
 
-    ,e_dcache_op_fencei   = 6'b111111
+    ,e_dcache_op_clean    = 6'b111110
   } bp_be_dcache_fu_op_e;
 
   typedef enum logic [5:0]
@@ -224,13 +224,12 @@
     logic instr_misaligned;
 
     // BP "exceptions"
-    logic unfreeze;
+    logic resume;
     logic itlb_miss;
     logic icache_miss;
     logic dcache_replay;
     logic dtlb_load_miss;
     logic dtlb_store_miss;
-    logic fencei_dirty;
     logic itlb_fill;
     logic dtlb_fill;
     logic _interrupt;
@@ -242,7 +241,7 @@
   {
     logic dcache_store_miss;
     logic dcache_load_miss;
-    logic fencei_clean;
+    logic fencei;
     logic sfence_vma;
     logic dbreak;
     logic dret;
