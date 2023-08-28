@@ -38,8 +38,9 @@ module bp_be_director
    , output logic                       poison_isd_o
    , output logic                       clear_iss_o
    , output logic                       suppress_iss_o
-   , output logic                       unfreeze_o
+   , output logic                       resume_o
    , input                              irq_waiting_i
+   , input                              mem_busy_i
    , output logic                       cmd_empty_n_o
    , output logic                       cmd_empty_r_o
    , output logic                       cmd_full_n_o
@@ -70,11 +71,12 @@ module bp_be_director
   logic fe_cmd_v_li;
 
   // Declare intermediate signals
-  enum logic [2:0] {e_freeze, e_run, e_fence, e_wait} state_n, state_r;
-  wire is_freeze = (state_r == e_freeze);
-  wire is_run    = (state_r == e_run);
-  wire is_fence  = (state_r == e_fence);
-  wire is_wait   = (state_r == e_wait);
+  enum logic [3:0] {e_freeze, e_fencei, e_run, e_cmd_fence, e_wait} state_n, state_r;
+  wire is_freeze    = (state_r == e_freeze);
+  wire is_fencei    = (state_r == e_fencei);
+  wire is_run       = (state_r == e_run);
+  wire is_cmd_fence = (state_r == e_cmd_fence);
+  wire is_wait      = (state_r == e_wait);
 
   // Module instantiations
   // Update the NPC on a valid instruction in ex1 or upon commit
@@ -116,20 +118,24 @@ module bp_be_director
 
   // Boot logic
   wire freeze_li = cfg_bus_cast_i.freeze | reset_i;
+  wire resume_li = (is_fencei & ~mem_busy_i) || (is_wait & irq_waiting_i);
   always_comb
     begin
       unique casez (state_r)
-        e_wait  : state_n = irq_waiting_i ? e_fence : e_wait;
+        e_freeze
+        ,e_fencei
+        ,e_wait : state_n = commit_pkt_cast_i.resume ? e_cmd_fence : state_r;
         e_run   : state_n = commit_pkt_cast_i.wfi
                             ? e_wait
-                            : fe_cmd_nonattaboy_v
-                              ? e_fence
-                              : freeze_li
-                                ? e_freeze
-                                : e_run;
-        e_freeze: state_n = commit_pkt_cast_i.unfreeze ? e_run : e_freeze;
-        // e_fence:
-        default : state_n = cmd_empty_r_o ? e_run : e_fence;
+                            : commit_pkt_cast_i.fencei
+                              ? e_fencei
+                              : fe_cmd_nonattaboy_v
+                                ? e_cmd_fence
+                                : freeze_li
+                                  ? e_freeze
+                                  : state_r;
+        // e_cmd_fence:
+        default : state_n = cmd_empty_r_o ? e_run : state_r;
       endcase
     end
 
@@ -142,9 +148,9 @@ module bp_be_director
         state_r <= state_n;
       end
 
-  assign suppress_iss_o = (state_r != e_run);
-  assign clear_iss_o    = (state_r == e_fence) & cmd_empty_r_o;
-  assign unfreeze_o     = (state_r == e_freeze) & ~freeze_li;
+  assign suppress_iss_o = !is_run;
+  assign clear_iss_o    = is_cmd_fence & cmd_empty_r_o;
+  assign resume_o       = (is_freeze & ~freeze_li) || (is_wait & irq_waiting_i) || (is_fencei & ~mem_busy_i);
 
   always_comb
     begin
@@ -152,16 +158,21 @@ module bp_be_director
       fe_cmd_v_li = 1'b0;
       fe_cmd_pc_redirect_operands = '0;
 
-      if (commit_pkt_cast_i.unfreeze)
+      if (commit_pkt_cast_i.resume)
         begin
-          fe_cmd_li.opcode = e_op_state_reset;
+          fe_cmd_li.opcode = is_freeze ? e_op_state_reset : e_op_pc_redirection;
           fe_cmd_li.npc = npc_n;
 
           fe_cmd_pc_redirect_operands.priv           = commit_pkt_cast_i.priv_n;
           fe_cmd_pc_redirect_operands.translation_en = commit_pkt_cast_i.translation_en_n;
+          fe_cmd_pc_redirect_operands.subopcode      = e_subop_resume;
           fe_cmd_li.operands.pc_redirect_operands    = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = 1'b1;
+        end
+      else if (resume_li)
+        begin
+          
         end
       else if (commit_pkt_cast_i.itlb_fill_v)
         begin

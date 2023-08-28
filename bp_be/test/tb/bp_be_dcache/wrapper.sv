@@ -192,10 +192,11 @@ module wrapper
 
       ,.data_o(data_o[i])
       ,.v_o(v_o[i])
-      ,.fencei_o()
+      ,.clean_o()
       ,.ret_o()
       ,.late_o()
       ,.rd_addr_o()
+      ,.addr_o()
       ,.ordered_o()
       ,.float_o()
       ,.store_o()

@@ -28,11 +28,11 @@ module bp_be_top
    // FE queue interface
    , input [fe_queue_width_lp-1:0]                   fe_queue_i
    , input                                           fe_queue_v_i
-   , output                                          fe_queue_ready_and_o
+   , output logic                                    fe_queue_ready_and_o
 
    // FE cmd interface
-   , output [fe_cmd_width_lp-1:0]                    fe_cmd_o
-   , output                                          fe_cmd_v_o
+   , output logic [fe_cmd_width_lp-1:0]              fe_cmd_o
+   , output logic                                    fe_cmd_v_o
    , input                                           fe_cmd_yumi_i
 
    // D$-LCE Interface
@@ -93,7 +93,7 @@ module bp_be_top
 
   bp_be_issue_pkt_s issue_pkt;
   logic [vaddr_width_p-1:0] expected_npc_lo;
-  logic npc_mismatch_lo, poison_isd_lo, clear_iss_lo, suppress_iss_lo, unfreeze_lo;
+  logic npc_mismatch_lo, poison_isd_lo, clear_iss_lo, suppress_iss_lo, resume_lo;
 
   logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo;
   logic mem_ordered_lo, mem_busy_lo, idiv_busy_lo, fdiv_busy_lo, ptw_busy_lo;
@@ -112,11 +112,12 @@ module bp_be_top
      ,.fe_cmd_v_o(fe_cmd_v_o)
      ,.fe_cmd_yumi_i(fe_cmd_yumi_i)
 
-     ,.unfreeze_o(unfreeze_lo)
+     ,.resume_o(resume_lo)
      ,.poison_isd_o(poison_isd_lo)
      ,.clear_iss_o(clear_iss_lo)
      ,.suppress_iss_o(suppress_iss_lo)
      ,.irq_waiting_i(irq_waiting_lo)
+     ,.mem_busy_i(mem_busy_lo)
      ,.cmd_empty_n_o()
      ,.cmd_empty_r_o()
      ,.cmd_full_n_o(cmd_full_n_lo)
@@ -159,7 +160,7 @@ module bp_be_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.unfreeze_i(unfreeze_lo)
+     ,.resume_i(resume_lo)
      ,.decode_info_i(decode_info_lo)
      ,.issue_pkt_o(issue_pkt)
      ,.poison_isd_i(poison_isd_lo)

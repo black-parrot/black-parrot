@@ -4,7 +4,7 @@
   typedef enum
   {
     e_icache_fetch
-    ,e_icache_fencei
+    ,e_icache_inval
   } bp_fe_icache_op_e;
 
 `endif

@@ -37,7 +37,7 @@ module bp_be_dcache_decoder
     // Atomic op decoding
     decode_cast_o.lr_op = dcache_pkt.opcode inside {e_dcache_op_lrw, e_dcache_op_lrd};
     decode_cast_o.sc_op = dcache_pkt.opcode inside {e_dcache_op_scw, e_dcache_op_scd};
-    decode_cast_o.fencei_op = dcache_pkt.opcode inside {e_dcache_op_fencei};
+    decode_cast_o.clean_op = dcache_pkt.opcode inside {e_dcache_op_clean};
 
     // Atomic subop decoding
     unique casez (dcache_pkt.opcode)
