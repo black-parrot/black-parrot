@@ -118,7 +118,6 @@ module bp_be_director
 
   // Boot logic
   wire freeze_li = cfg_bus_cast_i.freeze | reset_i;
-  wire resume_li = (is_fencei & ~mem_busy_i) || (is_wait & irq_waiting_i);
   always_comb
     begin
       unique casez (state_r)
@@ -169,10 +168,6 @@ module bp_be_director
           fe_cmd_li.operands.pc_redirect_operands    = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = 1'b1;
-        end
-      else if (resume_li)
-        begin
-          
         end
       else if (commit_pkt_cast_i.itlb_fill_v)
         begin

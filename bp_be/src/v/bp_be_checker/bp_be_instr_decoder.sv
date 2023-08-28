@@ -266,9 +266,9 @@ module bp_be_instr_decoder
               `RV64_FENCE   : begin end
               `RV64_FENCE_I :
                 begin
-                  decode_cast_o.pipe_mem_early_v = 1'b1;
+                  decode_cast_o.pipe_mem_early_v = !dcache_features_p[e_cfg_coherent];
                   decode_cast_o.fu_op            = e_dcache_op_clean;
-                  fencei_o                       = ~illegal_instr_o;
+                  fencei_o                       = 1'b1;
                 end
               default : illegal_instr_o = 1'b1;
             endcase

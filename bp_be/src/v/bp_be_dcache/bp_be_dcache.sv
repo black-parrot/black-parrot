@@ -504,11 +504,10 @@ module bp_be_dcache
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
   wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & ~nonblocking_req & writeback_p;
   wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv & ~nonblocking_req;
-  wire ldst_miss_tv     = load_miss_tv | store_miss_tv;
 
-  wire clean_miss_tv    = decode_tv_r.clean_op & !coherent_p;
+  wire blocking_miss_tv = blocking_req;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
-  wire any_miss_tv      = ldst_miss_tv | clean_miss_tv | engine_miss_tv;
+  wire any_miss_tv      = blocking_miss_tv | engine_miss_tv;
 
   assign addr_o = paddr_tv_r;
   assign data_o = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : final_data;
@@ -713,7 +712,7 @@ module bp_be_dcache
   wire uncached_amo_req    =  uncached_op_tv_r & decode_tv_r.amo_op & decode_tv_r.ret_op & ~snoop_tv_r;
   wire uncached_load_req   =  uncached_op_tv_r & ~decode_tv_r.amo_op & decode_tv_r.load_op & ~snoop_tv_r;
   wire uncached_store_req  =  uncached_op_tv_r & decode_tv_r.store_op & ~decode_tv_r.ret_op & ~snoop_tv_r;
-  wire clean_req           = ~uncached_op_tv_r & decode_tv_r.clean_op & !coherent_p & ~snoop_tv_r;
+  wire clean_req           = ~uncached_op_tv_r & decode_tv_r.clean_op & ~snoop_tv_r;
   wire backoff_req         = ~uncached_op_tv_r & sc_fail_tv & coherent_p & ~snoop_tv_r;
   wire wt_req              = ~uncached_op_tv_r & decode_tv_r.store_op & ~sc_fail_tv & !writeback_p & ~snoop_tv_r;
 
@@ -1179,7 +1178,11 @@ module bp_be_dcache
          ,.data_o(fill_pending_r)
          );
 
-      wire fill_secondary = (v_tv_r & fill_pending_r & any_miss_tv) | (v_tl_r & fill_hazard);
+      wire fill_serial = clean_req;
+      wire fill_secondary =
+        (v_tv_r & fill_pending_r & any_miss_tv)
+        | (v_tl_r & fill_hazard)
+        | (v_tv_r & blocking_sent & fill_serial);
       bsg_dff_reset_set_clear
        #(.width_p(1), .clear_over_set_p(1))
        fill_secondary_reg
