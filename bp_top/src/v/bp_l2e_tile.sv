@@ -33,7 +33,7 @@ module bp_l2e_tile
    , input                                                    reset_i
 
    // Memory side connection
-   , input [mem_noc_did_width_p-1:0]                           my_did_i
+   , input [mem_noc_did_width_p-1:0]                          my_did_i
    , input [coh_noc_cord_width_p-1:0]                         my_cord_i
 
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_req_link_i

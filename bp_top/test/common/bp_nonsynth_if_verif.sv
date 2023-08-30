@@ -125,7 +125,7 @@ module bp_nonsynth_if_verif
     $error("Error: L2 block width must be less than 1024");
   if (!`BSG_IS_POW2((l2_fill_width_p/l2_data_width_p)))
     $error("Error: L2 fill width must be POW2 multiple of L2 data width");
-  if (!`BSG_IS_POW2(l2_banks_p))
+  if (!`BSG_IS_POW2(l2_dmas_p))
     $error("Error: L2 banks must be a power of two");
 
   // Unicore
@@ -160,7 +160,7 @@ module bp_nonsynth_if_verif
   if ((cce_type_p != e_cce_uce) && (`BSG_SAFE_CLOG2(icache_block_width_p*icache_sets_p/8) > page_offset_width_gp) && (`BSG_SAFE_CLOG2(dcache_block_width_p*dcache_sets_p/8) > page_offset_width_gp))
     $error("Error: Multicore requires total cache size to be equal to 4kB * associativity");
 
-  if (num_cce_p/mc_x_dim_p*l2_banks_p > 16)
+  if (num_cce_p/mc_x_dim_p*l2_dmas_p > 16)
     $error("Round robin arbiter currently only supports 16 entries");
 
 endmodule

@@ -32,48 +32,48 @@ module bp_unicore
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
    )
-  (input                                                 clk_i
-   , input                                               rt_clk_i
-   , input                                               reset_i
+  (input                                                                  clk_i
+   , input                                                                rt_clk_i
+   , input                                                                reset_i
 
-   , input [mem_noc_did_width_p-1:0]                     my_did_i
-   , input [mem_noc_did_width_p-1:0]                     host_did_i
-   , input [coh_noc_cord_width_p-1:0]                    my_cord_i
+   , input [mem_noc_did_width_p-1:0]                                      my_did_i
+   , input [mem_noc_did_width_p-1:0]                                      host_did_i
+   , input [coh_noc_cord_width_p-1:0]                                     my_cord_i
 
    // Outgoing I/O
-   , output logic [mem_fwd_header_width_lp-1:0]          mem_fwd_header_o
-   , output logic [bedrock_fill_width_p-1:0]             mem_fwd_data_o
-   , output logic                                        mem_fwd_v_o
-   , input                                               mem_fwd_ready_and_i
+   , output logic [mem_fwd_header_width_lp-1:0]                           mem_fwd_header_o
+   , output logic [bedrock_fill_width_p-1:0]                              mem_fwd_data_o
+   , output logic                                                         mem_fwd_v_o
+   , input                                                                mem_fwd_ready_and_i
 
-   , input [mem_rev_header_width_lp-1:0]                 mem_rev_header_i
-   , input [bedrock_fill_width_p-1:0]                    mem_rev_data_i
-   , input                                               mem_rev_v_i
-   , output logic                                        mem_rev_ready_and_o
+   , input [mem_rev_header_width_lp-1:0]                                  mem_rev_header_i
+   , input [bedrock_fill_width_p-1:0]                                     mem_rev_data_i
+   , input                                                                mem_rev_v_i
+   , output logic                                                         mem_rev_ready_and_o
 
    // Incoming I/O
-   , input [mem_fwd_header_width_lp-1:0]                 mem_fwd_header_i
-   , input [bedrock_fill_width_p-1:0]                    mem_fwd_data_i
-   , input                                               mem_fwd_v_i
-   , output logic                                        mem_fwd_ready_and_o
+   , input [mem_fwd_header_width_lp-1:0]                                  mem_fwd_header_i
+   , input [bedrock_fill_width_p-1:0]                                     mem_fwd_data_i
+   , input                                                                mem_fwd_v_i
+   , output logic                                                         mem_fwd_ready_and_o
 
-   , output logic [mem_rev_header_width_lp-1:0]          mem_rev_header_o
-   , output logic [bedrock_fill_width_p-1:0]             mem_rev_data_o
-   , output logic                                        mem_rev_v_o
-   , input                                               mem_rev_ready_and_i
+   , output logic [mem_rev_header_width_lp-1:0]                           mem_rev_header_o
+   , output logic [bedrock_fill_width_p-1:0]                              mem_rev_data_o
+   , output logic                                                         mem_rev_v_o
+   , input                                                                mem_rev_ready_and_i
 
    // DRAM interface
-   , output logic [l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
-   , output logic [l2_banks_p-1:0]                       dma_pkt_v_o
-   , input [l2_banks_p-1:0]                              dma_pkt_ready_and_i
+   , output logic [l2_slices_p-1:0][l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic [l2_slices_p-1:0][l2_banks_p-1:0]                       dma_pkt_v_o
+   , input [l2_slices_p-1:0][l2_banks_p-1:0]                              dma_pkt_ready_and_i
 
-   , input [l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
-   , input [l2_banks_p-1:0]                              dma_data_v_i
-   , output logic [l2_banks_p-1:0]                       dma_data_ready_and_o
+   , input [l2_slices_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
+   , input [l2_slices_p-1:0][l2_banks_p-1:0]                              dma_data_v_i
+   , output logic [l2_slices_p-1:0][l2_banks_p-1:0]                       dma_data_ready_and_o
 
-   , output logic [l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
-   , output logic [l2_banks_p-1:0]                       dma_data_v_o
-   , input [l2_banks_p-1:0]                              dma_data_ready_and_i
+   , output logic [l2_slices_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
+   , output logic [l2_slices_p-1:0][l2_banks_p-1:0]                       dma_data_v_o
+   , input [l2_slices_p-1:0][l2_banks_p-1:0]                              dma_data_ready_and_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -94,7 +94,7 @@ module bp_unicore
   localparam cfg_dev_id_lp      =                      0;
   localparam clint_dev_id_lp    = cfg_dev_id_lp      + 1;
   localparam l2s_dev_base_id_lp = clint_dev_id_lp    + 1;
-  localparam io_dev_id_lp       = l2s_dev_base_id_lp + l2_banks_p;
+  localparam io_dev_id_lp       = l2s_dev_base_id_lp + l2_slices_p;
   localparam loopback_dev_id_lp = io_dev_id_lp       + 1;
   localparam num_dev_lp         = loopback_dev_id_lp + 1;
   localparam lg_num_dev_lp      = `BSG_SAFE_CLOG2(num_dev_lp);
@@ -172,25 +172,31 @@ module bp_unicore
       wire is_l2s_fwd       = ~is_local & ~is_io_fwd;
       wire is_loopback_fwd = ~is_cfg_fwd & ~is_clint_fwd & ~is_io_fwd & ~is_l2s_fwd;
 
-      localparam l2_block_offset_width_lp = `BSG_SAFE_CLOG2(l2_block_width_p/8);
-      localparam lg_l2_sets_lp            = `BSG_SAFE_CLOG2(l2_sets_p);
-      localparam lg_num_cce_lp            = `BSG_SAFE_CLOG2(num_cce_p);
-      localparam lg_l2_banks_lp           = `BSG_SAFE_CLOG2(l2_banks_p);
-      localparam l2_bank_offset_width_lp  = (num_cce_p > 1) ? l2_block_offset_width_lp+lg_num_cce_lp : l2_block_offset_width_lp;
-      logic [l2_banks_p-1:0] is_l2s_bank_fwd;
-      wire [lg_l2_banks_lp-1:0] bank_id = (l2_banks_p > 1) ? local_addr[l2_bank_offset_width_lp+:lg_l2_banks_lp] : '0;
+      localparam lg_l2_slices_lp = `BSG_SAFE_CLOG2(l2_slices_p);
+      logic [lg_l2_slices_lp-1:0] slice_id;
+      bp_me_dram_hash_encode
+       #(.bp_params_p(bp_params_p))
+       slice_select
+        (.daddr_i(local_addr[0+:daddr_width_p])
+         ,.daddr_o()
+         ,.cce_o()
+         ,.slice_o(slice_id)
+         ,.bank_o()
+         );
+
+      logic [l2_slices_p-1:0] is_l2s_slice_fwd;
       bsg_decode_with_v
-       #(.num_out_p(l2_banks_p))
-       bank_decode
-        (.i(bank_id)
+       #(.num_out_p(l2_slices_p))
+       slice_decode
+        (.i(slice_id)
          ,.v_i(is_l2s_fwd)
-         ,.o(is_l2s_bank_fwd)
+         ,.o(is_l2s_slice_fwd)
          );
 
       wire [num_dev_lp-1:0] proc_fwd_dst_sel =
         (is_cfg_fwd << cfg_dev_id_lp)
         | (is_clint_fwd << clint_dev_id_lp) 
-        | (is_l2s_bank_fwd << l2s_dev_base_id_lp) 
+        | (is_l2s_slice_fwd << l2s_dev_base_id_lp) 
         | (is_io_fwd << io_dev_id_lp) 
         | (is_loopback_fwd << loopback_dev_id_lp);
 
@@ -312,8 +318,8 @@ module bp_unicore
      ,.s_external_irq_o(s_external_irq_li)
      );
 
-  for (genvar i = 0; i < l2_banks_p; i++)
-    begin : bank
+  for (genvar i = 0; i < l2_slices_p; i++)
+    begin : slices
       bp_me_cache_slice
        #(.bp_params_p(bp_params_p))
        l2s

@@ -35,14 +35,14 @@ module bp_multicore
    , input                                                             dma_clk_i
    , input                                                             dma_reset_i
 
-   , input [mem_noc_did_width_p-1:0]                                    my_did_i
-   , input [mem_noc_did_width_p-1:0]                                    host_did_i
+   , input [mem_noc_did_width_p-1:0]                                   my_did_i
+   , input [mem_noc_did_width_p-1:0]                                   host_did_i
 
-   , input [E:W][mem_noc_ral_link_width_lp-1:0]                         mem_fwd_link_i
-   , output logic [E:W][mem_noc_ral_link_width_lp-1:0]                  mem_fwd_link_o
+   , input [E:W][mem_noc_ral_link_width_lp-1:0]                        mem_fwd_link_i
+   , output logic [E:W][mem_noc_ral_link_width_lp-1:0]                 mem_fwd_link_o
 
-   , input [E:W][mem_noc_ral_link_width_lp-1:0]                         mem_rev_link_i
-   , output logic [E:W][mem_noc_ral_link_width_lp-1:0]                  mem_rev_link_o
+   , input [E:W][mem_noc_ral_link_width_lp-1:0]                        mem_rev_link_i
+   , output logic [E:W][mem_noc_ral_link_width_lp-1:0]                 mem_rev_link_o
 
    , output logic [S:N][mc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0] dma_link_o
    , input [S:N][mc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0]        dma_link_i

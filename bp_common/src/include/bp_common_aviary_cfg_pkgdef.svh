@@ -172,6 +172,7 @@
     // L2 slice parameters (per core)
     // L2 cache features
     integer unsigned l2_features;
+    integer unsigned l2_slices;
     // Number of L2 banks present in the slice
     integer unsigned l2_banks;
     integer unsigned l2_data_width;
@@ -179,9 +180,6 @@
     integer unsigned l2_assoc;
     integer unsigned l2_block_width;
     integer unsigned l2_fill_width;
-    // Number of requests which can be pending in a cache slice
-    // Should be 4 < N < 4*l2_banks_p to prevent stalling
-    integer unsigned l2_outstanding_reqs;
 
     // Size of the issue queue
     integer unsigned fe_queue_fifo_els;
@@ -315,14 +313,13 @@
                               | (1 << e_cfg_amo_swap)
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)
+      ,l2_slices           : 2
       ,l2_banks            : 2
       ,l2_data_width       : 128
       ,l2_sets             : 128
       ,l2_assoc            : 8
       ,l2_block_width      : 512
       ,l2_fill_width       : 128
-      // Set to L2 pipeline depth
-      ,l2_outstanding_reqs : 3
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
@@ -427,13 +424,13 @@
       ,`bp_aviary_define_override(bedrock_fill_width, BP_BEDROCK_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(l2_features, BP_L2_FEATURES, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(l2_slices, BP_L2_SLICES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_banks, BP_L2_BANKS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_data_width, BP_L2_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_sets, BP_L2_SETS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_assoc, BP_L2_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_block_width, BP_L2_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_fill_width, BP_L2_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(l2_outstanding_reqs, BP_L2_OUTSTANDING_REQS, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(async_coh_clk, BP_ASYNC_COH_CLK, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(coh_noc_max_credits, BP_COH_NOC_MAX_CREDITS, `BP_CUSTOM_BASE_CFG)

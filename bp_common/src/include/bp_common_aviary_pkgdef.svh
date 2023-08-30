@@ -39,7 +39,6 @@
       ,l2_assoc            : 8
       ,l2_block_width      : 512
       ,l2_fill_width       : 512
-      ,l2_outstanding_reqs : 32
 
       ,default : "inv"
       };
@@ -176,8 +175,8 @@
       ,dcache_block_width : 512
       ,dcache_fill_width  : 512
 
-      ,bedrock_fill_width  : 512
       ,bedrock_block_width : 512
+      ,bedrock_fill_width  : 512
 
       ,l2_banks            : 8
       ,l2_data_width       : 512
@@ -185,7 +184,6 @@
       ,l2_assoc            : 8
       ,l2_block_width      : 512
       ,l2_fill_width       : 512
-      ,l2_outstanding_reqs : 32
 
       ,dma_noc_flit_width  : 512
       ,coh_noc_flit_width  : 512

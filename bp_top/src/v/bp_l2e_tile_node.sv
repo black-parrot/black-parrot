@@ -24,7 +24,7 @@ module bp_l2e_tile_node
    , input                                             dma_clk_i
    , input                                             dma_reset_i
 
-   , input [mem_noc_did_width_p-1:0]                    my_did_i
+   , input [mem_noc_did_width_p-1:0]                   my_did_i
    , input [coh_noc_cord_width_p-1:0]                  my_cord_i
 
    , input [S:W][coh_noc_ral_link_width_lp-1:0]        coh_lce_req_link_i
