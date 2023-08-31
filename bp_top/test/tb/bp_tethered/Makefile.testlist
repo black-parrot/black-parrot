@@ -415,6 +415,7 @@ BEEBS_TESTS := \
   edn \
   expint \
   fac \
+  fasta \
   fdct \
   fibcall \
   fir \
@@ -425,25 +426,26 @@ BEEBS_TESTS := \
   jfdctint \
   lcdnum \
   levenshtein \
+  ludcmp \
   matmult-int \
+  matmult-float \
   mergesort \
   miniz \
   nbody \
-  ndes \
   nettle-aes \
   nettle-arcfour \
   nettle-cast128 \
   nettle-des \
   nettle-md5 \
-  nettle-sha256 \
+  newlib-exp \
   newlib-log \
   newlib-mod \
   newlib-sqrt \
   ns \
-  nsichneu \
   picojpeg \
   prime \
   qrduino \
+  qurt \
   recursion \
   select \
   sglib-arraybinsearch \
@@ -456,9 +458,9 @@ BEEBS_TESTS := \
   sglib-queue \
   sglib-rbtree \
   slre \
+  sqrt \
   statemate \
-  stringsearch1 \
-  strstr \
+  stb_perlin \
   tarai \
   template \
   trio-snprintf \
@@ -469,16 +471,12 @@ BEEBS_TESTS := \
   minver \
   whetstone \
 
-# Spurious COSIM fail
-#  fasta
-#  newlib-exp
-#  qurt
-#  sqrt
-#  stb_perlin
-#
-# COSIM fail LFS init
-#  ludcmp \
-#  matmult-float \
+#  Fail with GCC 12
+#  ndes
+#  nettle-sha256
+#  nsichneu
+#  stringsearch1
+#  strstr
 
 BEEBS_TESTLIST := $(addprefix beebs@, $(BEEBS_TESTS))
 
