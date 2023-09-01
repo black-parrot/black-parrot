@@ -154,7 +154,8 @@ module bp_cacc_vdp
 
      ,.data_o(acache_data_lo)
      ,.v_o(acache_v_lo)
-     ,.fencei_o()
+     ,.addr_o()
+     ,.clean_o()
      ,.ret_o()
      ,.store_o()
      ,.float_o()

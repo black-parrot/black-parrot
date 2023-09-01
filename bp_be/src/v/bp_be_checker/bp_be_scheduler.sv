@@ -37,7 +37,7 @@ module bp_be_scheduler
    , input                                    poison_isd_i
    , input                                    clear_iss_i
    , input                                    suppress_iss_i
-   , input                                    unfreeze_i
+   , input                                    resume_i
    , input [decode_info_width_lp-1:0]         decode_info_i
    , input                                    dispatch_v_i
    , input                                    interrupt_v_i
@@ -75,7 +75,7 @@ module bp_be_scheduler
   wire fe_queue_roll_li      = commit_pkt_cast_i.npc_w_v;
   wire fe_queue_read_li      = dispatch_v_i & ~poison_isd_i;
   wire fe_queue_read_skip_li = !dispatch_pkt_cast_o.decode.compressed | dispatch_pkt_cast_o.partial;
-  wire fe_queue_inject_li    = ptw_fill_pkt_cast_i.v | unfreeze_i | interrupt_v_i;
+  wire fe_queue_inject_li    = ptw_fill_pkt_cast_i.v | resume_i | interrupt_v_i;
 
   bp_be_preissue_pkt_s preissue_pkt;
   bp_be_issue_queue
@@ -138,7 +138,7 @@ module bp_be_scheduler
 
   // Prioritization is:
   //   1) ptw_fill_pkt, since there is no backpressure
-  //   3) unfreeze request
+  //   3) resume request
   //   2) interrupt request
   //   4) finally, fe queue
   wire fe_instr_not_exc_li = fe_queue_read_li &  issue_pkt_cast_o.instr_v;
@@ -154,8 +154,8 @@ module bp_be_scheduler
   wire be_partial = ptw_fill_pkt_cast_i.v & ptw_fill_pkt_cast_i.partial;
 
   wire ptw_fill_v  =  ptw_fill_pkt_cast_i.v;
-  wire unfreeze_v  = ~ptw_fill_pkt_cast_i.v &  unfreeze_i;
-  wire interrupt_v = ~ptw_fill_pkt_cast_i.v & ~unfreeze_i & interrupt_v_i;
+  wire resume_v  = ~ptw_fill_pkt_cast_i.v &  resume_i;
+  wire interrupt_v = ~ptw_fill_pkt_cast_i.v & ~resume_i & interrupt_v_i;
 
   wire ptw_instr_page_fault_v = ptw_fill_v & ptw_fill_pkt_cast_i.instr_page_fault_v;
   wire ptw_load_page_fault_v  = ptw_fill_v & ptw_fill_pkt_cast_i.load_page_fault_v;
@@ -185,7 +185,7 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.exception.store_page_fault |= be_exc_not_instr_li & ptw_store_page_fault_v;
       dispatch_pkt_cast_o.exception.itlb_fill        |= be_exc_not_instr_li & ptw_itlb_fill_v;
       dispatch_pkt_cast_o.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_dtlb_fill_v;
-      dispatch_pkt_cast_o.exception.unfreeze         |= be_exc_not_instr_li & unfreeze_v;
+      dispatch_pkt_cast_o.exception.resume           |= be_exc_not_instr_li & resume_v;
       dispatch_pkt_cast_o.exception._interrupt       |= be_exc_not_instr_li & interrupt_v;
 
       dispatch_pkt_cast_o.exception.instr_access_fault |= fe_exc_not_instr_li & issue_pkt_cast_o.instr_access_fault;
@@ -204,6 +204,7 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.special.sret            |= fe_instr_not_exc_li & issue_pkt_cast_o.sret;
       dispatch_pkt_cast_o.special.wfi             |= fe_instr_not_exc_li & issue_pkt_cast_o.wfi;
       dispatch_pkt_cast_o.special.sfence_vma      |= fe_instr_not_exc_li & issue_pkt_cast_o.sfence_vma;
+      dispatch_pkt_cast_o.special.fencei          |= fe_instr_not_exc_li & issue_pkt_cast_o.fencei;
     end
 
 endmodule

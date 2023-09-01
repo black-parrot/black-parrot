@@ -459,12 +459,13 @@ module testbench
 
           ,.br_ovr_i(fe.pc_gen.ovr_btaken | fe.pc_gen.ovr_jmp)
           ,.ret_ovr_i(fe.pc_gen.ovr_ret)
+          ,.realigner_i(fe.if2_instr_v & ~fe.fetch_instr_v_lo)
+
           ,.icache_data_v_i(fe.icache.data_v_o)
           ,.icache_v_i(fe.icache.v_i)
           ,.icache_yumi_i(fe.icache.yumi_o)
 
-          ,.fe_cmd_nonattaboy_i(fe.fe_cmd_yumi_o & ~fe.controller.attaboy_v)
-          ,.fe_cmd_fence_i(be.director.is_fence)
+          ,.fe_cmd_nonattaboy_i(be.director.fe_cmd_v_li)
           ,.fe_queue_empty_i(be.scheduler.issue_queue.empty)
 
           ,.mispredict_i(be.director.npc_mismatch_v)

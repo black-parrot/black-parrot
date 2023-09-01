@@ -106,11 +106,11 @@ module bp_uce
   enum logic [4:0] {
     e_reset
     ,e_init
-    ,e_clear
-    ,e_flush_read
-    ,e_flush_scan
-    ,e_flush_write
-    ,e_flush_fence
+    ,e_inval
+    ,e_clean_read
+    ,e_clean_scan
+    ,e_clean_write
+    ,e_clean_fence
     ,e_ready
     ,e_uc_writeback_evict
     ,e_uc_writeback_write_req
@@ -124,12 +124,12 @@ module bp_uce
   } state_n, state_r;
 
   wire is_reset           = (state_r == e_reset);
-  wire is_clear           = (state_r == e_clear);
+  wire is_inval           = (state_r == e_inval);
   wire is_init            = (state_r == e_init);
-  wire is_flush_read      = (state_r == e_flush_read);
-  wire is_flush_scan      = (state_r == e_flush_scan);
-  wire is_flush_write     = (state_r == e_flush_write);
-  wire is_flush_fence     = (state_r == e_flush_fence);
+  wire is_clean_read      = (state_r == e_clean_read);
+  wire is_clean_scan      = (state_r == e_clean_scan);
+  wire is_clean_write     = (state_r == e_clean_write);
+  wire is_clean_fence     = (state_r == e_clean_fence);
   wire is_ready           = (state_r == e_ready);
   wire is_send_critical   = (state_r == e_send_critical);
   wire is_writeback_evict = (state_r == e_writeback_evict); // read dirty data from cache to UCE
@@ -285,8 +285,8 @@ module bp_uce
   assign cache_req_data_o = cache_req_r.data;
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
-  wire flush_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
-  wire clear_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clear};
+  wire clean_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clean};
+  wire inval_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_inval};
   wire wt_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
   wire uc_load_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
@@ -305,14 +305,14 @@ module bp_uce
   wire uc_store_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
   wire uc_amo_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
   wire uc_hit_v_r      = cache_req_v_r & cache_req_r.hit & (uc_load_v_r | uc_store_v_r | uc_amo_v_r);
-  wire flush_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_flush};
-  wire clear_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_clear};
+  wire clean_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_clean};
+  wire inval_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_inval};
   wire nonblocking_v_r = cache_req_v_r & (~uc_hit_v_r | !writeback_p) & (uc_store_v_r | wt_store_v_r);
 
   wire [block_size_in_fill_lp-1:0] fill_index_shift = {{(assoc_p != 1){fsm_rev_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp}}, {(assoc_p == 1){'0}}};
 
   logic [index_width_lp-1:0] index_cnt;
-  logic index_up;
+  logic index_clear, index_up;
   bsg_counter_clear_up
    #(.max_val_p(sets_p-1)
      ,.init_val_p(0)
@@ -322,16 +322,15 @@ module bp_uce
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.clear_i('0)
+     ,.clear_i(index_clear)
      ,.up_i(index_up)
 
      ,.count_o(index_cnt)
      );
-  wire index_done = (sets_p == 1) || (index_cnt == sets_p-1);
-  wire index_done_n = (sets_p == 1) || (index_cnt == sets_p-1);
+  wire index_done = index_up && ((sets_p == 1) || (index_cnt == sets_p-1));
 
   logic [`BSG_SAFE_CLOG2(assoc_p)-1:0] way_cnt;
-  logic way_up;
+  logic way_clear, way_up;
   bsg_counter_clear_up
    #(.max_val_p(assoc_p-1)
      ,.init_val_p(0)
@@ -341,12 +340,12 @@ module bp_uce
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.clear_i('0)
+     ,.clear_i(way_clear)
      ,.up_i(way_up)
 
      ,.count_o(way_cnt)
      );
-  wire way_done = (assoc_p == 1) || (way_cnt == assoc_p-1);
+  wire way_done = way_up && ((assoc_p == 1) || (way_cnt == assoc_p-1));
 
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
@@ -403,13 +402,15 @@ module bp_uce
   // We ack mem_revs for stores no matter what, so load_resp_yumi_lo is for other responses
   logic load_resp_yumi_lo;
   assign fsm_rev_yumi_lo = load_resp_yumi_lo | store_resp_v_li;
-  assign cache_req_lock_o = is_reset | is_init | flush_v_r | clear_v_r;
+  assign cache_req_lock_o = is_reset | is_init | clean_v_r | inval_v_r;
   always_comb
     begin
       cache_req_yumi_o = '0;
 
-      index_up = '0;
-      way_up   = '0;
+      index_up    = '0;
+      index_clear = '0;
+      way_up      = '0;
+      way_clear   = '0;
 
       tag_mem_pkt_cast_o  = '0;
       tag_mem_pkt_v_o     = '0;
@@ -436,7 +437,7 @@ module bp_uce
             state_n = e_init;
           end
 
-        e_init, e_clear:
+        e_init, e_inval:
           begin
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
             tag_mem_pkt_cast_o.index  = index_cnt;
@@ -448,61 +449,67 @@ module bp_uce
 
             index_up = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
-            cache_req_critical_o = is_clear & (index_done & index_up);
+            cache_req_critical_o = is_inval & (index_done & index_up);
             cache_req_last_o = cache_req_critical_o;
             cache_req_done = cache_req_last_o;
 
             state_n = (index_done & index_up) ? e_ready : state_r;
           end
 
-        e_flush_read:
+        e_clean_read:
           begin
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_read;
             stat_mem_pkt_cast_o.index  = index_cnt;
             stat_mem_pkt_v_o = 1'b1;
 
-            state_n = stat_mem_pkt_yumi_i ? e_flush_scan : state_r;
+            state_n = stat_mem_pkt_yumi_i ? e_clean_scan : state_r;
           end
 
-        e_flush_scan:
-          begin
-            // Could check if |dirty_stat_r to skip index entirely
-            if (dirty_stat_r[way_cnt])
-              begin
-                data_mem_pkt_cast_o.opcode     = e_cache_data_mem_read;
-                data_mem_pkt_cast_o.index      = index_cnt;
-                data_mem_pkt_cast_o.way_id     = way_cnt;
-                data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
-                data_mem_pkt_v_o = 1'b1;
+        e_clean_scan:
+          if (~|dirty_stat_r)
+            begin
+              way_clear = 1'b1;
+              index_up  = way_clear;
 
-                tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_read;
-                tag_mem_pkt_cast_o.index  = index_cnt;
-                tag_mem_pkt_cast_o.way_id = way_cnt;
-                tag_mem_pkt_v_o = 1'b1;
+              state_n = index_done
+                        ? e_clean_fence
+                        : e_clean_read;
+            end
+          else if (dirty_stat_r[way_cnt])
+            begin
+              data_mem_pkt_cast_o.opcode     = e_cache_data_mem_read;
+              data_mem_pkt_cast_o.index      = index_cnt;
+              data_mem_pkt_cast_o.way_id     = way_cnt;
+              data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
+              data_mem_pkt_v_o = 1'b1;
 
-                stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
-                stat_mem_pkt_cast_o.index  = index_cnt;
-                stat_mem_pkt_cast_o.way_id = way_cnt;
-                stat_mem_pkt_v_o = 1'b1;
+              tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_read;
+              tag_mem_pkt_cast_o.index  = index_cnt;
+              tag_mem_pkt_cast_o.way_id = way_cnt;
+              tag_mem_pkt_v_o = 1'b1;
 
-                state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
-                          ? e_flush_write
-                          : state_r;
-              end
-            else
-              begin
-                way_up   = 1'b1;
-                index_up = way_done;
+              stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
+              stat_mem_pkt_cast_o.index  = index_cnt;
+              stat_mem_pkt_cast_o.way_id = way_cnt;
+              stat_mem_pkt_v_o = 1'b1;
 
-                state_n = (index_done & way_done)
-                          ? e_flush_fence
-                          : way_done
-                            ? e_flush_read
-                            : e_flush_scan;
-              end
-          end
+              state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
+                        ? e_clean_write
+                        : state_r;
+            end
+          else
+            begin
+              way_up   = 1'b1;
+              index_up = way_done;
 
-        e_flush_write:
+              state_n = (index_done & way_done)
+                        ? e_clean_fence
+                        : way_done
+                          ? e_clean_read
+                          : e_clean_scan;
+            end
+
+        e_clean_write:
           begin
             fsm_fwd_header_lo.msg_type       = e_bedrock_mem_wr;
             fsm_fwd_header_lo.addr           = {dirty_tag_r.tag, index_cnt, block_offset_width_lp'(0)};
@@ -513,18 +520,18 @@ module bp_uce
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
             way_up = fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo;
-            index_up = way_done & way_up;
+            index_up = way_done;
 
-            state_n = (index_done & way_done & way_up)
-                      ? e_flush_fence
+            state_n = (index_done & way_done)
+                      ? e_clean_fence
                       : index_up
-                        ? e_flush_read
+                        ? e_clean_read
                         : way_up
-                          ? e_flush_scan
-                          : e_flush_write;
+                          ? e_clean_scan
+                          : e_clean_write;
           end
 
-        e_flush_fence:
+        e_clean_fence:
           begin
             cache_req_critical_o = (credit_count_lo == '0);
             cache_req_last_o = cache_req_critical_o;
@@ -538,10 +545,10 @@ module bp_uce
             cache_req_yumi_o = cache_req_v_i & cache_req_ready_lo & (~cache_req_v_r |  nonblocking_v_li);
 
             state_n = cache_req_yumi_o
-                      ? flush_v_li
-                        ? e_flush_read
-                        : clear_v_li
-                          ? e_clear
+                      ? clean_v_li
+                        ? e_clean_read
+                        : inval_v_li
+                          ? e_inval
                           : (uc_hit_v_li & (writeback_p == 1))
                             ? e_uc_writeback_evict
                             : (uc_store_v_li || wt_store_v_li)

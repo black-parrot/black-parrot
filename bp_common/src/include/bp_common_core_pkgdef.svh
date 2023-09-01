@@ -66,6 +66,7 @@
    * e_subop_trap is at-fault PC redirection. It will changes the permission bits.
    * e_subop_context_switch is no-fault PC redirection. It redirect pc to a new address space.
    * e_subop_translation_switch is no-fault PC redirection resulting from translation mode changes
+   * e_subop_resume is resuming from a no-fault PC redirect wait state.
    */
   typedef enum logic [2:0]
   {
@@ -75,6 +76,7 @@
     ,e_subop_trap
     ,e_subop_context_switch
     ,e_subop_translation_switch
+    ,e_subop_resume
   } bp_fe_command_queue_subopcodes_e;
 
 `endif
