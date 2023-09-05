@@ -1,6 +1,6 @@
 /*
  * Name:
- *   bp_me_cce_to_cache.sv
+ *   bp_me_cache_controller.sv
  *
  * Description:
  *   This module converts an arriving BedRock Stream message into a bsg_cache message, and
@@ -17,7 +17,7 @@
 `include "bp_me_defines.svh"
 `include "bsg_cache.vh"
 
-module bp_me_cce_to_cache
+module bp_me_cache_controller
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  import bsg_cache_pkg::*;
@@ -188,9 +188,11 @@ module bp_me_cce_to_cache
   // Swizzle address bits for L2 cache command
   bp_me_dram_hash_encode
    #(.bp_params_p(bp_params_p))
-   fsm_fwd_hash
+   bank_select
     (.daddr_i(fsm_fwd_addr_li[0+:daddr_width_p])
      ,.daddr_o(cache_pkt_addr_lo)
+     ,.cce_o()
+     ,.slice_o()
      ,.bank_o(cache_fwd_bank_lo)
      );
 
@@ -203,7 +205,7 @@ module bp_me_cce_to_cache
   logic stream_fifo_ready_lo, stream_header_v_lo;
   bsg_fifo_1r1w_small
    #(.width_p(lg_l2_banks_lp+$bits(bp_bedrock_mem_fwd_header_s))
-     ,.els_p(num_l2_banks_p*3)
+     ,.els_p(l2_banks_p*3)
      ,.ready_THEN_valid_p(1)
      )
    stream_fifo

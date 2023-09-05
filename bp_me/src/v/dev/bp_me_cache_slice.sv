@@ -82,9 +82,9 @@ module bp_me_cache_slice
      ,.yumi_i(mem_fwd_ready_and_lo & mem_fwd_v_li)
      );
 
-  bp_me_cce_to_cache
+  bp_me_cache_controller
    #(.bp_params_p(bp_params_p))
-   cce_to_cache
+   cache_controller
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
