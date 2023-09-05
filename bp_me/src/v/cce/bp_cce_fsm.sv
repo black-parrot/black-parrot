@@ -1861,6 +1861,7 @@ module bp_cce_fsm
   end // always_comb
 
   // Sequential Logic
+  // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       state_r <= e_reset;

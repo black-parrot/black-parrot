@@ -188,6 +188,7 @@
       ,dma_noc_flit_width  : 512
       ,coh_noc_flit_width  : 512
       ,mem_noc_flit_width  : 512
+      ,dma_noc_cid_width   : 4
 
       ,default : "inv"
       };
@@ -298,6 +299,7 @@
   localparam bp_proc_param_s bp_multicore_4_l2e_override_p =
     '{mc_y_dim   : 1
       ,num_cce   : 6
+      ,l2_banks  : 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_4_l2e_cfg_p
@@ -310,6 +312,7 @@
       ,cc_y_dim: 2
       ,num_cce : 6
       ,num_lce : 12
+      ,l2_slices: 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_6_cfg_p
@@ -322,6 +325,7 @@
       ,cc_y_dim: 2
       ,num_cce : 8
       ,num_lce : 16
+      ,l2_slices: 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_8_cfg_p
@@ -335,6 +339,7 @@
       ,num_cce : 12
       ,num_lce : 24
       ,l2_banks: 1
+      ,l2_slices: 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_12_cfg_p
@@ -348,6 +353,7 @@
       ,num_cce : 16
       ,num_lce : 32
       ,l2_banks: 1
+      ,l2_slices: 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_16_cfg_p
