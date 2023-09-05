@@ -506,12 +506,12 @@ module bp_core_tile
   logic mem_rev_v_li, mem_rev_ready_and_lo;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
-  bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
-  logic [l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
-  logic [l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
-  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
-  logic [l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
+  bsg_cache_dma_pkt_s [l2_dmas_p-1:0] dma_pkt_lo;
+  logic [l2_dmas_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [l2_dmas_p-1:0][l2_fill_width_p-1:0] dma_data_li;
+  logic [l2_dmas_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+  logic [l2_dmas_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
+  logic [l2_dmas_p-1:0] dma_data_v_lo, dma_data_yumi_li;
   bp_core
    #(.bp_params_p(bp_params_p))
    core
@@ -623,8 +623,8 @@ module bp_core_tile
      ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
      );
 
-  bp_dma_ready_and_link_s [l2_banks_p-1:0] dma_link_lo, dma_link_li;
-  for (genvar i = 0; i < l2_banks_p; i++)
+  bp_dma_ready_and_link_s [l2_dmas_p-1:0] dma_link_lo, dma_link_li;
+  for (genvar i = 0; i < l2_dmas_p; i++)
     begin : dma
       wire [dma_noc_cord_width_p-1:0] cord_li = my_cord_i[coh_noc_x_cord_width_p+:dma_noc_y_cord_width_p];
       wire [dma_noc_cid_width_p-1:0]   cid_li = i;
@@ -671,7 +671,7 @@ module bp_core_tile
      ,.len_width_p(dma_noc_len_width_p)
      ,.cid_width_p(dma_noc_cid_width_p)
      ,.cord_width_p(dma_noc_cord_width_p)
-     ,.num_in_p(l2_banks_p)
+     ,.num_in_p(l2_dmas_p)
      ,.hold_on_valid_p(1)
      )
    dma_concentrate

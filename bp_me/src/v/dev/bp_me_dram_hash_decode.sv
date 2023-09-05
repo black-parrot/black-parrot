@@ -27,7 +27,7 @@ module bp_me_dram_hash_decode
   localparam l2_block_offset_width_lp = `BSG_SAFE_CLOG2(l2_block_width_p/8);
   localparam l2_tag_offset_width_lp   = `BSG_SAFE_CLOG2(l2_block_width_p*l2_sets_p/8);
   localparam l2_hash_offset_width_lp  = lg_num_cce_lp + lg_l2_slices_lp + lg_l2_banks_lp;
-  localparam l2_indexhi_width_lp = `BSG_SAFE_CLOG2(l2_sets_p) - l2_hash_offset_width_lp;
+  localparam l2_indexhi_width_lp = `BSG_MAX(1, `BSG_SAFE_CLOG2(l2_sets_p) - l2_hash_offset_width_lp);
   localparam l2_taghi_width_lp = daddr_width_p - l2_tag_offset_width_lp - l2_hash_offset_width_lp;
 
   wire [l2_block_offset_width_lp-1:0] block = daddr_i[0+:l2_block_offset_width_lp];
