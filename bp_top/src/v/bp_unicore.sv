@@ -168,8 +168,9 @@ module bp_unicore
       wire is_clint_fwd    = is_my_core & is_local & (device_fwd_li == clint_dev_gp);
       wire is_cache_fwd    = is_my_core & is_local & (device_fwd_li == cache_dev_gp);
       wire is_host_fwd     = is_my_core & is_local & (device_fwd_li == host_dev_gp);
+      wire is_htif_cmd     = is_my_core & is_local & (device_fwd_li == 0);
 
-      wire is_io_fwd       = is_host_fwd | is_other_hio | is_other_core;
+      wire is_io_fwd       = is_host_fwd | is_htif_cmd | is_other_hio | is_other_core;
       wire is_l2_fwd       = is_cache_fwd | (~is_local & ~is_io_fwd);
       wire is_loopback_fwd = ~is_cfg_fwd & ~is_clint_fwd & ~is_io_fwd & ~is_l2_fwd;
 
