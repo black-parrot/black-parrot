@@ -126,7 +126,7 @@ module bp_be_dcache
    , input                                           ptag_v_i
    , input                                           ptag_uncached_i
    , input                                           ptag_dram_i
-   , input [dword_width_gp-1:0]                      st_data_i
+   , input [dpath_width_gp-1:0]                      st_data_i
    , input                                           flush_i
 
    // Cycle 2: "Tag Verify"
@@ -138,8 +138,8 @@ module bp_be_dcache
    , output logic                                    clean_o
    , output logic                                    float_o
    , output logic                                    ret_o
-   , output logic                                    late_o
    , output logic                                    store_o
+   , output logic                                    late_o
    , output logic                                    req_o
 
    // Cache Engine Interface
@@ -193,9 +193,9 @@ module bp_be_dcache
     : byte_offset_width_lp;
 
   // Global signals
-  logic tl_we, tv_we;
+  logic tl_we, tv_we, dm_we;
   logic safe_tl_we, safe_tv_we;
-  logic v_tl_r, v_tv_r;
+  logic v_tl_r, v_tv_r, v_dm_r;
   logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, engine_hazard, fill_hazard;
   logic blocking_req, blocking_sent;
   logic nonblocking_req, nonblocking_sent;
@@ -356,9 +356,17 @@ module bp_be_dcache
      ,.o(bank_sel_one_hot_tl)
      );
 
-  wire uncached_op_tl =  decode_tl_r.uncached_op | (~decode_tl_r.clean_op & ptag_uncached_i);
+  wire uncached_op_tl = decode_tl_r.uncached_op | (~decode_tl_r.clean_op & ptag_uncached_i);
   wire dram_op_tl =  ptag_dram_i;
-  wire [dword_width_gp-1:0] st_data_tl = st_data_i;
+
+  logic [dword_width_gp-1:0] dcache_st_fdata;
+  bp_be_reg_to_fp
+   #(.bp_params_p(bp_params_p))
+   reg_to_fp
+    (.reg_i(st_data_i)
+     ,.raw_o(dcache_st_fdata)
+     );
+  wire [dword_width_gp-1:0] st_data_tl = decode_tl_r.float_op ? dcache_st_fdata : st_data_i;
 
   /////////////////////////////////////////////////////////////////////////////
   // TV Stage
@@ -516,9 +524,9 @@ module bp_be_dcache
   assign rd_addr_o = decode_tv_r.rd_addr;
   assign float_o   = decode_tv_r.float_op;
   assign clean_o   = decode_tv_r.clean_op;
-  assign late_o    = snoop_tv_r;
   assign ret_o     = decode_tv_r.ret_op;
   assign store_o   = decode_tv_r.store_op;
+  assign late_o    = snoop_tv_r;
   assign req_o     = cache_req_yumi_i;
 
   ///////////////////////////

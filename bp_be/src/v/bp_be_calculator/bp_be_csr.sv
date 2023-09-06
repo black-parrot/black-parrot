@@ -706,6 +706,8 @@ module bp_be_csr
   assign commit_pkt_cast_o.dcache_load_miss  = retire_pkt_cast_i.special.dcache_load_miss;
   assign commit_pkt_cast_o.itlb_fill_v       = retire_pkt_cast_i.exception.itlb_fill;
   assign commit_pkt_cast_o.dtlb_fill_v       = retire_pkt_cast_i.exception.dtlb_fill;
+  assign commit_pkt_cast_o.iscore_v          = retire_pkt_cast_i.iscore;
+  assign commit_pkt_cast_o.fscore_v          = retire_pkt_cast_i.fscore;
 
   assign trans_info_cast_o.priv_mode      = priv_mode_r;
   assign trans_info_cast_o.base_ppn       = satp_lo.ppn;

@@ -8,7 +8,6 @@
     logic fe_cmd;
     logic mispredict;
     logic control_haz;
-    logic long_haz;
     logic data_haz;
     logic aux_dep;
     logic load_dep;
@@ -34,14 +33,13 @@
 
   typedef enum logic [4:0]
   {
-    icache_miss          = 5'd28
-    ,branch_override     = 5'd27
-    ,ret_override        = 5'd26
-    ,realigner           = 5'd25
-    ,fe_cmd              = 5'd24
-    ,mispredict          = 5'd23
-    ,control_haz         = 5'd22
-    ,long_haz            = 5'd21
+    icache_miss          = 5'd27
+    ,branch_override     = 5'd26
+    ,ret_override        = 5'd25
+    ,realigner           = 5'd24
+    ,fe_cmd              = 5'd23
+    ,mispredict          = 5'd22
+    ,control_haz         = 5'd21
     ,data_haz            = 5'd20
     ,aux_dep             = 5'd19
     ,load_dep            = 5'd18
@@ -107,7 +105,6 @@ module bp_nonsynth_core_profiler
     // ISD events
     , input dcache_miss_i
     , input mispredict_i
-    , input long_haz_i
     , input control_haz_i
     , input data_haz_i
     , input aux_dep_i
@@ -207,7 +204,6 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3].fdiv_haz          |= fdiv_haz_i;
       stall_stage_n[3].ptw_busy          |= ptw_busy_i;
       stall_stage_n[3].control_haz       |= control_haz_i;
-      stall_stage_n[3].long_haz          |= long_haz_i;
 
       stall_stage_n[3].special           |= |retire_pkt.special;
       stall_stage_n[3].replay            |= |retire_pkt.exception;

@@ -92,13 +92,13 @@ module bp_be_instr_decoder
                                    })
               begin
                 decode_cast_o.pipe_long_v = 1'b1;
-                decode_cast_o.late_iwb_v  = (instr.rd_addr != '0);
+                decode_cast_o.score_v     = 1'b1;
               end
             else
               decode_cast_o.pipe_int_v = 1'b1;
 
             // The writeback for long latency ops comes out of band
-            decode_cast_o.irf_w_v    = ~decode_cast_o.late_iwb_v & (instr.rd_addr != '0);
+            decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
             decode_cast_o.opw_v      = (instr.opcode == `RV64_OP_32_OP);
             unique casez (instr)
               `RV64_ADD, `RV64_ADDW : decode_cast_o.fu_op = e_int_op_add;
@@ -200,9 +200,11 @@ module bp_be_instr_decoder
         `RV64_LOAD_OP:
           begin
             decode_cast_o.pipe_mem_early_v = 1'b1;
-            decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-            decode_cast_o.dcache_r_v = 1'b1;
-            decode_cast_o.mem_v      = 1'b1;
+            decode_cast_o.irf_w_v          = (instr.rd_addr != '0);
+            decode_cast_o.spec_w_v         = 1'b1;
+            decode_cast_o.score_v          = 1'b1;
+            decode_cast_o.dcache_r_v       = 1'b1;
+            decode_cast_o.mem_v            = 1'b1;
             unique casez (instr)
               `RV64_LB : decode_cast_o.fu_op = e_dcache_op_lb;
               `RV64_LH : decode_cast_o.fu_op = e_dcache_op_lh;
@@ -217,10 +219,12 @@ module bp_be_instr_decoder
         `RV64_FLOAD_OP:
           begin
             decode_cast_o.pipe_mem_final_v = 1'b1;
-            decode_cast_o.frf_w_v    = 1'b1;
-            decode_cast_o.dcache_r_v = 1'b1;
-            decode_cast_o.mem_v      = 1'b1;
-            decode_cast_o.ops_v      = instr inside {`RV64_FL_W};
+            decode_cast_o.frf_w_v          = 1'b1;
+            decode_cast_o.spec_w_v         = 1'b1;
+            decode_cast_o.score_v          = 1'b1;
+            decode_cast_o.dcache_r_v       = 1'b1;
+            decode_cast_o.mem_v            = 1'b1;
+            decode_cast_o.ops_v            = instr inside {`RV64_FL_W};
 
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
 
@@ -533,15 +537,17 @@ module bp_be_instr_decoder
                 end
               `RV64_FDIV_S, `RV64_FDIV_D:
                 begin
-                  decode_cast_o.pipe_long_v  = 1'b1;
-                  decode_cast_o.late_fwb_v   = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FDIV_S};
-                  decode_cast_o.fu_op        = e_fma_op_fdiv;
+                  decode_cast_o.pipe_long_v   = 1'b1;
+                  decode_cast_o.frf_w_v       = 1'b1;
+                  decode_cast_o.score_v       = 1'b1;
+                  decode_cast_o.ops_v         = instr inside {`RV64_FDIV_S};
+                  decode_cast_o.fu_op         = e_fma_op_fdiv;
                 end
               `RV64_FSQRT_S, `RV64_FSQRT_D:
                 begin
                   decode_cast_o.pipe_long_v  = 1'b1;
-                  decode_cast_o.late_fwb_v   = 1'b1;
+                  decode_cast_o.frf_w_v      = 1'b1;
+                  decode_cast_o.score_v      = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FSQRT_S};
                   decode_cast_o.fu_op        = e_fma_op_fsqrt;
                 end
@@ -571,10 +577,12 @@ module bp_be_instr_decoder
         `RV64_AMO_OP:
           begin
             decode_cast_o.pipe_mem_early_v = 1'b1;
-            decode_cast_o.irf_w_v    =  (instr.rd_addr != '0);
-            decode_cast_o.dcache_r_v =  (instr inside {`RV64_LRD, `RV64_LRW});
-            decode_cast_o.dcache_w_v = ~(instr inside {`RV64_LRD, `RV64_LRW});
-            decode_cast_o.mem_v      = 1'b1;
+            decode_cast_o.irf_w_v          = (instr.rd_addr != '0);
+            decode_cast_o.spec_w_v         = 1'b1;
+            decode_cast_o.score_v          = 1'b1;
+            decode_cast_o.dcache_r_v       =  (instr inside {`RV64_LRD, `RV64_LRW});
+            decode_cast_o.dcache_w_v       = ~(instr inside {`RV64_LRD, `RV64_LRW});
+            decode_cast_o.mem_v            = 1'b1;
             // Note: could do a more efficent decoding here by having atomic be a flag
             //   And having the op simply taken from funct3
             unique casez (instr)

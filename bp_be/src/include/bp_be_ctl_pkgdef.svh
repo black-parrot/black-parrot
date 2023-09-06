@@ -197,6 +197,8 @@
     logic                             mem_v;
     logic                             opw_v;
     logic                             ops_v;
+    logic                             score_v;
+    logic                             spec_w_v;
 
     bp_be_fu_op_s                     fu_op;
 

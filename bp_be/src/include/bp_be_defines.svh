@@ -93,6 +93,8 @@
       logic                              mul_fwb_v;                                                \
       logic                              fma_iwb_v;                                                \
       logic                              fma_fwb_v;                                                \
+      logic                              long_iwb_v;                                               \
+      logic                              long_fwb_v;                                               \
       logic                              fflags_w_v;                                               \
                                                                                                    \
       logic [rv64_reg_addr_width_gp-1:0] rd_addr;                                                  \
@@ -120,6 +122,8 @@
       logic                      compressed;                                                       \
       bp_be_exception_s          exception;                                                        \
       bp_be_special_s            special;                                                          \
+      logic                      iscore;                                                           \
+      logic                      fscore;                                                           \
     }  bp_be_retire_pkt_s;                                                                         \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -165,6 +169,8 @@
       logic                           dcache_replay;                                               \
       logic                           itlb_fill_v;                                                 \
       logic                           dtlb_fill_v;                                                 \
+      logic                           iscore_v;                                                    \
+      logic                           fscore_v;                                                    \
     }  bp_be_commit_pkt_s;                                                                         \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -251,25 +257,24 @@
      )
 
   `define bp_be_dep_status_width \
-    (15 + rv64_reg_addr_width_gp)
+    (17 + rv64_reg_addr_width_gp)
 
   `define bp_be_branch_pkt_width(vaddr_width_mp) \
     (4 + vaddr_width_mp)
 
   `define bp_be_retire_pkt_width(vaddr_width_mp) \
-    (4 + dpath_width_gp + 2*vaddr_width_mp + instr_width_gp + 1 + $bits(bp_be_exception_s) + $bits(bp_be_special_s))
+    (6 + dpath_width_gp + 2*vaddr_width_mp + instr_width_gp + 1 + $bits(bp_be_exception_s) + $bits(bp_be_special_s))
 
   `define bp_be_pte_leaf_width(paddr_width_mp) \
     (paddr_width_mp - page_offset_width_gp + 7)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (5 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 18)
+    (5 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 20)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
-    (3                                                                                             \
+    (4                                                                                             \
      + reg_addr_width_gp                                                                           \
      + dpath_width_gp                                                                              \
-     + 1                                                                                           \
      + $bits(rv64_fflags_s)                                                                        \
      )
 
