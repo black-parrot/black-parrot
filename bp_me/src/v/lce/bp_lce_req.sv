@@ -36,7 +36,7 @@ module bp_lce_req
    , localparam bedrock_byte_offset_lp = `BSG_SAFE_CLOG2(fill_width_p/8)
    , localparam bit [paddr_width_p-1:0] req_addr_mask = {paddr_width_p{1'b1}} << bedrock_byte_offset_lp
 
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
   (
@@ -44,6 +44,7 @@ module bp_lce_req
     , input                                          reset_i
 
     // LCE Configuration
+    , input [did_width_p-1:0]                        did_i
     , input [lce_id_width_p-1:0]                     lce_id_i
     , input bp_lce_mode_e                            lce_mode_i
     , input                                          cache_init_done_i
@@ -84,7 +85,7 @@ module bp_lce_req
     , input                                          lce_req_ready_and_i
   );
 
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
   `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_i(bp_cache_req_s, cache_req);
@@ -258,6 +259,7 @@ module bp_lce_req
     fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
     fsm_req_header_lo.payload.dst_id = req_cce_id_lo;
     fsm_req_header_lo.payload.src_id = lce_id_i;
+    fsm_req_header_lo.payload.src_did = did_i;
     fsm_req_header_lo.payload.lru_way_id = lce_assoc_width_p'(cache_req_metadata.hit_or_repl_way);
     fsm_req_header_lo.payload.non_exclusive =
       (miss_load_v_r && (non_excl_reads_p == 1)) ? e_bedrock_req_non_excl : e_bedrock_req_excl;

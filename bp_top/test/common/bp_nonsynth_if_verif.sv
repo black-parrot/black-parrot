@@ -12,20 +12,18 @@ module bp_nonsynth_if_verif
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
   ();
 
   bp_proc_param_s proc_param;
   assign proc_param = all_cfgs_gp[bp_params_p];
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
 
   initial
@@ -130,7 +128,7 @@ module bp_nonsynth_if_verif
 
   // Unicore
   if ((cce_type_p == e_cce_uce) && (icache_fill_width_p != dcache_fill_width_p))
-    $error("Error: unicore requires L1-Cache fill widths to match");
+    $error("Error: unicore requires L1-Cache fill width to match");
   if ((cce_type_p == e_cce_uce) && (num_core_p != 1))
     $error("Error: Unicore only supports a single core configuration in the tethered testbench");
   if ((cce_type_p == e_cce_uce) && (bedrock_fill_width_p < dword_width_gp))
@@ -142,13 +140,13 @@ module bp_nonsynth_if_verif
   if ((cce_type_p != e_cce_uce) && (l2_data_width_p != bedrock_fill_width_p))
     $error("Error: Multicore requires L2 data width same as BedRock data width");
   if ((cce_type_p != e_cce_uce) && (icache_fill_width_p != dcache_fill_width_p))
-    $error("Error: Multicore requires L1-Cache fill widths to be the same");
+    $error("Error: Multicore requires L1-Cache fill width to be the same");
   if ((cce_type_p != e_cce_uce) && (num_cacc_p > 0) && (icache_fill_width_p != acache_fill_width_p))
-    $error("Error: Multicore requires L1-Cache fill widths to be the same");
+    $error("Error: Multicore requires L1-Cache fill width to be the same");
   if ((cce_type_p != e_cce_uce) && (dcache_block_width_p != icache_block_width_p))
-    $error("Error: Multicore requires L1-Cache block widths to be the same");
+    $error("Error: Multicore requires L1-Cache block width to be the same");
   if ((cce_type_p != e_cce_uce) && (num_cacc_p > 0) && (icache_block_width_p != acache_block_width_p))
-    $error("Error: Multicore requires L1-Cache block widths to be the same");
+    $error("Error: Multicore requires L1-Cache block width to be the same");
   if ((cce_type_p != e_cce_uce) && (l2_block_width_p < icache_block_width_p))
     $error("Error: Multicore requires L2-Cache block width to be at least L1-Cache block width");
   if ((cce_type_p != e_cce_uce) && (bedrock_fill_width_p < dword_width_gp))

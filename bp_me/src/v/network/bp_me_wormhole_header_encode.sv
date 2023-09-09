@@ -22,7 +22,7 @@ module bp_me_wormhole_header_encode
    , parameter `BSG_INV_PARAM(len_width_p)
    , parameter `BSG_INV_PARAM(payload_width_p)
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, msg)
+   `declare_bp_bedrock_generic_if_width(paddr_width_p, payload_width_p, msg)
 
    // Constructed as (1 << e_rd/wr_msg | 1 << e_uc_rd/wr_msg)
    , parameter stream_mask_p = 0
@@ -38,7 +38,7 @@ module bp_me_wormhole_header_encode
    , output logic [wh_header_width_lp-1:0]  wh_header_o
    );
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, msg);
+  `declare_bp_bedrock_generic_if(paddr_width_p, payload_width_p, msg);
   `bp_cast_i(bp_bedrock_msg_header_s, header);
 
   `declare_bp_bedrock_wormhole_header_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, bp_bedrock_msg_header_s, bedrock);

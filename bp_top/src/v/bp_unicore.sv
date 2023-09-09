@@ -28,7 +28,7 @@ module bp_unicore
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
    )
@@ -76,8 +76,8 @@ module bp_unicore
    , input [l2_slices_p-1:0][l2_banks_p-1:0]                              dma_data_ready_and_i
    );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   // Reset
@@ -94,9 +94,9 @@ module bp_unicore
   localparam cfg_dev_id_lp      =                      0;
   localparam clint_dev_id_lp    = cfg_dev_id_lp      + 1;
   localparam l2s_dev_base_id_lp = clint_dev_id_lp    + 1;
-  localparam io_dev_id_lp       = l2s_dev_base_id_lp + l2_slices_p;
-  localparam loopback_dev_id_lp = io_dev_id_lp       + 1;
-  localparam num_dev_lp         = loopback_dev_id_lp + 1;
+  localparam loopback_dev_id_lp = l2s_dev_base_id_lp + l2_slices_p;
+  localparam io_dev_id_lp       = loopback_dev_id_lp + 1;
+  localparam num_dev_lp         = io_dev_id_lp       + 1;
   localparam lg_num_dev_lp      = `BSG_SAFE_CLOG2(num_dev_lp);
 
   // {IO, BE UCE, FE UCE}
@@ -197,8 +197,8 @@ module bp_unicore
         (is_cfg_fwd << cfg_dev_id_lp)
         | (is_clint_fwd << clint_dev_id_lp) 
         | (is_l2s_slice_fwd << l2s_dev_base_id_lp) 
-        | (is_io_fwd << io_dev_id_lp) 
-        | (is_loopback_fwd << loopback_dev_id_lp);
+        | (is_loopback_fwd << loopback_dev_id_lp)
+        | (is_io_fwd << io_dev_id_lp);
 
       bsg_encode_one_hot
        #(.width_p(num_dev_lp), .lo_to_hi_p(1))
@@ -212,7 +212,10 @@ module bp_unicore
   logic [num_dev_lp-1:0][lg_num_proc_lp-1:0] dev_rev_dst_lo;
   for (genvar i = 0; i < num_dev_lp; i++)
     begin : dev_lce_id
-      assign dev_rev_dst_lo[i] = dev_rev_header_lo[i].payload.lce_id[0+:lg_num_proc_lp];
+      wire [did_width_p-1:0] dev_rev_did_li = dev_rev_header_lo[i].payload.src_did;
+      wire [lg_num_proc_lp-1:0] dev_rev_proc_id_li = dev_rev_header_lo[i].payload.lce_id;
+      wire remote_did_li = (dev_rev_did_li > 0) && (dev_rev_did_li != my_did_i);
+      assign dev_rev_dst_lo[i] = remote_did_li ? io_proc_id_lp : dev_rev_proc_id_li;
     end
 
   bp_me_xbar_stream

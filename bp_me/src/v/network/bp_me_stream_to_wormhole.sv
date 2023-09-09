@@ -12,7 +12,7 @@
  *  Usage of this module requires correctly formed wormhole headers. The length
  *    field of the wormhole message determines how many protocol data beats are
  *    expected (some multiple or divisor of the flit_width). We expect most
- *    link and protocol data widths to be powers of 2 (32, 64, 512), so this
+ *    link and protocol data width to be powers of 2 (32, 64, 512), so this
  *    length restriction is lenient.
  *
  *   - data width is a multiple of flit width (would be easy to add support)
@@ -93,9 +93,9 @@ module bp_me_stream_to_wormhole
 
   // parameter checks
   if (!(`BSG_IS_POW2(pr_data_width_p)) || !(`BSG_IS_POW2(flit_width_p)))
-    $error("Protocol and Network data widths must be powers of 2");
+    $error("Protocol and Network data width must be powers of 2");
 
-  `declare_bp_bedrock_if(paddr_width_p, pr_payload_width_p, lce_id_width_p, lce_assoc_p, msg);
+  `declare_bp_bedrock_generic_if(paddr_width_p, pr_payload_width_p, msg);
   `bp_cast_i(bp_bedrock_msg_header_s, pr_hdr);
 
   // WH control signals

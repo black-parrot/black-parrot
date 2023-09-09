@@ -20,11 +20,10 @@ module bp_cce_reg
     , localparam block_size_in_bytes_lp    = (bedrock_block_width_p/8)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
 
-    , localparam mshr_width_lp = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
+    , localparam mshr_width_lp = `bp_cce_mshr_width(paddr_width_p, lce_id_width_p, cce_width_p, did_width_p, lce_assoc_p)
 
     // Interface Widths
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
   )
   (input                                                                   clk_i
@@ -81,8 +80,7 @@ module bp_cce_reg
 
 
   // Interface Structs
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   bp_bedrock_lce_req_header_s  lce_req_hdr;
   bp_bedrock_lce_resp_header_s lce_resp_hdr;
@@ -93,7 +91,7 @@ module bp_cce_reg
   assign mem_rev_hdr = mem_rev_header_i;
 
   // Registers
-  `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cce_mshr_s(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   bp_cce_mshr_s                                                mshr_r, mshr_n;
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r;
@@ -210,6 +208,7 @@ module bp_cce_reg
       // Owner Way ID - from GAD or move
       // LRU paddr - from Directory or move
       mshr_n.lce_id = src_a_i[0+:lce_id_width_p];
+      mshr_n.src_did = src_a_i[lce_id_width_p+:did_width_p];
       mshr_n.paddr = src_a_i[0+:paddr_width_p];
       mshr_n.lru_way_id = src_a_i[0+:lce_assoc_width_p];
       mshr_n.next_coh_state = bp_coh_states_e'(src_a_i[0+:$bits(bp_coh_states_e)]);
@@ -231,6 +230,7 @@ module bp_cce_reg
         unique case (decoded_inst_i.popq_qsel)
           e_src_q_sel_lce_req: begin
             mshr_n.lce_id = lce_req_hdr.payload.src_id;
+            mshr_n.src_did = lce_req_hdr.payload.src_did;
             mshr_n.paddr = lce_req_hdr.addr;
             mshr_n.lru_way_id = lce_req_hdr.payload.lru_way_id;
             mshr_n.msg_size = lce_req_hdr.size;
@@ -334,6 +334,7 @@ module bp_cce_reg
       end else begin
         if (~stall_i & decoded_inst_i.lce_w_v) begin
           mshr_r.lce_id <= mshr_n.lce_id;
+          mshr_r.src_did <= mshr_n.src_did;
         end
         if (~stall_i & decoded_inst_i.addr_w_v) begin
           mshr_r.paddr <= mshr_n.paddr;

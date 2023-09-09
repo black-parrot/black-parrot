@@ -15,9 +15,9 @@ module bp_me_cfg_slice
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -47,8 +47,8 @@ module bp_me_cfg_slice
 
   if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `bp_cast_o(bp_cfg_bus_s, cfg_bus);
 
   localparam reg_els_lp = 10;
@@ -119,7 +119,7 @@ module bp_me_cfg_slice
 
   // Access to CCE ucode memory must be aligned
   localparam cce_pc_offset_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV(cce_instr_width_gp,8));
-  // Prevent writing CCE ucode if we're already out of cached mode.
+  // Prevent writing CCE ucode if we're already out of uncached mode.
   //   We could also handle this by software, but seems dangerous to allow in hardware
   assign cce_ucode_v_o    = (cce_mode_r == e_cce_mode_uncached) & (cce_ucode_r_v_li | cce_ucode_w_v_li);
   assign cce_ucode_w_o    = (cce_mode_r == e_cce_mode_uncached) & cce_ucode_w_v_li;
@@ -149,6 +149,7 @@ module bp_me_cfg_slice
                             ,cce_id: cce_id_li
                             ,cce_mode: cce_mode_r
                             ,hio_mask: hio_mask_r
+                            ,did: did_i
                             };
 
   assign data_li[0] = freeze_r;

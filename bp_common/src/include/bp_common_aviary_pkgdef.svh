@@ -102,19 +102,19 @@
       ,bht_row_els              : 2
       ,ghist_width              : 2
 
-      ,icache_sets        : 512
-      ,icache_assoc       : 1
-      ,icache_block_width : 64
-      ,icache_fill_width  : 64
+      ,icache_sets        : 256
+      ,icache_assoc       : 2
+      ,icache_block_width : 128
+      ,icache_fill_width  : 128
 
       ,dcache_features    : (1 << e_cfg_enabled) | (1 << e_cfg_lr_sc)
-      ,dcache_sets        : 512
-      ,dcache_assoc       : 1
-      ,dcache_block_width : 64
-      ,dcache_fill_width  : 64
+      ,dcache_sets        : 256
+      ,dcache_assoc       : 2
+      ,dcache_block_width : 128
+      ,dcache_fill_width  : 128
 
-      ,bedrock_block_width: 64
-      ,bedrock_fill_width : 64
+      ,bedrock_block_width: 128
+      ,bedrock_fill_width : 128
 
       // We use L2 for the write buffer support
       ,l2_features   : (1 << e_cfg_enabled)
@@ -123,8 +123,8 @@
                        | (1 << e_cfg_amo_swap)
                        | (1 << e_cfg_amo_fetch_logic)
                        | (1 << e_cfg_amo_fetch_arithmetic)
-      ,l2_data_width : 64
-      ,l2_fill_width : 64
+      ,l2_data_width : 128
+      ,l2_fill_width : 128
 
       ,default : "inv"
       };
@@ -210,30 +210,30 @@
       ,bht_row_els              : 2
       ,ghist_width              : 2
 
-      ,icache_sets        : 512
-      ,icache_assoc       : 1
-      ,icache_block_width : 64
-      ,icache_fill_width  : 64
+      ,icache_sets        : 256
+      ,icache_assoc       : 2
+      ,icache_block_width : 128
+      ,icache_fill_width  : 128
 
-      ,dcache_sets        : 512
-      ,dcache_assoc       : 1
-      ,dcache_block_width : 64
-      ,dcache_fill_width  : 64
+      ,dcache_sets        : 256
+      ,dcache_assoc       : 2
+      ,dcache_block_width : 128
+      ,dcache_fill_width  : 128
 
-      ,acache_sets        : 512
-      ,acache_assoc       : 1
-      ,acache_block_width : 64
-      ,acache_fill_width  : 64
+      ,acache_sets        : 256
+      ,acache_assoc       : 2
+      ,acache_block_width : 128
+      ,acache_fill_width  : 128
 
-      ,bedrock_block_width : 64
-      ,bedrock_fill_width  : 64
+      ,bedrock_block_width : 128
+      ,bedrock_fill_width  : 128
 
-      ,l2_data_width : 64
-      ,l2_fill_width : 64
+      ,l2_data_width : 128
+      ,l2_fill_width : 128
 
-      ,coh_noc_flit_width : 64
-      ,dma_noc_flit_width : 64
-      ,mem_noc_flit_width  : 64
+      ,coh_noc_flit_width : 128
+      ,dma_noc_flit_width : 128
+      ,mem_noc_flit_width : 128
 
       ,default : "inv"
       };
