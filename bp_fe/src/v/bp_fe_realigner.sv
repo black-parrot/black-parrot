@@ -12,7 +12,8 @@ module bp_fe_realigner
  import bp_fe_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
- )
+   , localparam scan_width_lp = $bits(bp_fe_instr_scan_s)
+   )
   (input                               clk_i
    , input                             reset_i
 
@@ -34,6 +35,7 @@ module bp_fe_realigner
 
    , output logic [vaddr_width_p-1:0]  fetch_pc_o
    , output logic [instr_width_gp-1:0] fetch_instr_o
+   , output logic [scan_width_lp-1:0]  fetch_instr_scan_o
    , output logic                      fetch_instr_v_o
    , output logic                      fetch_exception_v_o
    , output logic                      fetch_partial_o
@@ -42,6 +44,8 @@ module bp_fe_realigner
    , output logic                      fetch_scan_o
    , output logic                      fetch_rebase_o
    );
+
+  `bp_cast_o(bp_fe_instr_scan_s, fetch_instr_scan);
 
   logic partial_v_n, partial_v_r;
   logic partial_br_site_n, partial_br_site_r;
@@ -54,15 +58,16 @@ module bp_fe_realigner
     inside {`RV64_BRANCH, `RV64_JAL, `RV64_JALR, `RV64_CJ, `RV64_CJR, `RV64_CJALR, `RV64_CBEQZ, `RV64_CBNEZ};
   wire if2_high_branch = if2_data_i[cinstr_width_gp+:cinstr_width_gp]
     inside {`RV64_BRANCH, `RV64_JAL, `RV64_JALR, `RV64_CJ, `RV64_CJR, `RV64_CJALR, `RV64_CBEQZ, `RV64_CBNEZ};
+  wire [cinstr_width_gp-1:0] if2_data_upper = if2_data_i[cinstr_width_gp+:cinstr_width_gp];
+  wire [cinstr_width_gp-1:0] if2_data_lower = if2_data_i[0+:cinstr_width_gp];
 
   wire [vaddr_width_p-1:0] redirect_partial_pc = redirect_pc_i - (redirect_resume_i ? 2'b10 : 2'b00);
   wire [vaddr_width_p-1:0] if2_partial_pc = if2_pc_i + (if2_pc_aligned ? 2'b10 : 2'b00);
-  wire [cinstr_width_gp-1:0] if2_data_lower = if2_data_i[0+:cinstr_width_gp];
-  wire [cinstr_width_gp-1:0] if2_data_upper = if2_data_i[cinstr_width_gp+:cinstr_width_gp];
+  wire [cinstr_width_gp-1:0] if2_partial_instr = if2_pc_aligned ? if2_data_upper : if2_data_lower;
   bsg_mux
    #(.width_p(cinstr_width_gp+vaddr_width_p), .els_p(2))
    redirect_mux
-    (.data_i({{redirect_instr_i, redirect_partial_pc}, {if2_data_upper, if2_partial_pc}})
+    (.data_i({{redirect_instr_i, redirect_partial_pc}, {if2_partial_instr, if2_partial_pc}})
      ,.sel_i(redirect_v_i)
      ,.data_o({partial_instr_n, partial_pc_n})
      );
@@ -82,14 +87,30 @@ module bp_fe_realigner
      ,.data_o({partial_v_r, partial_br_site_r, partial_instr_r, partial_pc_r})
      );
 
-  wire [instr_width_gp-1:0] instr_aligned = if2_pc_aligned ? if2_data_i : {'0, if2_data_upper};
+  wire [instr_width_gp-1:0] instr_aligned = {if2_data_upper, if2_data_lower};
+  bp_fe_instr_scan_s scan_aligned;
+  bp_fe_instr_scan
+   #(.bp_params_p(bp_params_p))
+   aligned_instr_scan
+    (.instr_i(instr_aligned)
+     ,.scan_o(scan_aligned)
+     );
+
   wire [instr_width_gp-1:0] instr_assembled = {if2_data_lower, partial_instr_r};
+  bp_fe_instr_scan_s scan_assembled;
+  bp_fe_instr_scan
+   #(.bp_params_p(bp_params_p))
+   assembled_instr_scan
+    (.instr_i(instr_assembled)
+     ,.scan_o(scan_assembled)
+     );
+
   bsg_mux
-   #(.width_p(instr_width_gp+vaddr_width_p), .els_p(2))
+   #(.width_p(scan_width_lp+instr_width_gp+vaddr_width_p), .els_p(2))
    instr_mux
-    (.data_i({{instr_assembled, partial_pc_r}, {instr_aligned, if2_pc_i}})
+    (.data_i({{scan_assembled, instr_assembled, partial_pc_r}, {scan_aligned, instr_aligned, if2_pc_i}})
      ,.sel_i(partial_v_r)
-     ,.data_o({fetch_instr_o, fetch_pc_o})
+     ,.data_o({fetch_instr_scan_cast_o, fetch_instr_o, fetch_pc_o})
      );
 
   // Here is a table of the possible cases:

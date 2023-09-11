@@ -24,7 +24,6 @@ module bp_be_ptw
 
    // TLB miss and fill interfaces
    , input [ptw_miss_pkt_width_lp-1:0]      ptw_miss_pkt_i
-   , output [ptw_fill_pkt_width_lp-1:0]     ptw_fill_pkt_o
 
    // D-Cache connections
    , output logic                           dcache_v_o
@@ -33,9 +32,14 @@ module bp_be_ptw
    , output logic                           dcache_ptag_v_o
    , input                                  dcache_ready_and_i
 
-   , input                                  dcache_v_i
    , input [dword_width_gp-1:0]             dcache_data_i
-  );
+   , input                                  dcache_v_i
+   , input                                  dcache_late_i
+
+   , output logic [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_o
+   , output logic                             ptw_fill_v_o
+   , input                                    ptw_fill_yumi_i
+   );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
@@ -134,13 +138,14 @@ module bp_be_ptw
   assign tlb_w_entry.w          = dcache_pte_r.w;
   assign tlb_w_entry.r          = dcache_pte_r.r;
 
-  assign ptw_fill_pkt_cast_o.v                  = is_write;
-  assign ptw_fill_pkt_cast_o.itlb_fill_v        = is_write & itlb_fill_v;
-  assign ptw_fill_pkt_cast_o.dtlb_fill_v        = is_write & dtlb_fill_v;
-  assign ptw_fill_pkt_cast_o.instr_page_fault_v = is_write & instr_page_fault;
-  assign ptw_fill_pkt_cast_o.load_page_fault_v  = is_write & load_page_fault;
-  assign ptw_fill_pkt_cast_o.store_page_fault_v = is_write & store_page_fault;
-  assign ptw_fill_pkt_cast_o.partial            = is_write & ptw_miss_pkt_r.partial;
+  assign ptw_fill_v_o = is_write;
+  assign ptw_fill_pkt_cast_o.v                  = ptw_fill_v_o; 
+  assign ptw_fill_pkt_cast_o.itlb_fill_v        = ptw_fill_v_o & itlb_fill_v;
+  assign ptw_fill_pkt_cast_o.dtlb_fill_v        = ptw_fill_v_o & dtlb_fill_v;
+  assign ptw_fill_pkt_cast_o.instr_page_fault_v = ptw_fill_v_o & instr_page_fault;
+  assign ptw_fill_pkt_cast_o.load_page_fault_v  = ptw_fill_v_o & load_page_fault;
+  assign ptw_fill_pkt_cast_o.store_page_fault_v = ptw_fill_v_o & store_page_fault;
+  assign ptw_fill_pkt_cast_o.partial            = ptw_fill_v_o & ptw_miss_pkt_r.partial;
   assign ptw_fill_pkt_cast_o.vaddr              = ptw_miss_pkt_r.vaddr;
   assign ptw_fill_pkt_cast_o.entry              = tlb_w_entry;
 
@@ -184,11 +189,12 @@ module bp_be_ptw
   // Because internal dcache flushing is a possibility, we need to manually replay
   always_comb
     case(state_r)
-      e_idle      :  state_n = tlb_miss_v ? e_send_load : state_r;
-      e_send_load :  state_n = dcache_ready_and_i ? e_recv_load : state_r;
-      e_recv_load :  state_n = dcache_v_i ? e_check_load : e_send_load;
-      e_check_load:  state_n = (pte_is_leaf | page_fault_v) ? e_writeback : e_send_load;
-      default: // e_writeback
+      e_idle      : state_n = tlb_miss_v ? e_send_load : state_r;
+      e_send_load : state_n = dcache_ready_and_i ? e_recv_load : state_r;
+      e_recv_load : state_n = (dcache_v_i & ~dcache_late_i) ? e_check_load : e_send_load;
+      e_check_load: state_n = (pte_is_leaf | page_fault_v) ? e_writeback : e_send_load;
+      e_writeback : state_n = ptw_fill_yumi_i ? e_idle : e_writeback; 
+      default:
                      state_n = e_idle;
     endcase
 

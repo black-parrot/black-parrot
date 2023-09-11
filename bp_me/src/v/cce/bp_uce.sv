@@ -449,7 +449,7 @@ module bp_uce
 
             index_up = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
-            cache_req_critical_o = is_inval & (index_done & index_up);
+            cache_req_critical_o = is_inval & index_done;
             cache_req_last_o = cache_req_critical_o;
             cache_req_done = cache_req_last_o;
 

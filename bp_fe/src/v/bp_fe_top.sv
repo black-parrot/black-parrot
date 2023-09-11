@@ -248,6 +248,7 @@ module bp_fe_top
      ,.data_v_o(icache_data_v_lo)
      ,.spec_v_o(icache_spec_v_lo)
      ,.fence_v_o(icache_fence_v_lo)
+     ,.scan_i(fetch_scan_lo)
      ,.yumi_i(icache_yumi_li)
 
      ,.cache_req_o(cache_req_o)
@@ -319,6 +320,7 @@ module bp_fe_top
          ,.fetch_exception_v_o(fetch_exception_v_lo)
          ,.fetch_pc_o(fetch_pc_lo)
          ,.fetch_instr_o(fetch_instr_lo)
+         ,.fetch_instr_scan_o(fetch_instr_scan_lo)
          ,.fetch_partial_o(fetch_partial_lo)
          ,.fetch_linear_o(fetch_linear_lo)
          ,.fetch_eager_o(fetch_eager_lo)
@@ -338,14 +340,14 @@ module bp_fe_top
       assign fetch_eager_lo = '0;
       assign fetch_scan_lo = '0;
       assign fetch_rebase_lo = '0;
-    end
 
-  bp_fe_instr_scan
-   #(.bp_params_p(bp_params_p))
-   instr_scan
-    (.instr_i(fetch_instr_lo)
-     ,.scan_o(fetch_instr_scan_lo)
-     );
+      bp_fe_instr_scan
+       #(.bp_params_p(bp_params_p))
+       instr_scan
+        (.instr_i(fetch_instr_lo)
+         ,.scan_o(fetch_instr_scan_lo)
+         );
+    end
 
   assign fe_queue_v_o = fetch_instr_v_lo | fetch_exception_v_lo;
 

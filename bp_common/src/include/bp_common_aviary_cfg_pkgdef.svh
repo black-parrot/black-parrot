@@ -18,6 +18,7 @@
     ,e_cfg_amo_fetch_logic      = 4'b0110
     ,e_cfg_amo_fetch_arithmetic = 4'b0111
     ,e_cfg_hit_under_miss       = 4'b1000
+    ,e_cfg_misaligned           = 4'b1001
   } bp_cache_features_e;
 
   typedef enum logic
@@ -290,7 +291,7 @@
       ,dcache_block_width   : 512
       ,dcache_fill_width    : 128
 
-      ,icache_features      : (1 << e_cfg_enabled)
+      ,icache_features      : (1 << e_cfg_enabled) | (1 << e_cfg_misaligned)
       ,icache_sets          : 64
       ,icache_assoc         : 8
       ,icache_block_width   : 512

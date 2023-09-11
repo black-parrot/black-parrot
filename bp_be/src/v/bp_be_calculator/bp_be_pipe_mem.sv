@@ -34,14 +34,13 @@ module bp_be_pipe_mem
    , input                                flush_i
    , input                                sfence_i
 
+   , output logic                         ptw_busy_o
    , output logic                         busy_o
    , output logic                         ordered_o
 
    , input [dispatch_pkt_width_lp-1:0]    reservation_i
 
    , input [commit_pkt_width_lp-1:0]      commit_pkt_i
-   , output [ptw_fill_pkt_width_lp-1:0]   ptw_fill_pkt_o
-   , output logic                         ptw_busy_o
 
    , output logic                         tlb_load_miss_v_o
    , output logic                         tlb_store_miss_v_o
@@ -62,6 +61,10 @@ module bp_be_pipe_mem
 
    , output logic [wb_pkt_width_lp-1:0]   late_wb_pkt_o
    , output logic                         late_wb_v_o
+
+   , output logic [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_o
+   , output logic                             ptw_fill_v_o
+   , input                                    ptw_fill_yumi_i
 
    , input [trans_info_width_lp-1:0]      trans_info_i
 
@@ -269,7 +272,6 @@ module bp_be_pipe_mem
 
      ,.busy_o(ptw_busy)
      ,.ptw_miss_pkt_i(ptw_miss_pkt)
-     ,.ptw_fill_pkt_o(ptw_fill_pkt)
 
      ,.dcache_v_o(ptw_dcache_v)
      ,.dcache_pkt_o(ptw_dcache_pkt)
@@ -278,7 +280,12 @@ module bp_be_pipe_mem
      ,.dcache_ready_and_i(dcache_ready_and_lo)
 
      ,.dcache_v_i(dcache_v)
+     ,.dcache_late_i(dcache_late)
      ,.dcache_data_i(dcache_data)
+
+     ,.ptw_fill_pkt_o(ptw_fill_pkt)
+     ,.ptw_fill_v_o(ptw_fill_v_o)
+     ,.ptw_fill_yumi_i(ptw_fill_yumi_i)
      );
 
   logic dtlb_r_v_r;

@@ -98,7 +98,7 @@ module bp_be_director
 
   wire npc_mismatch_v = dispatch_v_i & (expected_npc_o != issue_pkt_cast_i.pc);
   wire npc_match_v    = dispatch_v_i & (expected_npc_o == issue_pkt_cast_i.pc);
-  assign poison_isd_o = commit_pkt_cast_i.npc_w_v | npc_mismatch_v;
+  assign poison_isd_o = npc_mismatch_v;
 
   logic btaken_pending, attaboy_pending;
   bsg_dff_reset_set_clear
