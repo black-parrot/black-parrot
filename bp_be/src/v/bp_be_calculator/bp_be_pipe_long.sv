@@ -48,7 +48,19 @@ module bp_be_pipe_long
   wire [dword_width_gp-1:0] rs2 = reservation.rs2[0+:dword_width_gp];
   wire [dword_width_gp-1:0] imm = reservation.imm[0+:dword_width_gp];
 
-  wire v_li = reservation.v & reservation.decode.pipe_long_v & (reservation.decode.late_iwb_v | reservation.decode.late_fwb_v);
+  wire int_v_li = reservation.v & reservation.decode.pipe_long_v & reservation.decode.irf_w_v;
+  wire fp_v_li = reservation.v & reservation.decode.pipe_long_v & reservation.decode.frf_w_v;
+
+  logic fmask_r, imask_r;
+  bsg_dff
+   #(.width_p(2))
+   mask_reg
+    (.clk_i(clk_i)
+     ,.data_i({fp_v_li, int_v_li})
+     ,.data_o({fmask_r, imask_r})
+     );
+  wire flush_int_li = flush_i & (imask_r | int_v_li);
+  wire flush_fp_li  = flush_i & (fmask_r | fp_v_li);
 
   wire signed_div_li = decode.fu_op inside {e_mul_op_div, e_mul_op_rem};
   wire rem_not_div_li = decode.fu_op inside {e_mul_op_rem, e_mul_op_remu};
@@ -61,12 +73,12 @@ module bp_be_pipe_long
 
   logic [dword_width_gp-1:0] imulh_result_lo;
   logic imulh_ready_lo, imulh_v_lo;
-  wire imulh_v_li = v_li & (decode.fu_op inside {e_mul_op_mulh, e_mul_op_mulhsu, e_mul_op_mulhu});
+  wire imulh_v_li = int_v_li & (decode.fu_op inside {e_mul_op_mulh, e_mul_op_mulhsu, e_mul_op_mulhu});
   bsg_imul_iterative
    #(.width_p(dword_width_gp))
    imulh
     (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_i | flush_int_li)
     ,.v_i(imulh_v_li)
     ,.ready_o(imulh_ready_lo)
     ,.opA_i(op_a)
@@ -83,14 +95,14 @@ module bp_be_pipe_long
   logic [dword_width_gp-1:0] quotient_lo, remainder_lo;
   logic idiv_ready_and_lo;
   logic idiv_v_lo;
-  wire idiv_v_li = v_li & (decode.fu_op inside {e_mul_op_div, e_mul_op_divu});
-  wire irem_v_li = v_li & (decode.fu_op inside {e_mul_op_rem, e_mul_op_remu});
+  wire idiv_v_li = int_v_li & (decode.fu_op inside {e_mul_op_div, e_mul_op_divu});
+  wire irem_v_li = int_v_li & (decode.fu_op inside {e_mul_op_rem, e_mul_op_remu});
   localparam idiv_bits_per_iter_lp = muldiv_support_p[e_idiv2b] ? 2'b10 : 2'b01;
   bsg_idiv_iterative
    #(.width_p(dword_width_gp), .bits_per_iter_p(idiv_bits_per_iter_lp))
    idiv
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_i | flush_int_li)
 
      ,.dividend_i(op_a)
      ,.divisor_i(op_b)
@@ -105,6 +117,19 @@ module bp_be_pipe_long
      );
   wire [word_width_gp-1:0] quotient_w_lo = quotient_lo[0+:word_width_gp];
   wire [word_width_gp-1:0] remainder_w_lo = remainder_lo[0+:word_width_gp];
+
+  logic [reg_addr_width_gp-1:0] ird_addr_r;
+  bp_be_fu_op_s fu_op_r;
+  logic opw_v_r;
+  bsg_dff_en
+   #(.width_p(reg_addr_width_gp+$bits(bp_be_fu_op_s)+1))
+   iwb_reg
+    (.clk_i(clk_i)
+     ,.en_i(imulh_v_li | idiv_v_li | irem_v_li)
+
+     ,.data_i({instr.t.fmatype.rd_addr, decode.fu_op, decode.opw_v})
+     ,.data_o({ird_addr_r, fu_op_r, opw_v_r})
+     );
 
   bp_be_fp_reg_s frs1, frs2;
   bp_be_nan_unbox
@@ -131,10 +156,11 @@ module bp_be_pipe_long
   always_comb frm_li = rv64_frm_e'((instr.t.fmatype.rm == e_dyn) ? frm_dyn_i : instr.t.fmatype.rm);
   wire [`floatControlWidth-1:0] control_li = `flControl_default;
 
-  wire fdiv_v_li  = v_li & (decode.fu_op == e_fma_op_fdiv);
-  wire fsqrt_v_li = v_li & (decode.fu_op == e_fma_op_fsqrt);
+  wire fdiv_v_li  = fp_v_li & (decode.fu_op inside {e_fma_op_fdiv});
+  wire fsqrt_v_li = fp_v_li & (decode.fu_op inside {e_fma_op_fsqrt});
+  wire fdivsqrt_v_li = fdiv_v_li | fsqrt_v_li;
 
-  logic fdiv_ready_and_lo, fdivsqrt_v_lo;
+  logic fdivsqrt_ready_and_lo, fdivsqrt_v_lo;
   logic sqrt_lo, invalid_exc, infinite_exc;
   logic [2:0] frm_lo;
   bp_hardfloat_raw_dp_s fdivsqrt_raw_lo;
@@ -146,11 +172,11 @@ module bp_be_pipe_long
      )
    fdiv
     (.clock(clk_i)
-     ,.nReset(~reset_i)
+     ,.nReset(~reset_i & ~flush_fp_li)
      ,.control(control_li)
 
-     ,.inReady(fdiv_ready_and_lo)
-     ,.inValid(fdiv_v_li | fsqrt_v_li)
+     ,.inReady(fdivsqrt_ready_and_lo)
+     ,.inValid(fdivsqrt_v_li)
      ,.sqrtOp(fsqrt_v_li)
      ,.a(frs1.rec)
      ,.b(frs2.rec)
@@ -170,19 +196,29 @@ module bp_be_pipe_long
      ,.out_sig(fdivsqrt_raw_lo.sig)
      );
 
-  logic opw_v_r, ops_v_r;
-  bp_be_fu_op_s fu_op_r;
-  logic [reg_addr_width_gp-1:0] rd_addr_r;
-  rv64_frm_e frm_r;
+  // outValid of fdivsqrt only goes high one cycle
+  logic fdivsqrt_pending_r;
   bsg_dff_reset_en
-   #(.width_p($bits(rv64_frm_e)+reg_addr_width_gp+$bits(bp_be_fu_op_s)+2))
-   wb_reg
+   #(.width_p(1))
+   fdivsqrt_pending_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(v_li)
+     ,.reset_i(reset_i | flush_fp_li)
+     ,.en_i(fdivsqrt_v_lo | fwb_yumi_i)
+     ,.data_i(fdivsqrt_v_lo & ~fwb_yumi_i)
+     ,.data_o(fdivsqrt_pending_r)
+     );
 
-     ,.data_i({frm_li, instr.t.fmatype.rd_addr, decode.fu_op, decode.opw_v, decode.ops_v})
-     ,.data_o({frm_r, rd_addr_r, fu_op_r, opw_v_r, ops_v_r})
+  logic ops_v_r;
+  logic [reg_addr_width_gp-1:0] frd_addr_r;
+  rv64_frm_e frm_r;
+  bsg_dff_en
+   #(.width_p($bits(rv64_frm_e)+reg_addr_width_gp+1))
+   fwb_reg
+    (.clk_i(clk_i)
+     ,.en_i(fdivsqrt_v_li)
+
+     ,.data_i({frm_li, instr.t.fmatype.rd_addr, decode.ops_v})
+     ,.data_o({frm_r, frd_addr_r, ops_v_r})
      );
 
   logic [dp_rec_width_gp-1:0] fdivsqrt_result_dp, fdivsqrt_result_sp;
@@ -212,18 +248,6 @@ module bp_be_pipe_long
      ,.midExceptionFlags(fdivsqrt_fflags_sp)
      );
 
-  logic imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(4))
-   wb_v_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.set_i({imulh_v_lo, idiv_v_lo, fdivsqrt_v_lo, v_li})
-     ,.clear_i({v_li, v_li, v_li, (iwb_yumi_i | fwb_yumi_i)})
-     ,.data_o({imulh_done_v_r, idiv_done_v_r, fdiv_done_v_r, rd_w_v_r})
-     );
-
   bp_be_fp_reg_s fdivsqrt_sp_reg_lo, fdivsqrt_dp_reg_lo, frd_data_lo;
   rv64_fflags_s fflags_lo;
   assign fdivsqrt_sp_reg_lo = '{tag: e_fp_sp, rec: fdivsqrt_result_sp};
@@ -247,36 +271,26 @@ module bp_be_pipe_long
     else
       ird_data_lo = remainder_lo;
 
-  // Actually a busy signal
-  assign ibusy_o = ~imulh_ready_lo | ~idiv_ready_and_lo | rd_w_v_r;
-  assign fbusy_o = ~fdiv_ready_and_lo | rd_w_v_r;
+  assign ibusy_o = int_v_li | ~imulh_ready_lo | ~idiv_ready_and_lo;
+  assign fbusy_o = fdivsqrt_v_li | ~fdivsqrt_ready_and_lo | fdivsqrt_pending_r;
 
-  assign iwb_pkt.ird_w_v    = rd_w_v_r;
+  assign iwb_v_o = ~imask_r & (imulh_v_lo | idiv_v_lo);
+  assign iwb_pkt.ird_w_v    = iwb_v_o;
   assign iwb_pkt.frd_w_v    = 1'b0;
   assign iwb_pkt.late       = 1'b1;
-  assign iwb_pkt.rd_addr    = rd_addr_r;
+  assign iwb_pkt.rd_addr    = ird_addr_r;
   assign iwb_pkt.rd_data    = ird_data_lo;
   assign iwb_pkt.fflags_w_v = 1'b0;
   assign iwb_pkt.fflags     = '0;
-  assign iwb_v_o = (imulh_done_v_r | idiv_done_v_r) & rd_w_v_r;
 
+  assign fwb_v_o = ~fmask_r & (fdivsqrt_v_lo | fdivsqrt_pending_r);
   assign fwb_pkt.ird_w_v    = 1'b0;
-  assign fwb_pkt.frd_w_v    = rd_w_v_r;
+  assign fwb_pkt.frd_w_v    = fwb_v_o;
   assign fwb_pkt.late       = 1'b1;
-  assign fwb_pkt.rd_addr    = rd_addr_r;
+  assign fwb_pkt.rd_addr    = frd_addr_r;
   assign fwb_pkt.rd_data    = frd_data_lo;
   assign fwb_pkt.fflags_w_v = 1'b1;
   assign fwb_pkt.fflags     = fflags_lo;
-  assign fwb_v_o = fdiv_done_v_r & rd_w_v_r;
-
-  // synopsys translate_off
-
-  always @(negedge clk_i)
-    begin
-      assert (reset_i !== 0 || ~v_li || ~rd_w_v_r) else $error("Long pipe structural hazard");
-    end
-
-  // synopsys translate_on
 
 endmodule
 

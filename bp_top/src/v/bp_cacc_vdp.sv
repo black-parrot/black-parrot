@@ -160,7 +160,6 @@ module bp_cacc_vdp
      ,.store_o()
      ,.float_o()
      ,.ordered_o()
-     ,.late_o()
      ,.rd_addr_o()
      ,.req_o()
 

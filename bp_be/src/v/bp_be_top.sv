@@ -18,6 +18,7 @@ module bp_be_top
 
    // Default parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
   )
   (input                                             clk_i
    , input                                           reset_i
@@ -91,6 +92,9 @@ module bp_be_top
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_decode_info_s decode_info_lo;
 
+  logic [wb_pkt_width_lp-1:0] late_wb_pkt;
+  logic late_wb_v_lo, late_wb_force_lo, late_wb_yumi_li;
+
   bp_be_issue_pkt_s issue_pkt;
   logic [vaddr_width_p-1:0] expected_npc_lo;
   logic npc_mismatch_lo, poison_isd_lo, clear_iss_lo, suppress_iss_lo, resume_lo;
@@ -150,8 +154,9 @@ module bp_be_top
      ,.interrupt_v_o(interrupt_v)
      ,.dispatch_pkt_i(dispatch_pkt)
      ,.commit_pkt_i(commit_pkt)
-     ,.iwb_pkt_i(iwb_pkt)
-     ,.fwb_pkt_i(fwb_pkt)
+
+     ,.late_wb_pkt_i(late_wb_pkt)
+     ,.late_wb_yumi_i(late_wb_yumi_li)
      );
 
   bp_be_scheduler
@@ -176,11 +181,15 @@ module bp_be_top
      ,.fe_queue_ready_and_o(fe_queue_ready_and_o)
 
      ,.dispatch_pkt_o(dispatch_pkt)
-
      ,.commit_pkt_i(commit_pkt)
-     ,.ptw_fill_pkt_i(ptw_fill_pkt)
      ,.iwb_pkt_i(iwb_pkt)
      ,.fwb_pkt_i(fwb_pkt)
+
+     ,.ptw_fill_pkt_i(ptw_fill_pkt)
+     ,.late_wb_pkt_i(late_wb_pkt)
+     ,.late_wb_v_i(late_wb_v_lo)
+     ,.late_wb_force_i(late_wb_force_lo)
+     ,.late_wb_yumi_o(late_wb_yumi_li)
      );
 
   bp_be_calculator_top
@@ -190,8 +199,6 @@ module bp_be_top
      ,.reset_i(reset_i)
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.dispatch_pkt_i(dispatch_pkt)
-
      ,.decode_info_o(decode_info_lo)
      ,.mem_busy_o(mem_busy_lo)
      ,.mem_ordered_o(mem_ordered_lo)
@@ -199,11 +206,17 @@ module bp_be_top
      ,.fdiv_busy_o(fdiv_busy_lo)
      ,.ptw_busy_o(ptw_busy_lo)
 
+     ,.dispatch_pkt_i(dispatch_pkt)
      ,.br_pkt_o(br_pkt)
      ,.commit_pkt_o(commit_pkt)
-     ,.ptw_fill_pkt_o(ptw_fill_pkt)
      ,.iwb_pkt_o(iwb_pkt)
      ,.fwb_pkt_o(fwb_pkt)
+
+     ,.ptw_fill_pkt_o(ptw_fill_pkt)
+     ,.late_wb_pkt_o(late_wb_pkt)
+     ,.late_wb_v_o(late_wb_v_lo)
+     ,.late_wb_force_o(late_wb_force_lo)
+     ,.late_wb_yumi_i(late_wb_yumi_li)
 
      ,.cache_req_o(cache_req_o)
      ,.cache_req_metadata_o(cache_req_metadata_o)

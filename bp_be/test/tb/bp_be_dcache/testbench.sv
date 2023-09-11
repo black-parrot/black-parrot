@@ -115,7 +115,7 @@ module testbench
   logic [num_caches_p-1:0][dcache_pkt_width_lp-1:0] dcache_pkt_li;
   logic [num_caches_p-1:0][ptag_width_p-1:0] ptag_li;
   logic [num_caches_p-1:0] uncached_li;
-  logic [num_caches_p-1:0][dword_width_gp-1:0] st_data_li, st_data_r;
+  logic [num_caches_p-1:0][dpath_width_gp-1:0] st_data_li, st_data_r;
   logic [num_caches_p-1:0] dcache_ready_li;
 
   logic [num_caches_p-1:0] fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
@@ -188,7 +188,7 @@ module testbench
       assign uncached_li[i] = trace_data_lo[i][(dword_width_gp+dcache_pkt_width_lp+ptag_width_p)+:1];
 
       bsg_dff
-       #(.width_p(dword_width_gp))
+       #(.width_p(dpath_width_gp))
        st_data_reg
         (.clk_i(clk_i)
          ,.data_i(st_data_li[i])

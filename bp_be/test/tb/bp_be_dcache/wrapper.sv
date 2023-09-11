@@ -41,7 +41,7 @@ module wrapper
 
    , input [num_caches_p-1:0][ptag_width_p-1:0]        ptag_i
    , input [num_caches_p-1:0]                          uncached_i
-   , input [num_caches_p-1:0][dword_width_gp-1:0]      st_data_i
+   , input [num_caches_p-1:0][dpath_width_gp-1:0]      st_data_i
 
    , output logic [num_caches_p-1:0][dword_width_gp-1:0] data_o
    , output logic [num_caches_p-1:0]                     v_o
@@ -195,7 +195,6 @@ module wrapper
       ,.v_o(v_o[i])
       ,.clean_o()
       ,.ret_o()
-      ,.late_o()
       ,.rd_addr_o()
       ,.addr_o()
       ,.ordered_o()

@@ -50,11 +50,15 @@ module bp_be_scheduler
 
    // Dispatch interface
    , output logic [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
-
    , input [commit_pkt_width_lp-1:0]          commit_pkt_i
    , input [wb_pkt_width_lp-1:0]              iwb_pkt_i
    , input [wb_pkt_width_lp-1:0]              fwb_pkt_i
+
    , input [ptw_fill_pkt_width_lp-1:0]        ptw_fill_pkt_i
+   , input [wb_pkt_width_lp-1:0]              late_wb_pkt_i
+   , input                                    late_wb_v_i
+   , input                                    late_wb_force_i
+   , output logic                             late_wb_yumi_o
    );
 
   // Declare parameterizable structures
@@ -67,6 +71,7 @@ module bp_be_scheduler
   `bp_cast_i(bp_be_commit_pkt_s, commit_pkt);
   `bp_cast_i(bp_be_wb_pkt_s, iwb_pkt);
   `bp_cast_i(bp_be_wb_pkt_s, fwb_pkt);
+  `bp_cast_i(bp_be_wb_pkt_s, late_wb_pkt);
 
   wire fe_queue_suppress_li  = suppress_iss_i;
   wire fe_queue_clr_li       = clear_iss_i;
@@ -75,7 +80,7 @@ module bp_be_scheduler
   wire fe_queue_roll_li      = commit_pkt_cast_i.npc_w_v;
   wire fe_queue_read_li      = dispatch_v_i & ~poison_isd_i;
   wire fe_queue_read_skip_li = !dispatch_pkt_cast_o.decode.compressed | dispatch_pkt_cast_o.partial;
-  wire fe_queue_inject_li    = ptw_fill_pkt_cast_i.v | resume_i | interrupt_v_i;
+  wire fe_queue_inject_li    = ptw_fill_pkt_cast_i.v | resume_i | interrupt_v_i | late_wb_yumi_o;
 
   bp_be_preissue_pkt_s preissue_pkt;
   bp_be_issue_queue
@@ -147,14 +152,15 @@ module bp_be_scheduler
 
   wire [vaddr_width_p-1:0] fe_exc_pc_li = issue_pkt_cast_o.pc;
   wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_exc_pc_li + (issue_pkt_cast_o.partial ? 2'b10 : 2'b00);
-  wire [vaddr_width_p-1:0] be_exc_vaddr_li = ptw_fill_pkt_cast_i.vaddr;
-  wire [dpath_width_gp-1:0] be_exc_data_li = ptw_fill_pkt_cast_i.entry;
+
+  wire [vaddr_width_p-1:0] be_exc_vaddr_li = late_wb_yumi_o ? late_wb_pkt_cast_i.fflags : ptw_fill_pkt_cast_i.vaddr;
+  wire [dpath_width_gp-1:0] be_exc_data_li = late_wb_yumi_o ? late_wb_pkt_cast_i.rd_data : ptw_fill_pkt_cast_i.entry;
 
   wire fe_partial = issue_pkt_cast_o.partial;
   wire be_partial = ptw_fill_pkt_cast_i.v & ptw_fill_pkt_cast_i.partial;
 
   wire ptw_fill_v  =  ptw_fill_pkt_cast_i.v;
-  wire resume_v  = ~ptw_fill_pkt_cast_i.v &  resume_i;
+  wire resume_v    = ~ptw_fill_pkt_cast_i.v &  resume_i;
   wire interrupt_v = ~ptw_fill_pkt_cast_i.v & ~resume_i & interrupt_v_i;
 
   wire ptw_instr_page_fault_v = ptw_fill_v & ptw_fill_pkt_cast_i.instr_page_fault_v;
@@ -162,6 +168,9 @@ module bp_be_scheduler
   wire ptw_store_page_fault_v = ptw_fill_v & ptw_fill_pkt_cast_i.store_page_fault_v;
   wire ptw_itlb_fill_v        = ptw_fill_v & ptw_fill_pkt_cast_i.itlb_fill_v;
   wire ptw_dtlb_fill_v        = ptw_fill_v & ptw_fill_pkt_cast_i.dtlb_fill_v;
+
+  // Could more intelligently schedule these late writebacks, based on availability and dependencies
+  assign late_wb_yumi_o = late_wb_v_i;
 
   always_comb
     begin
@@ -177,8 +186,8 @@ module bp_be_scheduler
       // If register injection is critical, can be done after bypass
       dispatch_pkt_cast_o.rs1        = be_exc_not_instr_li ? be_exc_vaddr_li : fe_exc_not_instr_li ? fe_exc_vaddr_li : issue_pkt_cast_o.decode.frs1_r_v ? frf_rs1 : irf_rs1;
       dispatch_pkt_cast_o.rs2        = be_exc_not_instr_li ? be_exc_data_li  : fe_exc_not_instr_li ? '0 : issue_pkt_cast_o.decode.frs2_r_v ? frf_rs2 : irf_rs2;
-      dispatch_pkt_cast_o.imm        = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt_cast_o.decode.frs3_r_v ? frf_rs3 : issue_pkt_cast_o.imm;
-      dispatch_pkt_cast_o.decode     = (fe_exc_not_instr_li | be_exc_not_instr_li) ? '0 : issue_pkt_cast_o.decode;
+      dispatch_pkt_cast_o.imm        = (be_exc_not_instr_li | fe_exc_not_instr_li) ? '0 : issue_pkt_cast_o.decode.frs3_r_v ? frf_rs3 : issue_pkt_cast_o.imm;
+      dispatch_pkt_cast_o.decode     = (be_exc_not_instr_li | fe_exc_not_instr_li) ? '0 : issue_pkt_cast_o.decode;
 
       dispatch_pkt_cast_o.exception.instr_page_fault |= be_exc_not_instr_li & ptw_instr_page_fault_v;
       dispatch_pkt_cast_o.exception.load_page_fault  |= be_exc_not_instr_li & ptw_load_page_fault_v;

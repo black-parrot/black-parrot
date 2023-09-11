@@ -141,6 +141,9 @@ module bp_be_pipe_sys
   logic [instr_width_gp-1:0] retire_ninstr_r, retire_instr_r;
   logic retire_npartial_r, retire_partial_r;
   logic retire_ncompressed_r, retire_compressed_r;
+  logic retire_niscore_r, retire_iscore_r;
+  logic retire_nfscore_r, retire_fscore_r;
+  logic retire_nspec_w_r, retire_spec_w_r;
   always_ff @(posedge clk_i)
     begin
       retire_npc_r <= reservation.pc;
@@ -157,9 +160,22 @@ module bp_be_pipe_sys
 
       retire_ncompressed_r <= reservation.decode.compressed;
       retire_compressed_r  <= retire_ncompressed_r;
+
+      retire_niscore_r <= reservation.decode.score_v & reservation.decode.irf_w_v;
+      retire_iscore_r  <= retire_niscore_r;
+
+      retire_nfscore_r <= reservation.decode.score_v & reservation.decode.frf_w_v;
+      retire_fscore_r  <= retire_nfscore_r;
+
+      retire_nspec_w_r <= reservation.decode.score_v & reservation.decode.spec_w_v;
+      retire_spec_w_r  <= retire_nspec_w_r;
     end
 
-  wire instret_li = retire_v_i & ~|retire_exception_i;
+  wire instret_li = retire_v_i & retire_queue_v_i & ~|retire_exception_i;
+  wire iscore_li =
+    (~retire_spec_w_r & retire_iscore_r) | (retire_spec_w_r & retire_iscore_r & |retire_special_i);
+  wire fscore_li =
+    (~retire_spec_w_r & retire_fscore_r) | (retire_spec_w_r & retire_fscore_r & |retire_special_i);
   assign retire_pkt =
     '{v           : retire_v_i
       ,queue_v    : retire_queue_v_i
@@ -170,9 +186,10 @@ module bp_be_pipe_sys
       ,instr      : retire_instr_r
       ,partial    : retire_partial_r
       ,compressed : retire_compressed_r
-      // Could do a preemptive onehot decode here
       ,exception  : retire_v_i ? retire_exception_i : '0
       ,special    : instret_li ? retire_special_i   : '0
+      ,iscore     : instret_li ? iscore_li : '0
+      ,fscore     : instret_li ? fscore_li : '0
       };
 
 endmodule

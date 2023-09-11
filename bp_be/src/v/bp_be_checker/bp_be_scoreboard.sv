@@ -10,20 +10,20 @@ module bp_be_scoreboard
 
    , parameter `BSG_INV_PARAM(num_rs_p)
    )
-  (input                                        clk_i
-   , input                                      reset_i
+  (input                                         clk_i
+   , input                                       reset_i
 
-   , input                                      score_v_i
+   , input                                       score_v_i
    , input [reg_addr_width_gp-1:0]               score_rd_i
 
-   , input                                      clear_v_i
+   , input                                       clear_v_i
    , input [reg_addr_width_gp-1:0]               clear_rd_i
 
-   , input [num_rs_p-1:0][reg_addr_width_gp-1:0] rs_i
-   , input               [reg_addr_width_gp-1:0] rd_i
+   , input [num_rs_p-1:0][reg_addr_width_gp-1:0] check_rs_i
+   , input               [reg_addr_width_gp-1:0] check_rd_i
 
-   , output logic [num_rs_p-1:0]                rs_match_o
-   , output logic                               rd_match_o
+   , output logic [num_rs_p-1:0]                 rs_match_o
+   , output logic                                rd_match_o
    );
 
   localparam rf_els_lp = 2**reg_addr_width_gp;
@@ -48,7 +48,7 @@ module bp_be_scoreboard
      );
 
   bsg_dff_reset_set_clear
-   #(.width_p(rf_els_lp))
+   #(.width_p(rf_els_lp), .clear_over_set_p(1))
    scoreboard_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -60,9 +60,9 @@ module bp_be_scoreboard
 
   for (genvar i = 0; i < num_rs_p; i++)
     begin : rs
-      assign rs_match_o[i] = scoreboard_r[rs_i[i]];
+      assign rs_match_o[i] = scoreboard_r[check_rs_i[i]];
     end
-  assign rd_match_o = scoreboard_r[rd_i];
+  assign rd_match_o = scoreboard_r[check_rd_i];
 
 endmodule
 
