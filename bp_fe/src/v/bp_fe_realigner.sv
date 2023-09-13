@@ -12,6 +12,7 @@ module bp_fe_realigner
  import bp_fe_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
+
    , localparam scan_width_lp = $bits(bp_fe_instr_scan_s)
    )
   (input                               clk_i
@@ -22,6 +23,7 @@ module bp_fe_realigner
    , input                             if2_exception_v_i
    , input [vaddr_width_p-1:0]         if2_pc_i
    , input [instr_width_gp-1:0]        if2_data_i
+   , input [scan_width_lp-1:0]         if2_instr_scan_i
    , input                             if2_taken_branch_site_i
    , output logic                      if2_yumi_o
 
@@ -45,9 +47,8 @@ module bp_fe_realigner
    , output logic                      fetch_rebase_o
    );
 
-  `bp_cast_o(bp_fe_instr_scan_s, fetch_instr_scan);
-
   logic partial_v_n, partial_v_r;
+  bp_fe_instr_scan_s partial_scan_n, partial_scan_r;
   logic partial_br_site_n, partial_br_site_r;
   logic [cinstr_width_gp-1:0] partial_instr_n, partial_instr_r;
   logic [vaddr_width_p-1:0] partial_pc_n, partial_pc_r;
@@ -72,46 +73,53 @@ module bp_fe_realigner
      ,.data_o({partial_instr_n, partial_pc_n})
      );
 
+  bp_fe_instr_scan
+   #(.bp_params_p(bp_params_p))
+   partial_instr_scan
+    (.instr_i({16'b0, partial_instr_n})
+     ,.scan_o(partial_scan_n)
+     );
+
   wire if2_store_v = if2_yumi_o & fetch_linear_o;
   wire partial_w_v = if2_store_v | redirect_v_i | fetch_instr_v_o;
   assign partial_v_n = (if2_store_v & ~redirect_v_i) | (redirect_v_i & redirect_resume_i);
   assign partial_br_site_n = if2_high_branch;
   bsg_dff_reset_en
-   #(.width_p(2+cinstr_width_gp+vaddr_width_p))
+   #(.width_p(scan_width_lp+2+cinstr_width_gp+vaddr_width_p))
    partial_instr_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.en_i(partial_w_v)
-     ,.data_i({partial_v_n, partial_br_site_n, partial_instr_n, partial_pc_n})
-     ,.data_o({partial_v_r, partial_br_site_r, partial_instr_r, partial_pc_r})
+     ,.data_i({partial_scan_n, partial_v_n, partial_br_site_n, partial_instr_n, partial_pc_n})
+     ,.data_o({partial_scan_r, partial_v_r, partial_br_site_r, partial_instr_r, partial_pc_r})
      );
 
-  wire [instr_width_gp-1:0] instr_aligned = {if2_data_upper, if2_data_lower};
-  bp_fe_instr_scan_s scan_aligned;
-  bp_fe_instr_scan
-   #(.bp_params_p(bp_params_p))
-   aligned_instr_scan
-    (.instr_i(instr_aligned)
-     ,.scan_o(scan_aligned)
-     );
-
-  wire [instr_width_gp-1:0] instr_assembled = {if2_data_lower, partial_instr_r};
+  // Scan data for assembled instructions depends on the second half
   bp_fe_instr_scan_s scan_assembled;
-  bp_fe_instr_scan
-   #(.bp_params_p(bp_params_p))
-   assembled_instr_scan
-    (.instr_i(instr_assembled)
-     ,.scan_o(scan_assembled)
-     );
-
+  rv64_instr_rtype_s instr_assembled, instr_aligned;
+  assign instr_assembled = {if2_data_lower, partial_instr_r};
+  assign instr_aligned   = {if2_data_upper, if2_data_lower};
   bsg_mux
    #(.width_p(scan_width_lp+instr_width_gp+vaddr_width_p), .els_p(2))
    instr_mux
-    (.data_i({{scan_assembled, instr_assembled, partial_pc_r}, {scan_aligned, instr_aligned, if2_pc_i}})
+    (.data_i({{scan_assembled, instr_assembled, partial_pc_r}, {if2_instr_scan_i, instr_aligned, if2_pc_i}})
      ,.sel_i(partial_v_r)
-     ,.data_o({fetch_instr_scan_cast_o, fetch_instr_o, fetch_pc_o})
+     ,.data_o({fetch_instr_scan_o, fetch_instr_o, fetch_pc_o})
      );
+
+  wire dest_link   = (instr_assembled.rd_addr inside {32'h1, 32'h5});
+  wire src_link    = (instr_assembled.rs1_addr inside {32'h1, 32'h5});
+  wire dest_src_eq = (instr_assembled.rd_addr == instr_assembled.rs1_addr);
+  assign scan_assembled =
+    '{full     : partial_scan_r.full
+      ,branch  : partial_scan_r.branch
+      ,jal     : partial_scan_r.jal
+      ,jalr    : partial_scan_r.jalr
+      ,call    : (partial_scan_r.jal | partial_scan_r.jalr) & dest_link
+      ,_return : partial_scan_r.jalr & src_link & !dest_src_eq
+      ,default: '0
+      };
 
   // Here is a table of the possible cases:
   // partial_v  if2_aligned if2_comp[1] if2_comp[0] | fetch_linear fetch_eager fetch_scan fetch_rebase |

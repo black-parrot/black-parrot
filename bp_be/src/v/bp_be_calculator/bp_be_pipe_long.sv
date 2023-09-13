@@ -277,7 +277,6 @@ module bp_be_pipe_long
   assign iwb_v_o = ~imask_r & (imulh_v_lo | idiv_v_lo);
   assign iwb_pkt.ird_w_v    = iwb_v_o;
   assign iwb_pkt.frd_w_v    = 1'b0;
-  assign iwb_pkt.late       = 1'b1;
   assign iwb_pkt.rd_addr    = ird_addr_r;
   assign iwb_pkt.rd_data    = ird_data_lo;
   assign iwb_pkt.fflags_w_v = 1'b0;
@@ -286,7 +285,6 @@ module bp_be_pipe_long
   assign fwb_v_o = ~fmask_r & (fdivsqrt_v_lo | fdivsqrt_pending_r);
   assign fwb_pkt.ird_w_v    = 1'b0;
   assign fwb_pkt.frd_w_v    = fwb_v_o;
-  assign fwb_pkt.late       = 1'b1;
   assign fwb_pkt.rd_addr    = frd_addr_r;
   assign fwb_pkt.rd_data    = frd_data_lo;
   assign fwb_pkt.fflags_w_v = 1'b1;

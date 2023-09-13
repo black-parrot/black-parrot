@@ -31,7 +31,7 @@ module bsg_serial_in_parallel_out_passthrough_dynamic
   logic last_word;
 
   assign v_o = v_i & last_word;
-  assign ready_and_o = ~count_r[els_p-1] | ready_and_i; // have space, or we are dequeing; (one gate delay in-to-out)
+  assign ready_and_o = ready_and_i;
 
   wire sending   = v_o & ready_and_i;  // we have all the items, and downstream is ready
   wire receiving = v_i & ready_and_o;  // data is coming in, and we have space

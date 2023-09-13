@@ -51,6 +51,7 @@ module bp_fe_pc_gen
    , input                                           fetch_instr_v_i
    , input [instr_scan_width_lp-1:0]                 fetch_instr_scan_i
    , input [vaddr_width_p-1:0]                       fetch_pc_i
+   , input [instr_width_gp-1:0]                      fetch_instr_i
    , input                                           fetch_linear_i
    , input                                           fetch_scan_i
    , input                                           fetch_rebase_i
@@ -310,7 +311,7 @@ module bp_fe_pc_gen
 
   assign ras_call_li = fetch_instr_v_i & fetch_instr_scan.call;
   assign ras_return_li = fetch_instr_v_i & fetch_instr_scan._return;
-  assign ras_addr_li = fetch_pc_i + (fetch_instr_scan.full ? 3'd4 : 3'd2);
+  assign ras_addr_li = fetch_pc_i + (fetch_instr_scan.clow ? 3'd2 : 3'd4);
 
   // Override calculations
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
@@ -327,7 +328,25 @@ module bp_fe_pc_gen
   assign ovr_ntaken  = fetch_linear_i &  taken_if1_r;
   assign ovr_o       = ovr_btaken | ovr_jmp | ovr_ret | ovr_dbranch | ovr_ntaken;
 
-  assign br_tgt_lo     = fetch_pc_i + `BSG_SIGN_EXTEND(fetch_instr_scan.imm20, vaddr_width_p);
+  logic [vaddr_width_p-1:0] br_imm;
+  wire [cinstr_width_gp-1:0] fetch_cinstr_lo = fetch_instr_i[0+:cinstr_width_gp];
+  wire [cinstr_width_gp-1:0] fetch_cinstr_hi = fetch_instr_i[cinstr_width_gp+:cinstr_width_gp];
+  always_comb
+    unique if (fetch_instr_scan.clow & fetch_instr_scan.jal)
+      br_imm = `rv64_signext_cj_imm(fetch_cinstr_lo);
+    else if (fetch_instr_scan.chigh & fetch_instr_scan.jal)
+      br_imm = `rv64_signext_cj_imm(fetch_cinstr_hi);
+    else if (fetch_instr_scan.clow & fetch_instr_scan.branch)
+      br_imm = `rv64_signext_cb_imm(fetch_cinstr_lo);
+    else if (fetch_instr_scan.chigh & fetch_instr_scan.branch)
+      br_imm = `rv64_signext_cb_imm(fetch_cinstr_hi);
+    else if (fetch_instr_scan.full & fetch_instr_scan.jal)
+      br_imm = `rv64_signext_j_imm(fetch_instr_i);
+    else
+      br_imm = `rv64_signext_b_imm(fetch_instr_i);
+  wire [1:0] cimm = fetch_instr_scan.chigh ? 2'b10 : 2'b00;
+
+  assign br_tgt_lo     = fetch_pc_i + br_imm + cimm;
   assign linear_tgt_lo = pc_if2_r + 3'd2;
 
   assign if2_br_metadata_fwd_o = metadata_if2_r;

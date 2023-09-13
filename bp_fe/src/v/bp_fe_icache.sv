@@ -365,7 +365,7 @@ module bp_fe_icache
                })
      );
 
-  wire [paddr_width_p-1:0] paddr_tv_n = critical_recv ? paddr_tv_r : scan_i ? (paddr_tv_r | 2'b10) : paddr_tl;
+  wire [paddr_width_p-1:0] paddr_tv_n = critical_recv ? paddr_tv_r : scan_i ? (paddr_tv_r + 2'b10) : paddr_tl;
   bsg_dff_en
    #(.width_p(paddr_width_p))
    paddr_reg

@@ -39,6 +39,7 @@ module bp_be_calculator_top
 
    // Calculator - Checker interface
    , input [dispatch_pkt_width_lp-1:0]               dispatch_pkt_i
+   , input                                           poison_isd_i
 
    , output logic                                    idiv_busy_o
    , output logic                                    fdiv_busy_o
@@ -186,10 +187,12 @@ module bp_be_calculator_top
   bp_be_dispatch_pkt_s reservation_n, reservation_r;
   always_comb
     begin
-      reservation_n        = dispatch_pkt_i;
-      reservation_n.rs1    = bypass_rs[0];
-      reservation_n.rs2    = bypass_rs[1];
-      reservation_n.imm    = bypass_rs[2];
+      reservation_n          = dispatch_pkt_cast_i;
+      reservation_n.v       &= ~poison_isd_i;
+      reservation_n.queue_v &= ~poison_isd_i;
+      reservation_n.rs1      = bypass_rs[0];
+      reservation_n.rs2      = bypass_rs[1];
+      reservation_n.imm      = bypass_rs[2];
     end
   wire injection = dispatch_pkt_cast_i.v & ~dispatch_pkt_cast_i.queue_v;
 

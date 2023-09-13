@@ -400,9 +400,9 @@ module bp_be_pipe_mem
      ,.data_i(is_req)
      ,.data_o(early_v_r)
      );
-  assign cache_store_miss_v_o = early_v_r &  dcache_req & ~dcache_v & dcache_store;
-  assign cache_load_miss_v_o  = early_v_r &  dcache_req & ~dcache_v & dcache_ret;
-  assign cache_replay_v_o     = early_v_r & ~dcache_req & ~dcache_v;
+  assign cache_store_miss_v_o = early_v_r &  dcache_req & ~dcache_v &  dcache_store;
+  assign cache_load_miss_v_o  = early_v_r &  dcache_req & ~dcache_v &  dcache_ret;
+  assign cache_replay_v_o     = early_v_r & ~dcache_req & (~dcache_v | dcache_late);
 
   logic dcache_late_r, dcache_ret_r, dcache_float_r, dcache_v_r;
   logic [reg_addr_width_gp-1:0] dcache_rd_addr_r;
@@ -429,7 +429,6 @@ module bp_be_pipe_mem
 
   assign late_wb_pkt_cast_o = '{ird_w_v  : dcache_v_r & dcache_late_r & dcache_ret_r & ~dcache_float_r
                                 ,frd_w_v : dcache_v_r & dcache_late_r & dcache_ret_r &  dcache_float_r
-                                ,late    : dcache_late_r
                                 ,rd_addr : dcache_rd_addr_r
                                 ,rd_data : dcache_final_data
                                 ,default : '0

@@ -124,6 +124,7 @@ module wrapper
      ,.spec_v_o()
      ,.fence_v_o()
      ,.yumi_i(ready_i & data_v_o)
+     ,.scan_i(1'b0)
 
      ,.cache_req_o(cache_req_lo)
      ,.cache_req_v_o(cache_req_v_lo)

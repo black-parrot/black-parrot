@@ -190,8 +190,6 @@
     logic                             fence_v;
     logic                             dcache_r_v;
     logic                             dcache_w_v;
-    logic                             late_iwb_v;
-    logic                             late_fwb_v;
     logic                             csr_w_v;
     logic                             csr_r_v;
     logic                             mem_v;

@@ -18,7 +18,6 @@
     logic full;
     logic clow;
     logic chigh;
-    logic [19:0] imm20;
   }  bp_fe_instr_scan_s;
 
 `endif
