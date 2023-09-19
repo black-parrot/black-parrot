@@ -168,7 +168,6 @@ module bp_be_top
      ,.resume_i(resume_lo)
      ,.decode_info_i(decode_info_lo)
      ,.issue_pkt_o(issue_pkt)
-     ,.poison_isd_i(poison_isd_lo)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.clear_iss_i(clear_iss_lo)
      ,.expected_npc_i(expected_npc_lo)
@@ -206,6 +205,7 @@ module bp_be_top
      ,.fdiv_busy_o(fdiv_busy_lo)
      ,.ptw_busy_o(ptw_busy_lo)
 
+     ,.poison_isd_i(poison_isd_lo)
      ,.dispatch_pkt_i(dispatch_pkt)
      ,.br_pkt_o(br_pkt)
      ,.commit_pkt_o(commit_pkt)

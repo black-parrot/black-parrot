@@ -24,7 +24,6 @@ module bp_be_ptw
 
    // TLB miss and fill interfaces
    , input [ptw_miss_pkt_width_lp-1:0]      ptw_miss_pkt_i
-   , output [ptw_fill_pkt_width_lp-1:0]     ptw_fill_pkt_o
 
    // D-Cache connections
    , output logic                           dcache_v_o
@@ -33,9 +32,14 @@ module bp_be_ptw
    , output logic                           dcache_ptag_v_o
    , input                                  dcache_ready_and_i
 
-   , input                                  dcache_v_i
    , input [dword_width_gp-1:0]             dcache_data_i
-  );
+   , input                                  dcache_v_i
+   , input                                  dcache_late_i
+
+   , output logic [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_o
+   , output logic                             ptw_fill_v_o
+   , input                                    ptw_fill_yumi_i
+   );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
@@ -67,11 +71,12 @@ module bp_be_ptw
 
   sv39_pte_s dcache_pte_n, dcache_pte_r;
   assign dcache_pte_n = dcache_data_i[0+:dword_width_gp];
+  wire recv_pte_v = dcache_v_i & ~dcache_late_i;
   bsg_dff_en
    #(.width_p($bits(sv39_pte_s)))
    dcache_pte_reg
     (.clk_i(clk_i)
-     ,.en_i(is_recv)
+     ,.en_i(recv_pte_v)
      ,.data_i(dcache_pte_n)
      ,.data_o(dcache_pte_r)
      );
@@ -121,6 +126,8 @@ module bp_be_ptw
   wire store_page_fault         = ptw_miss_pkt_r.store_miss_v & (common_faults | (pte_is_leaf & ~dcache_pte_r.w));
   assign page_fault_v           = (instr_page_fault | load_page_fault | store_page_fault);
 
+  wire walk_done                = pte_is_leaf | page_fault_v;
+
   wire itlb_fill_v              = ptw_miss_pkt_r.instr_miss_v & ~page_fault_v;
   wire dtlb_fill_v              = ~ptw_miss_pkt_r.instr_miss_v & ~page_fault_v;
 
@@ -134,13 +141,14 @@ module bp_be_ptw
   assign tlb_w_entry.w          = dcache_pte_r.w;
   assign tlb_w_entry.r          = dcache_pte_r.r;
 
-  assign ptw_fill_pkt_cast_o.v                  = is_write;
-  assign ptw_fill_pkt_cast_o.itlb_fill_v        = is_write & itlb_fill_v;
-  assign ptw_fill_pkt_cast_o.dtlb_fill_v        = is_write & dtlb_fill_v;
-  assign ptw_fill_pkt_cast_o.instr_page_fault_v = is_write & instr_page_fault;
-  assign ptw_fill_pkt_cast_o.load_page_fault_v  = is_write & load_page_fault;
-  assign ptw_fill_pkt_cast_o.store_page_fault_v = is_write & store_page_fault;
-  assign ptw_fill_pkt_cast_o.partial            = is_write & ptw_miss_pkt_r.partial;
+  assign ptw_fill_v_o = is_write;
+  assign ptw_fill_pkt_cast_o.v                  = ptw_fill_yumi_i; 
+  assign ptw_fill_pkt_cast_o.itlb_fill_v        = ptw_fill_yumi_i & itlb_fill_v;
+  assign ptw_fill_pkt_cast_o.dtlb_fill_v        = ptw_fill_yumi_i & dtlb_fill_v;
+  assign ptw_fill_pkt_cast_o.instr_page_fault_v = ptw_fill_yumi_i & instr_page_fault;
+  assign ptw_fill_pkt_cast_o.load_page_fault_v  = ptw_fill_yumi_i & load_page_fault;
+  assign ptw_fill_pkt_cast_o.store_page_fault_v = ptw_fill_yumi_i & store_page_fault;
+  assign ptw_fill_pkt_cast_o.partial            = ptw_fill_yumi_i & ptw_miss_pkt_r.partial;
   assign ptw_fill_pkt_cast_o.vaddr              = ptw_miss_pkt_r.vaddr;
   assign ptw_fill_pkt_cast_o.entry              = tlb_w_entry;
 
@@ -182,14 +190,15 @@ module bp_be_ptw
      );
 
   // Because internal dcache flushing is a possibility, we need to manually replay
+  //   rather than relying on the late writeback
   always_comb
     case(state_r)
-      e_idle      :  state_n = tlb_miss_v ? e_send_load : state_r;
-      e_send_load :  state_n = dcache_ready_and_i ? e_recv_load : state_r;
-      e_recv_load :  state_n = dcache_v_i ? e_check_load : e_send_load;
-      e_check_load:  state_n = (pte_is_leaf | page_fault_v) ? e_writeback : e_send_load;
-      default: // e_writeback
-                     state_n = e_idle;
+      e_idle      : state_n = tlb_miss_v         ? e_send_load  : e_idle;
+      e_send_load : state_n = dcache_ready_and_i ? e_recv_load  : e_send_load;
+      e_recv_load : state_n = recv_pte_v         ? e_check_load : e_send_load;
+      e_check_load: state_n = walk_done          ? e_writeback  : e_send_load;
+      e_writeback : state_n = ptw_fill_yumi_i    ? e_idle       : e_writeback;
+      default : state_n = e_idle;
     endcase
 
   // synopsys sync_set_reset "reset_i"

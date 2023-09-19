@@ -145,6 +145,7 @@ module bp_fe_top
 
      ,.fetch_instr_v_i(fetch_instr_v_lo)
      ,.fetch_pc_i(fetch_pc_lo)
+     ,.fetch_instr_i(fetch_instr_lo)
      ,.fetch_instr_scan_i(fetch_instr_scan_lo)
      ,.fetch_linear_i(fetch_linear_lo)
      ,.fetch_scan_i(fetch_scan_lo)
@@ -248,6 +249,7 @@ module bp_fe_top
      ,.data_v_o(icache_data_v_lo)
      ,.spec_v_o(icache_spec_v_lo)
      ,.fence_v_o(icache_fence_v_lo)
+     ,.scan_i(fetch_scan_lo)
      ,.yumi_i(icache_yumi_li)
 
      ,.cache_req_o(cache_req_o)
@@ -295,6 +297,14 @@ module bp_fe_top
      );
   wire if2_exception_v = ~poison_isd_lo & fe_queue_ready_and_i & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_spec_v_lo);
 
+  bp_fe_instr_scan_s icache_instr_scan_lo;
+  bp_fe_instr_scan
+   #(.bp_params_p(bp_params_p))
+   instr_scan
+    (.instr_i(icache_data_lo)
+     ,.scan_o(icache_instr_scan_lo)
+     );
+
   if (compressed_support_p)
     begin : realigner
       bp_fe_realigner
@@ -307,6 +317,7 @@ module bp_fe_top
          ,.if2_exception_v_i(if2_exception_v)
          ,.if2_pc_i(if2_pc_lo)
          ,.if2_data_i(icache_data_lo)
+         ,.if2_instr_scan_i(icache_instr_scan_lo)
          ,.if2_taken_branch_site_i(if2_taken_branch_site_lo)
          ,.if2_yumi_o(if2_yumi_lo)
 
@@ -319,6 +330,7 @@ module bp_fe_top
          ,.fetch_exception_v_o(fetch_exception_v_lo)
          ,.fetch_pc_o(fetch_pc_lo)
          ,.fetch_instr_o(fetch_instr_lo)
+         ,.fetch_instr_scan_o(fetch_instr_scan_lo)
          ,.fetch_partial_o(fetch_partial_lo)
          ,.fetch_linear_o(fetch_linear_lo)
          ,.fetch_eager_o(fetch_eager_lo)
@@ -333,19 +345,13 @@ module bp_fe_top
       assign fetch_exception_v_lo = if2_exception_v;
       assign fetch_pc_lo = if2_pc_lo;
       assign fetch_instr_lo = icache_data_lo;
+      assign fetch_instr_scan_lo = icache_instr_scan_lo;
       assign fetch_partial_lo = '0;
       assign fetch_linear_lo = '0;
       assign fetch_eager_lo = '0;
       assign fetch_scan_lo = '0;
       assign fetch_rebase_lo = '0;
     end
-
-  bp_fe_instr_scan
-   #(.bp_params_p(bp_params_p))
-   instr_scan
-    (.instr_i(fetch_instr_lo)
-     ,.scan_o(fetch_instr_scan_lo)
-     );
 
   assign fe_queue_v_o = fetch_instr_v_lo | fetch_exception_v_lo;
 

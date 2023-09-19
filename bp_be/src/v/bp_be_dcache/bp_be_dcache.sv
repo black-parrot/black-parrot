@@ -739,7 +739,7 @@ module bp_be_dcache
     begin
       cache_req_cast_o = '0;
       cache_req_cast_o.addr = paddr_tv_r;
-      cache_req_cast_o.data = wbuf_entry_in.data;
+      cache_req_cast_o.data = nonblocking_req ? wbuf_entry_in.data : st_data_tv_r;
       cache_req_cast_o.hit = load_hit_tv;
 
       // Assigning sizes to cache miss packet
@@ -1201,10 +1201,16 @@ module bp_be_dcache
          ,.data_o(fill_secondary_r)
          );
 
-      wire fill_v = data_mem_pkt_yumi_o & data_mem_pkt_cast_i.opcode == e_cache_data_mem_write;
+      wire fill_v =
+        fill_pending_r & (data_mem_pkt_v_i & data_mem_pkt_cast_i.opcode == e_cache_data_mem_write);
+      wire fill_recv = fill_v
+        & (~stat_mem_pkt_v_i | stat_mem_pkt_yumi_o)
+        & (~tag_mem_pkt_v_i | tag_mem_pkt_yumi_o)
+        & (~data_mem_pkt_v_i | data_mem_pkt_yumi_o);
+
       wire [assoc_p-1:0] fill_bank_mask_n = fill_v
-        ? (fill_bank_mask_r | data_mem_pkt_fill_mask_expanded)
-        : '0;
+        ? (fill_bank_mask_r & ~data_mem_pkt_fill_mask_expanded)
+        : '1;
       wire [assoc_p-1:0] fill_hit_n = fill_v
         ? (1'b1 << data_mem_pkt_cast_i.way_id)
         : '1;
@@ -1213,7 +1219,7 @@ module bp_be_dcache
        fill_reg
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
-         ,.en_i(fill_v | blocking_sent)
+         ,.en_i(fill_recv | blocking_sent)
          ,.data_i({fill_bank_mask_n, fill_hit_n})
          ,.data_o({fill_bank_mask_r, fill_hit_r})
          );
@@ -1231,11 +1237,10 @@ module bp_be_dcache
          );
 
       assign fill_snoop_v = critical_recv;
-      assign fill_hazard = v_tl_r
-        &    fill_pending_r
-        &  |(fill_index_r == vaddr_index_tl)
-        &  |(fill_hit_r & load_hit_tl)
-        & ~|(fill_bank_mask_r & bank_sel_one_hot_tl);
+      assign fill_hazard = v_tl_r & fill_pending_r
+        & |(fill_index_r == vaddr_index_tl)
+        & |(fill_hit_r & load_hit_tl)
+        & |(fill_bank_mask_r & bank_sel_one_hot_tl);
     end
   else
     begin : nhum

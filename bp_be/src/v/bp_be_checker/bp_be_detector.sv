@@ -68,7 +68,7 @@ module bp_be_detector
   logic frs1_sb_raw_haz_v, frs2_sb_raw_haz_v, frs3_sb_raw_haz_v;
   logic frd_sb_waw_haz_v;
   logic [2:0] frs1_data_haz_v , frs2_data_haz_v, frs3_data_haz_v;
-  logic [2:0] rs1_match_vector, rs2_match_vector, rs3_match_vector;
+  logic [2:0] rs1_match_vector, rs2_match_vector, rs3_match_vector, rd_match_vector;
   logic score_rs1_match, score_rs2_match, score_rs3_match, score_rd_match;
 
   bp_be_decode_s decode;
@@ -76,7 +76,7 @@ module bp_be_detector
   assign decode = issue_pkt_cast_i.decode;
   bp_be_dep_status_s [3:0] dep_status_r;
 
-  logic fence_haz_v, cmd_haz_v, fflags_haz_v, csr_haz_v, exception_haz_v, score_haz_v;
+  logic fence_haz_v, cmd_haz_v, fflags_haz_v, csr_haz_v, exception_haz_v, iscore_haz_v, fscore_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
 
   wire [reg_addr_width_gp-1:0] score_rd_li  = commit_pkt_cast_i.instr.t.fmatype.rd_addr;
@@ -153,6 +153,7 @@ module bp_be_detector
           rs1_match_vector[i] = (issue_pkt_cast_i.instr.t.fmatype.rs1_addr == dep_status_r[i].rd_addr);
           rs2_match_vector[i] = (issue_pkt_cast_i.instr.t.fmatype.rs2_addr == dep_status_r[i].rd_addr);
           rs3_match_vector[i] = (issue_pkt_cast_i.instr.t.fmatype.rs3_addr == dep_status_r[i].rd_addr);
+          rd_match_vector [i] = (issue_pkt_cast_i.instr.t.fmatype.rd_addr  == dep_status_r[i].rd_addr);
         end
       score_rs1_match = (issue_pkt_cast_i.instr.t.fmatype.rs1_addr == score_rd_li);
       score_rs2_match = (issue_pkt_cast_i.instr.t.fmatype.rs2_addr == score_rd_li);
@@ -162,12 +163,20 @@ module bp_be_detector
       // Detect scoreboard hazards
       irs1_sb_raw_haz_v = (decode.irs1_r_v & irs_match_lo[0]);
       irs2_sb_raw_haz_v = (decode.irs2_r_v & irs_match_lo[1]);
-      ird_sb_waw_haz_v = ((decode.irf_w_v | decode.late_iwb_v) & ird_match_lo);
+      ird_sb_waw_haz_v  = (decode.irf_w_v  & ird_match_lo);
 
       frs1_sb_raw_haz_v = (decode.frs1_r_v & frs_match_lo[0]);
       frs2_sb_raw_haz_v = (decode.frs2_r_v & frs_match_lo[1]);
       frs3_sb_raw_haz_v = (decode.frs3_r_v & frs_match_lo[2]);
-      frd_sb_waw_haz_v = ((decode.frf_w_v | decode.late_fwb_v) & frd_match_lo);
+      frd_sb_waw_haz_v  = (decode.frf_w_v  & frd_match_lo);
+
+      iscore_haz_v       = (decode.irf_w_v & dep_status_r[0].long_iwb_v & rd_match_vector[0])
+                           | (decode.irf_w_v & dep_status_r[1].long_iwb_v & rd_match_vector[1])
+                           | (decode.irf_w_v & dep_status_r[2].long_iwb_v & rd_match_vector[2]);
+
+      fscore_haz_v       = (decode.frf_w_v & dep_status_r[0].long_fwb_v & rd_match_vector[0])
+                           | (decode.frf_w_v & dep_status_r[1].long_fwb_v & rd_match_vector[1])
+                           | (decode.frf_w_v & dep_status_r[2].long_fwb_v & rd_match_vector[2]);
 
       // Detect integer and float data hazards for EX1
       irs1_data_haz_v[0] = (decode.irs1_r_v & rs1_match_vector[0])
@@ -203,26 +212,20 @@ module bp_be_detector
       frs3_data_haz_v[1] = (decode.frs3_r_v & rs3_match_vector[1])
                            & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v | dep_status_r[1].long_fwb_v);
 
-      irs1_data_haz_v[2] = '0;
+      irs1_data_haz_v[2] = (decode.irs1_r_v & rs1_match_vector[2])
+                           & (dep_status_r[2].long_iwb_v);
 
-      irs2_data_haz_v[2] = '0;
+      irs2_data_haz_v[2] = (decode.irs2_r_v & rs2_match_vector[2])
+                           & (dep_status_r[2].long_iwb_v);
 
       frs1_data_haz_v[2] = (decode.frs1_r_v & rs1_match_vector[2])
-                           & (dep_status_r[2].fma_fwb_v | dep_status_r[1].long_fwb_v);
+                           & (dep_status_r[2].fma_fwb_v | dep_status_r[2].long_fwb_v);
 
       frs2_data_haz_v[2] = (decode.frs2_r_v & rs2_match_vector[2])
-                           & (dep_status_r[2].fma_fwb_v | dep_status_r[1].long_fwb_v);
+                           & (dep_status_r[2].fma_fwb_v | dep_status_r[2].long_fwb_v);
 
       frs3_data_haz_v[2] = (decode.frs3_r_v & rs3_match_vector[2])
-                           & (dep_status_r[2].fma_fwb_v | dep_status_r[1].long_fwb_v);
-
-      score_haz_v        = (commit_pkt_cast_i.iscore_v & decode.irs1_r_v & score_rs1_match)
-                           | (commit_pkt_cast_i.iscore_v & decode.irs2_r_v & score_rs2_match)
-                           | (commit_pkt_cast_i.fscore_v & decode.frs1_r_v & score_rs1_match)
-                           | (commit_pkt_cast_i.fscore_v & decode.frs2_r_v & score_rs2_match)
-                           | (commit_pkt_cast_i.fscore_v & decode.frs3_r_v & score_rs3_match)
-                           | (commit_pkt_cast_i.iscore_v & decode.irf_w_v & score_rd_match)
-                           | (commit_pkt_cast_i.fscore_v & decode.frf_w_v & score_rd_match);
+                           & (dep_status_r[2].fma_fwb_v | dep_status_r[2].long_fwb_v);
 
       fence_haz_v        = decode.fence_v & ~mem_ordered_i;
       cmd_haz_v          = cmd_full_i;
@@ -259,7 +262,7 @@ module bp_be_detector
       // Combine all structural hazard information
       struct_haz_v = ptw_busy_i
                      | cmd_haz_v
-                     | score_haz_v
+                     | fscore_haz_v | iscore_haz_v
                      | (mem_busy_i & decode.pipe_mem_early_v)
                      | (mem_busy_i & decode.pipe_mem_final_v)
                      | (fdiv_busy_i & decode.pipe_long_v)

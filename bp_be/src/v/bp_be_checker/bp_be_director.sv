@@ -98,7 +98,7 @@ module bp_be_director
 
   wire npc_mismatch_v = dispatch_v_i & (expected_npc_o != issue_pkt_cast_i.pc);
   wire npc_match_v    = dispatch_v_i & (expected_npc_o == issue_pkt_cast_i.pc);
-  assign poison_isd_o = commit_pkt_cast_i.npc_w_v | npc_mismatch_v;
+  assign poison_isd_o = npc_mismatch_v;
 
   logic btaken_pending, attaboy_pending;
   bsg_dff_reset_set_clear
@@ -123,16 +123,19 @@ module bp_be_director
       unique casez (state_r)
         e_freeze
         ,e_fencei
-        ,e_wait : state_n = commit_pkt_cast_i.resume ? e_cmd_fence : state_r;
-        e_run   : state_n = commit_pkt_cast_i.wfi
+        ,e_wait //: state_n = commit_pkt_cast_i.resume ? e_cmd_fence : state_r;
+        ,e_cmd_fence
+        ,e_run   : state_n = commit_pkt_cast_i.wfi
                             ? e_wait
                             : commit_pkt_cast_i.fencei
                               ? e_fencei
-                              : fe_cmd_nonattaboy_v
+                              : (commit_pkt_cast_i.resume | fe_cmd_nonattaboy_v)
                                 ? e_cmd_fence
                                 : freeze_li
                                   ? e_freeze
-                                  : state_r;
+                                  : clear_iss_o
+                                    ? e_run
+                                    : state_r;
         // e_cmd_fence:
         default : state_n = cmd_empty_r_o ? e_run : state_r;
       endcase
@@ -141,11 +144,9 @@ module bp_be_director
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
-        state_r <= e_freeze;
+      state_r <= e_freeze;
     else
-      begin
-        state_r <= state_n;
-      end
+      state_r <= state_n;
 
   assign suppress_iss_o = !is_run;
   assign clear_iss_o    = is_cmd_fence & cmd_empty_r_o;

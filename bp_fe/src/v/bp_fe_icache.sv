@@ -38,12 +38,13 @@ module bp_fe_icache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to icache parameters, but can override if needed
+   , parameter misaligned_p  = icache_features_p[e_cfg_misaligned]
    , parameter coherent_p    = icache_features_p[e_cfg_coherent]
    , parameter sets_p        = icache_sets_p
    , parameter assoc_p       = icache_assoc_p
    , parameter block_width_p = icache_block_width_p
    , parameter fill_width_p  = icache_fill_width_p
-   , parameter ctag_width_p   = icache_ctag_width_p
+   , parameter ctag_width_p  = icache_ctag_width_p
 
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
@@ -95,6 +96,7 @@ module bp_fe_icache
    , output logic                                     data_v_o
    , output logic                                     fence_v_o
    , output logic                                     spec_v_o
+   , input                                            scan_i
    , input                                            yumi_i
 
    // Cache Engine Interface
@@ -137,7 +139,8 @@ module bp_fe_icache
   // Various localparameters
   localparam lg_assoc_lp            =`BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp          = block_width_p / assoc_p;
-  localparam num_words_per_bank_lp  = bank_width_lp / word_width_gp;
+  localparam num_instr_per_bank_lp  = bank_width_lp / instr_width_gp;
+  localparam num_cinstr_per_bank_lp = bank_width_lp / cinstr_width_gp;
   localparam data_mem_mask_width_lp = (bank_width_lp >> 3);
   localparam byte_offset_width_lp   = `BSG_SAFE_CLOG2(bank_width_lp >> 3);
   localparam bindex_width_lp        = `BSG_SAFE_CLOG2(assoc_p);
@@ -344,23 +347,32 @@ module bp_fe_icache
      );
 
   wire snoop_tv_n = critical_recv ? 1'b1 : (inval_op_tl_r & coherent_p);
-  wire [paddr_width_p-1:0] paddr_tv_n = critical_recv ? paddr_tv_r : paddr_tl;
   wire spec_tv_n = critical_recv ? spec_tv_r : spec_tl;
   wire fetch_op_tv_n = critical_recv ? fetch_op_tv_r : fetch_op_tl_r;
   wire inval_op_tv_n = critical_recv ? inval_op_tv_r : inval_op_tl_r;
   wire uncached_op_tv_n = critical_recv ? uncached_op_tv_r : fetch_uncached_tl;
   bsg_dff_reset_en
-   #(.width_p(block_width_p+1+3*assoc_p+paddr_width_p+4))
+   #(.width_p(block_width_p+1+3*assoc_p+4))
    tv_stage_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(tv_we | critical_recv)
      ,.data_i({ld_data_tv_n, snoop_tv_n, bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n
-               ,paddr_tv_n, spec_tv_n, fetch_op_tv_n, inval_op_tv_n, uncached_op_tv_n
+               ,spec_tv_n, fetch_op_tv_n, inval_op_tv_n, uncached_op_tv_n
                })
      ,.data_o({ld_data_tv_r, snoop_tv_r, bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r
-               ,paddr_tv_r, spec_tv_r, fetch_op_tv_r, inval_op_tv_r, uncached_op_tv_r
+               ,spec_tv_r, fetch_op_tv_r, inval_op_tv_r, uncached_op_tv_r
                })
+     );
+
+  wire [paddr_width_p-1:0] paddr_tv_n = critical_recv ? paddr_tv_r : scan_i ? (paddr_tv_r + 2'b10) : paddr_tl;
+  bsg_dff_en
+   #(.width_p(paddr_width_p))
+   paddr_reg
+    (.clk_i(clk_i)
+     ,.en_i(tv_we | critical_recv | scan_i)
+     ,.data_i(paddr_tv_n)
+     ,.data_o(paddr_tv_r)
      );
 
   logic [lg_assoc_lp-1:0] invalid_way_tv;
@@ -405,18 +417,23 @@ module bp_fe_icache
      ,.data_o(ld_data_way_picked)
      );
 
+  // TODO: Actual fix this
   logic [instr_width_gp-1:0] final_data_tv;
-  wire [`BSG_SAFE_CLOG2(num_words_per_bank_lp)-1:0] ld_data_word_sel_tv =
-    paddr_tv_r[2+:`BSG_SAFE_CLOG2(num_words_per_bank_lp)];
+  wire [`BSG_SAFE_CLOG2(num_instr_per_bank_lp)-1:0] ld_data_word_sel_tv =
+    paddr_tv_r[2+:`BSG_SAFE_CLOG2(num_instr_per_bank_lp)];
   bsg_mux
-   #(.width_p(instr_width_gp), .els_p(num_words_per_bank_lp))
+   #(.width_p(instr_width_gp), .els_p(num_instr_per_bank_lp))
    word_select_mux
     (.data_i(ld_data_way_picked)
      ,.sel_i(ld_data_word_sel_tv)
      ,.data_o(final_data_tv)
      );
+  wire upper_not_lower = paddr_tv_r[1];
+  wire [cinstr_width_gp-1:0] final_data_upper = final_data_tv[cinstr_width_gp+:cinstr_width_gp];
+  wire [cinstr_width_gp-1:0] final_data_lower = final_data_tv[0+:cinstr_width_gp];
 
-  assign data_o = final_data_tv;
+  assign data_o[0+:cinstr_width_gp] = upper_not_lower ? final_data_upper : final_data_lower;
+  assign data_o[cinstr_width_gp+:cinstr_width_gp] = final_data_upper;
   assign fence_v_o = v_tv &  inval_op_tv_r & snoop_tv_r;
   assign data_v_o  = v_tv & ~inval_op_tv_r &  hit_v_tv;
   assign spec_v_o  = v_tv & ~inval_op_tv_r & ~hit_v_tv & spec_tv_r;

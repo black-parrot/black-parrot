@@ -69,17 +69,6 @@ module bp_fe_instr_scan
       scan_cast_o.full    =  scan_full;
       scan_cast_o.clow    = ~scan_full &  scan_clow;
       scan_cast_o.chigh   = ~scan_full & ~scan_clow & scan_chigh;
-
-      unique casez (selected_instr)
-        `RV64_BRANCH            : scan_cast_o.imm20 = `rv64_signext_b_imm(selected_instr);
-        `RV64_JAL               : scan_cast_o.imm20 = `rv64_signext_j_imm(selected_instr);
-        `RV64_CJ                : scan_cast_o.imm20 = `rv64_signext_cj_imm(selected_instr);
-        //`RV64_CBEQZ, `RV64_CBNEZ:
-        default: scan_cast_o.imm20 = `rv64_signext_cb_imm(selected_instr);
-      endcase
-      // This is safe because the compressed imm is never more than 12b
-      if (scan_cast_o.chigh)
-        scan_cast_o.imm20 += 2'b10;
     end
 
 endmodule

@@ -39,6 +39,7 @@ module bp_be_calculator_top
 
    // Calculator - Checker interface
    , input [dispatch_pkt_width_lp-1:0]               dispatch_pkt_i
+   , input                                           poison_isd_i
 
    , output logic                                    idiv_busy_o
    , output logic                                    fdiv_busy_o
@@ -144,6 +145,7 @@ module bp_be_calculator_top
 
   bp_be_wb_pkt_s pipe_mem_late_wb_pkt;
   logic pipe_mem_late_wb_v, pipe_mem_late_wb_yumi;
+  logic ptw_fill_v, ptw_fill_yumi;
 
   // Generating match vector for bypass
   logic [2:0][pipe_stage_els_lp-1:0] match_rs;
@@ -185,10 +187,12 @@ module bp_be_calculator_top
   bp_be_dispatch_pkt_s reservation_n, reservation_r;
   always_comb
     begin
-      reservation_n        = dispatch_pkt_i;
-      reservation_n.rs1    = bypass_rs[0];
-      reservation_n.rs2    = bypass_rs[1];
-      reservation_n.imm    = bypass_rs[2];
+      reservation_n          = dispatch_pkt_cast_i;
+      reservation_n.v       &= ~poison_isd_i;
+      reservation_n.queue_v &= ~poison_isd_i;
+      reservation_n.rs1      = bypass_rs[0];
+      reservation_n.rs2      = bypass_rs[1];
+      reservation_n.imm      = bypass_rs[2];
     end
   wire injection = dispatch_pkt_cast_i.v & ~dispatch_pkt_cast_i.queue_v;
 
@@ -343,13 +347,13 @@ module bp_be_calculator_top
      ,.flush_i(commit_pkt_cast_o.npc_w_v)
      ,.sfence_i(commit_pkt_cast_o.sfence)
 
-     ,.reservation_i(reservation_r)
+     ,.ptw_busy_o(ptw_busy_o)
      ,.busy_o(mem_busy_o)
      ,.ordered_o(mem_ordered_o)
 
+     ,.reservation_i(reservation_r)
+
      ,.commit_pkt_i(commit_pkt_cast_o)
-     ,.ptw_fill_pkt_o(ptw_fill_pkt_o)
-     ,.ptw_busy_o(ptw_busy_o)
 
      ,.cache_req_o(cache_req_o)
      ,.cache_req_v_o(cache_req_v_o)
@@ -400,6 +404,10 @@ module bp_be_calculator_top
      ,.late_wb_pkt_o(pipe_mem_late_wb_pkt)
      ,.late_wb_v_o(pipe_mem_late_wb_v)
 
+     ,.ptw_fill_pkt_o(ptw_fill_pkt_o)
+     ,.ptw_fill_v_o(ptw_fill_v)
+     ,.ptw_fill_yumi_i(ptw_fill_yumi)
+
      ,.trans_info_i(trans_info_lo)
      );
 
@@ -444,17 +452,16 @@ module bp_be_calculator_top
      );
 
   localparam num_late_wb_lp = 3;
-  logic late_wb_v_lo, late_wb_yumi_li;
   logic [num_late_wb_lp-1:0] late_wb_reqs_li, late_wb_grants_lo;
   assign {pipe_long_fdata_yumi_lo, pipe_long_idata_yumi_lo, pipe_mem_late_wb_yumi} =
     late_wb_grants_lo & {num_late_wb_lp{late_wb_yumi_i}};
   assign late_wb_reqs_li = {pipe_long_fdata_v_lo, pipe_long_idata_v_lo, pipe_mem_late_wb_v};
   bsg_arb_fixed
-   #(.inputs_p(num_late_wb_lp), .lo_to_hi_p(1))
+   #(.inputs_p(1+num_late_wb_lp), .lo_to_hi_p(1))
    late_wb_arb
     (.ready_i(1'b1)
-     ,.reqs_i(late_wb_reqs_li)
-     ,.grants_o(late_wb_grants_lo)
+     ,.reqs_i({ptw_fill_v, late_wb_reqs_li})
+     ,.grants_o({ptw_fill_yumi, late_wb_grants_lo})
      );
 
   bp_be_wb_pkt_s late_wb_pkt_sel;
@@ -469,7 +476,7 @@ module bp_be_calculator_top
      );
 
   assign late_wb_pkt_cast_o = late_wb_pkt_sel;
-  assign late_wb_v_o = |late_wb_reqs_li;
+  assign late_wb_v_o = |late_wb_grants_lo;
   assign late_wb_force_o = pipe_mem_late_wb_v;
 
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.

@@ -34,7 +34,6 @@ module bp_be_scheduler
 
    , output logic [issue_pkt_width_lp-1:0]    issue_pkt_o
    , input [vaddr_width_p-1:0]                expected_npc_i
-   , input                                    poison_isd_i
    , input                                    clear_iss_i
    , input                                    suppress_iss_i
    , input                                    resume_i
@@ -78,7 +77,7 @@ module bp_be_scheduler
   wire fe_queue_deq_li       = commit_pkt_cast_i.queue_v;
   wire fe_queue_deq_skip_li  = !commit_pkt_cast_i.compressed | commit_pkt_cast_i.partial;
   wire fe_queue_roll_li      = commit_pkt_cast_i.npc_w_v;
-  wire fe_queue_read_li      = dispatch_v_i & ~poison_isd_i;
+  wire fe_queue_read_li      = dispatch_v_i;
   wire fe_queue_read_skip_li = !dispatch_pkt_cast_o.decode.compressed | dispatch_pkt_cast_o.partial;
   wire fe_queue_inject_li    = ptw_fill_pkt_cast_i.v | resume_i | interrupt_v_i | late_wb_yumi_o;
 

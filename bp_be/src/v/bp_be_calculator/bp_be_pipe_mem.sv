@@ -34,14 +34,13 @@ module bp_be_pipe_mem
    , input                                flush_i
    , input                                sfence_i
 
+   , output logic                         ptw_busy_o
    , output logic                         busy_o
    , output logic                         ordered_o
 
    , input [dispatch_pkt_width_lp-1:0]    reservation_i
 
    , input [commit_pkt_width_lp-1:0]      commit_pkt_i
-   , output [ptw_fill_pkt_width_lp-1:0]   ptw_fill_pkt_o
-   , output logic                         ptw_busy_o
 
    , output logic                         tlb_load_miss_v_o
    , output logic                         tlb_store_miss_v_o
@@ -62,6 +61,10 @@ module bp_be_pipe_mem
 
    , output logic [wb_pkt_width_lp-1:0]   late_wb_pkt_o
    , output logic                         late_wb_v_o
+
+   , output logic [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_o
+   , output logic                             ptw_fill_v_o
+   , input                                    ptw_fill_yumi_i
 
    , input [trans_info_width_lp-1:0]      trans_info_i
 
@@ -269,7 +272,6 @@ module bp_be_pipe_mem
 
      ,.busy_o(ptw_busy)
      ,.ptw_miss_pkt_i(ptw_miss_pkt)
-     ,.ptw_fill_pkt_o(ptw_fill_pkt)
 
      ,.dcache_v_o(ptw_dcache_v)
      ,.dcache_pkt_o(ptw_dcache_pkt)
@@ -278,7 +280,12 @@ module bp_be_pipe_mem
      ,.dcache_ready_and_i(dcache_ready_and_lo)
 
      ,.dcache_v_i(dcache_v)
+     ,.dcache_late_i(dcache_late)
      ,.dcache_data_i(dcache_data)
+
+     ,.ptw_fill_pkt_o(ptw_fill_pkt)
+     ,.ptw_fill_v_o(ptw_fill_v_o)
+     ,.ptw_fill_yumi_i(ptw_fill_yumi_i)
      );
 
   logic dtlb_r_v_r;
@@ -393,9 +400,9 @@ module bp_be_pipe_mem
      ,.data_i(is_req)
      ,.data_o(early_v_r)
      );
-  assign cache_store_miss_v_o = early_v_r &  dcache_req & ~dcache_v & dcache_store;
-  assign cache_load_miss_v_o  = early_v_r &  dcache_req & ~dcache_v & dcache_ret;
-  assign cache_replay_v_o     = early_v_r & ~dcache_req & ~dcache_v;
+  assign cache_store_miss_v_o = early_v_r &  dcache_req & ~dcache_v &  dcache_store;
+  assign cache_load_miss_v_o  = early_v_r &  dcache_req & ~dcache_v &  dcache_ret;
+  assign cache_replay_v_o     = early_v_r & ~dcache_req & (~dcache_v | dcache_late);
 
   logic dcache_late_r, dcache_ret_r, dcache_float_r, dcache_v_r;
   logic [reg_addr_width_gp-1:0] dcache_rd_addr_r;
@@ -422,7 +429,6 @@ module bp_be_pipe_mem
 
   assign late_wb_pkt_cast_o = '{ird_w_v  : dcache_v_r & dcache_late_r & dcache_ret_r & ~dcache_float_r
                                 ,frd_w_v : dcache_v_r & dcache_late_r & dcache_ret_r &  dcache_float_r
-                                ,late    : dcache_late_r
                                 ,rd_addr : dcache_rd_addr_r
                                 ,rd_data : dcache_final_data
                                 ,default : '0
