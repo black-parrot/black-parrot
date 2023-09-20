@@ -30,7 +30,7 @@ module bp_lce
    , parameter non_excl_reads_p = 0
    , parameter `BSG_INV_PARAM(ctag_width_p)
 
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
   )
   (
@@ -38,6 +38,7 @@ module bp_lce
     , input                                          reset_i
 
     // LCE Configuration
+    , input [did_width_p-1:0]                        did_i
     , input [lce_id_width_p-1:0]                     lce_id_i
     , input bp_lce_mode_e                            lce_mode_i
 
@@ -120,7 +121,7 @@ module bp_lce
     $error("fill width must be greater or equal than cache request data width");
 
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   // LCE Request Module
   logic req_busy_lo;
@@ -143,6 +144,7 @@ module bp_lce
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
+     ,.did_i(did_i)
      ,.lce_id_i(lce_id_i)
      ,.lce_mode_i(lce_mode_i)
      ,.sync_done_i(sync_done_lo)

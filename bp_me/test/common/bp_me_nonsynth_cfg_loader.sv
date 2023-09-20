@@ -20,7 +20,7 @@ module bp_me_nonsynth_cfg_loader
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
     , parameter `BSG_INV_PARAM(inst_width_p)
     , parameter `BSG_INV_PARAM(inst_ram_addr_width_p)
@@ -58,7 +58,7 @@ module bp_me_nonsynth_cfg_loader
   wire unused0 = &{mem_rev_header_i, mem_rev_data_i};
   assign mem_rev_ready_and_o = 1'b1;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bp_bedrock_mem_fwd_header_s mem_fwd_cast_o;

@@ -9,11 +9,10 @@ module bp_cacc_vdp
  import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
     `declare_bp_cache_engine_if_widths(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache)
 
-    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
     )
    (input                                         clk_i
     , input                                       reset_i
@@ -61,7 +60,7 @@ module bp_cacc_vdp
     );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   localparam reg_els_lp = 1;
@@ -101,7 +100,7 @@ module bp_cacc_vdp
   logic [dword_width_gp-1:0] acache_data_lo;
   logic acache_v_lo;
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
   assign cfg_bus_cast_i.dcache_mode = e_lce_mode_normal;
@@ -209,6 +208,7 @@ module bp_cacc_vdp
      ,.reset_i(reset_i)
 
      ,.lce_id_i(cfg_bus_cast_i.dcache_id)
+     ,.did_i(cfg_bus_cast_i.did)
      ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
 
      ,.cache_req_i(acache_req_lo)

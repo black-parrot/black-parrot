@@ -16,7 +16,7 @@ module bp_uce
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
     , parameter `BSG_INV_PARAM(writeback_p)
     , parameter `BSG_INV_PARAM(assoc_p)
     , parameter `BSG_INV_PARAM(sets_p)
@@ -29,6 +29,7 @@ module bp_uce
    (input                                            clk_i
     , input                                          reset_i
 
+    , input [did_width_p-1:0]                        did_i
     , input [lce_id_width_p-1:0]                     lce_id_i
 
     , input [cache_req_width_lp-1:0]                 cache_req_i
@@ -94,7 +95,7 @@ module bp_uce
                                                              ? e_bedrock_msg_size_8
                                                              : e_bedrock_msg_size_64;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
@@ -367,7 +368,6 @@ module bp_uce
   assign cache_req_credits_full_o = cache_req_v_r && (credit_count_lo == coh_noc_max_credits_p);
   assign cache_req_credits_empty_o = ~cache_req_v_r && (credit_count_lo == 0);
 
-
   logic [fill_width_p-1:0] writeback_data;
   wire [fill_cnt_width_lp-1:0] dirty_data_select = fsm_fwd_addr_lo[fill_offset_width_lp+:fill_cnt_width_lp];
   bsg_mux
@@ -516,6 +516,7 @@ module bp_uce
             fsm_fwd_header_lo.size           = block_msg_size_lp;
             fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
             fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+            fsm_fwd_header_lo.payload.src_did = did_i;
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
@@ -584,6 +585,7 @@ module bp_uce
             fsm_fwd_header_lo.size           = block_msg_size_lp;
             fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
             fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+            fsm_fwd_header_lo.payload.src_did = did_i;
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
@@ -602,6 +604,7 @@ module bp_uce
               fsm_fwd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+              fsm_fwd_header_lo.payload.src_did = did_i;
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
               state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo)
@@ -617,6 +620,7 @@ module bp_uce
               fsm_fwd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+              fsm_fwd_header_lo.payload.src_did = did_i;
               fsm_fwd_header_lo.subop    = mem_wr_subop;
               fsm_fwd_data_lo            = {fill_width_p/dword_width_gp{cache_req_r.data}};
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
@@ -678,6 +682,7 @@ module bp_uce
             fsm_fwd_header_lo.size           = block_msg_size_lp;
             fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
             fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+            fsm_fwd_header_lo.payload.src_did = did_i;
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
@@ -738,6 +743,7 @@ module bp_uce
           fsm_fwd_header_lo.size           = bp_bedrock_msg_size_e'(cache_req_r.size);
           fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
           fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+          fsm_fwd_header_lo.payload.src_did = did_i;
           fsm_fwd_header_lo.subop          = wt_store_v_r ? e_bedrock_store : mem_wr_subop;
           fsm_fwd_data_lo                  = {fill_width_p/dword_width_gp{cache_req_r.data}};
           fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);

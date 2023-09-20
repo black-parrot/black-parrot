@@ -17,7 +17,7 @@ module bp_processor
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
    , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
    )
@@ -107,7 +107,7 @@ module bp_processor
          ,.dma_link_o(dma_link_lo)
          );
 
-      `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+      `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
       `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
       `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
       `bp_cast_o(bp_bedrock_mem_rev_header_s, mem_rev_header);
@@ -144,7 +144,7 @@ module bp_processor
          ,.link_ready_and_i(proc_fwd_link_lo[E].ready_and_rev)
          );
 
-      wire [mem_noc_cord_width_p-1:0] mem_rev_dst_cord_li = mem_rev_header_cast_i.payload.did;
+      wire [mem_noc_cord_width_p-1:0] mem_rev_dst_cord_li = mem_rev_header_cast_i.payload.src_did;
       wire [mem_noc_cid_width_p-1:0] mem_rev_dst_cid_li = '0;
 
       bp_me_stream_to_wormhole

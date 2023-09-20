@@ -13,7 +13,7 @@ module bp_me_stream_gearbox
    , parameter `BSG_INV_PARAM(out_data_width_p)
    , parameter `BSG_INV_PARAM(payload_width_p)
    , parameter `BSG_INV_PARAM(stream_mask_p)
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, xce)
+   `declare_bp_bedrock_generic_if_width(paddr_width_p, payload_width_p, xce)
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -30,7 +30,7 @@ module bp_me_stream_gearbox
    , input                                          msg_ready_param_i
    );
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_bedrock_generic_if(paddr_width_p, payload_width_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, msg_header);
   `bp_cast_o(bp_bedrock_xce_header_s, msg_header);
 

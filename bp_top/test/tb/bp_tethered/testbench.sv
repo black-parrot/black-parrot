@@ -53,7 +53,7 @@ module testbench
    // Synthesis parameters
    , parameter no_bind_p                   = 0
 
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
    )
   (output bit reset_i);
 
@@ -69,7 +69,7 @@ module testbench
     return (`BP_SIM_CLK_PERIOD);
   endfunction
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
 // Bit to deal with initial X->0 transition detection
   bit clk_i;

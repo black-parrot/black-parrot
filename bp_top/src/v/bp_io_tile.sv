@@ -8,8 +8,7 @@ module bp_io_tile
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
@@ -17,8 +16,8 @@ module bp_io_tile
   (input                                          clk_i
    , input                                        reset_i
 
-   , input [mem_noc_did_width_p-1:0]               my_did_i
-   , input [mem_noc_did_width_p-1:0]               host_did_i
+   , input [mem_noc_did_width_p-1:0]              my_did_i
+   , input [mem_noc_did_width_p-1:0]              host_did_i
    , input [coh_noc_cord_width_p-1:0]             my_cord_i
 
    , input [coh_noc_ral_link_width_lp-1:0]        lce_req_link_i
@@ -34,8 +33,7 @@ module bp_io_tile
    , output logic [mem_noc_ral_link_width_lp-1:0]  mem_rev_link_o
    );
 
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_noc_ready_and_link_sif_s);
@@ -134,7 +132,6 @@ module bp_io_tile
      ,.reset_i(reset_r)
 
      ,.cce_id_i(cce_id_li)
-     ,.did_i(my_did_i)
 
      ,.lce_req_header_i(lce_req_header_li)
      ,.lce_req_data_i(lce_req_data_li)
@@ -326,7 +323,7 @@ module bp_io_tile
      ,.link_ready_and_i(mem_fwd_link_cast_i.ready_and_rev)
      );
 
-  wire [mem_noc_cord_width_p-1:0] mem_rev_dst_cord_lo = mem_rev_header_lo.payload.did;
+  wire [mem_noc_cord_width_p-1:0] mem_rev_dst_cord_lo = mem_rev_header_lo.payload.src_did;
   wire [mem_noc_cid_width_p-1:0] mem_rev_dst_cid_lo = '0;
   bp_me_stream_to_wormhole
    #(.bp_params_p(bp_params_p)

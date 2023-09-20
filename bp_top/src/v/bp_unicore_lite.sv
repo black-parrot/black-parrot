@@ -11,9 +11,9 @@ module bp_unicore_lite
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
   (input                                               clk_i
    , input                                             reset_i
@@ -38,10 +38,10 @@ module bp_unicore_lite
    , input                                             s_external_irq_i
    );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `declare_bp_cache_engine_if(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
   `declare_bp_cache_engine_if(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   bp_icache_req_s icache_req_lo;
@@ -83,6 +83,7 @@ module bp_unicore_lite
   wire posedge_clk = clk_i;
   wire negedge_clk = ~clk_i;
 
+  wire [did_width_p-1:0] did_li = cfg_bus_cast_i.did;
   wire [1:0][lce_id_width_p-1:0] lce_id_li = {cfg_bus_cast_i.dcache_id, cfg_bus_cast_i.icache_id};
   bp_core_minimal
    #(.bp_params_p(bp_params_p))
@@ -167,6 +168,7 @@ module bp_unicore_lite
     (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
 
+     ,.did_i(did_li)
      ,.lce_id_i(lce_id_li[0])
 
      ,.cache_req_i(icache_req_lo)
@@ -227,6 +229,7 @@ module bp_unicore_lite
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
 
+     ,.did_i(did_li)
      ,.lce_id_i(lce_id_li[1])
 
      ,.cache_req_i(dcache_req_lo)

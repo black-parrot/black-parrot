@@ -27,9 +27,8 @@ module bp_cce
     , localparam lg_cce_way_groups_lp      = `BSG_SAFE_CLOG2(cce_way_groups_p)
 
     // Interface Widths
-    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
+    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -80,14 +79,13 @@ module bp_cce
 
 
   // LCE-CCE and Mem-CCE Interface
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   // MSHR
-  `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cce_mshr_s(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   // Config Interface
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
 
   // LCE-CCE Interface structs
   `bp_cast_i(bp_bedrock_lce_req_header_s, lce_req_header);

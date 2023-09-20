@@ -26,21 +26,10 @@ module bp_cce_msg
     , localparam num_way_groups_lp         = `BSG_CDIV(cce_way_groups_p, num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
 
-    // counter width for memory command/response data packet counters
-    , localparam counter_width_lp          = 8
-
-    // byte offset bits required per bedrock data channel beat
-    , localparam lg_bedrock_data_bytes_lp = `BSG_SAFE_CLOG2(bedrock_fill_width_p/8)
-
     // Interface Widths
-    , localparam mshr_width_lp             = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
-    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
-
-    // stream pump
-    , localparam stream_words_lp = bedrock_block_width_p / bedrock_fill_width_p
-    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
+    , localparam mshr_width_lp             = `bp_cce_mshr_width(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
+    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
+    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -136,11 +125,10 @@ module bp_cce_msg
   );
 
   // LCE-CCE and Mem-CCE Interface
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   // MSHR
-  `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cce_mshr_s(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   // LCE-CCE Interface structs
   `bp_cast_i(bp_bedrock_lce_req_header_s, lce_req_header);
@@ -151,7 +139,7 @@ module bp_cce_msg
   `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
   // Config bus
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
   wire cce_normal_mode_li = (cfg_bus_cast_i.cce_mode == e_cce_mode_normal);
@@ -307,6 +295,7 @@ module bp_cce_msg
 
     // memory command stream pump
     mem_fwd_header_cast_o = '0;
+    mem_fwd_header_cast_o.payload.src_did = cfg_bus_cast_i.did;
     mem_fwd_data_o = '0;
     mem_fwd_v_o = '0;
 
@@ -317,6 +306,7 @@ module bp_cce_msg
     // LCE command output control
     lce_cmd_header_cast_o = '0;
     lce_cmd_header_cast_o.payload.src_id = cfg_bus_cast_i.cce_id;
+    lce_cmd_header_cast_o.payload.src_did = cfg_bus_cast_i.did;
     lce_cmd_data_o = '0;
     lce_cmd_v_o = '0;
 
@@ -414,6 +404,7 @@ module bp_cce_msg
             // modify the coherence state
             lce_cmd_header_cast_o.payload.dst_id = mem_rev_header_cast_i.payload.lce_id;
             lce_cmd_header_cast_o.payload.way_id = mem_rev_header_cast_i.payload.way_id;
+            lce_cmd_header_cast_o.payload.src_did = mem_rev_header_cast_i.payload.src_did;
             lce_cmd_header_cast_o.payload.state = bp_coh_states_e'(spec_bits_i.state);
 
             // command data
@@ -448,6 +439,7 @@ module bp_cce_msg
             // command payload
             lce_cmd_header_cast_o.payload.dst_id = mem_rev_header_cast_i.payload.lce_id;
             lce_cmd_header_cast_o.payload.way_id = mem_rev_header_cast_i.payload.way_id;
+            lce_cmd_header_cast_o.payload.src_did = mem_rev_header_cast_i.payload.src_did;
             lce_cmd_header_cast_o.payload.state = mem_rev_header_cast_i.payload.state;
 
             // command data
@@ -485,6 +477,7 @@ module bp_cce_msg
           // command payload
           lce_cmd_header_cast_o.payload.dst_id = mem_rev_header_cast_i.payload.lce_id;
           lce_cmd_header_cast_o.payload.way_id = mem_rev_header_cast_i.payload.way_id;
+          lce_cmd_header_cast_o.payload.src_did = mem_rev_header_cast_i.payload.src_did;
           lce_cmd_header_cast_o.payload.state = mem_rev_header_cast_i.payload.state;
 
           // command data
@@ -519,6 +512,7 @@ module bp_cce_msg
 
           // command payload
           lce_cmd_header_cast_o.payload.dst_id = mem_rev_header_cast_i.payload.lce_id;
+          lce_cmd_header_cast_o.payload.src_did = mem_rev_header_cast_i.payload.src_did;
 
           // command data
           lce_cmd_data_o = mem_rev_data_i;
@@ -554,6 +548,7 @@ module bp_cce_msg
 
           // command payload
           lce_cmd_header_cast_o.payload.dst_id = mem_rev_header_cast_i.payload.lce_id;
+          lce_cmd_header_cast_o.payload.src_did = mem_rev_header_cast_i.payload.src_did;
 
           // decrement pending bits if operating in normal mode and request was made
           // to coherent memory space
@@ -641,6 +636,7 @@ module bp_cce_msg
           mem_fwd_header_cast_o.size = lce_req_header_cast_i.size;
           mem_fwd_header_cast_o.msg_type.fwd = e_bedrock_mem_uc_wr;
           mem_fwd_header_cast_o.payload.lce_id = lce_req_header_cast_i.payload.src_id;
+          mem_fwd_header_cast_o.payload.src_did = lce_req_header_cast_i.payload.src_did;
           mem_fwd_header_cast_o.payload.uncached = 1'b1;
           mem_fwd_data_o = lce_req_data_i;
 
@@ -657,6 +653,7 @@ module bp_cce_msg
           mem_fwd_header_cast_o.addr = lce_req_header_cast_i.addr;
           mem_fwd_header_cast_o.size = lce_req_header_cast_i.size;
           mem_fwd_header_cast_o.payload.lce_id = lce_req_header_cast_i.payload.src_id;
+          mem_fwd_header_cast_o.payload.src_did = lce_req_header_cast_i.payload.src_did;
           mem_fwd_header_cast_o.payload.uncached = 1'b1;
           mem_fwd_header_cast_o.msg_type.fwd = e_bedrock_mem_uc_rd;
 
@@ -743,6 +740,7 @@ module bp_cce_msg
             mem_fwd_header_cast_o.size = mshr.msg_size;
             mem_fwd_header_cast_o.payload.lce_id = lce_i;
             mem_fwd_header_cast_o.payload.way_id = way_i;
+            mem_fwd_header_cast_o.payload.src_did = mshr.src_did;
             mem_fwd_header_cast_o.payload.state = mshr.next_coh_state;
 
             // set speculative bit if instruction indicates it will be written
@@ -837,6 +835,7 @@ module bp_cce_msg
             // all commands set src, dst, message type and address
             // defaults provided here, but may be overridden below
             lce_cmd_header_cast_o.payload.dst_id = lce_i;
+            lce_cmd_header_cast_o.payload.src_did = mem_rev_header_cast_i.payload.src_did;
             lce_cmd_header_cast_o.msg_type.cmd = decoded_inst_i.lce_cmd;
             lce_cmd_header_cast_o.addr = addr_i;
             lce_cmd_data_o = mem_rev_data_i;

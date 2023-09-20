@@ -39,7 +39,7 @@ module bp_me_stream_pump_out
    , parameter `BSG_INV_PARAM(msg_stream_mask_p)
    , parameter `BSG_INV_PARAM(fsm_stream_mask_p)
 
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, xce)
+   `declare_bp_bedrock_generic_if_width(paddr_width_p, payload_width_p, xce)
 
    , localparam fsm_bytes_lp = fsm_data_width_p >> 3
    , localparam fsm_cnt_offset_width_lp = `BSG_SAFE_CLOG2(fsm_bytes_lp)
@@ -74,7 +74,7 @@ module bp_me_stream_pump_out
    , output logic                                   fsm_critical_o
    );
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_bedrock_generic_if(paddr_width_p, payload_width_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, fsm_header);
   `bp_cast_o(bp_bedrock_xce_header_s, msg_header);
 

@@ -12,7 +12,7 @@ module bp_nonsynth_nbf_loader
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
    , parameter nbf_filename_p = "prog.nbf"
    , parameter verbose_p = 1
@@ -105,7 +105,7 @@ module bp_nonsynth_nbf_loader
      ,.data_o(read_data_r)
      );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `bp_cast_o(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
   `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
@@ -141,7 +141,7 @@ module bp_nonsynth_nbf_loader
     begin
       mem_fwd_header_cast_o = '0;
       mem_fwd_header_cast_o.payload.lce_id = lce_id_i;
-      mem_fwd_header_cast_o.payload.did = did_i;
+      mem_fwd_header_cast_o.payload.src_did = did_i;
       mem_fwd_header_cast_o.addr = curr_nbf.addr;
       mem_fwd_header_cast_o.msg_type.fwd = curr_nbf.opcode[5] ? e_bedrock_mem_uc_rd : e_bedrock_mem_uc_wr;
       mem_fwd_header_cast_o.subop = e_bedrock_store;

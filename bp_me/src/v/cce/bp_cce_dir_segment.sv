@@ -54,7 +54,7 @@ module bp_cce_dir_segment
 
     , localparam hash_index_width_lp      = $clog2((2**lg_sets_lp+num_cce_p-1)/num_cce_p)
 
-    // Directory information widths
+    // Directory information width
     , localparam entry_width_lp           = (tag_width_p+$bits(bp_coh_states_e))
     , localparam tag_set_width_lp         = (entry_width_lp*assoc_p)
     , localparam row_width_lp             = (tag_set_width_lp*tag_sets_per_row_lp)

@@ -9,7 +9,7 @@ module bp_nonsynth_host
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
    , parameter icache_trace_p         = 0
    , parameter dcache_trace_p         = 0
@@ -114,7 +114,7 @@ module bp_nonsynth_host
   localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
   wire [lg_num_core_lp-1:0] addr_core_enc = addr_lo[byte_offset_width_lp+:lg_num_core_lp];
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
   assign mem_fwd_header_li = mem_fwd_header_i;
   wire [hio_width_p-1:0] hio_id = mem_fwd_header_li.addr[paddr_width_p-1-:hio_width_p];
