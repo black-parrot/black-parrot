@@ -246,8 +246,7 @@
 
   typedef struct packed
   {
-    logic dcache_store_miss;
-    logic dcache_load_miss;
+    logic dcache_miss;
     logic fencei;
     logic sfence_vma;
     logic dbreak;

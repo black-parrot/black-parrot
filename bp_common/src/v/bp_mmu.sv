@@ -72,10 +72,10 @@ module bp_mmu
   // This logic only works for 8-byte words max.
   logic r_misaligned;
   always_comb
-    case ({r_cbo_i, r_size_i})
-      {1'b0, 2'b01}: r_misaligned = |r_eaddr_i[0+:1];
-      {1'b0, 2'b10}: r_misaligned = |r_eaddr_i[0+:2];
-      {1'b0, 2'b11}: r_misaligned = |r_eaddr_i[0+:3];
+    case (r_size_i)
+      2'b01: r_misaligned = |r_eaddr_i[0+:1];
+      2'b10: r_misaligned = |r_eaddr_i[0+:2];
+      2'b11: r_misaligned = |r_eaddr_i[0+:3];
       default: r_misaligned = '0;
     endcase
 

@@ -34,7 +34,6 @@ module bp_be_ptw
 
    , input [dword_width_gp-1:0]             dcache_data_i
    , input                                  dcache_v_i
-   , input                                  dcache_late_i
 
    , output logic [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_o
    , output logic                             ptw_fill_v_o
@@ -71,12 +70,11 @@ module bp_be_ptw
 
   sv39_pte_s dcache_pte_n, dcache_pte_r;
   assign dcache_pte_n = dcache_data_i[0+:dword_width_gp];
-  wire recv_pte_v = dcache_v_i & ~dcache_late_i;
   bsg_dff_en
    #(.width_p($bits(sv39_pte_s)))
    dcache_pte_reg
     (.clk_i(clk_i)
-     ,.en_i(recv_pte_v)
+     ,.en_i(dcache_v_i)
      ,.data_i(dcache_pte_n)
      ,.data_o(dcache_pte_r)
      );
@@ -195,7 +193,7 @@ module bp_be_ptw
     case(state_r)
       e_idle      : state_n = tlb_miss_v         ? e_send_load  : e_idle;
       e_send_load : state_n = dcache_ready_and_i ? e_recv_load  : e_send_load;
-      e_recv_load : state_n = recv_pte_v         ? e_check_load : e_send_load;
+      e_recv_load : state_n = dcache_v_i         ? e_check_load : e_send_load;
       e_check_load: state_n = walk_done          ? e_writeback  : e_send_load;
       e_writeback : state_n = ptw_fill_yumi_i    ? e_idle       : e_writeback;
       default : state_n = e_idle;

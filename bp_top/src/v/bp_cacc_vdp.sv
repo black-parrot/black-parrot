@@ -151,16 +151,16 @@ module bp_cacc_vdp
      ,.ptag_dram_i(1'b1)
      ,.st_data_i(acache_st_data_r)
 
-     ,.data_o(acache_data_lo)
-     ,.v_o(acache_v_lo)
-     ,.addr_o()
-     ,.clean_o()
-     ,.ret_o()
-     ,.store_o()
-     ,.float_o()
-     ,.ordered_o()
-     ,.rd_addr_o()
-     ,.req_o()
+     ,.early_data_o(acache_data_lo)
+     ,.early_v_o(acache_v_lo)
+     ,.early_req_o()
+
+     ,.final_v_o()
+     ,.final_addr_o()
+     ,.final_data_o()
+     ,.final_rd_addr_o()
+     ,.final_float_o()
+     ,.final_late_o()
 
      // D$-LCE Interface
      ,.cache_req_o(acache_req_lo)
