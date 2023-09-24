@@ -17,12 +17,13 @@
     logic sb_fraw_dep;
     logic sb_iwaw_dep;
     logic sb_fwaw_dep;
+    logic sb_writeback;
     logic struct_haz;
     logic idiv_haz;
     logic fdiv_haz;
     logic ptw_busy;
-    logic special;
     logic replay;
+    logic special;
     logic exception;
     logic _interrupt;
     logic itlb_miss;
@@ -33,28 +34,29 @@
 
   typedef enum logic [4:0]
   {
-    icache_miss          = 5'd27
-    ,branch_override     = 5'd26
-    ,ret_override        = 5'd25
-    ,realigner           = 5'd24
-    ,fe_cmd              = 5'd23
-    ,mispredict          = 5'd22
-    ,control_haz         = 5'd21
-    ,data_haz            = 5'd20
-    ,aux_dep             = 5'd19
-    ,load_dep            = 5'd18
-    ,mul_dep             = 5'd17
-    ,fma_dep             = 5'd16
-    ,sb_iraw_dep         = 5'd15
-    ,sb_fraw_dep         = 5'd14
-    ,sb_iwaw_dep         = 5'd13
-    ,sb_fwaw_dep         = 5'd12
+    icache_miss          = 5'd28
+    ,branch_override     = 5'd27
+    ,ret_override        = 5'd26
+    ,realigner           = 5'd25
+    ,fe_cmd              = 5'd24
+    ,mispredict          = 5'd23
+    ,control_haz         = 5'd22
+    ,data_haz            = 5'd21
+    ,aux_dep             = 5'd20
+    ,load_dep            = 5'd19
+    ,mul_dep             = 5'd18
+    ,fma_dep             = 5'd17
+    ,sb_iraw_dep         = 5'd16
+    ,sb_fraw_dep         = 5'd15
+    ,sb_iwaw_dep         = 5'd14
+    ,sb_fwaw_dep         = 5'd13
+    ,sb_writeback        = 5'd12
     ,struct_haz          = 5'd11
     ,idiv_haz            = 5'd10
     ,fdiv_haz            = 5'd9
     ,ptw_busy            = 5'd8
-    ,special             = 5'd7
-    ,replay              = 5'd6
+    ,replay              = 5'd7
+    ,special             = 5'd6
     ,exception           = 5'd5
     ,_interrupt          = 5'd4
     ,itlb_miss           = 5'd3
@@ -115,6 +117,7 @@ module bp_nonsynth_core_profiler
     , input sb_fraw_dep_i
     , input sb_iwaw_dep_i
     , input sb_fwaw_dep_i
+    , input sb_writeback_i
     , input struct_haz_i
     , input idiv_haz_i
     , input fdiv_haz_i
@@ -199,6 +202,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3].sb_fraw_dep       |= sb_fraw_dep_i;
       stall_stage_n[3].sb_iwaw_dep       |= sb_iwaw_dep_i;
       stall_stage_n[3].sb_fwaw_dep       |= sb_fwaw_dep_i;
+      stall_stage_n[3].sb_writeback      |= sb_writeback_i;
       stall_stage_n[3].struct_haz        |= struct_haz_i;
       stall_stage_n[3].idiv_haz          |= idiv_haz_i;
       stall_stage_n[3].fdiv_haz          |= fdiv_haz_i;
@@ -206,7 +210,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3].control_haz       |= control_haz_i;
 
       stall_stage_n[3].special           |= |retire_pkt.special;
-      stall_stage_n[3].replay            |= |retire_pkt.exception;
+      stall_stage_n[3].replay            |= |retire_pkt.exception & ~retire_pkt.exception.resume;
       stall_stage_n[3].exception         |= commit_pkt.exception;
       stall_stage_n[3]._interrupt        |= commit_pkt._interrupt;
       stall_stage_n[3].itlb_miss         |= commit_pkt.itlb_miss | commit_pkt.itlb_fill_v;
@@ -218,7 +222,7 @@ module bp_nonsynth_core_profiler
       // BE exception stalls
       stall_stage_n[4]                    = stall_stage_r[3];
       stall_stage_n[4].special           |= |retire_pkt.special;
-      stall_stage_n[4].replay            |= |retire_pkt.exception;
+      stall_stage_n[4].replay            |= |retire_pkt.exception & ~retire_pkt.exception.resume;
       stall_stage_n[4].exception         |= commit_pkt.exception;
       stall_stage_n[4]._interrupt        |= commit_pkt._interrupt;
       stall_stage_n[4].itlb_miss         |= commit_pkt.itlb_miss | commit_pkt.itlb_fill_v;
@@ -230,7 +234,7 @@ module bp_nonsynth_core_profiler
       // BE exception stalls
       stall_stage_n[5]                    = stall_stage_r[4];
       stall_stage_n[5].special           |= |retire_pkt.special;
-      stall_stage_n[5].replay            |= |retire_pkt.exception;
+      stall_stage_n[5].replay            |= |retire_pkt.exception & ~retire_pkt.exception.resume;
       stall_stage_n[5].exception         |= commit_pkt.exception;
       stall_stage_n[5]._interrupt        |= commit_pkt._interrupt;
       stall_stage_n[5].itlb_miss         |= commit_pkt.itlb_miss | commit_pkt.itlb_fill_v;
@@ -242,7 +246,7 @@ module bp_nonsynth_core_profiler
       // BE exception stalls
       stall_stage_n[6]                    = stall_stage_r[5];
       stall_stage_n[6].special           |= |retire_pkt.special;
-      stall_stage_n[6].replay            |= |retire_pkt.exception;
+      stall_stage_n[6].replay            |= |retire_pkt.exception & ~retire_pkt.exception.resume;
       stall_stage_n[6].exception         |= commit_pkt.exception;
       stall_stage_n[6]._interrupt        |= commit_pkt._interrupt;
       stall_stage_n[6].itlb_miss         |= commit_pkt.itlb_miss | commit_pkt.itlb_fill_v;

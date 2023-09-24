@@ -10,6 +10,7 @@
 
 module testbench
  import bp_common_pkg::*;
+ import bp_fe_pkg::*;
  import bp_me_pkg::*;
  import bp_me_nonsynth_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
@@ -42,7 +43,7 @@ module testbench
    , localparam trace_rom_addr_width_lp = 20
 
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, 1, cache)
    )
   (output bit reset_i);
 
@@ -286,7 +287,7 @@ module testbench
      ,.msg_ready_and_i(lce_cmd_ready_and_lo)
      );
 
-  `declare_bp_cache_engine_if(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, logic, cache);
 
   bp_cache_req_s [num_lce_p-1:0] cache_req_lo;
   logic [num_lce_p-1:0] cache_req_v_lo, cache_req_yumi_li, cache_req_lock_li;
@@ -360,6 +361,7 @@ module testbench
        ,.assoc_p(icache_assoc_p)
        ,.block_width_p(icache_block_width_p)
        ,.fill_width_p(icache_fill_width_p)
+       ,.payload_width_p($bits(bp_fe_icache_req_payload_s))
        )
      cache
       (.clk_i(clk_i)
@@ -421,6 +423,7 @@ module testbench
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
        ,.ctag_width_p(icache_ctag_width_p)
+       ,.payload_width_p($bits(bp_fe_icache_req_payload_s))
        )
      lce
       (.clk_i(clk_i)

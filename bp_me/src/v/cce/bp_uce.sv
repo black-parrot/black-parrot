@@ -23,8 +23,9 @@ module bp_uce
     , parameter `BSG_INV_PARAM(block_width_p)
     , parameter `BSG_INV_PARAM(fill_width_p)
     , parameter `BSG_INV_PARAM(ctag_width_p)
+    , parameter `BSG_INV_PARAM(payload_width_p)
 
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+    `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, payload_width_p, cache)
     )
    (input                                            clk_i
     , input                                          reset_i
@@ -40,6 +41,7 @@ module bp_uce
     , input                                          cache_req_metadata_v_i
     , output logic [paddr_width_p-1:0]               cache_req_addr_o
     , output logic [dword_width_gp-1:0]              cache_req_data_o
+    , output logic [payload_width_p-1:0]             cache_req_payload_o
     , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_last_o
     , output logic                                   cache_req_credits_full_o
@@ -96,7 +98,7 @@ module bp_uce
                                                              : e_bedrock_msg_size_64;
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, logic [payload_width_p-1:0], cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_i(bp_cache_req_metadata_s, cache_req_metadata);
@@ -286,6 +288,7 @@ module bp_uce
      );
   assign cache_req_addr_o = cache_req_r.addr;
   assign cache_req_data_o = cache_req_r.data;
+  assign cache_req_payload_o = cache_req_r.payload;
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
   wire miss_load_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_load};
@@ -369,7 +372,7 @@ module bp_uce
      ,.reset_i(reset_i)
 
      // credit consumed when memory command sends
-     ,.v_i(fsm_fwd_v_lo & fsm_fwd_new_lo)
+     ,.v_i(fsm_fwd_v_lo & fsm_fwd_last_lo)
      ,.ready_i(fsm_fwd_ready_and_li)
 
      // credit returned when memory response fully consumed

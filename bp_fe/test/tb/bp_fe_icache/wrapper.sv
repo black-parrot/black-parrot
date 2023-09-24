@@ -11,7 +11,7 @@ module wrapper
    , parameter block_width_p = icache_block_width_p
    , parameter fill_width_p = icache_fill_width_p
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_fe_icache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
@@ -185,6 +185,7 @@ module wrapper
        ,.credits_p(coh_noc_max_credits_p)
        ,.non_excl_reads_p(1)
        ,.ctag_width_p(icache_ctag_width_p)
+       ,.payload_width_p($bits(bp_fe_icache_req_payload_s))
        )
      icache_lce
       (.clk_i(clk_i)
@@ -295,6 +296,7 @@ module wrapper
        ,.block_width_p(icache_block_width_p)
        ,.fill_width_p(icache_fill_width_p)
        ,.ctag_width_p(icache_ctag_width_p)
+       ,.payload_width_p($bits(bp_fe_icache_req_payload_s))
        ,.writeback_p(icache_features_p[e_cfg_writeback])
        )
      icache_uce

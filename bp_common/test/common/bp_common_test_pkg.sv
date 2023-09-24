@@ -174,7 +174,6 @@ package bp_common_pkg;
   } bp_params_e;
 
   `include "bp_common_bedrock_pkgdef.svh"
-  `include "bp_common_cache_pkgdef.svh"
   `include "bp_common_cache_engine_pkgdef.svh"
   `include "bp_common_cfg_bus_pkgdef.svh"
   `include "bp_common_clint_pkgdef.svh"

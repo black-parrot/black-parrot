@@ -13,7 +13,7 @@ module bp_fe_nonsynth_icache_tracer
    , parameter trace_file_p = "icache"
    , parameter ctag_width_p = 27
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+    `declare_bp_fe_icache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p)
 
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
@@ -34,11 +34,11 @@ module bp_fe_nonsynth_icache_tracer
    , input                                                data_v_o
    , input                                                spec_v_o
 
-   , input [cache_req_width_lp-1:0]                       cache_req_o
+   , input [icache_req_width_lp-1:0]                      cache_req_o
    , input                                                cache_req_v_o
    , input                                                cache_req_yumi_i
    , input                                                cache_req_lock_i
-   , input [cache_req_metadata_width_lp-1:0]              cache_req_metadata_o
+   , input [icache_req_metadata_width_lp-1:0]             cache_req_metadata_o
    , input                                                cache_req_metadata_v_o
    , input                                                cache_req_critical_i
    , input                                                cache_req_last_i
@@ -47,43 +47,43 @@ module bp_fe_nonsynth_icache_tracer
    , input                                                cache_req_credits_empty_i
 
    , input                                                data_mem_pkt_v_i
-   , input [cache_data_mem_pkt_width_lp-1:0]              data_mem_pkt_i
+   , input [icache_data_mem_pkt_width_lp-1:0]             data_mem_pkt_i
    , input                                                data_mem_pkt_yumi_o
    , input [block_width_p-1:0]                            data_mem_o
 
    , input                                                tag_mem_pkt_v_i
-   , input [cache_tag_mem_pkt_width_lp-1:0]               tag_mem_pkt_i
+   , input [icache_tag_mem_pkt_width_lp-1:0]              tag_mem_pkt_i
    , input                                                tag_mem_pkt_yumi_o
-   , input [cache_tag_info_width_lp-1:0]                  tag_mem_o
+   , input [icache_tag_info_width_lp-1:0]                 tag_mem_o
 
    , input                                                stat_mem_pkt_v_i
-   , input [cache_stat_mem_pkt_width_lp-1:0]              stat_mem_pkt_i
+   , input [icache_stat_mem_pkt_width_lp-1:0]             stat_mem_pkt_i
    , input                                                stat_mem_pkt_yumi_o
-   , input [cache_stat_info_width_lp-1:0]                 stat_mem_o
+   , input [icache_stat_info_width_lp-1:0]                stat_mem_o
 
    , input [paddr_width_p-1:0]                            paddr_tv_r
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_fe_icache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p);
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt_cast_i;
   assign icache_pkt_cast_i = icache_pkt_i;
 
-  bp_cache_req_s cache_req_cast_o;
-  bp_cache_req_metadata_s cache_req_metadata_cast_o;
+  bp_fe_icache_req_s cache_req_cast_o;
+  bp_fe_icache_req_metadata_s cache_req_metadata_cast_o;
   assign cache_req_cast_o = cache_req_o;
   assign cache_req_metadata_cast_o = cache_req_metadata_o;
 
-  bp_cache_data_mem_pkt_s data_mem_pkt_cast_i;
-  bp_cache_tag_mem_pkt_s tag_mem_pkt_cast_i;
-  bp_cache_stat_mem_pkt_s stat_mem_pkt_cast_i;
+  bp_fe_icache_data_mem_pkt_s data_mem_pkt_cast_i;
+  bp_fe_icache_tag_mem_pkt_s tag_mem_pkt_cast_i;
+  bp_fe_icache_stat_mem_pkt_s stat_mem_pkt_cast_i;
   assign data_mem_pkt_cast_i = data_mem_pkt_i;
   assign tag_mem_pkt_cast_i = tag_mem_pkt_i;
   assign stat_mem_pkt_cast_i = stat_mem_pkt_i;
 
   logic [assoc_p-1:0][bank_width_lp-1:0] data_mem_cast_o;
-  bp_cache_tag_info_s tag_mem_info_cast_o;
-  bp_cache_tag_info_s stat_mem_info_cast_o;
+  bp_fe_icache_tag_info_s tag_mem_info_cast_o;
+  bp_fe_icache_tag_info_s stat_mem_info_cast_o;
   assign data_mem_cast_o = data_mem_o;
   assign tag_mem_info_cast_o = tag_mem_o;
   assign stat_mem_info_cast_o = stat_mem_o;

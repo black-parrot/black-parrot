@@ -13,7 +13,7 @@
 `include "bp_me_defines.svh"
 
 module bp_lce_cmd
-  import bp_common_pkg::*;
+ import bp_common_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
@@ -23,10 +23,11 @@ module bp_lce_cmd
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(fill_width_p)
    , parameter `BSG_INV_PARAM(ctag_width_p)
+   , parameter `BSG_INV_PARAM(payload_width_p)
 
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
-  )
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, payload_width_p, cache)
+   )
   (
     input                                            clk_i
     , input                                          reset_i
@@ -60,7 +61,6 @@ module bp_lce_cmd
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
     // cache_req_last_o is routed to the cache to indicate a blocking request is complete
-    , output logic [paddr_width_p-1:0]               cache_req_addr_o
     , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_last_o
 
@@ -69,7 +69,6 @@ module bp_lce_cmd
     // block (miss) on uncached stores
     , output logic                                   credit_return_o
     , output logic                                   cache_req_done_o
-    , input                                          backoff_i
 
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
@@ -90,7 +89,7 @@ module bp_lce_cmd
     );
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, logic [payload_width_p-1:0], cache);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
   `bp_cast_o(bp_bedrock_lce_fill_header_s, lce_fill_header);
   `bp_cast_o(bp_bedrock_lce_resp_header_s, lce_resp_header);
@@ -335,7 +334,6 @@ module bp_lce_cmd
     credit_return_o = '0;
     // raised request is fully resolved
     cache_req_done_o = '0;
-    cache_req_addr_o = fsm_cmd_header_li.addr;
     cache_req_last_o = 1'b0;
     cache_req_critical_o = 1'b0;
 
@@ -421,11 +419,11 @@ module bp_lce_cmd
           e_bedrock_cmd_set_clear: begin
             tag_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
-            tag_mem_pkt_v_o = fsm_cmd_v_li & ~backoff_i;
+            tag_mem_pkt_v_o = fsm_cmd_v_li;
 
             stat_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
-            stat_mem_pkt_v_o = fsm_cmd_v_li & ~backoff_i;
+            stat_mem_pkt_v_o = fsm_cmd_v_li;
 
             // consume header when tag and stat packets consumed together
             fsm_cmd_yumi_lo = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;

@@ -46,7 +46,7 @@ module bp_fe_icache
    , parameter fill_width_p  = icache_fill_width_p
    , parameter ctag_width_p  = icache_ctag_width_p
 
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
+   `declare_bp_fe_icache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p)
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
@@ -111,6 +111,7 @@ module bp_fe_icache
    , output logic                                     cache_req_metadata_v_o
    , input [paddr_width_p-1:0]                        cache_req_addr_i
    , input [dword_width_gp-1:0]                       cache_req_data_i
+   , input [icache_req_payload_width_lp-1:0]          cache_req_payload_i
    , input                                            cache_req_critical_i
    , input                                            cache_req_last_i
    , input                                            cache_req_credits_full_i
@@ -132,7 +133,7 @@ module bp_fe_icache
    , output logic [icache_stat_info_width_lp-1:0]     stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache);
+  `declare_bp_fe_icache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p);
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
@@ -196,16 +197,16 @@ module bp_fe_icache
   ///////////////////////////
   // Tag Mem Storage
   ///////////////////////////
-  `bp_cast_i(bp_icache_tag_mem_pkt_s, tag_mem_pkt);
+  `bp_cast_i(bp_fe_icache_tag_mem_pkt_s, tag_mem_pkt);
   logic                              tag_mem_v_li;
   logic                              tag_mem_w_li;
   logic [sindex_width_lp-1:0]        tag_mem_addr_li;
-  bp_icache_tag_info_s [assoc_p-1:0] tag_mem_w_mask_li;
-  bp_icache_tag_info_s [assoc_p-1:0] tag_mem_data_li;
-  bp_icache_tag_info_s [assoc_p-1:0] tag_mem_data_lo;
+  bp_fe_icache_tag_info_s [assoc_p-1:0] tag_mem_w_mask_li;
+  bp_fe_icache_tag_info_s [assoc_p-1:0] tag_mem_data_li;
+  bp_fe_icache_tag_info_s [assoc_p-1:0] tag_mem_data_lo;
 
   bsg_mem_1rw_sync_mask_write_bit
-   #(.width_p(assoc_p*($bits(bp_icache_tag_info_s))), .els_p(sets_p), .latch_last_read_p(1))
+   #(.width_p(assoc_p*($bits(bp_fe_icache_tag_info_s))), .els_p(sets_p), .latch_last_read_p(1))
    tag_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -220,7 +221,7 @@ module bp_fe_icache
   ///////////////////////////
   // Data Mem Storage
   ///////////////////////////
-  `bp_cast_i(bp_icache_data_mem_pkt_s, data_mem_pkt);
+  `bp_cast_i(bp_fe_icache_data_mem_pkt_s, data_mem_pkt);
   localparam data_mem_addr_width_lp = (assoc_p > 1) ? (sindex_width_lp+bindex_width_lp) : sindex_width_lp;
   logic [assoc_p-1:0]                             data_mem_v_li;
   logic [assoc_p-1:0]                             data_mem_w_li;
@@ -441,13 +442,13 @@ module bp_fe_icache
   ///////////////////////////
   // Stat Mem Storage
   ///////////////////////////
-  `bp_cast_i(bp_icache_stat_mem_pkt_s, stat_mem_pkt);
+  `bp_cast_i(bp_fe_icache_stat_mem_pkt_s, stat_mem_pkt);
   logic                       stat_mem_v_li;
   logic                       stat_mem_w_li;
   logic [sindex_width_lp-1:0] stat_mem_addr_li;
-  bp_icache_stat_info_s       stat_mem_data_li;
-  bp_icache_stat_info_s       stat_mem_mask_li;
-  bp_icache_stat_info_s       stat_mem_data_lo;
+  bp_fe_icache_stat_info_s       stat_mem_data_li;
+  bp_fe_icache_stat_info_s       stat_mem_mask_li;
+  bp_fe_icache_stat_info_s       stat_mem_data_lo;
 
   bsg_mem_1rw_sync_mask_write_bit
    #(.width_p(assoc_p-1), .els_p(sets_p), .latch_last_read_p(1))
@@ -473,8 +474,8 @@ module bp_fe_icache
   /////////////////////////////////////////////////////////////////////////////
   // Slow Path
   /////////////////////////////////////////////////////////////////////////////
-  `bp_cast_o(bp_icache_req_s, cache_req);
-  `bp_cast_o(bp_icache_req_metadata_s, cache_req_metadata);
+  `bp_cast_o(bp_fe_icache_req_s, cache_req);
+  `bp_cast_o(bp_fe_icache_req_metadata_s, cache_req_metadata);
 
   localparam block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
   localparam uncached_req_size = e_size_4B;
@@ -489,8 +490,8 @@ module bp_fe_icache
      ,size    : bp_cache_req_size_e'(cached_req ? block_req_size : uncached_req_size)
      ,msg_type: cached_req ? e_miss_load : uncached_req ? e_uc_load : e_cache_inval
      ,subop   : e_req_amoswap
-     ,data    : '0
      ,hit     : hit_v_tv
+     ,default : '0
      };
 
   // The cache pipeline is designed to always send metadata a cycle after the request
@@ -741,7 +742,7 @@ module bp_fe_icache
   assign snoop_hit = {2{pseudo_hit}};
   assign snoop_data = data_mem_data_li;
 
-  wire [bindex_width_lp-1:0] snoop_bank = cache_req_addr_i[byte_offset_width_lp+:bindex_width_lp];
+  wire [bindex_width_lp-1:0] snoop_bank = paddr_tv_r[byte_offset_width_lp+:bindex_width_lp];
   bsg_decode
    #(.num_out_p(assoc_p))
    snoop_offset_decode

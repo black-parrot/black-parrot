@@ -27,7 +27,6 @@ stages:
     - top_dev
     - sw_dev
     - cmos
-    - test
   before_script:
       - git submodule update --init --checkout --recursive external/
       - cp -r $CI_RTL_INSTALL_DIR install/

@@ -469,7 +469,7 @@ module testbench
           ,.fe_queue_empty_i(be.scheduler.issue_queue.empty)
 
           ,.mispredict_i(be.director.npc_mismatch_v)
-          ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_and_o)
+          ,.dcache_miss_i(!be.calculator.pipe_mem.dcache.is_ready)
           ,.control_haz_i(be.detector.control_haz_v)
           ,.data_haz_i(be.detector.data_haz_v)
           ,.aux_dep_i((be.detector.dep_status_r[0].aux_iwb_v
@@ -506,6 +506,7 @@ module testbench
                         )
           ,.sb_iwaw_dep_i(be.detector.ird_sb_waw_haz_v & be.detector.data_haz_v)
           ,.sb_fwaw_dep_i(be.detector.frd_sb_waw_haz_v & be.detector.data_haz_v)
+          ,.sb_writeback_i(be.scheduler.late_wb_yumi_o)
           ,.struct_haz_i(be.detector.struct_haz_v)
           ,.idiv_haz_i(be.detector.idiv_busy_i & be.detector.issue_pkt_cast_i.decode.pipe_long_v)
           ,.fdiv_haz_i(be.detector.fdiv_busy_i & be.detector.issue_pkt_cast_i.decode.pipe_long_v)

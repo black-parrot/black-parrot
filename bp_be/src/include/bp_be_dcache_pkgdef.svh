@@ -44,5 +44,11 @@
     logic [reg_addr_width_gp-1:0] rd_addr;
   }  bp_be_dcache_decode_s;
 
+  typedef struct packed
+  {
+    bp_be_dcache_decode_s decode;
+    logic                 uncached;
+  }  bp_be_dcache_req_payload_s;
+
 `endif
 

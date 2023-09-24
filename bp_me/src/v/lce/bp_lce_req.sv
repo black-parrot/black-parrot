@@ -31,13 +31,14 @@ module bp_lce_req
    , parameter credits_p = coh_noc_max_credits_p
    // issue non-exclusive read requests
    , parameter non_excl_reads_p = 0
+   , parameter `BSG_INV_PARAM(payload_width_p)
 
    // byte offset bits required per bedrock data channel beat
    , localparam bedrock_byte_offset_lp = `BSG_SAFE_CLOG2(fill_width_p/8)
    , localparam bit [paddr_width_p-1:0] req_addr_mask = {paddr_width_p{1'b1}} << bedrock_byte_offset_lp
 
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, payload_width_p, cache)
   )
   (
     input                                            clk_i
@@ -62,7 +63,9 @@ module bp_lce_req
     , output logic                                   cache_req_yumi_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
+    , output logic [paddr_width_p-1:0]               cache_req_addr_o
     , output logic [dword_width_gp-1:0]              cache_req_data_o
+    , output logic [payload_width_p-1:0]             cache_req_payload_o
 
     // LCE-Cache Interface
     , output logic                                   credits_full_o
@@ -74,7 +77,6 @@ module bp_lce_req
     // can be raised at any time after the LCE request sends out
     , input                                          credit_return_i
     , input                                          cache_req_done_i
-    , output logic                                   backoff_o
 
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
@@ -85,7 +87,7 @@ module bp_lce_req
   );
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, logic [payload_width_p-1:0], cache);
   `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_i(bp_cache_req_metadata_s, cache_req_metadata);
@@ -97,7 +99,7 @@ module bp_lce_req
 
   logic cache_req_ready_lo;
   bp_cache_req_s cache_req_r;
-  logic cache_req_v_r, cache_req_sent;
+  logic cache_req_v_r, cache_req_done;
   bsg_two_fifo
    #(.width_p($bits(bp_cache_req_s)), .ready_THEN_valid_p(1))
    cache_req_fifo
@@ -110,19 +112,11 @@ module bp_lce_req
 
      ,.data_o(cache_req_r)
      ,.v_o(cache_req_v_r)
-     ,.yumi_i(cache_req_sent)
+     ,.yumi_i(cache_req_v_r & cache_req_done)
      );
-
-  logic [dword_width_gp-1:0] cache_req_data_r;
-  bsg_dff_en
-   #(.width_p(dword_width_gp))
-   cache_req_data_reg
-    (.clk_i(clk_i)
-     ,.en_i(cache_req_sent)
-     ,.data_i(cache_req_r.data)
-     ,.data_o(cache_req_data_r)
-     );
-  assign cache_req_data_o = cache_req_data_r;
+  assign cache_req_data_o    = cache_req_r.data;
+  assign cache_req_addr_o    = cache_req_r.addr;
+  assign cache_req_payload_o = cache_req_r.payload;
 
   bp_cache_req_metadata_s cache_req_metadata, cache_req_metadata_r;
   logic cache_req_metadata_v_r;
@@ -133,12 +127,12 @@ module bp_lce_req
      ,.reset_i(reset_i)
 
      ,.data_i(cache_req_metadata_cast_i)
-     ,.v_i(cache_req_metadata_v_i & (cache_req_metadata_v_r | ~cache_req_sent))
+     ,.v_i(cache_req_metadata_v_i & (cache_req_metadata_v_r | ~cache_req_done))
      ,.ready_o(/* Follows cache req fifo */)
 
      ,.data_o(cache_req_metadata_r)
      ,.v_o(cache_req_metadata_v_r)
-     ,.yumi_i(cache_req_metadata_v_r & cache_req_sent)
+     ,.yumi_i(cache_req_metadata_v_r & cache_req_done)
      );
   assign cache_req_metadata = cache_req_metadata_v_r ? cache_req_metadata_r : cache_req_metadata_cast_i;
   wire cache_req_metadata_v = cache_req_metadata_v_i | cache_req_metadata_v_r;
@@ -150,9 +144,8 @@ module bp_lce_req
   wire clean_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clean};
   wire uc_load_v_li     = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
   wire uc_amo_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
-  wire backoff_v_li     = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_backoff};
   wire uc_store_v_li    = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
-  wire nonblocking_v_li = backoff_v_li | uc_store_v_li;
+  wire nonblocking_v_li = uc_store_v_li;
   wire blocking_v_li    = miss_load_v_li | miss_store_v_li | uc_load_v_li | uc_amo_v_li;
 
   bp_bedrock_lce_req_header_s fsm_req_header_lo;
@@ -194,15 +187,14 @@ module bp_lce_req
   wire clean_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_clean};
   wire uc_load_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire uc_amo_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
-  wire backoff_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_cache_backoff};
   wire uc_store_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
-  wire nonblocking_v_r = backoff_v_r | uc_store_v_r;
+  wire nonblocking_v_r = uc_store_v_r;
   wire blocking_v_r    = miss_load_v_r | miss_store_v_r | uc_load_v_r | uc_amo_v_r;
 
   // Outstanding request credit counter
   // one credit used per LCE request sent
   logic [`BSG_WIDTH(credits_p)-1:0] credit_count_lo;
-  wire credit_v_li = fsm_req_v_lo & fsm_req_new_lo;
+  wire credit_v_li = fsm_req_v_lo & fsm_req_last_lo;
   wire credit_ready_li = fsm_req_ready_and_li;
   wire credit_returned_li = credit_return_i;
   bsg_flow_counter
@@ -218,22 +210,6 @@ module bp_lce_req
   assign credits_full_o  = ~cache_req_ready_lo && (credit_count_lo == credits_p);
   assign credits_empty_o = ~cache_req_v_r && (credit_count_lo == '0);
 
-  // Linear backoff
-  localparam lock_max_limit_lp = 7;
-  logic [`BSG_SAFE_CLOG2(lock_max_limit_lp+1)-1:0] lock_cnt_r;
-  wire lock_inc = backoff_v_r || (lock_cnt_r > '0);
-  bsg_counter_clear_up
-   #(.max_val_p(lock_max_limit_lp), .init_val_p(0), .disable_overflow_warning_p(1))
-   lock_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i('0)
-     ,.up_i(lock_inc)
-     ,.count_o(lock_cnt_r)
-     );
-  assign backoff_o = (lock_cnt_r != '0);
-
   // Request Address to CCE
   logic [cce_id_width_p-1:0] req_cce_id_lo;
   bp_me_addr_to_cce_id
@@ -244,7 +220,7 @@ module bp_lce_req
      );
 
   logic pending_r;
-  wire pending_set = cache_req_sent & blocking_v_r;
+  wire pending_set = fsm_req_ready_and_li & fsm_req_v_lo & fsm_req_last_lo & blocking_v_r;
   wire pending_clear = cache_req_done_i;
   bsg_dff_reset_set_clear
    #(.width_p(1))
@@ -276,10 +252,9 @@ module bp_lce_req
 
   always_comb
     begin
-      cache_req_yumi_o = cache_req_v_i & cache_req_ready_lo & (~cache_req_v_r | nonblocking_v_li) & ~pending_r & cache_init_done_i;
+      cache_req_yumi_o = cache_req_v_i & cache_req_ready_lo & (~cache_req_v_r | nonblocking_v_li) & ~blocking_v_r & cache_init_done_i;
 
-      // Request message defaults
-      fsm_req_v_lo = cache_req_v_r & ~backoff_v_r & (credit_count_lo < credits_p);
+      fsm_req_v_lo = cache_req_v_r & ~pending_r & (credit_count_lo < credits_p);
       fsm_req_header_lo.addr = cache_req_r.addr;
       fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
       fsm_req_header_lo.payload.dst_id = req_cce_id_lo;
@@ -302,13 +277,14 @@ module bp_lce_req
         default: begin end
       endcase
 
-      cache_req_sent = (fsm_req_ready_and_li & fsm_req_v_lo & fsm_req_last_lo) || backoff_v_r;
+      cache_req_done =
+        (fsm_req_ready_and_li & fsm_req_v_lo & fsm_req_last_lo & nonblocking_v_r) || cache_req_done_i;
     end
 
   // LCE should suppress messages if in reset or we are not synchronized with the CCE
   // busy being lowered does not guarantee that this module will accept a valid cache request
   // packet (refer to cache_req_yumi_o below).
-  assign busy_o = ~sync_done_i && (lce_mode_i == e_lce_mode_normal);
+  assign busy_o = ~sync_done_i && (lce_mode_i == e_lce_mode_normal) || blocking_v_r;
 
 endmodule
 

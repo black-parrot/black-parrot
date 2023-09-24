@@ -26,5 +26,12 @@
   `define bp_be_dcache_wbuf_entry_width(caddr_width_mp, ways_mp) \
     (1+(1<<ways_mp)+(dword_width_gp>>3)+dword_width_gp+caddr_width_mp)
 
+  `define declare_bp_be_dcache_engine_if(addr_width_mp, tag_width_mp, sets_mp, ways_mp, data_width_mp, block_width_mp, fill_width_mp) \
+    `declare_bp_cache_engine_generic_if(addr_width_mp, tag_width_mp, sets_mp, ways_mp, data_width_mp, block_width_mp, fill_width_mp, bp_be_dcache_req_payload_s, be_dcache)
+
+  `define declare_bp_be_dcache_engine_if_widths(addr_width_mp, tag_width_mp, sets_mp, ways_mp, data_width_mp, block_width_mp, fill_width_mp) \
+    , localparam dcache_req_payload_width_lp = $bits(bp_be_dcache_req_payload_s) \
+    `declare_bp_cache_engine_generic_if_widths(addr_width_mp, tag_width_mp, sets_mp, ways_mp, data_width_mp, block_width_mp, fill_width_mp, dcache_req_payload_width_lp, dcache)
+
 `endif
 
