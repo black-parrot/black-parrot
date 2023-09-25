@@ -139,8 +139,9 @@ module bp_be_pipe_mem
   /* PTW ports */
   logic [ptag_width_p-1:0]      ptw_dcache_ptag;
   logic                         ptw_dcache_ptag_v;
-  logic                         ptw_dcache_early_v, ptw_busy;
+  logic                         ptw_dcache_ready_then, ptw_dcache_v;
   bp_be_dcache_pkt_s            ptw_dcache_pkt;
+  logic                         ptw_busy;
 
   /* D-Cache ports */
   bp_be_dcache_pkt_s            dcache_pkt;
@@ -276,11 +277,11 @@ module bp_be_pipe_mem
      ,.busy_o(ptw_busy)
      ,.ptw_miss_pkt_i(ptw_miss_pkt)
 
-     ,.dcache_v_o(ptw_dcache_early_v)
+     ,.dcache_ready_then_i(ptw_dcache_ready_then)
+     ,.dcache_v_o(ptw_dcache_v)
      ,.dcache_pkt_o(ptw_dcache_pkt)
      ,.dcache_ptag_o(ptw_dcache_ptag)
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
-     ,.dcache_ready_and_i(dcache_ready_and_lo)
 
      ,.dcache_v_i(dcache_early_v)
      ,.dcache_data_i(dcache_early_data)
@@ -315,7 +316,8 @@ module bp_be_pipe_mem
   always_comb
     if (ptw_busy)
       begin
-        dcache_pkt_v           = ptw_dcache_early_v;
+        ptw_dcache_ready_then  = dcache_ready_and_lo & dcache_ordered_lo;
+        dcache_pkt_v           = ptw_dcache_v;
         dcache_pkt             = ptw_dcache_pkt;
         dcache_ptag            = ptw_dcache_ptag;
         dcache_ptag_v          = ptw_dcache_ptag_v;

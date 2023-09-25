@@ -26,11 +26,11 @@ module bp_be_ptw
    , input [ptw_miss_pkt_width_lp-1:0]      ptw_miss_pkt_i
 
    // D-Cache connections
+   , input                                  dcache_ready_then_i
    , output logic                           dcache_v_o
    , output logic [dcache_pkt_width_lp-1:0] dcache_pkt_o
    , output logic [ptag_width_p-1:0]        dcache_ptag_o
    , output logic                           dcache_ptag_v_o
-   , input                                  dcache_ready_and_i
 
    , input [dword_width_gp-1:0]             dcache_data_i
    , input                                  dcache_v_i
@@ -94,7 +94,7 @@ module bp_be_ptw
 
   // PMA attributes
   localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_p);
-  assign dcache_v_o                    = is_send;
+  assign dcache_v_o                    = dcache_ready_then_i & is_send;
   assign dcache_pkt_cast_o.opcode      = e_dcache_op_ld;
   assign dcache_pkt_cast_o.vaddr       = partial_vpn[level_cntr] << lg_pte_size_in_bytes_lp;
   assign dcache_pkt_cast_o.rd_addr     = '0;
@@ -192,7 +192,7 @@ module bp_be_ptw
   always_comb
     case(state_r)
       e_idle      : state_n = tlb_miss_v         ? e_send_load  : e_idle;
-      e_send_load : state_n = dcache_ready_and_i ? e_recv_load  : e_send_load;
+      e_send_load : state_n = dcache_v_o         ? e_recv_load  : e_send_load;
       e_recv_load : state_n = dcache_v_i         ? e_check_load : e_send_load;
       e_check_load: state_n = walk_done          ? e_writeback  : e_send_load;
       e_writeback : state_n = ptw_fill_yumi_i    ? e_idle       : e_writeback;
