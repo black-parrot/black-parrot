@@ -92,7 +92,7 @@
     , localparam cce_way_groups_p           =                                                      \
         `BSG_MIN(dcache_sets_p, `BSG_MIN(icache_sets_p, num_cacc_p ? acache_sets_p : icache_sets_p)) \
                                                                                                    \
-    /* L2 enable turns the L2 into a small write buffer, which is minimal size                  */ \
+    , localparam l2_en_p               = proc_param_lp.l2_en                                       \
     , localparam l2_features_p         = proc_param_lp.l2_features                                 \
     , localparam l2_banks_p            = l2_features_p[e_cfg_enabled] ? proc_param_lp.l2_banks : 1 \
     , localparam l2_sets_p             = l2_features_p[e_cfg_enabled] ? proc_param_lp.l2_sets  : 4 \
@@ -104,6 +104,8 @@
                                                                                                    \
     , localparam l2_block_size_in_words_p = l2_block_width_p / l2_data_width_p                     \
     , localparam l2_block_size_in_fill_p  = l2_block_width_p / l2_fill_width_p                     \
+    , localparam dma_els_p                = l2_en_p ? l2_banks_p : 1                               \
+    , localparam dma_mask_width_p         = l2_en_p ? l2_block_size_in_words_p : (bedrock_block_width_p >> 3) \
                                                                                                    \
     , localparam fe_queue_fifo_els_p  = proc_param_lp.fe_queue_fifo_els                            \
     , localparam fe_cmd_fifo_els_p    = proc_param_lp.fe_cmd_fifo_els                              \
@@ -249,6 +251,7 @@
           ,`bp_aviary_parameter_override(bedrock_fill_width, override_cfg_mp, default_cfg_mp)      \
                                                                                                    \
           ,`bp_aviary_parameter_override(l2_features, override_cfg_mp, default_cfg_mp)             \
+          ,`bp_aviary_parameter_override(l2_en, override_cfg_mp, default_cfg_mp)                   \
           ,`bp_aviary_parameter_override(l2_banks, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(l2_data_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(l2_sets, override_cfg_mp, default_cfg_mp)                 \

@@ -35,7 +35,7 @@ module bp_unicore
 
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, dma_mask_width_p)
    )
   (input                                                 clk_i
    , input                                               rt_clk_i
@@ -68,17 +68,17 @@ module bp_unicore
    , input                                               mem_rev_ready_and_i
 
    // DRAM interface
-   , output logic [l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
-   , output logic [l2_banks_p-1:0]                       dma_pkt_v_o
-   , input [l2_banks_p-1:0]                              dma_pkt_ready_and_i
+   , output logic [dma_els_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic [dma_els_p-1:0]                       dma_pkt_v_o
+   , input [dma_els_p-1:0]                              dma_pkt_ready_and_i
 
-   , input [l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
-   , input [l2_banks_p-1:0]                              dma_data_v_i
-   , output logic [l2_banks_p-1:0]                       dma_data_ready_and_o
+   , input [dma_els_p-1:0][l2_fill_width_p-1:0]         dma_data_i
+   , input [dma_els_p-1:0]                              dma_data_v_i
+   , output logic [dma_els_p-1:0]                       dma_data_ready_and_o
 
-   , output logic [l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
-   , output logic [l2_banks_p-1:0]                       dma_data_v_o
-   , input [l2_banks_p-1:0]                              dma_data_ready_and_i
+   , output logic [dma_els_p-1:0][l2_fill_width_p-1:0]  dma_data_o
+   , output logic [dma_els_p-1:0]                       dma_data_v_o
+   , input [dma_els_p-1:0]                              dma_data_ready_and_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -168,8 +168,9 @@ module bp_unicore
       wire is_clint_fwd    = is_my_core & is_local & (device_fwd_li == clint_dev_gp);
       wire is_cache_fwd    = is_my_core & is_local & (device_fwd_li == cache_dev_gp);
       wire is_host_fwd     = is_my_core & is_local & (device_fwd_li == host_dev_gp);
+      wire is_htif_cmd     = is_my_core & is_local & (device_fwd_li == 0);
 
-      wire is_io_fwd       = is_host_fwd | is_other_hio | is_other_core;
+      wire is_io_fwd       = is_host_fwd | is_htif_cmd | is_other_hio | is_other_core;
       wire is_l2_fwd       = is_cache_fwd | (~is_local & ~is_io_fwd);
       wire is_loopback_fwd = ~is_cfg_fwd & ~is_clint_fwd & ~is_io_fwd & ~is_l2_fwd;
 

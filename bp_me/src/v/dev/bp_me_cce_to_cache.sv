@@ -69,13 +69,17 @@ module bp_me_cce_to_cache
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = {l2_banks_p{cache_pkt}};
 
-  enum logic [1:0] {e_reset, e_clear_tag, e_ready} state_n, state_r;
+  enum logic [2:0] {e_reset, e_clear_tag, e_flush_tag, e_flinv_tag, e_ready} state_n, state_r;
   wire is_reset  = (state_r == e_reset);
   wire is_clear  = (state_r == e_clear_tag);
   wire is_ready  = (state_r == e_ready);
 
-  logic [lg_l2_blocks_lp:0] tagst_sent_r, tagst_sent_n;
-  logic [lg_l2_blocks_lp:0] tagst_received_r, tagst_received_n;
+  logic [lg_l2_blocks_lp:0] tag_sent_r, tag_sent_n;
+  logic [lg_l2_blocks_lp:0] tag_received_r, tag_received_n;
+
+  logic mem_fwd_v_li, mem_fwd_ready_and_lo;
+  assign mem_fwd_v_li = mem_fwd_v_i & mem_fwd_ready_and_o;
+  assign mem_fwd_ready_and_o = mem_fwd_ready_and_lo & is_ready;
 
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_li;
   logic [l2_data_width_p-1:0] fsm_fwd_data_li;
@@ -96,8 +100,8 @@ module bp_me_cce_to_cache
 
      ,.msg_header_i(mem_fwd_header_i)
      ,.msg_data_i(mem_fwd_data_i)
-     ,.msg_v_i(mem_fwd_v_i)
-     ,.msg_ready_and_o(mem_fwd_ready_and_o)
+     ,.msg_v_i(mem_fwd_v_li)
+     ,.msg_ready_and_o(mem_fwd_ready_and_lo)
 
      ,.fsm_header_o(fsm_fwd_header_li)
      ,.fsm_data_o(fsm_fwd_data_li)
@@ -112,9 +116,12 @@ module bp_me_cce_to_cache
   bp_local_addr_s local_addr_cast;
   assign local_addr_cast = fsm_fwd_addr_li;
 
-  wire is_word_op = (fsm_fwd_header_li.size == e_bedrock_msg_size_4);
-  wire is_csr     = (local_addr_cast < dram_base_addr_gp);
+  wire is_word_op = fsm_fwd_v_li & (fsm_fwd_header_li.size == e_bedrock_msg_size_4);
+  wire is_csr     = fsm_fwd_v_li & (local_addr_cast < dram_base_addr_gp);
   wire is_tagfl   = is_csr && (local_addr_cast.addr == cache_tagfl_addr_gp);
+  wire is_tagfl_all    = is_csr && (local_addr_cast.addr == cache_tagfl_all_addr_gp);
+  wire is_taginv_all   = is_csr && (local_addr_cast.addr == cache_taginv_all_addr_gp);
+  wire is_tagflinv_all = is_csr && (local_addr_cast.addr == cache_tagflinv_all_addr_gp);
   wire [daddr_width_p-1:0] tagfl_addr = fsm_fwd_data_li[0+:lg_l2_sets_lp+lg_l2_assoc_lp] << l2_block_offset_width_lp;
 
   // cache packet data and mask mux elements
@@ -294,34 +301,45 @@ module bp_me_cce_to_cache
 
       fsm_rev_v_lo = 1'b0;
 
-      tagst_sent_n     = tagst_sent_r;
-      tagst_received_n = tagst_received_r;
+      tag_sent_n     = tag_sent_r;
+      tag_received_n = tag_received_r;
 
       state_n = state_r;
 
       case (state_r)
         e_reset:
           begin
+            tag_sent_n = '0;
+            tag_received_n = '0;
             state_n = e_clear_tag;
           end
-        e_clear_tag: begin
-          cache_pkt_v_o = (tagst_sent_r != l2_blocks_lp) << (tagst_sent_r / (l2_sets_p*l2_assoc_p));
-          cache_pkt.opcode = TAGST;
+        e_clear_tag, e_flush_tag, e_flinv_tag: begin
+          cache_pkt_v_o = (tag_sent_r != l2_blocks_lp) << (tag_sent_r / (l2_sets_p*l2_assoc_p));
+          cache_pkt.opcode = (state_r == e_clear_tag) ? TAGST : TAGFL;
           cache_pkt.data = '0;
-          cache_pkt.addr = tagst_sent_r[0+:lg_l2_sets_lp+lg_l2_assoc_lp] << l2_block_offset_width_lp;
+          cache_pkt.addr = tag_sent_r[0+:lg_l2_sets_lp+lg_l2_assoc_lp] << l2_block_offset_width_lp;
 
           cache_data_yumi_o = cache_data_v_i;
 
-          tagst_sent_n = |cache_pkt_yumi_i
-            ? tagst_sent_r + 1'b1
-            : tagst_sent_r;
-          tagst_received_n = |{cache_data_yumi_o}
-            ? tagst_received_r + 1'b1
-            : tagst_received_r;
+          fsm_fwd_yumi_lo = fsm_fwd_v_li & (tag_sent_r == l2_blocks_lp);
+          fsm_rev_v_lo = stream_header_v_lo & (tag_received_r == l2_blocks_lp);
 
-          state_n = (tagst_sent_r == l2_blocks_lp) & (tagst_received_r == l2_blocks_lp)
-            ? e_ready
-            : e_clear_tag;
+          tag_sent_n = (tag_sent_r == l2_blocks_lp) & (tag_received_r == l2_blocks_lp)
+            ? '0
+            : (|cache_pkt_yumi_i)
+              ? tag_sent_r + 1'b1
+              : tag_sent_r;
+          tag_received_n = (tag_sent_r == l2_blocks_lp) & (tag_received_r == l2_blocks_lp)
+            ? '0
+            : |{cache_data_yumi_o}
+              ? tag_received_r + 1'b1
+              : tag_received_r;
+
+          state_n = (tag_sent_r == l2_blocks_lp) & (tag_received_r == l2_blocks_lp)
+            ?(state_r == e_flinv_tag)
+              ? e_clear_tag
+              : e_ready
+            : state_r;
         end
         e_ready:
           begin
@@ -333,11 +351,10 @@ module bp_me_cce_to_cache
                   e_bedrock_msg_size_2: cache_pkt.opcode = LH;
                   e_bedrock_msg_size_4: cache_pkt.opcode = LW;
                   e_bedrock_msg_size_8: cache_pkt.opcode = LD;
-                  //e_bedrock_msg_size_16
-                  //,e_bedrock_msg_size_32
-                  //,e_bedrock_msg_size_64
-                  //,e_bedrock_msg_size_128
-                  default: cache_pkt.opcode = LM;
+                  e_bedrock_msg_size_16
+                  ,e_bedrock_msg_size_32
+                  ,e_bedrock_msg_size_64: cache_pkt.opcode = LD;
+                  default: cache_pkt.opcode = LB;
                 endcase
               e_bedrock_mem_uc_wr
               ,e_bedrock_mem_wr
@@ -359,35 +376,43 @@ module bp_me_cce_to_cache
                       e_bedrock_amomaxu: cache_pkt.opcode = is_word_op ? AMOMAXU_W : AMOMAXU_D;
                       default : begin end
                     endcase
-                  //e_bedrock_msg_size_16
-                  //,e_bedrock_msg_size_32
-                  //,e_bedrock_msg_size_64
-                  //,e_bedrock_msg_size_128
-                  default: cache_pkt.opcode = SM;
+                  e_bedrock_msg_size_16
+                  ,e_bedrock_msg_size_32
+                  ,e_bedrock_msg_size_64: cache_pkt.opcode = SD;
+                  default: cache_pkt.opcode = LB;
                 endcase
               default: cache_pkt.opcode = LB;
             endcase
 
-            if (is_tagfl)
-              begin
-                cache_pkt.opcode = TAGFL;
-                cache_pkt.addr = tagfl_addr;
-              end
-            else
-              begin
-                cache_pkt.addr = cache_pkt_addr_lo;
-                cache_pkt.data = fsm_fwd_data_li;
-                // This mask is only used for the LM/SM operations for >64 bit mask operations,
-                // but it gets set regardless of operation
-                cache_pkt.mask = cache_pkt_mask_lo;
-              end
-            cache_pkt_v_o[cache_fwd_bank_lo] = stream_fifo_ready_lo & fsm_fwd_v_li;
-            // fsm_fwd_v_li is not strictly necessary, but avoids x-prop caused by
-            //   cache_fwd_bank_lo
-            fsm_fwd_yumi_lo = fsm_fwd_v_li & cache_pkt_yumi_i[cache_fwd_bank_lo];
+            if (is_tagfl_all) begin
+              state_n = e_flush_tag;
+            end
+            else if (is_taginv_all) begin
+              state_n = e_clear_tag;
+            end
+            else if (is_tagflinv_all) begin
+              state_n = e_flinv_tag;
+            end
+            else if (is_tagfl) begin
+              //TODO: add valid/yumi signals
+              cache_pkt.opcode = TAGFL;
+              cache_pkt.addr = tagfl_addr;
+            end
+            else begin
+              cache_pkt.addr = cache_pkt_addr_lo;
+              cache_pkt.data = fsm_fwd_data_li;
+              // This mask is only used for the LM/SM operations for >64 bit mask operations,
+              // but it gets set regardless of operation
+              cache_pkt.mask = cache_pkt_mask_lo;
 
-            fsm_rev_v_lo = stream_header_v_lo & cache_data_v_i[cache_rev_bank_lo];
-            cache_data_yumi_o[cache_rev_bank_lo] = fsm_rev_ready_and_li & fsm_rev_v_lo;
+              cache_pkt_v_o[cache_fwd_bank_lo] = stream_fifo_ready_lo & fsm_fwd_v_li;
+              // fsm_fwd_v_li is not strictly necessary, but avoids x-prop caused by
+              //   cache_fwd_bank_lo
+              fsm_fwd_yumi_lo = fsm_fwd_v_li & stream_fifo_ready_lo & cache_pkt_yumi_i[cache_fwd_bank_lo];
+
+              fsm_rev_v_lo = stream_header_v_lo & cache_data_v_i[cache_rev_bank_lo];
+              cache_data_yumi_o[cache_rev_bank_lo] = fsm_rev_ready_and_li & fsm_rev_v_lo;
+            end
           end
         default: begin end
       endcase
@@ -397,15 +422,15 @@ module bp_me_cce_to_cache
   always_ff @(posedge clk_i)
     if (reset_i)
       begin
-        state_r          <= e_reset;
-        tagst_sent_r     <= '0;
-        tagst_received_r <= '0;
+        state_r        <= e_reset;
+        tag_sent_r     <= '0;
+        tag_received_r <= '0;
       end
     else
       begin
-        state_r          <= state_n;
-        tagst_sent_r     <= tagst_sent_n;
-        tagst_received_r <= tagst_received_n;
+        state_r        <= state_n;
+        tag_sent_r     <= tag_sent_n;
+        tag_received_r <= tag_received_n;
       end
 
   // synopsys translate_off

@@ -9,7 +9,7 @@ module bp_ddr
   import bsg_dmc_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, dma_mask_width_p)
 
    , parameter num_dma_p = 1
    )
@@ -180,12 +180,12 @@ module bp_ddr
     $error("BSG DMC is currently unsupported as a backend; raise an issue if this impacts your workflow!");
 
   //bsg_cache_to_dram_ctrl
-  // #(.num_cache_p(num_dma_p)
-  //   ,.addr_width_p(daddr_width_p)
-  //   ,.data_width_p(l2_fill_width_p)
-  //   ,.block_size_in_words_p(l2_block_size_in_fill_p)
+  // #(.num_dma_p(num_dma_p)
+  //   ,.dma_addr_width_p(daddr_width_p)
+  //   ,.dma_mask_width_p(dma_mask_width_p)
+  //   ,.dma_data_width_p(l2_fill_width_p)
+  //   ,.dma_burst_len_p(l2_block_size_in_fill_p)
   //   ,.dram_ctrl_burst_len_p(l2_block_size_in_fill_p)
-  //   ,.dram_ctrl_addr_width_p(dmc_addr_width_lp)
   //   )
   // cache2dmc
   //  (.clk_i(clk_i)

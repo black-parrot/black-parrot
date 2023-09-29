@@ -26,7 +26,7 @@ module bp_core
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
-   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, l2_block_size_in_words_p)
+   , localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(daddr_width_p, dma_mask_width_p)
    )
   (input                                                 clk_i
    , input                                               rt_clk_i
@@ -79,17 +79,17 @@ module bp_core
    , output logic                                        mem_rev_v_o
    , input                                               mem_rev_ready_and_i
 
-   , output logic [l2_banks_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
-   , output logic [l2_banks_p-1:0]                       dma_pkt_v_o
-   , input [l2_banks_p-1:0]                              dma_pkt_ready_and_i
+   , output logic [dma_els_p-1:0][dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic [dma_els_p-1:0]                       dma_pkt_v_o
+   , input [dma_els_p-1:0]                              dma_pkt_ready_and_i
 
-   , input [l2_banks_p-1:0][l2_fill_width_p-1:0]         dma_data_i
-   , input [l2_banks_p-1:0]                              dma_data_v_i
-   , output logic [l2_banks_p-1:0]                       dma_data_ready_and_o
+   , input [dma_els_p-1:0][l2_fill_width_p-1:0]         dma_data_i
+   , input [dma_els_p-1:0]                              dma_data_v_i
+   , output logic [dma_els_p-1:0]                       dma_data_ready_and_o
 
-   , output logic [l2_banks_p-1:0][l2_fill_width_p-1:0]  dma_data_o
-   , output logic [l2_banks_p-1:0]                       dma_data_v_o
-   , input [l2_banks_p-1:0]                              dma_data_ready_and_i
+   , output logic [dma_els_p-1:0][l2_fill_width_p-1:0]  dma_data_o
+   , output logic [dma_els_p-1:0]                       dma_data_v_o
+   , input [dma_els_p-1:0]                              dma_data_ready_and_i
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);

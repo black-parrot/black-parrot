@@ -172,6 +172,8 @@
     // L2 slice parameters (per core)
     // L2 cache features
     integer unsigned l2_features;
+    // Enable L2 instantiation
+    integer unsigned l2_en;
     // Number of L2 banks present in the slice
     integer unsigned l2_banks;
     integer unsigned l2_data_width;
@@ -315,6 +317,7 @@
                               | (1 << e_cfg_amo_swap)
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)
+      ,l2_en               : 1
       ,l2_banks            : 2
       ,l2_data_width       : 128
       ,l2_sets             : 128
@@ -426,6 +429,7 @@
       ,`bp_aviary_define_override(bedrock_fill_width, BP_BEDROCK_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(l2_features, BP_L2_FEATURES, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(l2_en, BP_L2_EN, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_banks, BP_L2_BANKS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_data_width, BP_L2_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_sets, BP_L2_SETS, `BP_CUSTOM_BASE_CFG)
