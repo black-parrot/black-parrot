@@ -109,7 +109,7 @@ module bp_mmu
 
   logic tlb_r_v_lo;
   bp_pte_leaf_s tlb_r_entry_lo;
-  wire tlb_r_v_li = (r_v_i & ~tlb_bypass);
+  wire tlb_r_v_li = (r_v_i & ~tlb_bypass) | flush_i;
   wire tlb_w_v_li = w_v_i;
   wire tlb_v_li = tlb_r_v_li | tlb_w_v_li;
   wire [vtag_width_p-1:0] tlb_vtag_li = w_v_i ? w_vtag_i : r_etag_li;

@@ -46,6 +46,8 @@
      ,e_cache_tag_mem_set_tag
      // set coherence state for given index and way_id
      ,e_cache_tag_mem_set_state
+     // invalidate all ways in the set
+     ,e_cache_tag_mem_set_inval
      // read tag mem packets for writeback and transfer (Used for UCE)
      ,e_cache_tag_mem_read
     } bp_cache_tag_mem_opcode_e;

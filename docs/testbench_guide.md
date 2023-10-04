@@ -5,12 +5,13 @@ This document is intended to provide software and firmware developers with platf
 
 ## Architectural Details
 Currently implemented in BlackParrot is:
-* RV64IMAFD_Zfencei (Integer, Multiply/Divide, Single/Double Precision Float, Atomics and Fence.i) User-mode ISA v2.00
+* RV64IMAFDC_Zcsr_Zfencei_Zcbo (Integer, Multiply/Divide, Single/Double Precision Float, Compressed Instructions, Atomics, CSRs, Fence.i) User-mode ISA v2.00
 * MSU (Machine, Supervisor and User) privilege levels conforming to Privileged Architecture v1.11
 * SV39 virtual memory with variable physical address width 
 
 ## Building a Test
-BlackParrot test suites live in `bp_common/test/src` and are compiled with `make -C bp_common/test <test suite>.`. When a suite is compiled, it creates a set of files in `bp_common/test/mem/<suite>`. There are also a number of potential generate targets that are useful for simulation, but are generally handled automatically by the build system. The targets include:
+BlackParrot test suites live in `black-parrot-sdk` and are compiled with `make -C black-parrot-sdk
+<test suite>.`. If a suite has already been compiled, manual recompilation can be done with make -C black-parrot-sdk <test suite>_manual. When a suite is compiled, it creates a set of files in `black-parrot-sdk/prog/<suite>`. There are also a number of potential generate targets that are useful for simulation, but are generally handled automatically by the build system. The targets include:
 * .riscv (the elf file)
 * .dump (a disassembly of the test)
 * .mem (a Verilog hex format file, used to load memories in a simulation)

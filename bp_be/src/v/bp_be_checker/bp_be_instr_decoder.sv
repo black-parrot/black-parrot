@@ -42,6 +42,7 @@ module bp_be_instr_decoder
    , output logic                       wfi_o
    , output logic                       sfence_vma_o
    , output logic                       fencei_o
+   , output logic                       csrw_o
 
    , output logic [dword_width_gp-1:0]  imm_o
    );
@@ -78,6 +79,7 @@ module bp_be_instr_decoder
       wfi_o           = '0;
       sfence_vma_o    = '0;
       fencei_o        = '0;
+      csrw_o          = '0;
 
       imm_o           = '0;
 
@@ -265,11 +267,14 @@ module bp_be_instr_decoder
           end
         `RV64_MISC_MEM_OP:
           begin
-            decode_cast_o.fence_v = 1'b1;
             unique casez (instr)
-              `RV64_FENCE   : begin end
+              `RV64_FENCE   :
+                begin
+                  decode_cast_o.fence_v = 1'b1;
+                end
               `RV64_FENCE_I :
                 begin
+                  decode_cast_o.fence_v          = 1'b1;
                   decode_cast_o.pipe_mem_early_v = !dcache_features_p[e_cfg_coherent];
                   decode_cast_o.fu_op            = e_dcache_op_clean;
                   fencei_o                       = 1'b1;
@@ -283,16 +288,16 @@ module bp_be_instr_decoder
             unique casez (instr)
               `RV64_ECALL:
                 begin
-                  ecall_m_o = (decode_info_cast_i.priv_mode == `PRIV_MODE_M);
-                  ecall_s_o = (decode_info_cast_i.priv_mode == `PRIV_MODE_S);
-                  ecall_u_o = (decode_info_cast_i.priv_mode == `PRIV_MODE_U);
+                  ecall_m_o = decode_info_cast_i.m_mode;
+                  ecall_s_o = decode_info_cast_i.s_mode;
+                  ecall_u_o = decode_info_cast_i.u_mode;
                 end
               `RV64_EBREAK:
                 begin
                   dbreak_o = decode_info_cast_i.debug_mode
-                            | (decode_info_cast_i.ebreakm & (decode_info_cast_i.priv_mode == `PRIV_MODE_M))
-                            | (decode_info_cast_i.ebreaks & (decode_info_cast_i.priv_mode == `PRIV_MODE_S))
-                            | (decode_info_cast_i.ebreaku & (decode_info_cast_i.priv_mode == `PRIV_MODE_U));
+                            | (decode_info_cast_i.ebreakm & decode_info_cast_i.m_mode)
+                            | (decode_info_cast_i.ebreaks & decode_info_cast_i.s_mode)
+                            | (decode_info_cast_i.ebreaku & decode_info_cast_i.u_mode);
                   ebreak_o = ~dbreak_o;
                 end
               `RV64_DRET:
@@ -302,13 +307,12 @@ module bp_be_instr_decoder
                 end
               `RV64_MRET:
                 begin
-                  illegal_instr_o = ~decode_info_cast_i.debug_mode & (decode_info_cast_i.priv_mode < `PRIV_MODE_M);
+                  illegal_instr_o = (decode_info_cast_i.s_mode | decode_info_cast_i.u_mode);
                   mret_o = ~illegal_instr_o;
                 end
               `RV64_SRET:
                 begin
-                  illegal_instr_o = (~decode_info_cast_i.debug_mode & (decode_info_cast_i.priv_mode < `PRIV_MODE_S))
-                    | (decode_info_cast_i.tsr & (decode_info_cast_i.priv_mode == `PRIV_MODE_S));
+                  illegal_instr_o = decode_info_cast_i.u_mode | (decode_info_cast_i.tsr & decode_info_cast_i.s_mode);
                   sret_o = ~illegal_instr_o;
                 end
               `RV64_WFI:
@@ -320,25 +324,30 @@ module bp_be_instr_decoder
               `RV64_SFENCE_VMA:
                 begin
                   decode_cast_o.fence_v = 1'b1;
-                  illegal_instr_o = (decode_info_cast_i.tvm & (decode_info_cast_i.priv_mode == `PRIV_MODE_S))
-                    | (~decode_info_cast_i.debug_mode & (decode_info_cast_i.priv_mode < `PRIV_MODE_S));
+                  illegal_instr_o = (decode_info_cast_i.s_mode & decode_info_cast_i.tvm) | decode_info_cast_i.u_mode;
                   sfence_vma_o = ~illegal_instr_o;
                 end
-              default:
+              `RV64_CSRRW, `RV64_CSRRWI, `RV64_CSRRS, `RV64_CSRRSI, `RV64_CSRRC, `RV64_CSRRCI:
                 begin
                   decode_cast_o.csr_w_v = instr inside {`RV64_CSRRW, `RV64_CSRRWI} || (instr.rs1_addr != '0);
                   decode_cast_o.csr_r_v = ~(instr inside {`RV64_CSRRW, `RV64_CSRRWI}) || (instr.rd_addr != '0);
                   decode_cast_o.irf_w_v = (instr.rd_addr != '0);
-                  unique casez (instr)
-                    `RV64_CSRRW : decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrw  : e_csrr;
-                    `RV64_CSRRWI: decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrwi : e_csrr;
-                    `RV64_CSRRS : decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrs  : e_csrr;
-                    `RV64_CSRRSI: decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrsi : e_csrr;
-                    `RV64_CSRRC : decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrc  : e_csrr;
-                    `RV64_CSRRCI: decode_cast_o.fu_op = decode_cast_o.csr_w_v ? e_csrrci : e_csrr;
-                    default : illegal_instr_o = 1'b1;
+                  csrw_o = decode_cast_o.csr_w_v;
+
+                  casez (instr[31-:12])
+                    `CSR_ADDR_FCSR
+                    ,`CSR_ADDR_FFLAGS
+                    ,`CSR_ADDR_FRM      : illegal_instr_o = !decode_info_cast_i.fpu_en;
+                    `CSR_ADDR_CYCLE     : illegal_instr_o = !decode_info_cast_i.cycle_en;
+                    `CSR_ADDR_INSTRET   : illegal_instr_o = !decode_info_cast_i.instret_en;
+                    `CSR_ADDR_SATP      : illegal_instr_o = decode_info_cast_i.s_mode & decode_info_cast_i.tvm;
+                    {12'b11??_????_????}: illegal_instr_o = csrw_o;
+                    {12'b??01_????_????}: illegal_instr_o = decode_info_cast_i.u_mode;
+                    {12'b??10_????_????}: illegal_instr_o = decode_info_cast_i.s_mode | decode_info_cast_i.u_mode;
+                    {12'b??11_????_????}: illegal_instr_o = decode_info_cast_i.s_mode | decode_info_cast_i.u_mode;
                   endcase
                 end
+              default: illegal_instr_o = 1'b1;
             endcase
           end
         `RV64_FP_OP:
@@ -648,8 +657,6 @@ module bp_be_instr_decoder
           imm_o = `rv64_signext_s_imm(instr);
         `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_FLOAD_OP:
           imm_o = `rv64_signext_i_imm(instr);
-        `RV64_SYSTEM_OP:
-          imm_o = `rv64_signext_c_imm(instr);
         //`RV64_AMO_OP:
         default: imm_o = '0;
       endcase

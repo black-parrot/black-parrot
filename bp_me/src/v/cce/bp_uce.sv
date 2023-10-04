@@ -310,7 +310,7 @@ module bp_uce
   wire inval_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_inval};
   wire nonblocking_v_r = cache_req_v_r & (~uc_hit_v_r | !writeback_p) & (uc_store_v_r | wt_store_v_r);
 
-  wire [block_size_in_fill_lp-1:0] fill_index_shift = {{(assoc_p != 1){fsm_rev_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp}}, {(assoc_p == 1){'0}}};
+  wire [block_size_in_fill_lp-1:0] fill_index_shift = (assoc_p > 1) ? (fsm_rev_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp) : '0;
 
   logic [index_width_lp-1:0] index_cnt;
   logic index_clear, index_up;
@@ -358,7 +358,7 @@ module bp_uce
      ,.reset_i(reset_i)
 
      // credit consumed when memory command sends
-     ,.v_i(fsm_fwd_v_lo & fsm_fwd_new_lo)
+     ,.v_i(fsm_fwd_v_lo & fsm_fwd_last_lo)
      ,.ready_i(fsm_fwd_ready_and_li)
 
      // credit returned when memory response fully consumed

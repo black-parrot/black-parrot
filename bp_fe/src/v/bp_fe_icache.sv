@@ -346,7 +346,7 @@ module bp_fe_icache
      ,.data_o({bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n, ld_data_tv_n})
      );
 
-  wire snoop_tv_n = critical_recv ? 1'b1 : (inval_op_tl_r & coherent_p);
+  wire snoop_tv_n = critical_recv;
   wire spec_tv_n = critical_recv ? spec_tv_r : spec_tl;
   wire fetch_op_tv_n = critical_recv ? fetch_op_tv_r : fetch_op_tl_r;
   wire inval_op_tv_n = critical_recv ? inval_op_tv_r : inval_op_tl_r;
@@ -593,6 +593,11 @@ module bp_fe_icache
           begin
             tag_mem_data_li[i]   = '{state: tag_mem_pkt_cast_i.state, tag: '0};
             tag_mem_w_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, tag: '0};
+          end
+        e_cache_tag_mem_set_inval:
+          begin
+            tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
+            tag_mem_w_mask_li[i] = '{state: bp_coh_states_e'('1), tag: '0};
           end
         default: // e_cache_tag_mem_set_clear
           begin
