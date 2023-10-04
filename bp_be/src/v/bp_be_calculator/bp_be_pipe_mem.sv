@@ -63,7 +63,6 @@ module bp_be_pipe_mem
 
    , output logic [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_o
    , output logic                             ptw_fill_v_o
-   , input                                    ptw_fill_yumi_i
 
    , input [trans_info_width_lp-1:0]      trans_info_i
 
@@ -142,7 +141,7 @@ module bp_be_pipe_mem
   /* PTW ports */
   logic [ptag_width_p-1:0]  ptw_dcache_ptag;
   logic                     ptw_dcache_ptag_v;
-  logic                     ptw_dcache_v, ptw_busy;
+  logic                     ptw_dcache_v;
   bp_be_dcache_pkt_s        ptw_dcache_pkt;
 
   /* D-Cache ports */
@@ -155,12 +154,14 @@ module bp_be_pipe_mem
   logic                     dcache_ptag_uncached, dcache_ptag_dram, dcache_ptag_v;
   logic [dpath_width_gp-1:0] dcache_st_data;
 
-  logic [dword_width_gp-1:0] dcache_data;
-  logic [paddr_width_p-1:0] dcache_addr;
-  logic [reg_addr_width_gp-1:0] dcache_rd_addr;
-  logic                     dcache_ret, dcache_store, dcache_clean, dcache_v, dcache_late;
-  logic                     dcache_float;
-  logic                     dcache_req;
+  logic [dword_width_gp-1:0]    dcache_early_data;
+  logic                         dcache_early_v, dcache_early_req;
+
+  logic [dpath_width_gp-1:0]    dcache_final_data;
+  logic [paddr_width_p-1:0]     dcache_final_addr;
+  logic [reg_addr_width_gp-1:0] dcache_final_rd_addr;
+  logic                         dcache_final_v, dcache_final_late;
+  logic                         dcache_final_int, dcache_final_float, dcache_final_ptw;
 
   logic load_access_fault_v, store_access_fault_v;
   logic load_page_fault_v, store_page_fault_v;
@@ -271,8 +272,10 @@ module bp_be_pipe_mem
     (.clk_i(posedge_clk)
      ,.reset_i(reset_i)
 
-     ,.busy_o(ptw_busy)
-     ,.ptw_miss_pkt_i(ptw_miss_pkt)
+     ,.busy_o(ptw_busy_o)
+     ,.commit_pkt_i(commit_pkt)
+     ,.trans_info_i(trans_info_i)
+     ,.ordered_i(dcache_ordered_lo)
 
      ,.dcache_v_o(ptw_dcache_v)
      ,.dcache_pkt_o(ptw_dcache_pkt)
@@ -280,13 +283,14 @@ module bp_be_pipe_mem
      ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
      ,.dcache_ready_and_i(dcache_ready_and_lo)
 
-     ,.dcache_v_i(dcache_v)
-     ,.dcache_late_i(dcache_late)
-     ,.dcache_data_i(dcache_data)
+     ,.dcache_early_v_i(dcache_early_v)
+     ,.dcache_early_req_i(dcache_early_req)
+     ,.dcache_final_v_i(dcache_final_v)
+     ,.dcache_final_ptw_i(dcache_final_ptw)
+     ,.dcache_final_data_i(dcache_final_data)
 
      ,.ptw_fill_pkt_o(ptw_fill_pkt)
      ,.ptw_fill_v_o(ptw_fill_v_o)
-     ,.ptw_fill_yumi_i(ptw_fill_yumi_i)
      );
 
   logic dtlb_r_v_r;
@@ -312,7 +316,7 @@ module bp_be_pipe_mem
 
   // We mux D-Cache accesses to a single port because PTW are fairly rare events
   always_comb
-    if (ptw_busy)
+    if (ptw_busy_o)
       begin
         dcache_pkt_v           = ptw_dcache_v;
         dcache_pkt             = ptw_dcache_pkt;
@@ -354,16 +358,18 @@ module bp_be_pipe_mem
       ,.st_data_i(dcache_st_data)
       ,.flush_i(flush_i)
 
-      ,.v_o(dcache_v)
-      ,.data_o(dcache_data)
-      ,.addr_o(dcache_addr)
-      ,.rd_addr_o(dcache_rd_addr)
-      ,.clean_o(dcache_clean)
-      ,.float_o(dcache_float)
-      ,.ret_o(dcache_ret)
-      ,.store_o(dcache_store)
-      ,.late_o(dcache_late)
-      ,.req_o(dcache_req)
+      ,.early_v_o(dcache_early_v)
+      ,.early_data_o(dcache_early_data)
+      ,.early_req_o(dcache_early_req)
+
+      ,.final_v_o(dcache_final_v)
+      ,.final_data_o(dcache_final_data)
+      ,.final_addr_o(dcache_final_addr)
+      ,.final_rd_addr_o(dcache_final_rd_addr)
+      ,.final_int_o(dcache_final_int)
+      ,.final_float_o(dcache_final_float)
+      ,.final_ptw_o(dcache_final_ptw)
+      ,.final_late_o(dcache_final_late)
 
       // D$-LCE Interface
       ,.cache_req_o(cache_req_cast_o)
@@ -401,39 +407,16 @@ module bp_be_pipe_mem
      ,.data_i(is_req)
      ,.data_o(early_v_r)
      );
-  assign cache_miss_v_o   = early_v_r &  dcache_req & ~dcache_v;
-  assign cache_replay_v_o = early_v_r & ~dcache_req & (~dcache_v | dcache_late);
+  assign cache_miss_v_o   = early_v_r & ~dcache_early_v &  dcache_early_req;
+  assign cache_replay_v_o = early_v_r & ~dcache_early_v & ~dcache_early_req;
 
-  logic dcache_late_r, dcache_ret_r, dcache_float_r, dcache_v_r;
-  logic [reg_addr_width_gp-1:0] dcache_rd_addr_r;
-  logic [dword_width_gp-1:0] dcache_data_r;
-  bsg_dff
-   #(.width_p(4+reg_addr_width_gp+dword_width_gp))
-   final_reg
-    (.clk_i(posedge_clk)
-
-     ,.data_i({dcache_late, dcache_ret, dcache_float, dcache_v, dcache_rd_addr, dcache_data})
-     ,.data_o({dcache_late_r, dcache_ret_r, dcache_float_r, dcache_v_r, dcache_rd_addr_r, dcache_data_r})
-     );
-
-  // Could use original early data; however, this would introduce a hazard if
-  //   an integer result returned immediately after a float result
-  bp_be_fp_reg_s dcache_float_data;
-  bp_be_fp_to_reg
-   #(.bp_params_p(bp_params_p))
-   fp_to_reg
-    (.raw_i(dcache_data_r)
-     ,.reg_o(dcache_float_data)
-     );
-  wire [dpath_width_gp-1:0] dcache_final_data = dcache_float_r ? dcache_float_data : dcache_data_r;
-
-  assign late_wb_pkt_cast_o = '{ird_w_v  : dcache_v_r & dcache_late_r & dcache_ret_r & ~dcache_float_r
-                                ,frd_w_v : dcache_v_r & dcache_late_r & dcache_ret_r &  dcache_float_r
-                                ,rd_addr : dcache_rd_addr_r
+  assign late_wb_v_o = dcache_final_v & dcache_final_late;
+  assign late_wb_pkt_cast_o = '{ird_w_v  : dcache_final_v & dcache_final_int
+                                ,frd_w_v : dcache_final_v & dcache_final_float
+                                ,rd_addr : dcache_final_rd_addr
                                 ,rd_data : dcache_final_data
                                 ,default : '0
                                 };
-  assign late_wb_v_o = dcache_v_r & dcache_late_r & dcache_ret_r;
 
   wire early_v_li = reservation.v & reservation.decode.pipe_mem_early_v;
   bsg_dff_chain
@@ -465,8 +448,7 @@ module bp_be_pipe_mem
 
   assign ordered_o      = dcache_ordered_lo;
   assign busy_o         = ~dcache_ready_and_lo;
-  assign ptw_busy_o     = ptw_busy;
-  assign early_data_o   = dcache_data;
+  assign early_data_o   = dcache_early_data;
   assign final_data_o   = dcache_final_data;
 
 endmodule

@@ -17,30 +17,25 @@ module bp_be_dcache_decoder
    );
 
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
-  bp_be_dcache_pkt_s dcache_pkt;
-  assign dcache_pkt = pkt_i;
-
-  bp_be_dcache_decode_s decode_cast_o;
-  assign decode_o = decode_cast_o;
+  `bp_cast_i(bp_be_dcache_pkt_s, pkt);
+  `bp_cast_o(bp_be_dcache_decode_s, decode);
 
   always_comb begin
     decode_cast_o = '0;
 
-    // Signed op decoding
-    decode_cast_o.signed_op = !(dcache_pkt.opcode inside
-      {e_dcache_op_lwu, e_dcache_op_lhu, e_dcache_op_lbu});
-
     // Float decoding
-    decode_cast_o.float_op = dcache_pkt.opcode inside
+    decode_cast_o.float_op = pkt_cast_i.opcode inside
       {e_dcache_op_flw, e_dcache_op_fld, e_dcache_op_fsw, e_dcache_op_fsd};
 
+    decode_cast_o.ptw_op = pkt_cast_i.opcode inside {e_dcache_op_ptw};
+
     // Atomic op decoding
-    decode_cast_o.lr_op = dcache_pkt.opcode inside {e_dcache_op_lrw, e_dcache_op_lrd};
-    decode_cast_o.sc_op = dcache_pkt.opcode inside {e_dcache_op_scw, e_dcache_op_scd};
-    decode_cast_o.clean_op = dcache_pkt.opcode inside {e_dcache_op_clean};
+    decode_cast_o.lr_op = pkt_cast_i.opcode inside {e_dcache_op_lrw, e_dcache_op_lrd};
+    decode_cast_o.sc_op = pkt_cast_i.opcode inside {e_dcache_op_scw, e_dcache_op_scd};
+    decode_cast_o.clean_op = pkt_cast_i.opcode inside {e_dcache_op_clean};
 
     // Atomic subop decoding
-    unique casez (dcache_pkt.opcode)
+    unique casez (pkt_cast_i.opcode)
       e_dcache_op_lrw, e_dcache_op_lrd          : decode_cast_o.amo_subop = e_dcache_subop_lr;
       e_dcache_op_scw, e_dcache_op_scd          : decode_cast_o.amo_subop = e_dcache_subop_sc;
       e_dcache_op_amoswapw, e_dcache_op_amoswapd: decode_cast_o.amo_subop = e_dcache_subop_amoswap;
@@ -70,17 +65,18 @@ module bp_be_dcache_decoder
       || ((!amo_support_p[e_dcache_subop_amoand]) && decode_cast_o.amo_subop == e_dcache_subop_amoand)
       || ((!amo_support_p[e_dcache_subop_amoor]) && decode_cast_o.amo_subop == e_dcache_subop_amoor);
 
-    decode_cast_o.load_op = (decode_cast_o.amo_op | decode_cast_o.lr_op) || dcache_pkt.opcode inside
+    decode_cast_o.load_op = (decode_cast_o.amo_op | decode_cast_o.lr_op) || pkt_cast_i.opcode inside
       {e_dcache_op_flw, e_dcache_op_fld
        ,e_dcache_op_ld, e_dcache_op_lw, e_dcache_op_lh, e_dcache_op_lb
        ,e_dcache_op_lwu, e_dcache_op_lhu, e_dcache_op_lbu
+       ,e_dcache_op_ptw
        };
 
-    decode_cast_o.store_op = (decode_cast_o.amo_op & ~decode_cast_o.lr_op) || dcache_pkt.opcode inside
+    decode_cast_o.store_op = (decode_cast_o.amo_op & ~decode_cast_o.lr_op) || pkt_cast_i.opcode inside
       {e_dcache_op_sd, e_dcache_op_sw, e_dcache_op_sh, e_dcache_op_sb, e_dcache_op_fsw, e_dcache_op_fsd};
 
     // Size decoding
-    unique case (dcache_pkt.opcode)
+    unique case (pkt_cast_i.opcode)
       e_dcache_op_lb, e_dcache_op_lbu, e_dcache_op_sb: decode_cast_o.byte_op   = 1'b1;
       e_dcache_op_lh, e_dcache_op_lhu, e_dcache_op_sh: decode_cast_o.half_op   = 1'b1;
       e_dcache_op_amoswapw, e_dcache_op_amoaddw, e_dcache_op_amoxorw
@@ -92,11 +88,15 @@ module bp_be_dcache_decoder
       default: decode_cast_o.double_op = 1'b1;
     endcase
 
+    // Signed op decoding
+    decode_cast_o.signed_op = (decode_cast_o.byte_op | decode_cast_o.half_op | decode_cast_o.word_op)
+      && !(pkt_cast_i.opcode inside {e_dcache_op_lwu, e_dcache_op_lhu, e_dcache_op_lbu});
+
     // The destination register of the cache request
-    decode_cast_o.rd_addr = dcache_pkt.rd_addr;
+    decode_cast_o.rd_addr = pkt_cast_i.rd_addr;
 
     // Return
-    decode_cast_o.ret_op = decode_cast_o.load_op & (decode_cast_o.float_op | (decode_cast_o.rd_addr != '0));
+    decode_cast_o.ret_op = decode_cast_o.load_op & ~decode_cast_o.ptw_op & (decode_cast_o.float_op | (decode_cast_o.rd_addr != '0));
   end
 
 endmodule

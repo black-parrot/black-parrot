@@ -184,27 +184,30 @@ module wrapper
       ,.reset_i(reset_i)
 
       ,.cfg_bus_i(cfg_bus_i)
+      ,.ordered_o()
 
       ,.dcache_pkt_i(rolly_dcache_pkt_lo[i])
       ,.v_i(rolly_yumi_li[i])
       ,.ready_and_o(dcache_ready_and_lo[i])
-
-      ,.data_o(data_o[i])
-      ,.v_o(v_o[i])
-      ,.clean_o()
-      ,.ret_o()
-      ,.rd_addr_o()
-      ,.addr_o()
-      ,.ordered_o()
-      ,.float_o()
-      ,.store_o()
-      ,.req_o()
 
       ,.ptag_v_i(1'b1)
       ,.ptag_i(rolly_ptag_r[i])
       ,.ptag_uncached_i(rolly_uncached_r[i])
       ,.ptag_dram_i(1'b1)
       ,.st_data_i(st_data_i)
+
+      ,.early_v_o(v_o[i])
+      ,.early_data_o(data_o[i])
+      ,.early_req_o()
+
+      ,.final_v_o()
+      ,.final_data_o()
+      ,.final_addr_o()
+      ,.final_rd_addr_o()
+      ,.final_int_o()
+      ,.final_float_o()
+      ,.final_ptw_o()
+      ,.final_late_o()
 
       ,.flush_i('0)
 
@@ -254,6 +257,7 @@ module wrapper
              ,.reset_i(reset_i)
 
              ,.lce_id_i(lce_id_width_p'(i))
+             ,.did_i('0)
              ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
 
              ,.cache_req_i(cache_req_lo[i])

@@ -107,6 +107,7 @@ module bp_uce
   enum logic [4:0] {
     e_reset
     ,e_init
+    ,e_backoff
     ,e_inval
     ,e_clean_read
     ,e_clean_scan
@@ -125,6 +126,7 @@ module bp_uce
   } state_n, state_r;
 
   wire is_reset           = (state_r == e_reset);
+  wire is_backoff         = (state_r == e_backoff);
   wire is_inval           = (state_r == e_inval);
   wire is_init            = (state_r == e_init);
   wire is_clean_read      = (state_r == e_clean_read);
@@ -402,7 +404,7 @@ module bp_uce
   // We ack mem_revs for stores no matter what, so load_resp_yumi_lo is for other responses
   logic load_resp_yumi_lo;
   assign fsm_rev_yumi_lo = load_resp_yumi_lo | store_resp_v_li;
-  assign cache_req_lock_o = is_reset | is_init | clean_v_r | inval_v_r;
+  assign cache_req_lock_o = is_reset | is_init | clean_v_r | inval_v_r | ~fsm_fwd_ready_and_li;
   always_comb
     begin
       cache_req_yumi_o = '0;
@@ -454,6 +456,11 @@ module bp_uce
             cache_req_done = cache_req_last_o;
 
             state_n = (index_done & index_up) ? e_ready : state_r;
+          end
+
+        e_backoff:
+          begin
+            state_n = fsm_fwd_ready_and_li ? e_ready : state_r;
           end
 
         e_clean_read:
@@ -555,7 +562,7 @@ module bp_uce
                             : (uc_store_v_li || wt_store_v_li)
                               ? e_ready
                               : e_send_critical
-                      : state_r;
+                      : cache_req_v_i ? e_backoff : state_r;
           end
 
         e_uc_writeback_evict:

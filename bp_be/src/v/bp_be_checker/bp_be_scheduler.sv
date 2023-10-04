@@ -41,6 +41,7 @@ module bp_be_scheduler
    , input                                    dispatch_v_i
    , input                                    interrupt_v_i
    , input                                    ispec_v_i
+   , input                                    poison_isd_i
 
    // Fetch interface
    , input [fe_queue_width_lp-1:0]            fe_queue_i
@@ -175,8 +176,8 @@ module bp_be_scheduler
     begin
       // Form dispatch packet
       dispatch_pkt_cast_o = '0;
-      dispatch_pkt_cast_o.v          = fe_queue_read_li || be_exc_not_instr_li;
-      dispatch_pkt_cast_o.queue_v    = fe_queue_read_li;
+      dispatch_pkt_cast_o.v          = (fe_queue_read_li & ~poison_isd_i) || be_exc_not_instr_li;
+      dispatch_pkt_cast_o.queue_v    = (fe_queue_read_li & ~poison_isd_i);
       dispatch_pkt_cast_o.instr_v    = fe_instr_not_exc_li;
       dispatch_pkt_cast_o.ispec_v    = ispec_v_i;
       dispatch_pkt_cast_o.nspec_v    = be_exc_not_instr_li;
