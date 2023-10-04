@@ -134,6 +134,7 @@ module bp_be_ptw
   bp_be_pte_leaf_s tlb_w_entry;
   assign tlb_w_entry.ptag       = writeback_ppn;
   assign tlb_w_entry.gigapage   = pte_is_gigapage;
+  assign tlb_w_entry.megapage   = pte_is_megapage;
   assign tlb_w_entry.a          = dcache_pte_r.a;
   assign tlb_w_entry.d          = dcache_pte_r.d;
   assign tlb_w_entry.u          = dcache_pte_r.u;

@@ -89,6 +89,7 @@
     {                                                                                              \
       logic [paddr_width_mp-page_offset_width_gp-1:0] ptag;                                        \
       logic                                           gigapage;                                    \
+      logic                                           megapage;                                    \
       logic                                           a;                                           \
       logic                                           d;                                           \
       logic                                           u;                                           \
@@ -187,7 +188,7 @@
     (`bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
 
   `define bp_pte_leaf_width(paddr_width_mp) \
-    (paddr_width_mp - page_offset_width_gp + 7)
+    (paddr_width_mp - page_offset_width_gp + 8)
 
   `define bp_fe_cmd_itlb_fence_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))

@@ -27,6 +27,7 @@ module bp_nonsynth_vm_tracer
    , input                           itlb_clear_i
    , input                           itlb_fill_v_i
    , input                           itlb_fill_g_i
+   , input                           itlb_fill_m_i
    , input [vtag_width_p-1:0]        itlb_vtag_i
    , input [itlb_entry_width_lp-1:0] itlb_entry_i
    , input                           itlb_r_v_i
@@ -34,6 +35,7 @@ module bp_nonsynth_vm_tracer
    , input                           dtlb_clear_i
    , input                           dtlb_fill_v_i
    , input                           dtlb_fill_g_i
+   , input                           dtlb_fill_m_i
    , input [vtag_width_p-1:0]        dtlb_vtag_i
    , input [dtlb_entry_width_lp-1:0] dtlb_entry_i
    , input                           dtlb_r_v_i
@@ -65,13 +67,14 @@ module bp_nonsynth_vm_tracer
       if (itlb_clear_i)
         $fwrite(file, "%12t | ITLB Clear\n", $time);
       if (itlb_fill_v_i)
-        $fwrite(file, "%12t | ITLB map %x -> %x [R:%x W:%x X:%x] GP: %x\n" //A:%x D:%x]"
+        $fwrite(file, "%12t | ITLB map %x -> %x [R:%x W:%x X:%x] MP: %x GP: %x\n" //A:%x D:%x]"
                 ,$time
                 ,itlb_vtag_i
                 ,itlb_w_entry.ptag
                 ,itlb_w_entry.r
                 ,itlb_w_entry.w
                 ,itlb_w_entry.x
+                ,itlb_fill_m_i
                 ,itlb_fill_g_i
                 //,itlb_w_entry.a
                 //,itlb_w_entry.d
@@ -79,13 +82,14 @@ module bp_nonsynth_vm_tracer
       if (dtlb_clear_i)
         $fwrite(file, "%12t | DTLB Clear\n", $time);
       if (dtlb_fill_v_i)
-        $fwrite(file, "%12t | DTLB map %x -> %x [R:%x W:%x X:%x] GP: %x\n" //A:%x D:%x]"
+        $fwrite(file, "%12t | DTLB map %x -> %x [R:%x W:%x X:%x] MP: %x GP: %x\n" //A:%x D:%x]"
                 ,$time
                 ,dtlb_vtag_i
                 ,dtlb_w_entry.ptag
                 ,dtlb_w_entry.r
                 ,dtlb_w_entry.w
                 ,dtlb_w_entry.x
+                ,dtlb_fill_m_i
                 ,dtlb_fill_g_i
                 //,dtlb_w_entry.a
                 //,dtlb_w_entry.d

@@ -132,8 +132,10 @@
 
     // Capacity of the Instruction/Data TLBs
     integer unsigned itlb_els_4k;
+    integer unsigned itlb_els_2m;
     integer unsigned itlb_els_1g;
     integer unsigned dtlb_els_4k;
+    integer unsigned dtlb_els_2m;
     integer unsigned dtlb_els_1g;
 
     // I$ cache features
@@ -275,9 +277,11 @@
       ,ghist_width              : 2
 
       ,itlb_els_4k : 8
+      ,itlb_els_2m : 2
+      ,itlb_els_1g : 1
       ,dtlb_els_4k : 8
-      ,itlb_els_1g : 0
-      ,dtlb_els_1g : 0
+      ,dtlb_els_2m : 2
+      ,dtlb_els_1g : 1
 
       ,dcache_features      : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
@@ -397,8 +401,10 @@
       ,`bp_aviary_define_override(ghist_width, BP_GHIST_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(itlb_els_4k, BP_ITLB_ELS_4K, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(itlb_els_2m, BP_ITLB_ELS_2M, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(itlb_els_1g, BP_ITLB_ELS_1G, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dtlb_els_4k, BP_DTLB_ELS_4K, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dtlb_els_2m, BP_DTLB_ELS_2M, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dtlb_els_1g, BP_DTLB_ELS_1G, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(icache_features, BP_ICACHE_FEATURES, `BP_CUSTOM_BASE_CFG)

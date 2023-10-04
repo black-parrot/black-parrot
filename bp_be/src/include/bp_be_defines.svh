@@ -130,6 +130,7 @@
     {                                                                                              \
       logic [paddr_width_mp-page_offset_width_gp-1:0] ptag;                                        \
       logic                                           gigapage;                                    \
+      logic                                           megapage;                                    \
       logic                                           a;                                           \
       logic                                           d;                                           \
       logic                                           u;                                           \
@@ -265,7 +266,7 @@
     (6 + dpath_width_gp + 2*vaddr_width_mp + instr_width_gp + 1 + $bits(bp_be_exception_s) + $bits(bp_be_special_s))
 
   `define bp_be_pte_leaf_width(paddr_width_mp) \
-    (paddr_width_mp - page_offset_width_gp + 7)
+    (paddr_width_mp - page_offset_width_gp + 8)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
     (5 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 20)

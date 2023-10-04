@@ -151,6 +151,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_muxi2_gatestack.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_nor2.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_nor3.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_nand.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_popcount.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_reduce.v

@@ -12,6 +12,7 @@ module bp_tlb
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    , parameter `BSG_INV_PARAM(els_1g_p)
+   , parameter `BSG_INV_PARAM(els_2m_p)
    , parameter `BSG_INV_PARAM(els_4k_p)
 
    , parameter pte_width_p         = sv39_pte_width_gp
@@ -23,7 +24,7 @@ module bp_tlb
    )
   (input                               clk_i
    , input                             reset_i
-   , input                             flush_i
+   , input                             fence_i
 
    // Single read-write port, but writes also "read" from the TLB
    , input                             v_i
@@ -39,9 +40,11 @@ module bp_tlb
   `bp_cast_i(bp_pte_leaf_s, entry);
   // Signals must be 1 width
   localparam els_1g_lp = `BSG_MAX(els_1g_p, 1);
+  localparam els_2m_lp = `BSG_MAX(els_2m_p, 1);
 
-  localparam r_entry_low_bits_lp  = (sv39_levels_gp-1)*sv39_page_idx_width_gp;
-  localparam r_entry_high_bits_lp = $bits(bp_pte_leaf_s) - r_entry_low_bits_lp;
+  localparam r_entry_low_bits_lp  = 1*sv39_page_idx_width_gp;
+  localparam r_entry_med_bits_lp  = 1*sv39_page_idx_width_gp;
+  localparam r_entry_high_bits_lp = $bits(bp_pte_leaf_s) - r_entry_med_bits_lp - r_entry_low_bits_lp;
 
   wire r_v_li = v_i & ~w_i;
   wire w_v_li = v_i &  w_i;
@@ -67,9 +70,11 @@ module bp_tlb
      ,.data_o(vtag_r)
      );
   wire [r_entry_low_bits_lp-1:0] passthrough_low_bits = vtag_r[0+:r_entry_low_bits_lp];
+  wire [r_entry_med_bits_lp-1:0] passthrough_med_bits = vtag_r[r_entry_low_bits_lp+:r_entry_med_bits_lp];
 
   wire fill_gigapage = w_v_li & entry_cast_i.gigapage & (els_1g_p > 0);
-  wire fill_kilopage = w_v_li & ~fill_gigapage;
+  wire fill_megapage = w_v_li & entry_cast_i.megapage & (els_2m_p > 0);
+  wire fill_kilopage = w_v_li & ~fill_gigapage & ~fill_megapage;
 
   logic flush_4k_li;
   logic [els_4k_p-1:0] tag_r_match_4k_lo;
@@ -104,6 +109,41 @@ module bp_tlb
      ,.alloc_v_i(fill_kilopage)
      ,.alloc_empty_i(tag_empty_4k_lo)
      ,.alloc_v_o(repl_way_4k_lo)
+     );
+
+  logic flush_2m_li;
+  logic [els_2m_lp-1:0] tag_r_match_2m_lo;
+  logic [els_2m_lp-1:0] tag_empty_2m_lo;
+  logic [els_2m_lp-1:0] repl_way_2m_lo;
+  wire [els_2m_lp-1:0] tag_2m_w_v_li = ({els_2m_lp{fill_megapage}} & repl_way_2m_lo) | {els_2m_lp{flush_2m_li}};
+  bsg_cam_1r1w_tag_array
+   #(.width_p(vtag_width_p), .els_p(els_2m_p))
+   tag_array_2m
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.w_v_i(tag_2m_w_v_li)
+     ,.w_set_not_clear_i(~flush_2m_li)
+     ,.w_tag_i(vtag_i)
+     ,.w_empty_o(tag_empty_2m_lo)
+
+     ,.r_v_i(1'b1)
+     ,.r_tag_i(vtag_r)
+     ,.r_match_o(tag_r_match_2m_lo)
+     );
+  wire any_match_2m_lo = |tag_r_match_2m_lo;
+
+  bsg_cam_1r1w_replacement
+   #(.els_p(els_2m_p))
+   replacement_2m
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.read_v_i(tag_r_match_2m_lo)
+
+     ,.alloc_v_i(fill_megapage)
+     ,.alloc_empty_i(tag_empty_2m_lo)
+     ,.alloc_v_o(repl_way_2m_lo)
      );
 
   logic flush_1g_li;
@@ -142,6 +182,7 @@ module bp_tlb
      );
 
   logic [els_4k_p-1:0][r_entry_high_bits_lp-1:0] data_4k_high_r;
+  logic [els_4k_p-1:0][r_entry_med_bits_lp-1:0] data_4k_med_r;
   logic [els_4k_p-1:0][r_entry_low_bits_lp-1:0] data_4k_low_r;
   wire [els_4k_p-1:0] mem_4k_w_v_li = ({els_4k_p{fill_kilopage}} & repl_way_4k_lo);
   for (genvar i = 0; i < els_4k_p; i++)
@@ -152,13 +193,30 @@ module bp_tlb
          (.clk_i(clk_i)
           ,.en_i(mem_4k_w_v_li[i])
           ,.data_i(entry_shifted)
-          ,.data_o({data_4k_high_r[i], data_4k_low_r[i]})
+          ,.data_o({data_4k_high_r[i], data_4k_med_r[i], data_4k_low_r[i]})
           );
     end
 
+  logic [els_2m_lp-1:0][r_entry_high_bits_lp-1:0] data_2m_high_r;
+  logic [els_2m_lp-1:0][r_entry_med_bits_lp-1:0] data_2m_med_r;
+  wire [els_2m_lp-1:0] mem_2m_w_v_li = ({els_2m_lp{fill_megapage}} & repl_way_2m_lo);
+  if (els_2m_p == 0) begin assign data_2m_high_r = '0; assign data_2m_med_r = '0; end
+  else
+    for (genvar i = 0; i < els_2m_p; i++)
+      begin : mem_array_2m
+        bsg_dff_en
+          #(.width_p(r_entry_high_bits_lp+r_entry_med_bits_lp))
+          mem_reg
+          (.clk_i(clk_i)
+            ,.en_i(mem_2m_w_v_li[i])
+            ,.data_i(entry_shifted[r_entry_low_bits_lp+:r_entry_med_bits_lp+r_entry_high_bits_lp])
+            ,.data_o({data_2m_high_r[i], data_2m_med_r[i]})
+            );
+      end
+
   logic [els_1g_lp-1:0][r_entry_high_bits_lp-1:0] data_1g_high_r;
   wire [els_1g_lp-1:0] mem_1g_w_v_li = ({els_1g_lp{fill_gigapage}} & repl_way_1g_lo);
-  if (els_1g_p == 0) assign data_1g_high_r = '0;
+  if (els_1g_p == 0) begin assign data_1g_high_r = '0; end
   else
     for (genvar i = 0; i < els_1g_p; i++)
       begin : mem_array_1g
@@ -167,7 +225,7 @@ module bp_tlb
           mem_reg
           (.clk_i(clk_i)
             ,.en_i(mem_1g_w_v_li[i])
-            ,.data_i(entry_shifted[r_entry_low_bits_lp+:r_entry_high_bits_lp])
+            ,.data_i(entry_shifted[r_entry_low_bits_lp+r_entry_med_bits_lp+:r_entry_high_bits_lp])
             ,.data_o(data_1g_high_r[i])
             );
       end
@@ -177,22 +235,39 @@ module bp_tlb
    #(.width_p(r_entry_low_bits_lp), .els_p(els_4k_p+1))
    one_hot_sel_low
     (.data_i({passthrough_low_bits, data_4k_low_r})
-     ,.sel_one_hot_i({any_match_1g_lo, tag_r_match_4k_lo})
+     ,.sel_one_hot_i({(any_match_1g_lo | any_match_2m_lo), tag_r_match_4k_lo})
      ,.data_o(r_entry[0+:r_entry_low_bits_lp])
      );
 
   bsg_mux_one_hot
-   #(.width_p(r_entry_high_bits_lp), .els_p(els_4k_p+els_1g_lp))
-   one_hot_sel_high
-    (.data_i({data_1g_high_r, data_4k_high_r})
-     ,.sel_one_hot_i({tag_r_match_1g_lo, tag_r_match_4k_lo})
-     ,.data_o(r_entry[r_entry_low_bits_lp+:r_entry_high_bits_lp])
+   #(.width_p(r_entry_med_bits_lp), .els_p(els_4k_p+els_2m_p+1))
+   one_hot_sel_med
+    (.data_i({passthrough_med_bits, data_2m_med_r, data_4k_med_r})
+     ,.sel_one_hot_i({any_match_1g_lo, tag_r_match_2m_lo, tag_r_match_4k_lo})
+     ,.data_o(r_entry[r_entry_low_bits_lp+:r_entry_med_bits_lp])
      );
 
-  wire r_v_lo = any_match_4k_lo ^ any_match_1g_lo;
+  bsg_mux_one_hot
+   #(.width_p(r_entry_high_bits_lp), .els_p(els_4k_p+els_2m_p+els_1g_lp))
+   one_hot_sel_high
+    (.data_i({data_1g_high_r, data_2m_high_r, data_4k_high_r})
+     ,.sel_one_hot_i({tag_r_match_1g_lo, tag_r_match_2m_lo, tag_r_match_4k_lo})
+     ,.data_o(r_entry[r_entry_low_bits_lp+r_entry_med_bits_lp+:r_entry_high_bits_lp])
+     );
 
-  assign flush_4k_li = flush_i | (any_match_4k_lo & any_match_1g_lo);
-  assign flush_1g_li = flush_i;
+  logic [`BSG_WIDTH(3)-1:0] match_cnt;
+  bsg_popcount
+   #(.width_p(3))
+   mpc
+    (.i({any_match_1g_lo, any_match_2m_lo, any_match_4k_lo})
+     ,.o(match_cnt)
+     );
+  wire single_match = (match_cnt == 1'b1);
+  wire multi_match  = (match_cnt > 1'b1);
+
+  assign flush_4k_li = fence_i | (any_match_1g_lo & any_match_4k_lo) | (any_match_2m_lo & any_match_4k_lo);
+  assign flush_2m_li = fence_i | (any_match_1g_lo & any_match_2m_lo);
+  assign flush_1g_li = fence_i;
 
   // We shift so that ppn bits are LSB
   bp_pte_leaf_s entry_unshifted;
@@ -205,7 +280,7 @@ module bp_tlb
      );
 
   assign entry_o = entry_unshifted;
-  assign v_o     = r_v_lo;
+  assign v_o     = single_match;
 
 endmodule
 

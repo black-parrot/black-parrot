@@ -154,7 +154,7 @@ module bp_fe_top
 
   wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
   wire [1:0] r_size_li = 2'b10;
-  logic itlb_r_v_li, itlb_w_v_li, itlb_flush_v_li;
+  logic itlb_r_v_li, itlb_w_v_li, itlb_flush_v_li, itlb_fence_v_li;
 
   bp_pte_leaf_s w_tlb_entry_li;
   wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.npc[vaddr_width_p-1-:vtag_width_p];
@@ -169,6 +169,7 @@ module bp_fe_top
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(itlb_els_4k_p)
+     ,.tlb_els_2m_p(itlb_els_2m_p)
      ,.tlb_els_1g_p(itlb_els_1g_p)
      )
    immu
@@ -176,6 +177,7 @@ module bp_fe_top
      ,.reset_i(reset_i)
 
      ,.flush_i(itlb_flush_v_li)
+     ,.fence_i(itlb_fence_v_li)
      ,.priv_mode_i(shadow_priv_r)
      ,.trans_en_i(shadow_translation_en_r)
      // Supervisor use of user memory is always disabled for immu
@@ -419,6 +421,7 @@ module bp_fe_top
      ,.itlb_r_v_o(itlb_r_v_li)
      ,.itlb_w_v_o(itlb_w_v_li)
      ,.itlb_flush_v_o(itlb_flush_v_li)
+     ,.itlb_fence_v_o(itlb_fence_v_li)
      ,.icache_v_o(icache_v_li)
      ,.icache_force_o(icache_force_li)
      ,.icache_pkt_o(icache_pkt_li)
