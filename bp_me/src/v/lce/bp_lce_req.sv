@@ -24,6 +24,7 @@ module bp_lce_req
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(fill_width_p)
    , parameter `BSG_INV_PARAM(ctag_width_p)
+   , parameter `BSG_INV_PARAM(id_width_p)
 
    // LCE-cache interface timeout in cycles
    , parameter timeout_max_limit_p=4
@@ -37,7 +38,7 @@ module bp_lce_req
    , localparam bit [paddr_width_p-1:0] req_addr_mask = {paddr_width_p{1'b1}} << bedrock_byte_offset_lp
 
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
   )
   (
     input                                            clk_i
@@ -62,8 +63,6 @@ module bp_lce_req
     , output logic                                   cache_req_yumi_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
-    , output logic [paddr_width_p-1:0]               cache_req_addr_o
-    , output logic [dword_width_gp-1:0]              cache_req_data_o
 
     // LCE-Cache Interface
     , output logic                                   credits_full_o
@@ -85,7 +84,7 @@ module bp_lce_req
   );
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
   `bp_cast_o(bp_bedrock_lce_req_header_s, lce_req_header);
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_i(bp_cache_req_metadata_s, cache_req_metadata);
@@ -114,8 +113,6 @@ module bp_lce_req
      ,.v_o(cache_req_v_r)
      ,.yumi_i(cache_req_done)
      );
-  assign cache_req_addr_o = cache_req_r.addr;
-  assign cache_req_data_o = cache_req_r.data;
 
   bp_cache_req_metadata_s cache_req_metadata, cache_req_metadata_r;
   logic cache_req_metadata_v_r;

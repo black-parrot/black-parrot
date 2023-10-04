@@ -10,7 +10,7 @@ module bp_cacc_vdp
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache)
+    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache_req_id_width_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
     )
@@ -105,24 +105,23 @@ module bp_cacc_vdp
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
   assign cfg_bus_cast_i.dcache_mode = e_lce_mode_normal;
 
-  `declare_bp_cache_engine_if(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache);
-  bp_acache_req_s acache_req_lo;
+  `declare_bp_be_dcache_engine_if(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache_req_id_width_p);
+  bp_be_dcache_req_s acache_req_lo;
   logic acache_req_v_lo, acache_req_yumi_li, acache_req_lock_li;
-  bp_acache_req_metadata_s acache_req_metadata_lo;
+  bp_be_dcache_req_metadata_s acache_req_metadata_lo;
   logic acache_req_metadata_v_lo;
-  logic [paddr_width_p-1:0] acache_req_addr_lo;
-  logic [dword_width_gp-1:0] acache_req_data_lo;
+  logic [acache_req_id_width_p-1:0] acache_req_id_lo;
   logic acache_req_last_lo, acache_req_critical_lo;
   logic acache_req_credits_full_lo, acache_req_credits_empty_lo;
-  bp_acache_data_mem_pkt_s acache_data_mem_pkt_li;
+  bp_be_dcache_data_mem_pkt_s acache_data_mem_pkt_li;
   logic acache_data_mem_pkt_v_li, acache_data_mem_pkt_yumi_lo;
   logic [acache_block_width_p-1:0] acache_data_mem_lo;
-  bp_acache_tag_mem_pkt_s acache_tag_mem_pkt_li;
+  bp_be_dcache_tag_mem_pkt_s acache_tag_mem_pkt_li;
   logic acache_tag_mem_pkt_v_li, acache_tag_mem_pkt_yumi_lo;
-  bp_acache_tag_info_s acache_tag_mem_lo;
-  bp_acache_stat_mem_pkt_s acache_stat_mem_pkt_li;
+  bp_be_dcache_tag_info_s acache_tag_mem_lo;
+  bp_be_dcache_stat_mem_pkt_s acache_stat_mem_pkt_li;
   logic acache_stat_mem_pkt_v_li, acache_stat_mem_pkt_yumi_lo;
-  bp_acache_stat_info_s acache_stat_mem_lo;
+  bp_be_dcache_stat_info_s acache_stat_mem_lo;
 
   logic [ptag_width_p-1:0] acache_ptag_li;
   logic [dword_width_gp-1:0] acache_st_data_r;
@@ -144,6 +143,7 @@ module bp_cacc_vdp
      ,.v_i(acache_v_li)
      ,.ready_and_o(acache_ready_and_lo)
      ,.flush_i(1'b0)
+     ,.ordered_o()
 
      ,.ptag_v_i(1'b1)
      ,.ptag_i(acache_ptag_li)
@@ -156,11 +156,11 @@ module bp_cacc_vdp
      ,.early_req_o()
 
      ,.final_v_o()
-     ,.final_data_o()
      ,.final_addr_o()
+     ,.final_data_o()
      ,.final_rd_addr_o()
-     ,.final_int_o()
      ,.final_float_o()
+     ,.final_int_o()
      ,.final_ptw_o()
      ,.final_late_o()
 
@@ -173,8 +173,7 @@ module bp_cacc_vdp
      ,.cache_req_metadata_v_o(acache_req_metadata_v_lo)
      ,.cache_req_credits_full_i(acache_req_credits_full_lo)
      ,.cache_req_credits_empty_i(acache_req_credits_empty_lo)
-     ,.cache_req_addr_i(acache_req_addr_lo)
-     ,.cache_req_data_i(acache_req_data_lo)
+     ,.cache_req_id_i(acache_req_id_lo)
      ,.cache_req_critical_i(acache_req_critical_lo)
      ,.cache_req_last_i(acache_req_last_lo)
 
@@ -202,6 +201,7 @@ module bp_cacc_vdp
      ,.block_width_p(acache_block_width_p)
      ,.fill_width_p(acache_fill_width_p)
      ,.ctag_width_p(acache_ctag_width_p)
+     ,.id_width_p(acache_req_id_width_p)
      ,.timeout_max_limit_p(4)
      ,.credits_p(coh_noc_max_credits_p)
      )
@@ -219,8 +219,7 @@ module bp_cacc_vdp
      ,.cache_req_lock_o(acache_req_lock_li)
      ,.cache_req_metadata_i(acache_req_metadata_lo)
      ,.cache_req_metadata_v_i(acache_req_metadata_v_lo)
-     ,.cache_req_addr_o(acache_req_addr_lo)
-     ,.cache_req_data_o(acache_req_data_lo)
+     ,.cache_req_id_o(acache_req_id_lo)
      ,.cache_req_critical_o(acache_req_critical_lo)
      ,.cache_req_last_o(acache_req_last_lo)
      ,.cache_req_credits_full_o(acache_req_credits_full_lo)

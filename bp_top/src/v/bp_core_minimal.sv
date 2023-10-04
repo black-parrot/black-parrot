@@ -4,6 +4,8 @@
  */
 
 `include "bp_common_defines.svh"
+`include "bp_fe_defines.svh"
+`include "bp_be_defines.svh"
 `include "bp_top_defines.svh"
 
 module bp_core_minimal
@@ -12,8 +14,8 @@ module bp_core_minimal
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
+   `declare_bp_fe_icache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p)
+   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p)
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
   (input                                             clk_i
@@ -27,8 +29,7 @@ module bp_core_minimal
    , input                                           icache_req_lock_i
    , output logic [icache_req_metadata_width_lp-1:0] icache_req_metadata_o
    , output logic                                    icache_req_metadata_v_o
-   , input [paddr_width_p-1:0]                       icache_req_addr_i
-   , input [dword_width_gp-1:0]                      icache_req_data_i
+   , input [icache_req_id_width_p-1:0]               icache_req_id_i
    , input                                           icache_req_critical_i
    , input                                           icache_req_last_i
    , input                                           icache_req_credits_full_i
@@ -57,8 +58,7 @@ module bp_core_minimal
    , input                                           dcache_req_lock_i
    , output logic [dcache_req_metadata_width_lp-1:0] dcache_req_metadata_o
    , output logic                                    dcache_req_metadata_v_o
-   , input [paddr_width_p-1:0]                       dcache_req_addr_i
-   , input [dword_width_gp-1:0]                      dcache_req_data_i
+   , input [dcache_req_id_width_p-1:0]               dcache_req_id_i
    , input                                           dcache_req_critical_i
    , input                                           dcache_req_last_i
    , input                                           dcache_req_credits_full_i
@@ -118,8 +118,7 @@ module bp_core_minimal
      ,.cache_req_lock_i(icache_req_lock_i)
      ,.cache_req_metadata_o(icache_req_metadata_o)
      ,.cache_req_metadata_v_o(icache_req_metadata_v_o)
-     ,.cache_req_addr_i(icache_req_addr_i)
-     ,.cache_req_data_i(icache_req_data_i)
+     ,.cache_req_id_i(icache_req_id_i)
      ,.cache_req_critical_i(icache_req_critical_i)
      ,.cache_req_last_i(icache_req_last_i)
      ,.cache_req_credits_full_i(icache_req_credits_full_i)
@@ -163,8 +162,7 @@ module bp_core_minimal
      ,.cache_req_lock_i(dcache_req_lock_i)
      ,.cache_req_metadata_o(dcache_req_metadata_o)
      ,.cache_req_metadata_v_o(dcache_req_metadata_v_o)
-     ,.cache_req_addr_i(dcache_req_addr_i)
-     ,.cache_req_data_i(dcache_req_data_i)
+     ,.cache_req_id_i(dcache_req_id_i)
      ,.cache_req_critical_i(dcache_req_critical_i)
      ,.cache_req_last_i(dcache_req_last_i)
      ,.cache_req_credits_full_i(dcache_req_credits_full_i)

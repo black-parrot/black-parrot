@@ -1,6 +1,8 @@
 
 `include "bp_common_defines.svh"
 `include "bp_top_defines.svh"
+`include "bp_fe_defines.svh"
+`include "bp_be_defines.svh"
 
 module bp_unicore_lite
  import bsg_wormhole_router_pkg::*;
@@ -39,46 +41,44 @@ module bp_unicore_lite
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
-  `declare_bp_cache_engine_if(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache);
-  `declare_bp_cache_engine_if(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache);
+  `declare_bp_fe_icache_engine_if(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p);
+  `declare_bp_be_dcache_engine_if(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p);
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
-  bp_icache_req_s icache_req_lo;
+  bp_fe_icache_req_s icache_req_lo;
   logic icache_req_v_lo, icache_req_yumi_li, icache_req_lock_li, icache_req_metadata_v_lo;
-  bp_icache_req_metadata_s icache_req_metadata_lo;
-  logic [paddr_width_p-1:0] icache_req_addr_li;
-  logic [dword_width_gp-1:0] icache_req_data_li;
+  bp_fe_icache_req_metadata_s icache_req_metadata_lo;
+  logic [icache_req_id_width_p-1:0] icache_req_id_li;
   logic icache_req_critical_li, icache_req_last_li;
   logic icache_req_credits_full_li, icache_req_credits_empty_li;
 
-  bp_icache_tag_mem_pkt_s icache_tag_mem_pkt_li;
+  bp_fe_icache_tag_mem_pkt_s icache_tag_mem_pkt_li;
   logic icache_tag_mem_pkt_v_li, icache_tag_mem_pkt_yumi_lo;
-  bp_icache_tag_info_s icache_tag_mem_lo;
-  bp_icache_data_mem_pkt_s icache_data_mem_pkt_li;
+  bp_fe_icache_tag_info_s icache_tag_mem_lo;
+  bp_fe_icache_data_mem_pkt_s icache_data_mem_pkt_li;
   logic icache_data_mem_pkt_v_li, icache_data_mem_pkt_yumi_lo;
   logic [icache_block_width_p-1:0] icache_data_mem_lo;
-  bp_icache_stat_mem_pkt_s icache_stat_mem_pkt_li;
+  bp_fe_icache_stat_mem_pkt_s icache_stat_mem_pkt_li;
   logic icache_stat_mem_pkt_v_li, icache_stat_mem_pkt_yumi_lo;
-  bp_icache_stat_info_s icache_stat_mem_lo;
+  bp_fe_icache_stat_info_s icache_stat_mem_lo;
 
-  bp_dcache_req_s dcache_req_lo;
+  bp_be_dcache_req_s dcache_req_lo;
   logic dcache_req_v_lo, dcache_req_yumi_li, dcache_req_lock_li, dcache_req_metadata_v_lo;
-  bp_dcache_req_metadata_s dcache_req_metadata_lo;
-  logic [paddr_width_p-1:0] dcache_req_addr_li;
-  logic [dword_width_gp-1:0] dcache_req_data_li;
+  bp_be_dcache_req_metadata_s dcache_req_metadata_lo;
+  logic [dcache_req_id_width_p-1:0] dcache_req_id_li;
   logic dcache_req_critical_li, dcache_req_last_li;
   logic dcache_req_credits_full_li, dcache_req_credits_empty_li;
 
-  bp_dcache_tag_mem_pkt_s dcache_tag_mem_pkt_li;
+  bp_be_dcache_tag_mem_pkt_s dcache_tag_mem_pkt_li;
   logic dcache_tag_mem_pkt_v_li, dcache_tag_mem_pkt_yumi_lo;
-  bp_dcache_tag_info_s dcache_tag_mem_lo;
-  bp_dcache_data_mem_pkt_s dcache_data_mem_pkt_li;
+  bp_be_dcache_tag_info_s dcache_tag_mem_lo;
+  bp_be_dcache_data_mem_pkt_s dcache_data_mem_pkt_li;
   logic dcache_data_mem_pkt_v_li, dcache_data_mem_pkt_yumi_lo;
   logic [dcache_block_width_p-1:0] dcache_data_mem_lo;
-  bp_dcache_stat_mem_pkt_s dcache_stat_mem_pkt_li;
+  bp_be_dcache_stat_mem_pkt_s dcache_stat_mem_pkt_li;
   logic dcache_stat_mem_pkt_v_li, dcache_stat_mem_pkt_yumi_lo;
-  bp_dcache_stat_info_s dcache_stat_mem_lo;
+  bp_be_dcache_stat_info_s dcache_stat_mem_lo;
 
   wire posedge_clk = clk_i;
   wire negedge_clk = ~clk_i;
@@ -98,8 +98,7 @@ module bp_unicore_lite
      ,.icache_req_lock_i(icache_req_lock_li)
      ,.icache_req_metadata_o(icache_req_metadata_lo)
      ,.icache_req_metadata_v_o(icache_req_metadata_v_lo)
-     ,.icache_req_addr_i(icache_req_addr_li)
-     ,.icache_req_data_i(icache_req_data_li)
+     ,.icache_req_id_i(icache_req_id_li)
      ,.icache_req_critical_i(icache_req_critical_li)
      ,.icache_req_last_i(icache_req_last_li)
      ,.icache_req_credits_full_i(icache_req_credits_full_li)
@@ -126,8 +125,7 @@ module bp_unicore_lite
      ,.dcache_req_lock_i(dcache_req_lock_li)
      ,.dcache_req_metadata_o(dcache_req_metadata_lo)
      ,.dcache_req_metadata_v_o(dcache_req_metadata_v_lo)
-     ,.dcache_req_addr_i(dcache_req_addr_li)
-     ,.dcache_req_data_i(dcache_req_data_li)
+     ,.dcache_req_id_i(dcache_req_id_li)
      ,.dcache_req_critical_i(dcache_req_critical_li)
      ,.dcache_req_last_i(dcache_req_last_li)
      ,.dcache_req_credits_full_i(dcache_req_credits_full_li)
@@ -162,6 +160,7 @@ module bp_unicore_lite
      ,.block_width_p(icache_block_width_p)
      ,.fill_width_p(icache_fill_width_p)
      ,.ctag_width_p(icache_ctag_width_p)
+     ,.id_width_p(icache_req_id_width_p)
      ,.writeback_p(icache_features_p[e_cfg_writeback])
      )
    icache_uce
@@ -177,8 +176,7 @@ module bp_unicore_lite
      ,.cache_req_lock_o(icache_req_lock_li)
      ,.cache_req_metadata_i(icache_req_metadata_lo)
      ,.cache_req_metadata_v_i(icache_req_metadata_v_lo)
-     ,.cache_req_addr_o(icache_req_addr_li)
-     ,.cache_req_data_o(icache_req_data_li)
+     ,.cache_req_id_o(icache_req_id_li)
      ,.cache_req_critical_o(icache_req_critical_li)
      ,.cache_req_last_o(icache_req_last_li)
      ,.cache_req_credits_full_o(icache_req_credits_full_li)
@@ -223,6 +221,7 @@ module bp_unicore_lite
      ,.block_width_p(dcache_block_width_p)
      ,.fill_width_p(dcache_fill_width_p)
      ,.ctag_width_p(dcache_ctag_width_p)
+     ,.id_width_p(dcache_req_id_width_p)
      ,.writeback_p(dcache_features_p[e_cfg_writeback])
      )
    dcache_uce
@@ -238,8 +237,7 @@ module bp_unicore_lite
      ,.cache_req_lock_o(dcache_req_lock_li)
      ,.cache_req_metadata_i(dcache_req_metadata_lo)
      ,.cache_req_metadata_v_i(dcache_req_metadata_v_lo)
-     ,.cache_req_addr_o(dcache_req_addr_li)
-     ,.cache_req_data_o(dcache_req_data_li)
+     ,.cache_req_id_o(dcache_req_id_li)
      ,.cache_req_critical_o(dcache_req_critical_li)
      ,.cache_req_last_o(dcache_req_last_li)
      ,.cache_req_credits_full_o(dcache_req_credits_full_li)
