@@ -514,7 +514,7 @@ module bp_be_dcache
   wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv & ~nonblocking_req;
 
   wire blocking_miss_tv = blocking_req;
-  wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
+  wire engine_miss_tv   = (blocking_req | nonblocking_req) & ~cache_req_yumi_i;
   wire any_miss_tv      = blocking_miss_tv | engine_miss_tv;
 
   assign addr_o = paddr_tv_r;
