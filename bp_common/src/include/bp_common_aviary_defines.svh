@@ -58,8 +58,10 @@
     , localparam bht_offset_width_p          = `BSG_SAFE_CLOG2(bht_row_els_p)                      \
                                                                                                    \
     , localparam itlb_els_4k_p              = proc_param_lp.itlb_els_4k                            \
+    , localparam itlb_els_2m_p              = proc_param_lp.itlb_els_2m                            \
     , localparam itlb_els_1g_p              = proc_param_lp.itlb_els_1g                            \
     , localparam dtlb_els_4k_p              = proc_param_lp.dtlb_els_4k                            \
+    , localparam dtlb_els_2m_p              = proc_param_lp.dtlb_els_2m                            \
     , localparam dtlb_els_1g_p              = proc_param_lp.dtlb_els_1g                            \
                                                                                                    \
     , localparam dcache_features_p          = proc_param_lp.dcache_features                        \
@@ -222,8 +224,10 @@
           ,`bp_aviary_parameter_override(ghist_width, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
           ,`bp_aviary_parameter_override(itlb_els_4k, override_cfg_mp, default_cfg_mp)             \
+          ,`bp_aviary_parameter_override(itlb_els_2m, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(itlb_els_1g, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(dtlb_els_4k, override_cfg_mp, default_cfg_mp)             \
+          ,`bp_aviary_parameter_override(dtlb_els_2m, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(dtlb_els_1g, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
           ,`bp_aviary_parameter_override(icache_features, override_cfg_mp, default_cfg_mp)         \

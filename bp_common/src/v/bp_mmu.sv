@@ -9,6 +9,7 @@ module bp_mmu
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    , parameter `BSG_INV_PARAM(tlb_els_4k_p)
+   , parameter `BSG_INV_PARAM(tlb_els_2m_p)
    , parameter `BSG_INV_PARAM(tlb_els_1g_p)
 
    , localparam entry_width_lp = `bp_pte_leaf_width(paddr_width_p)
@@ -17,6 +18,7 @@ module bp_mmu
    , input                                            reset_i
 
    , input                                            flush_i
+   , input                                            fence_i
    , input [1:0]                                      priv_mode_i
    , input                                            trans_en_i
    , input                                            sum_i
@@ -57,17 +59,6 @@ module bp_mmu
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  logic trans_en_r, sum_r, mxr_r;
-  logic [1:0] priv_mode_r;
-  bsg_dff_reset
-   #(.width_p(5))
-   base_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i({mxr_i, sum_i, priv_mode_i, trans_en_i})
-     ,.data_o({mxr_r, sum_r, priv_mode_r, trans_en_r})
-     );
-
   // This logic only works for 8-byte words max.
   logic r_misaligned;
   always_comb
@@ -78,54 +69,60 @@ module bp_mmu
       default: r_misaligned = '0;
     endcase
 
-  logic r_instr_r, r_load_r, r_store_r, r_misaligned_r;
+  logic r_instr_r, r_load_r, r_store_r, r_misaligned_r, r_trans_en_r;
+  logic [etag_width_p-1:0] r_etag_r;
+  wire [etag_width_p-1:0] r_etag_li = r_eaddr_i[dword_width_gp-1-:etag_width_p];
   bsg_dff_reset_en
-   #(.width_p(4))
+   #(.width_p(5+etag_width_p))
    read_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(r_v_i)
-     ,.data_i({r_misaligned, r_instr_i, r_load_i, r_store_i})
-     ,.data_o({r_misaligned_r, r_instr_r, r_load_r, r_store_r})
+
+     ,.data_i({trans_en_i, r_misaligned, r_instr_i, r_load_i, r_store_i, r_etag_li})
+     ,.data_o({trans_en_r, r_misaligned_r, r_instr_r, r_load_r, r_store_r, r_etag_r})
      );
 
-  logic [etag_width_p-1:0] r_etag_r;
-  wire [etag_width_p-1:0] r_etag_li = r_eaddr_i[dword_width_gp-1-:etag_width_p];
-  bsg_dff_reset_en
-   #(.width_p(etag_width_p))
-   etag_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(r_v_i)
-
-     ,.data_i(r_etag_li)
-     ,.data_o(r_etag_r)
-     );
-
-  logic tlb_bypass_r;
-  wire tlb_bypass = ~flush_i & ~w_v_i & (r_etag_li[0+:vtag_width_p] == r_etag_r[0+:vtag_width_p]) & trans_en_r & trans_en_i;
-  bsg_dff_reset
+  logic r_v_r;
+  bsg_dff_reset_set_clear
    #(.width_p(1))
-   tlb_bypass_reg
+   r_v_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.data_i(tlb_bypass)
-     ,.data_o(tlb_bypass_r)
+     ,.set_i(r_v_i)
+     ,.clear_i(flush_i)
+     ,.data_o(r_v_r)
+     );
+
+  logic bypass_v_r;
+  wire r_etag_match = r_etag_li[0+:vtag_width_p] == r_etag_r[0+:vtag_width_p];
+  wire tlb_bypass = (~trans_en_i & ~flush_i) | (bypass_v_r & r_etag_match);
+  bsg_dff_reset_set_clear
+   #(.width_p(1), .clear_over_set_p(1))
+   bypass_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.set_i(r_v_i)
+     ,.clear_i(flush_i)
+     ,.data_o(bypass_v_r)
      );
 
   logic tlb_r_v_lo;
   bp_pte_leaf_s tlb_r_entry_lo;
-  wire [vtag_width_p-1:0] w_vtag_li = w_v_i ? w_vtag_i : r_eaddr_i[vaddr_width_p-1-:vtag_width_p];
+  wire tlb_r_v_li = (r_v_i & ~tlb_bypass);
+  wire tlb_w_v_li = w_v_i;
+  wire tlb_v_li = tlb_r_v_li | tlb_w_v_li;
+  wire [vtag_width_p-1:0] tlb_vtag_li = w_v_i ? w_vtag_i : r_etag_li;
   bp_tlb
-   #(.bp_params_p(bp_params_p), .els_4k_p(tlb_els_4k_p), .els_1g_p(tlb_els_1g_p))
+   #(.bp_params_p(bp_params_p), .els_4k_p(tlb_els_4k_p), .els_2m_p(tlb_els_2m_p), .els_1g_p(tlb_els_1g_p))
    tlb
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.flush_i(flush_i)
+     ,.fence_i(fence_i)
 
-     ,.v_i((r_v_i | w_v_i) & trans_en_i & ~tlb_bypass)
-     ,.w_i(w_v_i)
-     ,.vtag_i(w_vtag_li)
+     ,.v_i(tlb_v_li)
+     ,.w_i(tlb_w_v_li)
+     ,.vtag_i(tlb_vtag_li)
      ,.entry_i(w_entry_i)
 
      ,.v_o(tlb_r_v_lo)
@@ -134,17 +131,18 @@ module bp_mmu
 
   bp_pte_leaf_s tlb_r_entry_r;
   logic tlb_r_v_r;
-  bsg_dff_en_bypass
-   #(.width_p(1+$bits(bp_pte_leaf_s)))
+  bsg_dff_sync_read
+   #(.width_p(1+$bits(bp_pte_leaf_s)), .bypass_p(1))
    entry_reg
     (.clk_i(clk_i)
-     ,.en_i(~tlb_bypass_r)
+     ,.reset_i(reset_i)
+     ,.v_n_i(tlb_r_v_li)
      ,.data_i({tlb_r_v_lo, tlb_r_entry_lo})
      ,.data_o({tlb_r_v_r, tlb_r_entry_r})
      );
 
   bp_pte_leaf_s passthrough_entry, tlb_entry_lo;
-  assign passthrough_entry = '{ptag: r_etag_r[0+:ptag_width_p], default: '0};
+  assign passthrough_entry = '{ptag: r_etag_r, default: '0};
   assign tlb_entry_lo      = trans_en_r ? tlb_r_entry_r : passthrough_entry;
   wire tlb_v_lo            = trans_en_r ? tlb_r_v_r : 1'b1;
 
@@ -181,36 +179,38 @@ module bp_mmu
 
   // Page faults
   wire instr_exe_page_fault_v  = tlb_v_lo & ~tlb_entry_lo.x;
-  wire instr_priv_page_fault_v = tlb_v_lo & (((priv_mode_r == `PRIV_MODE_S) & tlb_entry_lo.u)
-                                             | ((priv_mode_r == `PRIV_MODE_U) & ~tlb_entry_lo.u)
+  wire instr_priv_page_fault_v = tlb_v_lo & (((priv_mode_i == `PRIV_MODE_S) & tlb_entry_lo.u)
+                                             | ((priv_mode_i == `PRIV_MODE_U) & ~tlb_entry_lo.u)
                                             );
-  wire data_priv_page_fault = tlb_v_lo & (((priv_mode_r == `PRIV_MODE_S) & ~sum_r & tlb_entry_lo.u)
-                                           | ((priv_mode_r == `PRIV_MODE_U) & ~tlb_entry_lo.u)
+  wire data_priv_page_fault = tlb_v_lo & (((priv_mode_i == `PRIV_MODE_S) & ~sum_i & tlb_entry_lo.u)
+                                           | ((priv_mode_i == `PRIV_MODE_U) & ~tlb_entry_lo.u)
                                           );
-  wire data_read_page_fault  = tlb_v_lo & ~(tlb_entry_lo.r | (tlb_entry_lo.x & mxr_r));
+  wire data_read_page_fault  = tlb_v_lo & ~(tlb_entry_lo.r | (tlb_entry_lo.x & mxr_i));
   wire data_write_page_fault = tlb_v_lo & ~(tlb_entry_lo.w & tlb_entry_lo.d);
-  wire instr_page_fault_v = trans_en_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v);
+  wire instr_page_fault_v = trans_en_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v | eaddr_fault_v);
   wire load_page_fault_v  = trans_en_r & r_load_r & (data_priv_page_fault | data_read_page_fault  | eaddr_fault_v);
   wire store_page_fault_v = trans_en_r & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_fault_v);
   wire any_page_fault_v   = |{instr_page_fault_v, load_page_fault_v, store_page_fault_v};
 
-  assign r_v_o                   = tlb_v_lo & ~any_access_fault_v & ~any_page_fault_v;
+  wire any_fault_v        = any_access_fault_v | any_page_fault_v;
+
+  assign r_v_o                   = r_v_r &  tlb_v_lo & ~any_fault_v;
+  assign r_instr_miss_o          = r_v_r & ~tlb_v_lo & ~any_fault_v & r_instr_r;
+  assign r_load_miss_o           = r_v_r & ~tlb_v_lo & ~any_fault_v & r_load_r;
+  assign r_store_miss_o          = r_v_r & ~tlb_v_lo & ~any_fault_v & r_store_r;
+  assign r_instr_misaligned_o    = r_v_r & r_misaligned_r & r_instr_r;
+  assign r_load_misaligned_o     = r_v_r & r_misaligned_r & r_load_r;
+  assign r_store_misaligned_o    = r_v_r & r_misaligned_r & r_store_r;
+  assign r_instr_access_fault_o  = r_v_r & instr_access_fault_v;
+  assign r_load_access_fault_o   = r_v_r & load_access_fault_v;
+  assign r_store_access_fault_o  = r_v_r & store_access_fault_v;
+  assign r_instr_page_fault_o    = r_v_r & instr_page_fault_v;
+  assign r_load_page_fault_o     = r_v_r & load_page_fault_v;
+  assign r_store_page_fault_o    = r_v_r & store_page_fault_v;
   assign r_ptag_o                = ptag_lo;
-  assign r_instr_miss_o          = ~tlb_v_lo & r_instr_r & ~any_access_fault_v & ~any_page_fault_v;
-  assign r_load_miss_o           = ~tlb_v_lo & r_load_r  & ~any_access_fault_v & ~any_page_fault_v;
-  assign r_store_miss_o          = ~tlb_v_lo & r_store_r & ~any_access_fault_v & ~any_page_fault_v;
-  assign r_uncached_o            =  tlb_v_lo & ptag_uncached_lo;
-  assign r_nonidem_o             =  tlb_v_lo & ptag_nonidem_lo;
-  assign r_dram_o                =  tlb_v_lo & ptag_dram_lo;
-  assign r_instr_misaligned_o    = r_misaligned_r & r_instr_r;
-  assign r_load_misaligned_o     = r_misaligned_r & r_load_r;
-  assign r_store_misaligned_o    = r_misaligned_r & r_store_r;
-  assign r_instr_access_fault_o  = instr_access_fault_v;
-  assign r_load_access_fault_o   = load_access_fault_v;
-  assign r_store_access_fault_o  = store_access_fault_v;
-  assign r_instr_page_fault_o    = instr_page_fault_v;
-  assign r_load_page_fault_o     = load_page_fault_v;
-  assign r_store_page_fault_o    = store_page_fault_v;
+  assign r_uncached_o            = ptag_uncached_lo;
+  assign r_nonidem_o             = ptag_nonidem_lo;
+  assign r_dram_o                = ptag_dram_lo;
 
 endmodule
 

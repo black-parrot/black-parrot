@@ -58,6 +58,7 @@ module bp_fe_controller
    , output logic                                     itlb_r_v_o
    , output logic                                     itlb_w_v_o
    , output logic                                     itlb_flush_v_o
+   , output logic                                     itlb_fence_v_o
    , output logic                                     icache_v_o
    , output logic                                     icache_force_o
    , output logic [icache_pkt_width_lp-1:0]           icache_pkt_o
@@ -164,6 +165,7 @@ module bp_fe_controller
       itlb_r_v_o = 1'b0;
       itlb_w_v_o = 1'b0;
       itlb_flush_v_o = 1'b0;
+      itlb_fence_v_o = 1'b0;
 
       case (state_r)
         e_reset:
@@ -176,7 +178,8 @@ module bp_fe_controller
             if1_we_o = icache_yumi_i & ~cmd_complex_v;
             itlb_r_v_o = icache_yumi_i;
             itlb_w_v_o = itlb_fill_response_v;
-            itlb_flush_v_o = itlb_fence_v;
+            itlb_fence_v_o = itlb_fence_v;
+            itlb_flush_v_o = cmd_nonattaboy_v;
             state_n = (wait_v | icache_fence_v)
                       ? e_wait
                       : cmd_complex_v

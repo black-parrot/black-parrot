@@ -201,13 +201,15 @@ module bp_be_pipe_mem
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(dtlb_els_4k_p)
+     ,.tlb_els_2m_p(dtlb_els_2m_p)
      ,.tlb_els_1g_p(dtlb_els_1g_p)
      )
    dmmu
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
 
-     ,.flush_i(sfence_i)
+     ,.flush_i(flush_i)
+     ,.fence_i(sfence_i)
      ,.priv_mode_i(trans_info.priv_mode)
      ,.sum_i(trans_info.mstatus_sum)
      ,.mxr_i(trans_info.mstatus_mxr)
