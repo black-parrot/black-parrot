@@ -44,8 +44,7 @@ module bp_be_pipe_mem
 
    , output logic                         tlb_load_miss_v_o
    , output logic                         tlb_store_miss_v_o
-   , output logic                         cache_load_miss_v_o
-   , output logic                         cache_store_miss_v_o
+   , output logic                         cache_miss_v_o
    , output logic                         cache_replay_v_o
    , output logic                         load_misaligned_v_o
    , output logic                         load_access_fault_v_o
@@ -402,9 +401,8 @@ module bp_be_pipe_mem
      ,.data_i(is_req)
      ,.data_o(early_v_r)
      );
-  assign cache_store_miss_v_o = early_v_r &  dcache_req & ~dcache_v &  dcache_store;
-  assign cache_load_miss_v_o  = early_v_r &  dcache_req & ~dcache_v &  dcache_ret;
-  assign cache_replay_v_o     = early_v_r & ~dcache_req & (~dcache_v | dcache_late);
+  assign cache_miss_v_o   = early_v_r &  dcache_req & ~dcache_v;
+  assign cache_replay_v_o = early_v_r & ~dcache_req & (~dcache_v | dcache_late);
 
   logic dcache_late_r, dcache_ret_r, dcache_float_r, dcache_v_r;
   logic [reg_addr_width_gp-1:0] dcache_rd_addr_r;

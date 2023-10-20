@@ -179,6 +179,7 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.queue_v    = fe_queue_read_li;
       dispatch_pkt_cast_o.instr_v    = fe_instr_not_exc_li;
       dispatch_pkt_cast_o.ispec_v    = ispec_v_i;
+      dispatch_pkt_cast_o.nspec_v    = be_exc_not_instr_li;
       dispatch_pkt_cast_o.pc         = expected_npc_i;
       dispatch_pkt_cast_o.instr      = issue_pkt_cast_o.instr;
       dispatch_pkt_cast_o.partial    = be_exc_not_instr_li ? be_partial : fe_partial;
@@ -213,6 +214,7 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.special.wfi             |= fe_instr_not_exc_li & issue_pkt_cast_o.wfi;
       dispatch_pkt_cast_o.special.sfence_vma      |= fe_instr_not_exc_li & issue_pkt_cast_o.sfence_vma;
       dispatch_pkt_cast_o.special.fencei          |= fe_instr_not_exc_li & issue_pkt_cast_o.fencei;
+      dispatch_pkt_cast_o.special.csrw            |= fe_instr_not_exc_li & issue_pkt_cast_o.csrw;
     end
 
 endmodule

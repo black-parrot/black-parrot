@@ -49,6 +49,7 @@
       logic                                    wfi;                                                \
       logic                                    sfence_vma;                                         \
       logic                                    fencei;                                             \
+      logic                                    csrw;                                               \
                                                                                                    \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
@@ -64,6 +65,7 @@
       logic                                    queue_v;                                            \
       logic                                    instr_v;                                            \
       logic                                    ispec_v;                                            \
+      logic                                    nspec_v;                                            \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
       logic                                    partial;                                            \
@@ -165,8 +167,7 @@
       logic                           icache_miss;                                                 \
       logic                           dtlb_store_miss;                                             \
       logic                           dtlb_load_miss;                                              \
-      logic                           dcache_store_miss;                                           \
-      logic                           dcache_load_miss;                                            \
+      logic                           dcache_miss;                                                 \
       logic                           dcache_replay;                                               \
       logic                           itlb_fill_v;                                                 \
       logic                           dtlb_fill_v;                                                 \
@@ -222,7 +223,9 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
-      logic [rv64_priv_width_gp-1:0] priv_mode;                                                    \
+      logic                          u_mode;                                                       \
+      logic                          s_mode;                                                       \
+      logic                          m_mode;                                                       \
       logic                          debug_mode;                                                   \
       logic                          tsr;                                                          \
       logic                          tw;                                                           \
@@ -231,6 +234,8 @@
       logic                          ebreaks;                                                      \
       logic                          ebreaku;                                                      \
       logic                          fpu_en;                                                       \
+      logic                          cycle_en;                                                     \
+      logic                          instret_en;                                                   \
     }  bp_be_decode_info_s
 
 
@@ -243,10 +248,10 @@
     (6+rv64_instr_width_gp)
 
   `define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-    (7+vaddr_width_mp+instr_width_gp+$bits(bp_be_decode_s)+dpath_width_gp+branch_metadata_fwd_width_mp+12)
+    (7+vaddr_width_mp+instr_width_gp+$bits(bp_be_decode_s)+dpath_width_gp+branch_metadata_fwd_width_mp+13)
 
   `define bp_be_dispatch_pkt_width(vaddr_width_mp) \
-    (4                                                                                             \
+    (5                                                                                             \
      + vaddr_width_mp                                                                              \
      + rv64_instr_width_gp                                                                         \
      + 1                                                                                           \
@@ -269,7 +274,7 @@
     (paddr_width_mp - page_offset_width_gp + 8)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (5 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 20)
+    (5 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 19)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3                                                                                             \
@@ -291,7 +296,7 @@
     (rv64_priv_width_gp+ptag_width_mp+3)
 
   `define bp_be_decode_info_width \
-    (rv64_priv_width_gp+8)
+    (13)
 
 `endif
 

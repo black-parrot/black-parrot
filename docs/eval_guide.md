@@ -135,5 +135,4 @@ The reports directory contains very brief summaries of tool runs. For example, w
 - **ci/** contains scripts used to run Continuous Integration jobs, mostly using the same Makefile commands but with additional data collection.
 - **docs/** contains documentation, images, guides and links to document Blackparrot.
 - **external/** contains submodules corresponding to tooling that BlackParrot depends upon, such as the Verilator.
-- **tools/** contains tools needed for RTL simulation and manipulation.
 
