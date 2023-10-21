@@ -17,14 +17,14 @@ module wrapper
    , parameter assoc_p = dcache_assoc_p
    , parameter block_width_p = dcache_block_width_p
    , parameter fill_width_p = dcache_fill_width_p
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
+   , parameter id_width_p = dcache_req_id_width_p
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, dcache_ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, dcache)
 
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
 
-   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
 
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
 
@@ -41,7 +41,7 @@ module wrapper
 
    , input [num_caches_p-1:0][ptag_width_p-1:0]        ptag_i
    , input [num_caches_p-1:0]                          uncached_i
-   , input [num_caches_p-1:0][dword_width_gp-1:0]      st_data_i
+   , input [num_caches_p-1:0][dpath_width_gp-1:0]      st_data_i
 
    , output logic [num_caches_p-1:0][dword_width_gp-1:0] data_o
    , output logic [num_caches_p-1:0]                     v_o
@@ -57,8 +57,7 @@ module wrapper
    , output logic                                      mem_rev_ready_and_o
    );
 
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
 
   // Cache to Rolly FIFO signals
@@ -74,7 +73,6 @@ module wrapper
   logic [num_caches_p-1:0] cache_req_v_lo, cache_req_metadata_v_lo;
   logic [num_caches_p-1:0] cache_req_yumi_lo, cache_req_lock_lo;
   logic [num_caches_p-1:0] cache_req_last_lo, cache_req_critical_lo;
-  logic [num_caches_p-1:0][paddr_width_p-1:0] cache_req_addr_lo;
   logic [num_caches_p-1:0][dcache_req_width_lp-1:0] cache_req_lo;
   logic [num_caches_p-1:0][dcache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
 
@@ -120,7 +118,7 @@ module wrapper
   logic [num_caches_p-1:0] lce_fill_v_lo, lce_fill_ready_and_li;
   logic [num_caches_p-1:0][lg_num_lce_lp-1:0] lce_fill_dst;
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   for (genvar i = 0; i < num_caches_p; i++)
@@ -185,28 +183,30 @@ module wrapper
       ,.reset_i(reset_i)
 
       ,.cfg_bus_i(cfg_bus_i)
+      ,.ordered_o()
 
       ,.dcache_pkt_i(rolly_dcache_pkt_lo[i])
       ,.v_i(rolly_yumi_li[i])
       ,.ready_and_o(dcache_ready_and_lo[i])
-
-      ,.data_o(data_o[i])
-      ,.v_o(v_o[i])
-      ,.clean_o()
-      ,.ret_o()
-      ,.late_o()
-      ,.rd_addr_o()
-      ,.addr_o()
-      ,.ordered_o()
-      ,.float_o()
-      ,.store_o()
-      ,.req_o()
 
       ,.ptag_v_i(1'b1)
       ,.ptag_i(rolly_ptag_r[i])
       ,.ptag_uncached_i(rolly_uncached_r[i])
       ,.ptag_dram_i(1'b1)
       ,.st_data_i(st_data_i)
+
+      ,.early_v_o(v_o[i])
+      ,.early_data_o(data_o[i])
+      ,.early_req_o()
+
+      ,.final_v_o()
+      ,.final_data_o()
+      ,.final_addr_o()
+      ,.final_rd_addr_o()
+      ,.final_int_o()
+      ,.final_float_o()
+      ,.final_ptw_o()
+      ,.final_late_o()
 
       ,.flush_i('0)
 
@@ -216,7 +216,6 @@ module wrapper
       ,.cache_req_metadata_v_o(cache_req_metadata_v_lo[i])
       ,.cache_req_yumi_i(cache_req_yumi_lo[i])
       ,.cache_req_lock_i(cache_req_lock_lo[i])
-      ,.cache_req_addr_i(cache_req_addr_lo[i])
       ,.cache_req_critical_i(cache_req_critical_lo[i])
       ,.cache_req_last_i(cache_req_last_lo[i])
       ,.cache_req_credits_full_i(cache_req_credits_full_lo[i])
@@ -249,12 +248,14 @@ module wrapper
              ,.timeout_max_limit_p(4)
              ,.credits_p(coh_noc_max_credits_p)
              ,.ctag_width_p(dcache_ctag_width_p)
+             ,.id_width_p(id_width_p)
              )
            dcache_lce
             (.clk_i(clk_i)
              ,.reset_i(reset_i)
 
              ,.lce_id_i(lce_id_width_p'(i))
+             ,.did_i('0)
              ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
 
              ,.cache_req_i(cache_req_lo[i])
@@ -263,7 +264,6 @@ module wrapper
              ,.cache_req_lock_o(cache_req_lock_lo[i])
              ,.cache_req_metadata_i(cache_req_metadata_lo[i])
              ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
-             ,.cache_req_addr_o(cache_req_addr_lo[i])
              ,.cache_req_critical_o(cache_req_critical_lo[i])
              ,.cache_req_last_o(cache_req_last_lo[i])
              ,.cache_req_credits_full_o(cache_req_credits_full_lo[i])
@@ -322,6 +322,7 @@ module wrapper
             ,.block_width_p(block_width_p)
             ,.fill_width_p(fill_width_p)
             ,.ctag_width_p(dcache_ctag_width_p)
+            ,.id_width_p(id_width_p)
             ,.writeback_p(!wt_p)
             )
           dcache_uce
@@ -336,7 +337,6 @@ module wrapper
             ,.cache_req_lock_o(cache_req_lock_lo)
             ,.cache_req_metadata_i(cache_req_metadata_lo)
             ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-            ,.cache_req_addr_o(cache_req_addr_lo)
             ,.cache_req_critical_o(cache_req_critical_lo)
             ,.cache_req_last_o(cache_req_last_lo)
             ,.cache_req_credits_full_o(cache_req_credits_full_lo)
@@ -394,8 +394,8 @@ module wrapper
        #(.bp_params_p(bp_params_p)
          ,.block_width_p(block_width_p)
          ,.data_width_p(fill_width_p)
-         ,.payload_width_p(lce_req_payload_width_lp)
          ,.stream_mask_p(lce_req_stream_mask_gp)
+         ,.payload_width_p(lce_req_payload_width_lp)
          ,.num_source_p(num_lce_p)
          ,.num_sink_p(num_cce_p)
          )

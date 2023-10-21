@@ -58,25 +58,36 @@
     , localparam bht_offset_width_p          = `BSG_SAFE_CLOG2(bht_row_els_p)                      \
                                                                                                    \
     , localparam itlb_els_4k_p              = proc_param_lp.itlb_els_4k                            \
+    , localparam itlb_els_2m_p              = proc_param_lp.itlb_els_2m                            \
     , localparam itlb_els_1g_p              = proc_param_lp.itlb_els_1g                            \
     , localparam dtlb_els_4k_p              = proc_param_lp.dtlb_els_4k                            \
+    , localparam dtlb_els_2m_p              = proc_param_lp.dtlb_els_2m                            \
     , localparam dtlb_els_1g_p              = proc_param_lp.dtlb_els_1g                            \
+                                                                                                   \
+    , localparam icache_features_p          = proc_param_lp.icache_features                        \
+    , localparam icache_sets_p              = proc_param_lp.icache_sets                            \
+    , localparam icache_assoc_p             = proc_param_lp.icache_assoc                           \
+    , localparam icache_block_width_p       = proc_param_lp.icache_block_width                     \
+    , localparam icache_fill_width_p        = proc_param_lp.icache_fill_width                      \
+    , localparam icache_mshr_p              = proc_param_lp.icache_mshr                            \
+    , localparam icache_req_id_width_p      = `BSG_SAFE_CLOG2(icache_mshr_p)                       \
                                                                                                    \
     , localparam dcache_features_p          = proc_param_lp.dcache_features                        \
     , localparam dcache_sets_p              = proc_param_lp.dcache_sets                            \
     , localparam dcache_assoc_p             = proc_param_lp.dcache_assoc                           \
     , localparam dcache_block_width_p       = proc_param_lp.dcache_block_width                     \
     , localparam dcache_fill_width_p        = proc_param_lp.dcache_fill_width                      \
-    , localparam icache_features_p          = proc_param_lp.icache_features                        \
-    , localparam icache_sets_p              = proc_param_lp.icache_sets                            \
-    , localparam icache_assoc_p             = proc_param_lp.icache_assoc                           \
-    , localparam icache_block_width_p       = proc_param_lp.icache_block_width                     \
-    , localparam icache_fill_width_p        = proc_param_lp.icache_fill_width                      \
+    , localparam dcache_mshr_p              = proc_param_lp.dcache_mshr                            \
+    , localparam dcache_req_id_width_p      = `BSG_SAFE_CLOG2(dcache_mshr_p)                       \
+                                                                                                   \
     , localparam acache_features_p          = proc_param_lp.acache_features                        \
     , localparam acache_sets_p              = proc_param_lp.acache_sets                            \
     , localparam acache_assoc_p             = proc_param_lp.acache_assoc                           \
     , localparam acache_block_width_p       = proc_param_lp.acache_block_width                     \
     , localparam acache_fill_width_p        = proc_param_lp.acache_fill_width                      \
+    , localparam acache_mshr_p              = proc_param_lp.acache_mshr                            \
+    , localparam acache_req_id_width_p      = `BSG_SAFE_CLOG2(acache_mshr_p)                       \
+                                                                                                   \
     , localparam lce_assoc_p                =                                                      \
         `BSG_MAX(dcache_assoc_p, `BSG_MAX(icache_assoc_p, num_cacc_p ? acache_assoc_p : '0))       \
     , localparam lce_assoc_width_p          = `BSG_SAFE_CLOG2(lce_assoc_p)                         \
@@ -94,13 +105,14 @@
                                                                                                    \
     /* L2 enable turns the L2 into a small write buffer, which is minimal size                  */ \
     , localparam l2_features_p         = proc_param_lp.l2_features                                 \
+    , localparam l2_slices_p           = l2_features_p[e_cfg_enabled] ? proc_param_lp.l2_slices : 1 \
     , localparam l2_banks_p            = l2_features_p[e_cfg_enabled] ? proc_param_lp.l2_banks : 1 \
     , localparam l2_sets_p             = l2_features_p[e_cfg_enabled] ? proc_param_lp.l2_sets  : 4 \
     , localparam l2_assoc_p            = l2_features_p[e_cfg_enabled] ? proc_param_lp.l2_assoc : 2 \
     , localparam l2_block_width_p      = proc_param_lp.l2_block_width                              \
     , localparam l2_fill_width_p       = proc_param_lp.l2_fill_width                               \
     , localparam l2_data_width_p       = proc_param_lp.l2_data_width                               \
-    , localparam l2_outstanding_reqs_p = proc_param_lp.l2_outstanding_reqs                         \
+    , localparam l2_dmas_p = l2_slices_p * l2_banks_p                                              \
                                                                                                    \
     , localparam l2_block_size_in_words_p = l2_block_width_p / l2_data_width_p                     \
     , localparam l2_block_size_in_fill_p  = l2_block_width_p / l2_fill_width_p                     \
@@ -221,8 +233,10 @@
           ,`bp_aviary_parameter_override(ghist_width, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
           ,`bp_aviary_parameter_override(itlb_els_4k, override_cfg_mp, default_cfg_mp)             \
+          ,`bp_aviary_parameter_override(itlb_els_2m, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(itlb_els_1g, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(dtlb_els_4k, override_cfg_mp, default_cfg_mp)             \
+          ,`bp_aviary_parameter_override(dtlb_els_2m, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(dtlb_els_1g, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
           ,`bp_aviary_parameter_override(icache_features, override_cfg_mp, default_cfg_mp)         \
@@ -230,18 +244,21 @@
           ,`bp_aviary_parameter_override(icache_assoc, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(icache_block_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(icache_fill_width, override_cfg_mp, default_cfg_mp)       \
+          ,`bp_aviary_parameter_override(icache_mshr, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
           ,`bp_aviary_parameter_override(dcache_features, override_cfg_mp, default_cfg_mp)         \
           ,`bp_aviary_parameter_override(dcache_sets, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(dcache_assoc, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(dcache_block_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(dcache_fill_width, override_cfg_mp, default_cfg_mp)       \
+          ,`bp_aviary_parameter_override(dcache_mshr, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
           ,`bp_aviary_parameter_override(acache_features, override_cfg_mp, default_cfg_mp)         \
           ,`bp_aviary_parameter_override(acache_sets, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(acache_assoc, override_cfg_mp, default_cfg_mp)            \
           ,`bp_aviary_parameter_override(acache_block_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(acache_fill_width, override_cfg_mp, default_cfg_mp)       \
+          ,`bp_aviary_parameter_override(acache_mshr, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
           ,`bp_aviary_parameter_override(cce_type, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(cce_pc_width, override_cfg_mp, default_cfg_mp)            \
@@ -249,13 +266,13 @@
           ,`bp_aviary_parameter_override(bedrock_fill_width, override_cfg_mp, default_cfg_mp)      \
                                                                                                    \
           ,`bp_aviary_parameter_override(l2_features, override_cfg_mp, default_cfg_mp)             \
+          ,`bp_aviary_parameter_override(l2_slices, override_cfg_mp, default_cfg_mp)               \
           ,`bp_aviary_parameter_override(l2_banks, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(l2_data_width, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(l2_sets, override_cfg_mp, default_cfg_mp)                 \
           ,`bp_aviary_parameter_override(l2_assoc, override_cfg_mp, default_cfg_mp)                \
           ,`bp_aviary_parameter_override(l2_block_width, override_cfg_mp, default_cfg_mp)          \
           ,`bp_aviary_parameter_override(l2_fill_width, override_cfg_mp, default_cfg_mp)           \
-          ,`bp_aviary_parameter_override(l2_outstanding_reqs, override_cfg_mp, default_cfg_mp)     \
                                                                                                    \
           ,`bp_aviary_parameter_override(async_coh_clk, override_cfg_mp, default_cfg_mp)           \
           ,`bp_aviary_parameter_override(coh_noc_max_credits, override_cfg_mp, default_cfg_mp)     \

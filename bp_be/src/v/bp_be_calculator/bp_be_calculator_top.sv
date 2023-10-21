@@ -21,10 +21,10 @@ module bp_be_calculator_top
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_cache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
+    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
@@ -52,7 +52,12 @@ module bp_be_calculator_top
    , output logic [branch_pkt_width_lp-1:0]          br_pkt_o
    , output logic [wb_pkt_width_lp-1:0]              iwb_pkt_o
    , output logic [wb_pkt_width_lp-1:0]              fwb_pkt_o
+
    , output logic [ptw_fill_pkt_width_lp-1:0]        ptw_fill_pkt_o
+   , output logic [wb_pkt_width_lp-1:0]              late_wb_pkt_o
+   , output logic                                    late_wb_v_o
+   , output logic                                    late_wb_force_o
+   , input                                           late_wb_yumi_i
 
    , input                                           debug_irq_i
    , input                                           timer_irq_i
@@ -68,8 +73,7 @@ module bp_be_calculator_top
    , input                                           cache_req_lock_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
-   , input [paddr_width_p-1:0]                       cache_req_addr_i
-   , input [dword_width_gp-1:0]                      cache_req_data_i
+   , input [dcache_req_id_width_p-1:0]               cache_req_id_i
    , input                                           cache_req_critical_i
    , input                                           cache_req_last_i
    , input                                           cache_req_credits_full_i
@@ -92,12 +96,15 @@ module bp_be_calculator_top
    );
 
   // Declare parameterizable structs
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   `bp_cast_i(bp_be_dispatch_pkt_s, dispatch_pkt);
   `bp_cast_o(bp_be_commit_pkt_s, commit_pkt);
   `bp_cast_o(bp_be_branch_pkt_s, br_pkt);
+  `bp_cast_o(bp_be_wb_pkt_s, iwb_pkt);
+  `bp_cast_o(bp_be_wb_pkt_s, fwb_pkt);
+  `bp_cast_o(bp_be_wb_pkt_s, late_wb_pkt);
 
   // Pipeline stage registers
   localparam pipe_stage_els_lp = 5;
@@ -111,20 +118,20 @@ module bp_be_calculator_top
   bp_be_trans_info_s   trans_info_lo;
   rv64_frm_e           frm_dyn_lo;
 
-  bp_be_wb_pkt_s long_iwb_pkt, long_fwb_pkt;
+  bp_be_wb_pkt_s pipe_long_iwb_pkt, pipe_long_fwb_pkt;
 
   logic pipe_int_early_instr_misaligned_lo;
   logic pipe_int_catchup_instr_misaligned_lo, pipe_int_catchup_mispredict_lo;
 
   logic pipe_mem_dtlb_load_miss_lo, pipe_mem_dtlb_store_miss_lo;
-  logic pipe_mem_dcache_load_miss_lo, pipe_mem_dcache_store_miss_lo, pipe_mem_dcache_replay_lo;
+  logic pipe_mem_dcache_load_miss_lo, pipe_mem_dcache_miss_lo, pipe_mem_dcache_replay_lo;
   logic pipe_mem_load_misaligned_lo, pipe_mem_load_access_fault_lo, pipe_mem_load_page_fault_lo;
   logic pipe_mem_store_misaligned_lo, pipe_mem_store_access_fault_lo, pipe_mem_store_page_fault_lo;
 
-  logic pipe_sys_illegal_instr_lo, pipe_sys_csrw_lo;
+  logic pipe_sys_illegal_instr_lo;
 
-  logic pipe_int_early_data_lo_v, pipe_int_catchup_data_lo_v, pipe_aux_data_lo_v, pipe_mem_early_data_lo_v, pipe_mem_final_data_lo_v, pipe_sys_data_lo_v, pipe_mul_data_lo_v, pipe_fma_data_lo_v;
-  logic pipe_long_idata_lo_v, pipe_long_idata_lo_yumi, pipe_long_fdata_lo_v, pipe_long_fdata_lo_yumi;
+  logic pipe_int_early_data_v_lo, pipe_int_catchup_data_v_lo, pipe_aux_data_v_lo, pipe_mem_early_data_v_lo, pipe_mem_final_data_v_lo, pipe_sys_data_v_lo, pipe_mul_data_v_lo, pipe_fma_data_v_lo;
+  logic pipe_long_idata_v_lo, pipe_long_idata_yumi_lo, pipe_long_fdata_v_lo, pipe_long_fdata_yumi_lo;
   logic [dpath_width_gp-1:0] pipe_int_early_data_lo, pipe_int_catchup_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
   rv64_fflags_s pipe_aux_fflags_lo, pipe_fma_fflags_lo;
 
@@ -134,10 +141,9 @@ module bp_be_calculator_top
   logic [vaddr_width_p-1:0] pipe_int_catchup_npc_lo;
   logic pipe_int_catchup_branch_lo, pipe_int_catchup_btaken_lo;
 
-  bp_be_wb_pkt_s pipe_mem_late_iwb_pkt;
-  logic pipe_mem_late_iwb_pkt_v, pipe_mem_late_iwb_pkt_yumi;
-  bp_be_wb_pkt_s pipe_mem_late_fwb_pkt;
-  logic pipe_mem_late_fwb_pkt_v, pipe_mem_late_fwb_pkt_yumi;
+  bp_be_wb_pkt_s pipe_mem_late_wb_pkt;
+  logic pipe_mem_late_wb_v, pipe_mem_late_wb_yumi;
+  logic ptw_fill_v, ptw_fill_yumi;
 
   // Generating match vector for bypass
   logic [2:0][pipe_stage_els_lp-1:0] match_rs;
@@ -145,10 +151,10 @@ module bp_be_calculator_top
   for (genvar i = 0; i < pipe_stage_els_lp; i++)
     begin : forward_match
       assign match_rs[0][i] = ((i < 4) & dispatch_pkt_cast_i.decode.irs1_r_v & comp_stage_r[i].ird_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr))
-                              || ((i > 0) & dispatch_pkt_cast_i.decode.frs1_r_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr));
+                              || (dispatch_pkt_cast_i.decode.frs1_r_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs1_addr == comp_stage_r[i].rd_addr));
       assign match_rs[1][i] = ((i < 4) & dispatch_pkt_cast_i.decode.irs2_r_v & comp_stage_r[i].ird_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr))
-                              || ((i > 0) & dispatch_pkt_cast_i.decode.frs2_r_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr));
-      assign match_rs[2][i] = ((i > 0) & dispatch_pkt_cast_i.decode.frs3_r_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs3_addr == comp_stage_r[i].rd_addr));
+                              || (dispatch_pkt_cast_i.decode.frs2_r_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs2_addr == comp_stage_r[i].rd_addr));
+      assign match_rs[2][i] = (dispatch_pkt_cast_i.decode.frs3_r_v & comp_stage_r[i].frd_w_v & (dispatch_pkt_cast_i.instr.t.fmatype.rs3_addr == comp_stage_r[i].rd_addr));
 
       assign forward_data[i] = comp_stage_n[i+1].rd_data;
     end
@@ -179,10 +185,10 @@ module bp_be_calculator_top
   bp_be_dispatch_pkt_s reservation_n, reservation_r;
   always_comb
     begin
-      reservation_n        = dispatch_pkt_i;
-      reservation_n.rs1    = bypass_rs[0];
-      reservation_n.rs2    = bypass_rs[1];
-      reservation_n.imm    = bypass_rs[2];
+      reservation_n          = dispatch_pkt_cast_i;
+      reservation_n.rs1      = bypass_rs[0];
+      reservation_n.rs2      = bypass_rs[1];
+      reservation_n.imm      = bypass_rs[2];
     end
   wire injection = dispatch_pkt_cast_i.v & ~dispatch_pkt_cast_i.queue_v;
 
@@ -224,9 +230,8 @@ module bp_be_calculator_top
      ,.irq_waiting_o(irq_waiting_o)
 
      ,.illegal_instr_o(pipe_sys_illegal_instr_lo)
-     ,.csrw_o(pipe_sys_csrw_lo)
      ,.data_o(pipe_sys_data_lo)
-     ,.v_o(pipe_sys_data_lo_v)
+     ,.v_o(pipe_sys_data_v_lo)
 
      ,.decode_info_o(decode_info_o)
      ,.trans_info_o(trans_info_lo)
@@ -245,7 +250,7 @@ module bp_be_calculator_top
      ,.flush_i(commit_pkt_cast_o.npc_w_v)
 
      ,.data_o(pipe_int_early_data_lo)
-     ,.v_o(pipe_int_early_data_lo_v)
+     ,.v_o(pipe_int_early_data_v_lo)
      ,.npc_o(pipe_int_early_npc_lo)
      ,.branch_o(pipe_int_early_branch_lo)
      ,.btaken_o(pipe_int_early_btaken_lo)
@@ -293,7 +298,7 @@ module bp_be_calculator_top
          ,.flush_i(commit_pkt_cast_o.npc_w_v)
 
          ,.data_o(pipe_int_catchup_data_lo)
-         ,.v_o(pipe_int_catchup_data_lo_v)
+         ,.v_o(pipe_int_catchup_data_v_lo)
          ,.npc_o(pipe_int_catchup_npc_lo)
          ,.branch_o(pipe_int_catchup_branch_lo)
          ,.btaken_o(pipe_int_catchup_btaken_lo)
@@ -304,7 +309,7 @@ module bp_be_calculator_top
   else
     begin : no_catchup
       assign pipe_int_catchup_data_lo = '0;
-      assign pipe_int_catchup_data_lo_v = '0;
+      assign pipe_int_catchup_data_v_lo = '0;
       assign pipe_int_catchup_mispredict_lo = '0;
       assign pipe_int_catchup_instr_misaligned_lo = '0;
     end
@@ -322,7 +327,7 @@ module bp_be_calculator_top
 
      ,.data_o(pipe_aux_data_lo)
      ,.fflags_o(pipe_aux_fflags_lo)
-     ,.v_o(pipe_aux_data_lo_v)
+     ,.v_o(pipe_aux_data_v_lo)
      );
 
   // Memory pipe: 2/3 cycle latency
@@ -337,13 +342,13 @@ module bp_be_calculator_top
      ,.flush_i(commit_pkt_cast_o.npc_w_v)
      ,.sfence_i(commit_pkt_cast_o.sfence)
 
-     ,.reservation_i(reservation_r)
+     ,.ptw_busy_o(ptw_busy_o)
      ,.busy_o(mem_busy_o)
      ,.ordered_o(mem_ordered_o)
 
+     ,.reservation_i(reservation_r)
+
      ,.commit_pkt_i(commit_pkt_cast_o)
-     ,.ptw_fill_pkt_o(ptw_fill_pkt_o)
-     ,.ptw_busy_o(ptw_busy_o)
 
      ,.cache_req_o(cache_req_o)
      ,.cache_req_v_o(cache_req_v_o)
@@ -351,8 +356,7 @@ module bp_be_calculator_top
      ,.cache_req_lock_i(cache_req_lock_i)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-     ,.cache_req_addr_i(cache_req_addr_i)
-     ,.cache_req_data_i(cache_req_data_i)
+     ,.cache_req_id_i(cache_req_id_i)
      ,.cache_req_critical_i(cache_req_critical_i)
      ,.cache_req_last_i(cache_req_last_i)
      ,.cache_req_credits_full_i(cache_req_credits_full_i)
@@ -376,8 +380,7 @@ module bp_be_calculator_top
      ,.tlb_store_miss_v_o(pipe_mem_dtlb_store_miss_lo)
      ,.tlb_load_miss_v_o(pipe_mem_dtlb_load_miss_lo)
      ,.cache_replay_v_o(pipe_mem_dcache_replay_lo)
-     ,.cache_load_miss_v_o(pipe_mem_dcache_load_miss_lo)
-     ,.cache_store_miss_v_o(pipe_mem_dcache_store_miss_lo)
+     ,.cache_miss_v_o(pipe_mem_dcache_miss_lo)
      ,.load_misaligned_v_o(pipe_mem_load_misaligned_lo)
      ,.load_access_fault_v_o(pipe_mem_load_access_fault_lo)
      ,.load_page_fault_v_o(pipe_mem_load_page_fault_lo)
@@ -386,17 +389,16 @@ module bp_be_calculator_top
      ,.store_page_fault_v_o(pipe_mem_store_page_fault_lo)
 
      ,.early_data_o(pipe_mem_early_data_lo)
-     ,.early_v_o(pipe_mem_early_data_lo_v)
+     ,.early_v_o(pipe_mem_early_data_v_lo)
 
      ,.final_data_o(pipe_mem_final_data_lo)
-     ,.final_v_o(pipe_mem_final_data_lo_v)
+     ,.final_v_o(pipe_mem_final_data_v_lo)
 
-     ,.late_iwb_pkt_o(pipe_mem_late_iwb_pkt)
-     ,.late_iwb_pkt_v_o(pipe_mem_late_iwb_pkt_v)
-     ,.late_iwb_pkt_yumi_i(pipe_mem_late_iwb_pkt_yumi)
-     ,.late_fwb_pkt_o(pipe_mem_late_fwb_pkt)
-     ,.late_fwb_pkt_v_o(pipe_mem_late_fwb_pkt_v)
-     ,.late_fwb_pkt_yumi_i(pipe_mem_late_fwb_pkt_yumi)
+     ,.late_wb_pkt_o(pipe_mem_late_wb_pkt)
+     ,.late_wb_v_o(pipe_mem_late_wb_v)
+
+     ,.ptw_fill_pkt_o(ptw_fill_pkt_o)
+     ,.ptw_fill_v_o(ptw_fill_v)
 
      ,.trans_info_i(trans_info_lo)
      );
@@ -413,10 +415,10 @@ module bp_be_calculator_top
      ,.frm_dyn_i(frm_dyn_lo)
 
      ,.imul_data_o(pipe_mul_data_lo)
-     ,.imul_v_o(pipe_mul_data_lo_v)
+     ,.imul_v_o(pipe_mul_data_v_lo)
      ,.fma_data_o(pipe_fma_data_lo)
      ,.fma_fflags_o(pipe_fma_fflags_lo)
-     ,.fma_v_o(pipe_fma_data_lo_v)
+     ,.fma_v_o(pipe_fma_data_v_lo)
      );
 
   // Variable length pipeline, used for long (potentially scoreboarded operations)
@@ -432,14 +434,42 @@ module bp_be_calculator_top
      ,.fbusy_o(fdiv_busy_o)
      ,.frm_dyn_i(frm_dyn_lo)
 
-     ,.iwb_pkt_o(long_iwb_pkt)
-     ,.iwb_v_o(pipe_long_idata_lo_v)
-     ,.iwb_yumi_i(pipe_long_idata_lo_yumi)
+     ,.iwb_pkt_o(pipe_long_iwb_pkt)
+     ,.iwb_v_o(pipe_long_idata_v_lo)
+     ,.iwb_yumi_i(pipe_long_idata_yumi_lo)
 
-     ,.fwb_pkt_o(long_fwb_pkt)
-     ,.fwb_v_o(pipe_long_fdata_lo_v)
-     ,.fwb_yumi_i(pipe_long_fdata_lo_yumi)
+     ,.fwb_pkt_o(pipe_long_fwb_pkt)
+     ,.fwb_v_o(pipe_long_fdata_v_lo)
+     ,.fwb_yumi_i(pipe_long_fdata_yumi_lo)
      );
+
+  localparam num_late_wb_lp = 3;
+  logic [num_late_wb_lp-1:0] late_wb_reqs_li, late_wb_grants_lo;
+  assign {pipe_long_fdata_yumi_lo, pipe_long_idata_yumi_lo, pipe_mem_late_wb_yumi} =
+    late_wb_grants_lo & {num_late_wb_lp{late_wb_yumi_i}};
+  assign late_wb_reqs_li = {pipe_long_fdata_v_lo, pipe_long_idata_v_lo, pipe_mem_late_wb_v};
+  bsg_arb_fixed
+   #(.inputs_p(1+num_late_wb_lp), .lo_to_hi_p(1))
+   late_wb_arb
+    (.ready_i(1'b1)
+     ,.reqs_i({late_wb_reqs_li, ptw_fill_v})
+     ,.grants_o({late_wb_grants_lo, ptw_fill_yumi})
+     );
+
+  bp_be_wb_pkt_s late_wb_pkt_sel;
+  wire [num_late_wb_lp-1:0][$bits(bp_be_wb_pkt_s)-1:0] late_wb_pkts_li =
+    {pipe_long_fwb_pkt, pipe_long_iwb_pkt, pipe_mem_late_wb_pkt};
+  bsg_mux_one_hot
+   #(.width_p($bits(bp_be_wb_pkt_s)), .els_p(num_late_wb_lp))
+   late_wb_mux_oh
+    (.data_i(late_wb_pkts_li)
+     ,.sel_one_hot_i(late_wb_grants_lo)
+     ,.data_o(late_wb_pkt_sel)
+     );
+
+  assign late_wb_pkt_cast_o = late_wb_pkt_sel;
+  assign late_wb_v_o = |late_wb_grants_lo;
+  assign late_wb_force_o = pipe_mem_late_wb_v | ptw_fill_v;
 
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
   // Else, mux in the previous stage of the completion pipe. Since we are single issue and have
@@ -450,27 +480,28 @@ module bp_be_calculator_top
         begin : comp_stage
           // Normally, shift down in the pipe
           comp_stage_n[i] = (i == 0)
-            ? '{ird_w_v    : reservation_n.decode.irf_w_v
-                ,frd_w_v   : reservation_n.decode.frf_w_v
-                ,fflags_w_v: reservation_n.decode.fflags_w_v
-                ,rd_addr   : reservation_n.instr.t.rtype.rd_addr
+            ? '{ird_w_v    : late_wb_yumi_i ? late_wb_pkt_cast_o.ird_w_v    : reservation_n.decode.irf_w_v
+                ,frd_w_v   : late_wb_yumi_i ? late_wb_pkt_cast_o.frd_w_v    : reservation_n.decode.frf_w_v
+                ,fflags_w_v: late_wb_yumi_i ? late_wb_pkt_cast_o.fflags_w_v : reservation_n.decode.fflags_w_v
+                ,rd_addr   : late_wb_yumi_i ? late_wb_pkt_cast_o.rd_addr    : reservation_n.instr.t.rtype.rd_addr
                 ,default: '0
                 }
             : comp_stage_r[i-1];
         end
       // Injected instructions can carry a payload in rs2
       comp_stage_n[0].rd_data    |= injection                  ? dispatch_pkt_cast_i.rs2  : '0;
-      comp_stage_n[1].rd_data    |= pipe_int_early_data_lo_v   ? pipe_int_early_data_lo   : '0;
-      comp_stage_n[1].rd_data    |= pipe_sys_data_lo_v         ? pipe_sys_data_lo         : '0;
-      comp_stage_n[2].rd_data    |= pipe_mem_early_data_lo_v   ? pipe_mem_early_data_lo   : '0;
-      comp_stage_n[2].rd_data    |= pipe_aux_data_lo_v         ? pipe_aux_data_lo         : '0;
-      comp_stage_n[2].rd_data    |= pipe_int_catchup_data_lo_v ? pipe_int_catchup_data_lo : '0;
-      comp_stage_n[3].rd_data    |= pipe_mem_final_data_lo_v   ? pipe_mem_final_data_lo   : '0;
-      comp_stage_n[3].rd_data    |= pipe_mul_data_lo_v         ? pipe_mul_data_lo         : '0;
-      comp_stage_n[4].rd_data    |= pipe_fma_data_lo_v         ? pipe_fma_data_lo         : '0;
+      comp_stage_n[1].rd_data    |= pipe_int_early_data_v_lo   ? pipe_int_early_data_lo   : '0;
+      comp_stage_n[1].rd_data    |= pipe_sys_data_v_lo         ? pipe_sys_data_lo         : '0;
+      comp_stage_n[2].rd_data    |= pipe_mem_early_data_v_lo   ? pipe_mem_early_data_lo   : '0;
+      comp_stage_n[2].rd_data    |= pipe_aux_data_v_lo         ? pipe_aux_data_lo         : '0;
+      comp_stage_n[2].rd_data    |= pipe_int_catchup_data_v_lo ? pipe_int_catchup_data_lo : '0;
+      comp_stage_n[3].rd_data    |= pipe_mem_final_data_v_lo   ? pipe_mem_final_data_lo   : '0;
+      comp_stage_n[3].rd_data    |= pipe_mul_data_v_lo         ? pipe_mul_data_lo         : '0;
+      comp_stage_n[4].rd_data    |= pipe_fma_data_v_lo         ? pipe_fma_data_lo         : '0;
 
-      comp_stage_n[2].fflags     |= pipe_aux_data_lo_v         ? pipe_aux_fflags_lo       : '0;
-      comp_stage_n[4].fflags     |= pipe_fma_data_lo_v         ? pipe_fma_fflags_lo       : '0;
+      comp_stage_n[0].fflags     |= injection                  ? dispatch_pkt_cast_i.rs1  : '0;
+      comp_stage_n[2].fflags     |= pipe_aux_data_v_lo         ? pipe_aux_fflags_lo       : '0;
+      comp_stage_n[4].fflags     |= pipe_fma_data_v_lo         ? pipe_fma_fflags_lo       : '0;
 
       comp_stage_n[0].ird_w_v    &= exc_stage_n[0].v;
       comp_stage_n[1].ird_w_v    &= exc_stage_n[1].v;
@@ -487,9 +518,8 @@ module bp_be_calculator_top
       comp_stage_n[2].fflags_w_v &= exc_stage_n[2].v;
       comp_stage_n[3].fflags_w_v &= exc_stage_n[3].v;
 
-      // Inject D$ miss so we don't accidentally write back the data
-      comp_stage_n[2].ird_w_v    &= ~pipe_mem_dcache_load_miss_lo;
-      comp_stage_n[2].frd_w_v    &= ~pipe_mem_dcache_load_miss_lo;
+      comp_stage_n[3].ird_w_v    &= ~commit_pkt_cast_o.iscore_v;
+      comp_stage_n[3].frd_w_v    &= ~commit_pkt_cast_o.fscore_v;
     end
 
   bsg_dff
@@ -499,6 +529,8 @@ module bp_be_calculator_top
      ,.data_i(comp_stage_n[0+:pipe_stage_els_lp])
      ,.data_o(comp_stage_r)
      );
+  assign iwb_pkt_cast_o = comp_stage_r[3];
+  assign fwb_pkt_cast_o = comp_stage_r[4];
 
   always_comb
     begin
@@ -511,21 +543,20 @@ module bp_be_calculator_top
           exc_stage_n[0].v                        |= reservation_n.v;
           exc_stage_n[0].queue_v                  |= reservation_n.queue_v;
           exc_stage_n[0].ispec_v                  |= reservation_n.ispec_v;
+          exc_stage_n[0].nspec_v                  |= reservation_n.nspec_v;
           exc_stage_n[0].spec                     |= reservation_n.special;
           exc_stage_n[0].exc                      |= reservation_n.exception;
 
-          exc_stage_n[0].v                        &= ~commit_pkt_cast_o.npc_w_v;
-          exc_stage_n[1].v                        &= ~commit_pkt_cast_o.npc_w_v;
-          exc_stage_n[2].v                        &= ~commit_pkt_cast_o.npc_w_v;
-          exc_stage_n[3].v                        &= commit_pkt_cast_o.instret;
+          exc_stage_n[0].v                        &= ~commit_pkt_cast_o.npc_w_v | reservation_n.nspec_v;
+          exc_stage_n[1].v                        &= ~commit_pkt_cast_o.npc_w_v | exc_stage_r[0].nspec_v;
+          exc_stage_n[2].v                        &= ~commit_pkt_cast_o.npc_w_v | exc_stage_r[1].nspec_v;
+          exc_stage_n[3].v                        &=  commit_pkt_cast_o.instret | exc_stage_r[2].nspec_v;
 
           exc_stage_n[0].queue_v                  &= ~commit_pkt_cast_o.npc_w_v;
           exc_stage_n[1].queue_v                  &= ~commit_pkt_cast_o.npc_w_v;
           exc_stage_n[2].queue_v                  &= ~commit_pkt_cast_o.npc_w_v;
-          exc_stage_n[3].queue_v                  &= ~commit_pkt_cast_o.npc_w_v;
 
           exc_stage_n[1].exc.illegal_instr        |= pipe_sys_illegal_instr_lo;
-          exc_stage_n[1].spec.csrw                |= pipe_sys_csrw_lo;
 
           exc_stage_n[1].exc.instr_misaligned     |= pipe_int_early_instr_misaligned_lo & ~exc_stage_r[0].ispec_v;
 
@@ -542,8 +573,7 @@ module bp_be_calculator_top
           exc_stage_n[2].exc.mispredict           |= pipe_int_catchup_mispredict_lo;
 
           exc_stage_n[2].exc.dcache_replay        |= pipe_mem_dcache_replay_lo;
-          exc_stage_n[2].spec.dcache_load_miss    |= pipe_mem_dcache_load_miss_lo;
-          exc_stage_n[2].spec.dcache_store_miss   |= pipe_mem_dcache_store_miss_lo;
+          exc_stage_n[2].spec.dcache_miss         |= pipe_mem_dcache_miss_lo;
           exc_stage_n[2].exc.cmd_full             |= |{exc_stage_r[2].exc, exc_stage_r[2].spec} & cmd_full_n_i;
     end
 
@@ -555,15 +585,6 @@ module bp_be_calculator_top
      ,.data_i(exc_stage_n[0+:pipe_stage_els_lp])
      ,.data_o(exc_stage_r)
      );
-
-  assign pipe_mem_late_iwb_pkt_yumi = pipe_mem_late_iwb_pkt_v & ~comp_stage_r[3].ird_w_v;
-  assign pipe_mem_late_fwb_pkt_yumi = pipe_mem_late_fwb_pkt_v & ~comp_stage_r[4].frd_w_v;
-
-  assign pipe_long_idata_lo_yumi = pipe_long_idata_lo_v & ~pipe_mem_late_iwb_pkt_v & ~comp_stage_r[3].ird_w_v;
-  assign pipe_long_fdata_lo_yumi = pipe_long_fdata_lo_v & ~pipe_mem_late_fwb_pkt_v & ~comp_stage_r[4].frd_w_v & ~comp_stage_r[4].fflags_w_v;
-
-  assign iwb_pkt_o = pipe_mem_late_iwb_pkt_yumi ? pipe_mem_late_iwb_pkt : pipe_long_idata_lo_yumi ? long_iwb_pkt : comp_stage_r[3];
-  assign fwb_pkt_o = pipe_mem_late_fwb_pkt_yumi ? pipe_mem_late_fwb_pkt : pipe_long_fdata_lo_yumi ? long_fwb_pkt : comp_stage_r[4];
 
 endmodule
 

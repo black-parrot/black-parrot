@@ -1,6 +1,6 @@
 /*
  * Name:
- *   bp_me_cce_to_cache.sv
+ *   bp_me_cache_controller.sv
  *
  * Description:
  *   This module converts an arriving BedRock Stream message into a bsg_cache message, and
@@ -17,13 +17,13 @@
 `include "bp_me_defines.svh"
 `include "bsg_cache.vh"
 
-module bp_me_cce_to_cache
+module bp_me_cache_controller
  import bp_common_pkg::*;
  import bp_me_pkg::*;
  import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
    // L2 organization and interface
    , localparam cache_pkt_width_lp = `bsg_cache_pkt_width(daddr_width_p, l2_data_width_p)
@@ -63,7 +63,7 @@ module bp_me_cce_to_cache
   localparam data_byte_offset_width_lp = `BSG_SAFE_CLOG2(data_bytes_lp);
 
   `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
   bsg_cache_pkt_s cache_pkt;
@@ -114,8 +114,6 @@ module bp_me_cce_to_cache
 
   wire is_word_op = (fsm_fwd_header_li.size == e_bedrock_msg_size_4);
   wire is_csr     = (local_addr_cast < dram_base_addr_gp);
-  wire is_tagfl   = is_csr && (local_addr_cast.addr == cache_tagfl_addr_gp);
-  wire [daddr_width_p-1:0] tagfl_addr = fsm_fwd_data_li[0+:lg_l2_sets_lp+lg_l2_assoc_lp] << l2_block_offset_width_lp;
 
   // cache packet data and mask mux elements
   // each mux has one element per power of 2 in [1, N] where N is log2(L2 data width bytes)
@@ -190,9 +188,11 @@ module bp_me_cce_to_cache
   // Swizzle address bits for L2 cache command
   bp_me_dram_hash_encode
    #(.bp_params_p(bp_params_p))
-   fsm_fwd_hash
+   bank_select
     (.daddr_i(fsm_fwd_addr_li[0+:daddr_width_p])
      ,.daddr_o(cache_pkt_addr_lo)
+     ,.cce_o()
+     ,.slice_o()
      ,.bank_o(cache_fwd_bank_lo)
      );
 
@@ -205,7 +205,7 @@ module bp_me_cce_to_cache
   logic stream_fifo_ready_lo, stream_header_v_lo;
   bsg_fifo_1r1w_small
    #(.width_p(lg_l2_banks_lp+$bits(bp_bedrock_mem_fwd_header_s))
-     ,.els_p(l2_outstanding_reqs_p)
+     ,.els_p(l2_banks_p*3)
      ,.ready_THEN_valid_p(1)
      )
    stream_fifo
@@ -368,19 +368,11 @@ module bp_me_cce_to_cache
               default: cache_pkt.opcode = LB;
             endcase
 
-            if (is_tagfl)
-              begin
-                cache_pkt.opcode = TAGFL;
-                cache_pkt.addr = tagfl_addr;
-              end
-            else
-              begin
-                cache_pkt.addr = cache_pkt_addr_lo;
-                cache_pkt.data = fsm_fwd_data_li;
-                // This mask is only used for the LM/SM operations for >64 bit mask operations,
-                // but it gets set regardless of operation
-                cache_pkt.mask = cache_pkt_mask_lo;
-              end
+            cache_pkt.addr = cache_pkt_addr_lo;
+            cache_pkt.data = fsm_fwd_data_li;
+            // This mask is only used for the LM/SM operations for >64 bit mask operations,
+            // but it gets set regardless of operation
+            cache_pkt.mask = cache_pkt_mask_lo;
             cache_pkt_v_o[cache_fwd_bank_lo] = stream_fifo_ready_lo & fsm_fwd_v_li;
             // fsm_fwd_v_li is not strictly necessary, but avoids x-prop caused by
             //   cache_fwd_bank_lo

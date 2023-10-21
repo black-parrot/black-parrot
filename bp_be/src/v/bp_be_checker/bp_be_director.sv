@@ -22,7 +22,7 @@ module bp_be_director
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    // Generated parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam branch_pkt_width_lp = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
@@ -57,7 +57,7 @@ module bp_be_director
    );
 
   // Declare parameterized structures
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
@@ -98,7 +98,7 @@ module bp_be_director
 
   wire npc_mismatch_v = dispatch_v_i & (expected_npc_o != issue_pkt_cast_i.pc);
   wire npc_match_v    = dispatch_v_i & (expected_npc_o == issue_pkt_cast_i.pc);
-  assign poison_isd_o = commit_pkt_cast_i.npc_w_v | npc_mismatch_v;
+  assign poison_isd_o = npc_mismatch_v;
 
   logic btaken_pending, attaboy_pending;
   bsg_dff_reset_set_clear
@@ -123,16 +123,19 @@ module bp_be_director
       unique casez (state_r)
         e_freeze
         ,e_fencei
-        ,e_wait : state_n = commit_pkt_cast_i.resume ? e_cmd_fence : state_r;
-        e_run   : state_n = commit_pkt_cast_i.wfi
+        ,e_wait
+        ,e_cmd_fence
+        ,e_run  : state_n = commit_pkt_cast_i.wfi
                             ? e_wait
                             : commit_pkt_cast_i.fencei
                               ? e_fencei
-                              : fe_cmd_nonattaboy_v
+                              : (commit_pkt_cast_i.resume | fe_cmd_nonattaboy_v)
                                 ? e_cmd_fence
                                 : freeze_li
                                   ? e_freeze
-                                  : state_r;
+                                  : clear_iss_o
+                                    ? e_run
+                                    : state_r;
         // e_cmd_fence:
         default : state_n = cmd_empty_r_o ? e_run : state_r;
       endcase
@@ -141,11 +144,9 @@ module bp_be_director
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i)
     if (reset_i)
-        state_r <= e_freeze;
+      state_r <= e_freeze;
     else
-      begin
-        state_r <= state_n;
-      end
+      state_r <= state_n;
 
   assign suppress_iss_o = !is_run;
   assign clear_iss_o    = is_cmd_fence & cmd_empty_r_o;
@@ -207,7 +208,7 @@ module bp_be_director
           fe_cmd_li.opcode = e_op_icache_fence;
           fe_cmd_li.npc = commit_pkt_cast_i.npc;
 
-          fe_cmd_v_li = 1'b1;
+          fe_cmd_v_li = !icache_features_p[e_cfg_coherent];
         end
       else if (commit_pkt_cast_i.icache_miss)
         begin

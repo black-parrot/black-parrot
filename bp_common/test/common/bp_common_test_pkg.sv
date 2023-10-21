@@ -32,7 +32,6 @@ package bp_common_pkg;
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)
       ,l2_features          : '0
-      ,l2_banks             : 1
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_multicore_1_cfg_p

@@ -120,8 +120,8 @@ module bp_nonsynth_cosim
   wire instret_v_li = commit_pkt_r.instret;
   wire [vaddr_width_p-1:0] commit_pc_li = commit_pkt_r.pc;
   wire [instr_width_gp-1:0] commit_instr_li = commit_pkt_r.instr;
-  wire commit_ird_w_v_li = instret_v_li & (decode_r.irf_w_v | decode_r.late_iwb_v);
-  wire commit_frd_w_v_li = instret_v_li & (decode_r.frf_w_v | decode_r.late_fwb_v);
+  wire commit_ird_w_v_li = instret_v_li & decode_r.irf_w_v;
+  wire commit_frd_w_v_li = instret_v_li & decode_r.frf_w_v;
   wire commit_req_v_li   = instret_v_li & cache_req_v_r;
   wire trap_v_li = commit_pkt_r.exception | commit_pkt_r._interrupt;
   wire [dword_width_gp-1:0] cause_li = (priv_mode_i == `PRIV_MODE_M) ? mcause_i : scause_i;

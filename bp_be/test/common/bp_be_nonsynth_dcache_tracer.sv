@@ -12,8 +12,9 @@ module bp_be_nonsynth_dcache_tracer
   , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
   , parameter ctag_width_p = 27
+  , parameter id_width_p = 1
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
 
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
@@ -30,14 +31,17 @@ module bp_be_nonsynth_dcache_tracer
    , input                                                v_i
    , input                                                ready_and_o
 
-   , input [dword_width_gp-1:0]                           data_o
-   , input                                                v_o
+   , input [dword_width_gp-1:0]                           early_data_o
+   , input                                                early_v_o
 
-   , input [cache_req_width_lp-1:0]                       cache_req_o
+   , input [dpath_width_gp-1:0]                           final_data_o
+   , input                                                final_v_o
+
+   , input [dcache_req_width_lp-1:0]                      cache_req_o
    , input                                                cache_req_v_o
    , input                                                cache_req_yumi_i
    , input                                                cache_req_lock_i
-   , input [cache_req_metadata_width_lp-1:0]              cache_req_metadata_o
+   , input [dcache_req_metadata_width_lp-1:0]             cache_req_metadata_o
    , input                                                cache_req_metadata_v_o
    , input                                                cache_req_critical_i
    , input                                                cache_req_last_i
@@ -46,19 +50,19 @@ module bp_be_nonsynth_dcache_tracer
    , input                                                cache_req_credits_empty_i
 
    , input                                                data_mem_pkt_v_i
-   , input [cache_data_mem_pkt_width_lp-1:0]              data_mem_pkt_i
+   , input [dcache_data_mem_pkt_width_lp-1:0]             data_mem_pkt_i
    , input                                                data_mem_pkt_yumi_o
    , input [block_width_p-1:0]                            data_mem_o
 
    , input                                                tag_mem_pkt_v_i
-   , input [cache_tag_mem_pkt_width_lp-1:0]               tag_mem_pkt_i
+   , input [dcache_tag_mem_pkt_width_lp-1:0]              tag_mem_pkt_i
    , input                                                tag_mem_pkt_yumi_o
-   , input [cache_tag_info_width_lp-1:0]                  tag_mem_o
+   , input [dcache_tag_info_width_lp-1:0]                 tag_mem_o
 
    , input                                                stat_mem_pkt_v_i
-   , input [cache_stat_mem_pkt_width_lp-1:0]              stat_mem_pkt_i
+   , input [dcache_stat_mem_pkt_width_lp-1:0]             stat_mem_pkt_i
    , input                                                stat_mem_pkt_yumi_o
-   , input [cache_stat_info_width_lp-1:0]                 stat_mem_o
+   , input [dcache_stat_info_width_lp-1:0]                stat_mem_o
 
    , input [wbuf_entry_width_lp-1:0]                      wbuf_entry_out
    , input                                                wbuf_yumi_li
@@ -86,31 +90,31 @@ module bp_be_nonsynth_dcache_tracer
    , input                                                stat_mem_fast_write
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_be_dcache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   bp_be_dcache_pkt_s dcache_pkt_cast_i;
   assign dcache_pkt_cast_i = dcache_pkt_i;
 
-  bp_cache_req_s cache_req_cast_o;
-  bp_cache_req_metadata_s cache_req_metadata_cast_o;
+  bp_be_dcache_req_s cache_req_cast_o;
+  bp_be_dcache_req_metadata_s cache_req_metadata_cast_o;
   assign cache_req_cast_o = cache_req_o;
   assign cache_req_metadata_cast_o = cache_req_metadata_o;
 
-  bp_cache_data_mem_pkt_s data_mem_pkt_cast_i;
-  bp_cache_tag_mem_pkt_s tag_mem_pkt_cast_i;
-  bp_cache_stat_mem_pkt_s stat_mem_pkt_cast_i;
+  bp_be_dcache_data_mem_pkt_s data_mem_pkt_cast_i;
+  bp_be_dcache_tag_mem_pkt_s tag_mem_pkt_cast_i;
+  bp_be_dcache_stat_mem_pkt_s stat_mem_pkt_cast_i;
   assign data_mem_pkt_cast_i = data_mem_pkt_i;
   assign tag_mem_pkt_cast_i = tag_mem_pkt_i;
   assign stat_mem_pkt_cast_i = stat_mem_pkt_i;
 
   logic [assoc_p-1:0][bank_width_lp-1:0] data_mem_cast_o;
-  bp_cache_tag_info_s tag_mem_info_cast_o;
-  bp_cache_tag_info_s stat_mem_info_cast_o;
+  bp_be_dcache_tag_info_s tag_mem_info_cast_o;
+  bp_be_dcache_stat_info_s stat_mem_info_cast_o;
   assign data_mem_cast_o = data_mem_o;
   assign tag_mem_info_cast_o = tag_mem_o;
   assign stat_mem_info_cast_o = stat_mem_o;
 
-  `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, assoc_p);
+  `declare_bp_be_dcache_wbuf_entry_s(caddr_width_p, assoc_p);
   bp_be_dcache_wbuf_entry_s wbuf_entry_out_cast;
   assign wbuf_entry_out_cast = wbuf_entry_out;
 
@@ -148,18 +152,22 @@ module bp_be_nonsynth_dcache_tracer
         stat_mem_read_r <= stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode == e_cache_stat_mem_read);
       end
 
+  logic [dword_width_gp-1:0] st_data_dm_r;
+  always_ff @(posedge clk_i)
+    st_data_dm_r <= st_data_tv_r;
+
   always_ff @(posedge clk_i)
     begin
       if (ready_and_o & v_i)
         $fwrite(acc_file, "%12t | access: %p\n", $time, dcache_pkt_cast_i);
-      if (v_o & decode_tv_r.load_op & ~snoop_tv_r)
-        $fwrite(acc_file, "%12t | early load: [%x]->%x\n", $time, paddr_tv_r, data_o);
-      if (v_o & decode_tv_r.store_op & ~snoop_tv_r)
+      if (early_v_o & decode_tv_r.load_op)
+        $fwrite(acc_file, "%12t | early load: [%x]->%x\n", $time, paddr_tv_r, early_data_o);
+      if (early_v_o & decode_tv_r.store_op)
         $fwrite(acc_file, "%12t | early store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
-      if (v_o & decode_tv_r.load_op & snoop_tv_r)
-        $fwrite(acc_file, "%12t | late load: [%x]->%x\n", $time, paddr_tv_r, data_o);
-      if (v_o & decode_tv_r.store_op & snoop_tv_r)
-        $fwrite(acc_file, "%12t | late store: [%x]<-%x\n", $time, paddr_tv_r, st_data_tv_r);
+      if (final_v_o & decode_tv_r.load_op & snoop_tv_r)
+        $fwrite(acc_file, "%12t | late load: [%x]->%x\n", $time, paddr_tv_r, final_data_o);
+      if (final_v_o & decode_tv_r.store_op & snoop_tv_r)
+        $fwrite(acc_file, "%12t | late store: [%x]<-%x\n", $time, paddr_tv_r, st_data_dm_r);
       if (wbuf_yumi_li)
         $fwrite(acc_file, "%12t | wbuf: %p\n", $time, wbuf_entry_out_cast);
 

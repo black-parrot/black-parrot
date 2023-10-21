@@ -23,15 +23,14 @@ module bp_cce_src_sel
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
-    , localparam mshr_width_lp             = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
+    , localparam mshr_width_lp             = `bp_cce_mshr_width(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
     // number of way groups managed by this CCE
     , localparam num_way_groups_lp         = `BSG_CDIV(cce_way_groups_p, num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
 
-    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
 
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
   )
   (// Select signals for src_a and src_b - from decoded instruction
@@ -84,17 +83,16 @@ module bp_cce_src_sel
    , output bp_coh_states_e                      state_o
   );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   bp_cfg_bus_s cfg_bus_cast;
   assign cfg_bus_cast = cfg_bus_i;
 
-  `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cce_mshr_s(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   bp_cce_mshr_s mshr;
   assign mshr = mshr_i;
 
   // LCE-CCE and Mem-CCE Interface
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   // Message casting
   bp_bedrock_lce_req_header_s  lce_req_header_li;
@@ -144,7 +142,7 @@ module bp_cce_src_sel
       end
       e_src_sel_special: begin
         unique case (src_a_i.special)
-          e_opd_req_lce:         src_a_o[0+:lce_id_width_p] = mshr.lce_id;
+          e_opd_req_lce:         src_a_o[0+:did_width_p+lce_id_width_p] = {mshr.src_did, mshr.lce_id};
           e_opd_req_addr:        src_a_o[0+:paddr_width_p] = mshr.paddr;
           e_opd_req_way:         src_a_o[0+:lce_assoc_width_p] = mshr.way_id;
           e_opd_lru_addr:        src_a_o[0+:paddr_width_p] = mshr.lru_paddr;

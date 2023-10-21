@@ -16,19 +16,21 @@ module bp_uce
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
     , parameter `BSG_INV_PARAM(writeback_p)
     , parameter `BSG_INV_PARAM(assoc_p)
     , parameter `BSG_INV_PARAM(sets_p)
     , parameter `BSG_INV_PARAM(block_width_p)
     , parameter `BSG_INV_PARAM(fill_width_p)
     , parameter `BSG_INV_PARAM(ctag_width_p)
+    , parameter `BSG_INV_PARAM(id_width_p)
 
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+    `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
     )
    (input                                            clk_i
     , input                                          reset_i
 
+    , input [did_width_p-1:0]                        did_i
     , input [lce_id_width_p-1:0]                     lce_id_i
 
     , input [cache_req_width_lp-1:0]                 cache_req_i
@@ -37,8 +39,7 @@ module bp_uce
     , output logic                                   cache_req_lock_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
     , input                                          cache_req_metadata_v_i
-    , output logic [paddr_width_p-1:0]               cache_req_addr_o
-    , output logic [dword_width_gp-1:0]              cache_req_data_o
+    , output logic [id_width_p-1:0]                  cache_req_id_o
     , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_last_o
     , output logic                                   cache_req_credits_full_o
@@ -94,8 +95,8 @@ module bp_uce
                                                              ? e_bedrock_msg_size_8
                                                              : e_bedrock_msg_size_64;
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_i(bp_cache_req_metadata_s, cache_req_metadata);
@@ -106,11 +107,14 @@ module bp_uce
   enum logic [4:0] {
     e_reset
     ,e_init
+    ,e_backoff
     ,e_inval
     ,e_clean_read
     ,e_clean_scan
     ,e_clean_write
     ,e_clean_fence
+    ,e_bclean_evict
+    ,e_bclean_writeback_req
     ,e_ready
     ,e_uc_writeback_evict
     ,e_uc_writeback_write_req
@@ -124,6 +128,7 @@ module bp_uce
   } state_n, state_r;
 
   wire is_reset           = (state_r == e_reset);
+  wire is_backoff         = (state_r == e_backoff);
   wire is_inval           = (state_r == e_inval);
   wire is_init            = (state_r == e_init);
   wire is_clean_read      = (state_r == e_clean_read);
@@ -281,21 +286,25 @@ module bp_uce
      ,.fsm_critical_o(fsm_rev_critical_li)
      ,.fsm_last_o(fsm_rev_last_li)
      );
-  assign cache_req_addr_o = cache_req_r.addr;
-  assign cache_req_data_o = cache_req_r.data;
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
-  wire clean_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clean};
-  wire inval_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_inval};
-  wire wt_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
-  wire uc_load_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
-  wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
-  wire uc_amo_v_li        = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
-  wire uc_hit_v_li        = cache_req_v_i & cache_req_cast_i.hit & (uc_load_v_li | uc_store_v_li | uc_amo_v_li);
-  wire nonblocking_v_li   = (~uc_hit_v_li | !writeback_p) & (uc_store_v_li | wt_store_v_li);
+  wire miss_load_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_load};
+  wire miss_store_v_li  = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_store};
+  wire miss_v_li        = cache_req_v_i & miss_load_v_li | miss_store_v_li;
+  wire wt_store_v_li    = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
+  wire uc_load_v_li     = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
+  wire uc_store_v_li    = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
+  wire uc_amo_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
+  wire uc_evict_v_li    = (uc_load_v_li | uc_store_v_li | uc_amo_v_li) & writeback_p & cache_req_cast_i.hit;
+  wire inval_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_inval};
+  wire clean_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clean};
+  wire flush_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
+  wire binval_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_binval};
+  wire bclean_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_bclean};
+  wire nonblocking_v_li = cache_req_v_i & (uc_store_v_li | wt_store_v_li) & ~uc_evict_v_li;
 
-  wire store_resp_v_li    = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
-  wire load_resp_v_li     = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_amo};
+  wire store_resp_v_li  = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
+  wire load_resp_v_li   = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_amo};
 
   wire miss_load_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
@@ -304,12 +313,15 @@ module bp_uce
   wire uc_load_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire uc_store_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
   wire uc_amo_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
-  wire uc_hit_v_r      = cache_req_v_r & cache_req_r.hit & (uc_load_v_r | uc_store_v_r | uc_amo_v_r);
-  wire clean_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_clean};
+  wire uc_evict_v_r    = (uc_load_v_r | uc_store_v_r | uc_amo_v_r) & writeback_p & cache_req_r.hit;
   wire inval_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_inval};
-  wire nonblocking_v_r = cache_req_v_r & (~uc_hit_v_r | !writeback_p) & (uc_store_v_r | wt_store_v_r);
+  wire clean_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_clean};
+  wire flush_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_flush};
+  wire binval_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_cache_binval};
+  wire bclean_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_cache_bclean};
+  wire nonblocking_v_r = cache_req_v_r & (uc_store_v_r | wt_store_v_r) & ~uc_evict_v_r;
 
-  wire [block_size_in_fill_lp-1:0] fill_index_shift = {{(assoc_p != 1){fsm_rev_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp}}, {(assoc_p == 1){'0}}};
+  wire [block_size_in_fill_lp-1:0] fill_index_shift = (assoc_p > 1) ? (fsm_rev_addr_li[byte_offset_width_lp+:bank_offset_width_lp] >> bank_sub_offset_width_lp) : '0;
 
   logic [index_width_lp-1:0] index_cnt;
   logic index_clear, index_up;
@@ -357,7 +369,7 @@ module bp_uce
      ,.reset_i(reset_i)
 
      // credit consumed when memory command sends
-     ,.v_i(fsm_fwd_v_lo & fsm_fwd_new_lo)
+     ,.v_i(fsm_fwd_v_lo & fsm_fwd_last_lo)
      ,.ready_i(fsm_fwd_ready_and_li)
 
      // credit returned when memory response fully consumed
@@ -366,7 +378,6 @@ module bp_uce
      );
   assign cache_req_credits_full_o = cache_req_v_r && (credit_count_lo == coh_noc_max_credits_p);
   assign cache_req_credits_empty_o = ~cache_req_v_r && (credit_count_lo == 0);
-
 
   logic [fill_width_p-1:0] writeback_data;
   wire [fill_cnt_width_lp-1:0] dirty_data_select = fsm_fwd_addr_lo[fill_offset_width_lp+:fill_cnt_width_lp];
@@ -402,7 +413,7 @@ module bp_uce
   // We ack mem_revs for stores no matter what, so load_resp_yumi_lo is for other responses
   logic load_resp_yumi_lo;
   assign fsm_rev_yumi_lo = load_resp_yumi_lo | store_resp_v_li;
-  assign cache_req_lock_o = is_reset | is_init | clean_v_r | inval_v_r;
+  assign cache_req_lock_o = is_reset | is_init | inval_v_r | clean_v_r | flush_v_r;
   always_comb
     begin
       cache_req_yumi_o = '0;
@@ -449,11 +460,16 @@ module bp_uce
 
             index_up = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
-            cache_req_critical_o = is_inval & (index_done & index_up);
+            cache_req_critical_o = is_inval & index_done;
             cache_req_last_o = cache_req_critical_o;
             cache_req_done = cache_req_last_o;
 
             state_n = (index_done & index_up) ? e_ready : state_r;
+          end
+
+        e_backoff:
+          begin
+            state_n = fsm_fwd_ready_and_li ? e_ready : state_r;
           end
 
         e_clean_read:
@@ -462,7 +478,13 @@ module bp_uce
             stat_mem_pkt_cast_o.index  = index_cnt;
             stat_mem_pkt_v_o = 1'b1;
 
-            state_n = stat_mem_pkt_yumi_i ? e_clean_scan : state_r;
+            tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_inval;
+            tag_mem_pkt_cast_o.index = index_cnt;
+            tag_mem_pkt_v_o = flush_v_r;
+
+            state_n = (stat_mem_pkt_yumi_i & (~tag_mem_pkt_v_o | tag_mem_pkt_yumi_i))
+                      ? e_clean_scan
+                      : state_r;
           end
 
         e_clean_scan:
@@ -516,6 +538,7 @@ module bp_uce
             fsm_fwd_header_lo.size           = block_msg_size_lp;
             fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
             fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+            fsm_fwd_header_lo.payload.src_did = did_i;
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
@@ -540,21 +563,49 @@ module bp_uce
             state_n = cache_req_last_o ? e_ready : state_r;
           end
 
+        e_bclean_evict:
+          begin
+            data_mem_pkt_cast_o.opcode     = e_cache_data_mem_read;
+            data_mem_pkt_cast_o.index      = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+            data_mem_pkt_cast_o.way_id     = cache_req_metadata.hit_or_repl_way;
+            data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
+            data_mem_pkt_v_o = 1'b1;
+
+            state_n = data_mem_pkt_yumi_i ? e_bclean_writeback_req : state_r;
+          end
+
+        e_bclean_writeback_req:
+          begin
+            fsm_fwd_header_lo.msg_type       = e_bedrock_mem_wr;
+            fsm_fwd_header_lo.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
+            fsm_fwd_header_lo.size           = block_msg_size_lp;
+            fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
+            fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+            fsm_fwd_data_lo                  = writeback_data;
+            fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
+
+            cache_req_done = ~cache_req_metadata.dirty || (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo);
+
+            state_n = cache_req_done ? e_ready : state_r;
+          end
+
         e_ready:
           begin
             cache_req_yumi_o = cache_req_v_i & cache_req_ready_lo & (~cache_req_v_r |  nonblocking_v_li);
 
             state_n = cache_req_yumi_o
-                      ? clean_v_li
+                      ? (flush_v_li | clean_v_li)
                         ? e_clean_read
                         : inval_v_li
                           ? e_inval
-                          : (uc_hit_v_li & (writeback_p == 1))
-                            ? e_uc_writeback_evict
-                            : (uc_store_v_li || wt_store_v_li)
-                              ? e_ready
-                              : e_send_critical
-                      : state_r;
+                          : bclean_v_li
+                            ? e_bclean_evict
+                            : uc_evict_v_li
+                              ? e_uc_writeback_evict
+                              : nonblocking_v_li
+                                ? e_ready
+                                : e_send_critical
+                      : cache_req_v_i ? e_backoff : state_r;
           end
 
         e_uc_writeback_evict:
@@ -584,6 +635,7 @@ module bp_uce
             fsm_fwd_header_lo.size           = block_msg_size_lp;
             fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
             fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+            fsm_fwd_header_lo.payload.src_did = did_i;
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
@@ -602,6 +654,7 @@ module bp_uce
               fsm_fwd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+              fsm_fwd_header_lo.payload.src_did = did_i;
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
               state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo)
@@ -617,6 +670,7 @@ module bp_uce
               fsm_fwd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+              fsm_fwd_header_lo.payload.src_did = did_i;
               fsm_fwd_header_lo.subop    = mem_wr_subop;
               fsm_fwd_data_lo            = {fill_width_p/dword_width_gp{cache_req_r.data}};
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
@@ -678,6 +732,7 @@ module bp_uce
             fsm_fwd_header_lo.size           = block_msg_size_lp;
             fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
             fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+            fsm_fwd_header_lo.payload.src_did = did_i;
             fsm_fwd_data_lo                  = writeback_data;
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
@@ -738,11 +793,12 @@ module bp_uce
           fsm_fwd_header_lo.size           = bp_bedrock_msg_size_e'(cache_req_r.size);
           fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
           fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+          fsm_fwd_header_lo.payload.src_did = did_i;
           fsm_fwd_header_lo.subop          = wt_store_v_r ? e_bedrock_store : mem_wr_subop;
           fsm_fwd_data_lo                  = {fill_width_p/dword_width_gp{cache_req_r.data}};
           fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-          cache_req_done = fsm_fwd_ready_and_li & fsm_fwd_v_lo;
+          cache_req_done = fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo;
         end
     end
 

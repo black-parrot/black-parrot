@@ -18,6 +18,7 @@
     ,e_cfg_amo_fetch_logic      = 4'b0110
     ,e_cfg_amo_fetch_arithmetic = 4'b0111
     ,e_cfg_hit_under_miss       = 4'b1000
+    ,e_cfg_misaligned           = 4'b1001
   } bp_cache_features_e;
 
   typedef enum logic
@@ -131,8 +132,10 @@
 
     // Capacity of the Instruction/Data TLBs
     integer unsigned itlb_els_4k;
+    integer unsigned itlb_els_2m;
     integer unsigned itlb_els_1g;
     integer unsigned dtlb_els_4k;
+    integer unsigned dtlb_els_2m;
     integer unsigned dtlb_els_1g;
 
     // I$ cache features
@@ -142,6 +145,7 @@
     integer unsigned icache_assoc;
     integer unsigned icache_block_width;
     integer unsigned icache_fill_width;
+    integer unsigned icache_mshr;
 
     // D$ cache features
     integer unsigned dcache_features;
@@ -150,6 +154,7 @@
     integer unsigned dcache_assoc;
     integer unsigned dcache_block_width;
     integer unsigned dcache_fill_width;
+    integer unsigned dcache_mshr;
 
     // A$ cache features
     integer unsigned acache_features;
@@ -158,6 +163,7 @@
     integer unsigned acache_assoc;
     integer unsigned acache_block_width;
     integer unsigned acache_fill_width;
+    integer unsigned acache_mshr;
 
     // CCE selection and parameters
     // cce_type defined by bp_cce_type_e
@@ -172,6 +178,7 @@
     // L2 slice parameters (per core)
     // L2 cache features
     integer unsigned l2_features;
+    integer unsigned l2_slices;
     // Number of L2 banks present in the slice
     integer unsigned l2_banks;
     integer unsigned l2_data_width;
@@ -179,9 +186,6 @@
     integer unsigned l2_assoc;
     integer unsigned l2_block_width;
     integer unsigned l2_fill_width;
-    // Number of requests which can be pending in a cache slice
-    // Should be 4 < N < 4*l2_banks_p to prevent stalling
-    integer unsigned l2_outstanding_reqs;
 
     // Size of the issue queue
     integer unsigned fe_queue_fifo_els;
@@ -276,9 +280,18 @@
       ,ghist_width              : 2
 
       ,itlb_els_4k : 8
+      ,itlb_els_2m : 2
+      ,itlb_els_1g : 1
       ,dtlb_els_4k : 8
-      ,itlb_els_1g : 0
-      ,dtlb_els_1g : 0
+      ,dtlb_els_2m : 2
+      ,dtlb_els_1g : 1
+
+      ,icache_features      : (1 << e_cfg_enabled) | (1 << e_cfg_misaligned)
+      ,icache_sets          : 64
+      ,icache_assoc         : 8
+      ,icache_block_width   : 512
+      ,icache_fill_width    : 128
+      ,icache_mshr          : 1
 
       ,dcache_features      : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
@@ -291,18 +304,14 @@
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
       ,dcache_fill_width    : 128
-
-      ,icache_features      : (1 << e_cfg_enabled)
-      ,icache_sets          : 64
-      ,icache_assoc         : 8
-      ,icache_block_width   : 512
-      ,icache_fill_width    : 128
+      ,dcache_mshr          : 1
 
       ,acache_features      : (1 << e_cfg_enabled)
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
       ,acache_fill_width    : 128
+      ,acache_mshr          : 1
 
       ,cce_type             : e_cce_uce
       ,cce_pc_width         : 8
@@ -315,13 +324,13 @@
                               | (1 << e_cfg_amo_swap)
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)
+      ,l2_slices           : 2
       ,l2_banks            : 2
       ,l2_data_width       : 128
       ,l2_sets             : 128
       ,l2_assoc            : 8
       ,l2_block_width      : 512
       ,l2_fill_width       : 128
-      ,l2_outstanding_reqs : 6
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
@@ -398,8 +407,10 @@
       ,`bp_aviary_define_override(ghist_width, BP_GHIST_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(itlb_els_4k, BP_ITLB_ELS_4K, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(itlb_els_2m, BP_ITLB_ELS_2M, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(itlb_els_1g, BP_ITLB_ELS_1G, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dtlb_els_4k, BP_DTLB_ELS_4K, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dtlb_els_2m, BP_DTLB_ELS_2M, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dtlb_els_1g, BP_DTLB_ELS_1G, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(icache_features, BP_ICACHE_FEATURES, `BP_CUSTOM_BASE_CFG)
@@ -407,18 +418,21 @@
       ,`bp_aviary_define_override(icache_assoc, BP_ICACHE_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_block_width, BP_ICACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_fill_width, BP_ICACHE_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(icache_mshr, BP_ICACHE_MSHR, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(dcache_features, BP_DCACHE_FEATURES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_sets, BP_DCACHE_SETS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_assoc, BP_DCACHE_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_block_width, BP_DCACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_fill_width, BP_DCACHE_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dcache_mshr, BP_DCACHE_MSHR, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(acache_features, BP_ACACHE_FEATURES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_sets, BP_ACACHE_SETS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_assoc, BP_ACACHE_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_block_width, BP_ACACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_fill_width, BP_ACACHE_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(acache_mshr, BP_ACACHE_MSHR, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(cce_type, BP_CCE_TYPE, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(cce_pc_width, BP_CCE_PC_WIDTH, `BP_CUSTOM_BASE_CFG)
@@ -426,13 +440,13 @@
       ,`bp_aviary_define_override(bedrock_fill_width, BP_BEDROCK_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(l2_features, BP_L2_FEATURES, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(l2_slices, BP_L2_SLICES, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_banks, BP_L2_BANKS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_data_width, BP_L2_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_sets, BP_L2_SETS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_assoc, BP_L2_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_block_width, BP_L2_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(l2_fill_width, BP_L2_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
-      ,`bp_aviary_define_override(l2_outstanding_reqs, BP_L2_OUTSTANDING_REQS, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(async_coh_clk, BP_ASYNC_COH_CLK, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(coh_noc_max_credits, BP_COH_NOC_MAX_CREDITS, `BP_CUSTOM_BASE_CFG)

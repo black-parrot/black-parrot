@@ -17,5 +17,11 @@
       logic [dev_addr_width_gp-1:0]  addr;             \
     }  bp_local_addr_s
 
+  `define bp_addr_is_aligned(addr_mp, num_bytes_mp) \
+    (!(|{ addr_mp[$clog2(num_bytes_mp)-1:0] }))
+
+  `define bp_addr_align(addr_mp, num_bytes_mp) \
+    ((addr_mp >> $clog2(num_bytes_mp)) << $clog2(num_bytes_mp))
+
 `endif
 

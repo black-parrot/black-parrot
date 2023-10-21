@@ -29,7 +29,7 @@ module bp_me_stream_pump_control
    , parameter `BSG_INV_PARAM(data_width_p)
    , parameter `BSG_INV_PARAM(stream_mask_p)
    , parameter `BSG_INV_PARAM(widest_beat_size_p)
-   `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, xce)
+   `declare_bp_bedrock_generic_if_width(paddr_width_p, payload_width_p, xce)
    )
   (input                                          clk_i
    , input                                        reset_i
@@ -46,7 +46,7 @@ module bp_me_stream_pump_control
    , output logic                                 last_o
    );
 
-  `declare_bp_bedrock_if(paddr_width_p, payload_width_p, lce_id_width_p, lce_assoc_p, xce);
+  `declare_bp_bedrock_generic_if(paddr_width_p, payload_width_p, xce);
   `bp_cast_i(bp_bedrock_xce_header_s, header);
 
   localparam bytes_lp = data_width_p >> 3;

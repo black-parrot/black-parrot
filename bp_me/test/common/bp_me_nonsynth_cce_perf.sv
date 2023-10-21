@@ -16,8 +16,7 @@ module bp_me_nonsynth_cce_perf
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
-    `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-    `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
     , localparam cnt_max_lp = 64'h0FFF_FFFF_FFFF_FFFF
     , localparam cce_trace_file_p = "cce_perf"
@@ -40,8 +39,7 @@ module bp_me_nonsynth_cce_perf
    , input [mem_fwd_header_width_lp-1:0]            mem_fwd_header_i
   );
 
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   bp_bedrock_lce_req_header_s  lce_req;
 
   integer file;

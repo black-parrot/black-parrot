@@ -13,7 +13,7 @@ module bp_nonsynth_mem
  import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
    , parameter preload_mem_p = 0
    , parameter mem_bytes_p = 0
@@ -45,7 +45,7 @@ module bp_nonsynth_mem
   logic [l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
   bp_me_cache_slice
    #(.bp_params_p(bp_params_p))
-   cce_to_cache
+   l2s
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 

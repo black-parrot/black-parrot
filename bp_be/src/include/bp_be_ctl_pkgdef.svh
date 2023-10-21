@@ -93,19 +93,16 @@
     ,e_dcache_op_amominud = 6'b100000
     ,e_dcache_op_amomaxud = 6'b100001
 
-    ,e_dcache_op_clean    = 6'b111110
-  } bp_be_dcache_fu_op_e;
+    ,e_dcache_op_ptw      = 6'b111000
 
-  typedef enum logic [5:0]
-  {
-    e_csrr    = 6'b000000
-    ,e_csrrw  = 6'b000001
-    ,e_csrrs  = 6'b000010
-    ,e_csrrc  = 6'b000011
-    ,e_csrrwi = 6'b000100
-    ,e_csrrsi = 6'b000101
-    ,e_csrrci = 6'b000110
-  } bp_be_csr_fu_op_e;
+    ,e_dcache_op_bzero    = 6'b110000
+    ,e_dcache_op_bclean   = 6'b110001
+    ,e_dcache_op_binval   = 6'b110010
+    ,e_dcache_op_bflush   = 6'b110100
+    ,e_dcache_op_clean    = 6'b111110
+    ,e_dcache_op_inval    = 6'b111101
+    ,e_dcache_op_flush    = 6'b111111
+  } bp_be_dcache_fu_op_e;
 
   typedef enum logic [5:0]
   {
@@ -137,7 +134,6 @@
   {
     union packed
     {
-      bp_be_csr_fu_op_e      csr_fu_op;
       bp_be_int_fu_op_e      int_fu_op;
       bp_be_aux_fu_op_e      aux_fu_op;
       bp_be_dcache_fu_op_e   dcache_op;
@@ -190,19 +186,20 @@
     logic                             fence_v;
     logic                             dcache_r_v;
     logic                             dcache_w_v;
-    logic                             late_iwb_v;
-    logic                             late_fwb_v;
+    logic                             dcache_cbo_v;
     logic                             csr_w_v;
     logic                             csr_r_v;
     logic                             mem_v;
     logic                             opw_v;
     logic                             ops_v;
+    logic                             score_v;
+    logic                             spec_w_v;
 
     bp_be_fu_op_s                     fu_op;
 
-    bp_be_src1_e                      src1_sel;
-    bp_be_src2_e                      src2_sel;
-    bp_be_baddr_e                     baddr_sel;
+    logic [$bits(bp_be_src1_e)-1:0]   src1_sel;
+    logic [$bits(bp_be_src2_e)-1:0]   src2_sel;
+    logic [$bits(bp_be_baddr_e)-1:0]  baddr_sel;
   }  bp_be_decode_s;
 
   typedef struct packed
@@ -239,8 +236,7 @@
 
   typedef struct packed
   {
-    logic dcache_store_miss;
-    logic dcache_load_miss;
+    logic dcache_miss;
     logic fencei;
     logic sfence_vma;
     logic dbreak;
@@ -256,17 +252,11 @@
     logic v;
     logic queue_v;
     logic ispec_v;
+    logic nspec_v;
 
     bp_be_exception_s exc;
     bp_be_special_s   spec;
   }  bp_be_exc_stage_s;
-
-  typedef struct packed
-  {
-    bp_be_csr_fu_op_e                  csr_op;
-    logic [rv64_csr_addr_width_gp-1:0] csr_addr;
-    logic [rv64_reg_data_width_gp-1:0] data;
-  }  bp_be_csr_cmd_s;
 
 `endif
 

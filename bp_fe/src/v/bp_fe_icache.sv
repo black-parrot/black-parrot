@@ -38,15 +38,17 @@ module bp_fe_icache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to icache parameters, but can override if needed
+   , parameter misaligned_p  = icache_features_p[e_cfg_misaligned]
    , parameter coherent_p    = icache_features_p[e_cfg_coherent]
    , parameter sets_p        = icache_sets_p
    , parameter assoc_p       = icache_assoc_p
    , parameter block_width_p = icache_block_width_p
    , parameter fill_width_p  = icache_fill_width_p
-   , parameter ctag_width_p   = icache_ctag_width_p
+   , parameter ctag_width_p  = icache_ctag_width_p
+   , parameter id_width_p    = icache_req_id_width_p
 
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache)
-   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   `declare_bp_fe_icache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
+   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
   (input                                              clk_i
@@ -95,6 +97,7 @@ module bp_fe_icache
    , output logic                                     data_v_o
    , output logic                                     fence_v_o
    , output logic                                     spec_v_o
+   , input                                            scan_i
    , input                                            yumi_i
 
    // Cache Engine Interface
@@ -107,8 +110,7 @@ module bp_fe_icache
    , input                                            cache_req_lock_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
-   , input [paddr_width_p-1:0]                        cache_req_addr_i
-   , input [dword_width_gp-1:0]                       cache_req_data_i
+   , input [id_width_p-1:0]                           cache_req_id_i
    , input                                            cache_req_critical_i
    , input                                            cache_req_last_i
    , input                                            cache_req_credits_full_i
@@ -130,14 +132,15 @@ module bp_fe_icache
    , output logic [icache_stat_info_width_lp-1:0]     stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, icache);
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_fe_icache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Various localparameters
   localparam lg_assoc_lp            =`BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp          = block_width_p / assoc_p;
-  localparam num_words_per_bank_lp  = bank_width_lp / word_width_gp;
+  localparam num_instr_per_bank_lp  = bank_width_lp / instr_width_gp;
+  localparam num_cinstr_per_bank_lp = bank_width_lp / cinstr_width_gp;
   localparam data_mem_mask_width_lp = (bank_width_lp >> 3);
   localparam byte_offset_width_lp   = `BSG_SAFE_CLOG2(bank_width_lp >> 3);
   localparam bindex_width_lp        = `BSG_SAFE_CLOG2(assoc_p);
@@ -171,15 +174,15 @@ module bp_fe_icache
   logic [block_width_p-1:0] snoop_data;
   logic [1:0][assoc_p-1:0] snoop_hit;
   logic [assoc_p-1:0] snoop_bank_sel_one_hot;
+  logic snoop_spec, snoop_uncached;
+  bp_fe_icache_decode_s snoop_decode;
 
   /////////////////////////////////////////////////////////////////////////////
   // Decode stage
   /////////////////////////////////////////////////////////////////////////////
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   `bp_cast_i(bp_fe_icache_pkt_s, icache_pkt);
-
-  wire fetch_op  = (icache_pkt_cast_i.op inside {e_icache_fetch});
-  wire inval_op = (icache_pkt_cast_i.op inside {e_icache_inval});
+  bp_fe_icache_decode_s decode_lo;
 
   wire [vaddr_width_p-1:0]   vaddr       = icache_pkt_cast_i.vaddr;
   wire [vtag_width_p-1:0]    vaddr_vtag  = vaddr[(vaddr_width_p-1)-:vtag_width_p];
@@ -188,21 +191,25 @@ module bp_fe_icache
 
   wire spec = icache_pkt_cast_i.spec;
 
+  assign decode_lo = '{fetch_op : icache_pkt_cast_i.op inside {e_icache_fetch}
+                       ,inval_op: icache_pkt_cast_i.op inside {e_icache_inval}
+                       };
+
   assign yumi_o = safe_tl_we;
 
   ///////////////////////////
   // Tag Mem Storage
   ///////////////////////////
-  `bp_cast_i(bp_icache_tag_mem_pkt_s, tag_mem_pkt);
+  `bp_cast_i(bp_fe_icache_tag_mem_pkt_s, tag_mem_pkt);
   logic                              tag_mem_v_li;
   logic                              tag_mem_w_li;
   logic [sindex_width_lp-1:0]        tag_mem_addr_li;
-  bp_icache_tag_info_s [assoc_p-1:0] tag_mem_w_mask_li;
-  bp_icache_tag_info_s [assoc_p-1:0] tag_mem_data_li;
-  bp_icache_tag_info_s [assoc_p-1:0] tag_mem_data_lo;
+  bp_fe_icache_tag_info_s [assoc_p-1:0] tag_mem_w_mask_li;
+  bp_fe_icache_tag_info_s [assoc_p-1:0] tag_mem_data_li;
+  bp_fe_icache_tag_info_s [assoc_p-1:0] tag_mem_data_lo;
 
   bsg_mem_1rw_sync_mask_write_bit
-   #(.width_p(assoc_p*($bits(bp_icache_tag_info_s))), .els_p(sets_p), .latch_last_read_p(1))
+   #(.width_p(assoc_p*($bits(bp_fe_icache_tag_info_s))), .els_p(sets_p), .latch_last_read_p(1))
    tag_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -217,7 +224,7 @@ module bp_fe_icache
   ///////////////////////////
   // Data Mem Storage
   ///////////////////////////
-  `bp_cast_i(bp_icache_data_mem_pkt_s, data_mem_pkt);
+  `bp_cast_i(bp_fe_icache_data_mem_pkt_s, data_mem_pkt);
   localparam data_mem_addr_width_lp = (assoc_p > 1) ? (sindex_width_lp+bindex_width_lp) : sindex_width_lp;
   logic [assoc_p-1:0]                             data_mem_v_li;
   logic [assoc_p-1:0]                             data_mem_w_li;
@@ -243,7 +250,8 @@ module bp_fe_icache
   // TL Stage
   /////////////////////////////////////////////////////////////////////////////
   logic [vaddr_width_p-1:0] vaddr_tl_r;
-  logic spec_tl_r, fetch_op_tl_r, inval_op_tl_r;
+  logic spec_tl_r;
+  bp_fe_icache_decode_s decode_tl_r;
 
   // Accept requests when we're in ready state and there's no blocked request in TL
   // Also accept request when 'forced'
@@ -265,13 +273,13 @@ module bp_fe_icache
 
   // Save stage information
   bsg_dff_reset_en
-   #(.width_p(vaddr_width_p+3))
+   #(.width_p(vaddr_width_p+1+$bits(bp_fe_icache_decode_s)))
    tl_stage_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(tl_we)
-     ,.data_i({vaddr, spec, fetch_op, inval_op})
-     ,.data_o({vaddr_tl_r, spec_tl_r, fetch_op_tl_r, inval_op_tl_r})
+     ,.data_i({vaddr, spec, decode_lo})
+     ,.data_o({vaddr_tl_r, spec_tl_r, decode_tl_r})
      );
 
   wire [paddr_width_p-1:0]         paddr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_gp]};
@@ -291,8 +299,8 @@ module bp_fe_icache
     assign way_v_tl[i] = (tag_mem_data_lo[i].state != e_COH_I);
     assign hit_v_tl[i] = (tag_mem_data_lo[i].tag == ctag_li && way_v_tl[i]);
   end
-  wire fetch_uncached_tl = (fetch_op_tl_r &  ptag_uncached_i);
-  wire fetch_cached_tl   = (fetch_op_tl_r & ~ptag_uncached_i);
+  wire fetch_uncached_tl = (decode_tl_r.fetch_op &  ptag_uncached_i);
+  wire fetch_cached_tl   = (decode_tl_r.fetch_op & ~ptag_uncached_i);
   wire spec_tl           = (spec_tl_r & ptag_nonidem_i);
 
   logic [assoc_p-1:0] bank_sel_one_hot_tl;
@@ -309,14 +317,15 @@ module bp_fe_icache
   localparam snoop_offset_width_lp = `BSG_SAFE_CLOG2(fill_width_p/word_width_gp);
   logic [paddr_width_p-1:0]              paddr_tv_r;
   logic [assoc_p-1:0]                    bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r;
-  logic                                  spec_tv_r, fetch_op_tv_r, inval_op_tv_r, uncached_op_tv_r;
+  logic                                  spec_tv_r, uncached_tv_r;
+  bp_fe_icache_decode_s                  decode_tv_r;
   logic                                  snoop_tv_r;
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
 
   // fence.i does not check tags
   assign safe_tv_we = v_tl & (~v_tv_r || yumi_i);
   assign tv_we = safe_tv_we | poison_tv_i;
-  assign v_tv_n = v_tl & (ptag_v_i | inval_op_tl_r) & ~poison_tv_i;
+  assign v_tv_n = v_tl & (ptag_v_i | decode_tl_r.inval_op) & ~poison_tv_i;
   bsg_dff_reset_en
    #(.width_p(1))
    v_tv_reg
@@ -333,34 +342,44 @@ module bp_fe_icache
 
   logic [assoc_p-1:0] bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n;
   logic [block_width_p-1:0] ld_data_tv_n;
+  logic spec_tv_n, uncached_tv_n;
+  bp_fe_icache_decode_s decode_tv_n;
   bsg_mux
-   #(.width_p(3*assoc_p+block_width_p), .els_p(2))
+   #(.width_p(3*assoc_p+block_width_p+2+$bits(bp_fe_icache_decode_s)), .els_p(2))
    hit_mux
-    (.data_i({{snoop_bank_sel_one_hot, snoop_hit, snoop_data}
-              ,{bank_sel_one_hot_tl, way_v_tl, hit_v_tl, data_mem_data_lo}
+    (.data_i({{snoop_bank_sel_one_hot, snoop_hit, snoop_data
+               ,snoop_spec, snoop_uncached, snoop_decode}
+              ,{bank_sel_one_hot_tl, way_v_tl, hit_v_tl, data_mem_data_lo
+                ,spec_tl, fetch_uncached_tl, decode_tl_r}
               })
      ,.sel_i(critical_recv)
-     ,.data_o({bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n, ld_data_tv_n})
+     ,.data_o({bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n, ld_data_tv_n
+               ,spec_tv_n, uncached_tv_n, decode_tv_n})
      );
 
-  wire snoop_tv_n = critical_recv ? 1'b1 : (inval_op_tl_r & coherent_p);
-  wire [paddr_width_p-1:0] paddr_tv_n = critical_recv ? paddr_tv_r : paddr_tl;
-  wire spec_tv_n = critical_recv ? spec_tv_r : spec_tl;
-  wire fetch_op_tv_n = critical_recv ? fetch_op_tv_r : fetch_op_tl_r;
-  wire inval_op_tv_n = critical_recv ? inval_op_tv_r : inval_op_tl_r;
-  wire uncached_op_tv_n = critical_recv ? uncached_op_tv_r : fetch_uncached_tl;
+  wire snoop_tv_n = critical_recv;
   bsg_dff_reset_en
-   #(.width_p(block_width_p+1+3*assoc_p+paddr_width_p+4))
+   #(.width_p(block_width_p+1+3*assoc_p+2+$bits(bp_fe_icache_decode_s)))
    tv_stage_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(tv_we | critical_recv)
      ,.data_i({ld_data_tv_n, snoop_tv_n, bank_sel_one_hot_tv_n, way_v_tv_n, hit_v_tv_n
-               ,paddr_tv_n, spec_tv_n, fetch_op_tv_n, inval_op_tv_n, uncached_op_tv_n
+               ,spec_tv_n, uncached_tv_n, decode_tv_n
                })
      ,.data_o({ld_data_tv_r, snoop_tv_r, bank_sel_one_hot_tv_r, way_v_tv_r, hit_v_tv_r
-               ,paddr_tv_r, spec_tv_r, fetch_op_tv_r, inval_op_tv_r, uncached_op_tv_r
+               ,spec_tv_r, uncached_tv_r, decode_tv_r
                })
+     );
+
+  wire [paddr_width_p-1:0] paddr_tv_n = critical_recv ? paddr_tv_r : scan_i ? (paddr_tv_r + 2'b10) : paddr_tl;
+  bsg_dff_en
+   #(.width_p(paddr_width_p))
+   paddr_reg
+    (.clk_i(clk_i)
+     ,.en_i(tv_we | critical_recv | scan_i)
+     ,.data_i(paddr_tv_n)
+     ,.data_o(paddr_tv_r)
      );
 
   logic [lg_assoc_lp-1:0] invalid_way_tv;
@@ -405,32 +424,37 @@ module bp_fe_icache
      ,.data_o(ld_data_way_picked)
      );
 
+  // TODO: Can retime manually for critical path?
   logic [instr_width_gp-1:0] final_data_tv;
-  wire [`BSG_SAFE_CLOG2(num_words_per_bank_lp)-1:0] ld_data_word_sel_tv =
-    paddr_tv_r[2+:`BSG_SAFE_CLOG2(num_words_per_bank_lp)];
+  wire [`BSG_SAFE_CLOG2(num_instr_per_bank_lp)-1:0] ld_data_word_sel_tv =
+    paddr_tv_r[2+:`BSG_SAFE_CLOG2(num_instr_per_bank_lp)];
   bsg_mux
-   #(.width_p(instr_width_gp), .els_p(num_words_per_bank_lp))
+   #(.width_p(instr_width_gp), .els_p(num_instr_per_bank_lp))
    word_select_mux
     (.data_i(ld_data_way_picked)
      ,.sel_i(ld_data_word_sel_tv)
      ,.data_o(final_data_tv)
      );
+  wire upper_not_lower = paddr_tv_r[1];
+  wire [cinstr_width_gp-1:0] final_data_upper = final_data_tv[cinstr_width_gp+:cinstr_width_gp];
+  wire [cinstr_width_gp-1:0] final_data_lower = final_data_tv[0+:cinstr_width_gp];
 
-  assign data_o = final_data_tv;
-  assign fence_v_o = v_tv &  inval_op_tv_r & snoop_tv_r;
-  assign data_v_o  = v_tv & ~inval_op_tv_r &  hit_v_tv;
-  assign spec_v_o  = v_tv & ~inval_op_tv_r & ~hit_v_tv & spec_tv_r;
+  assign data_o[0+:cinstr_width_gp] = upper_not_lower ? final_data_upper : final_data_lower;
+  assign data_o[cinstr_width_gp+:cinstr_width_gp] = final_data_upper;
+  assign fence_v_o = v_tv &  decode_tv_r.inval_op & snoop_tv_r;
+  assign data_v_o  = v_tv & ~decode_tv_r.inval_op &  hit_v_tv;
+  assign spec_v_o  = v_tv & ~decode_tv_r.inval_op & ~hit_v_tv & spec_tv_r;
 
   ///////////////////////////
   // Stat Mem Storage
   ///////////////////////////
-  `bp_cast_i(bp_icache_stat_mem_pkt_s, stat_mem_pkt);
+  `bp_cast_i(bp_fe_icache_stat_mem_pkt_s, stat_mem_pkt);
   logic                       stat_mem_v_li;
   logic                       stat_mem_w_li;
   logic [sindex_width_lp-1:0] stat_mem_addr_li;
-  bp_icache_stat_info_s       stat_mem_data_li;
-  bp_icache_stat_info_s       stat_mem_mask_li;
-  bp_icache_stat_info_s       stat_mem_data_lo;
+  bp_fe_icache_stat_info_s       stat_mem_data_li;
+  bp_fe_icache_stat_info_s       stat_mem_mask_li;
+  bp_fe_icache_stat_info_s       stat_mem_data_lo;
 
   bsg_mem_1rw_sync_mask_write_bit
    #(.width_p(assoc_p-1), .els_p(sets_p), .latch_last_read_p(1))
@@ -456,15 +480,16 @@ module bp_fe_icache
   /////////////////////////////////////////////////////////////////////////////
   // Slow Path
   /////////////////////////////////////////////////////////////////////////////
-  `bp_cast_o(bp_icache_req_s, cache_req);
-  `bp_cast_o(bp_icache_req_metadata_s, cache_req_metadata);
+  `bp_cast_o(bp_fe_icache_req_s, cache_req);
+  `bp_cast_o(bp_fe_icache_req_metadata_s, cache_req_metadata);
 
   localparam block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
   localparam uncached_req_size = e_size_4B;
 
-  wire cached_req   = fetch_op_tv_r & ~uncached_op_tv_r & ~snoop_tv_r & ~hit_v_tv;
-  wire uncached_req = fetch_op_tv_r &  uncached_op_tv_r & ~snoop_tv_r & ~hit_v_tv;
-  wire inval_req   = inval_op_tv_r & ~snoop_tv_r;
+  wire cached_req   = decode_tv_r.fetch_op & ~uncached_tv_r & ~snoop_tv_r & ~hit_v_tv;
+  wire uncached_req = decode_tv_r.fetch_op &  uncached_tv_r & ~snoop_tv_r & ~hit_v_tv;
+  wire inval_req    = decode_tv_r.inval_op & ~snoop_tv_r;
+
 
   assign cache_req_v_o = v_tv & ~spec_tv_r & |{uncached_req, cached_req, inval_req};
   assign cache_req_cast_o =
@@ -472,8 +497,9 @@ module bp_fe_icache
      ,size    : bp_cache_req_size_e'(cached_req ? block_req_size : uncached_req_size)
      ,msg_type: cached_req ? e_miss_load : uncached_req ? e_uc_load : e_cache_inval
      ,subop   : e_req_amoswap
-     ,data    : '0
      ,hit     : hit_v_tv
+     ,id      : '0
+     ,data    : '0
      };
 
   // The cache pipeline is designed to always send metadata a cycle after the request
@@ -577,6 +603,11 @@ module bp_fe_icache
             tag_mem_data_li[i]   = '{state: tag_mem_pkt_cast_i.state, tag: '0};
             tag_mem_w_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, tag: '0};
           end
+        {1'b0, e_cache_tag_mem_set_inval}:
+          begin
+            tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
+            tag_mem_w_mask_li[i] = '{state: bp_coh_states_e'('1), tag: '0};
+          end
         default: // e_cache_tag_mem_set_clear
           begin
             tag_mem_data_li[i]   = '{state: bp_coh_states_e'('0), tag: '0};
@@ -652,7 +683,7 @@ module bp_fe_icache
       assign data_mem_slow_read[i] = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_read);
       assign data_mem_slow_write[i] = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write) & data_mem_write_bank_mask[i];
 
-      assign data_mem_fast_read[i] = is_recover || safe_tl_we & fetch_op & (~data_mem_bypass | data_mem_bypass_select[i]);
+      assign data_mem_fast_read[i] = is_recover || safe_tl_we & decode_lo.fetch_op & (~data_mem_bypass | data_mem_bypass_select[i]);
 
       assign data_mem_v_li[i] = data_mem_fast_read[i] | data_mem_slow_read[i] | data_mem_slow_write[i];
       assign data_mem_w_li[i] = data_mem_slow_write[i];
@@ -687,8 +718,8 @@ module bp_fe_icache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  wire stat_mem_fast_read = (v_tv & cache_req_v_o & ~uncached_op_tv_r);
-  wire stat_mem_fast_write = (v_tv & data_v_o & ~uncached_op_tv_r & ~inval_op_tv_r);
+  wire stat_mem_fast_read = (v_tv & cache_req_v_o & ~uncached_tv_r);
+  wire stat_mem_fast_write = (v_tv & data_v_o & ~uncached_tv_r & ~decode_tv_r.inval_op);
   wire stat_mem_slow_write = stat_mem_pkt_v_i & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   assign stat_mem_pkt_yumi_o = stat_mem_pkt_v_i & ~stat_mem_fast_write & ~stat_mem_fast_read;
   assign stat_mem_v_li = stat_mem_fast_read | stat_mem_fast_write | stat_mem_pkt_yumi_o;
@@ -718,14 +749,10 @@ module bp_fe_icache
     (data_mem_pkt_v_i << data_mem_pkt_cast_i.way_id) | (tag_mem_pkt_v_i << tag_mem_pkt_cast_i.way_id);
   assign snoop_hit = {2{pseudo_hit}};
   assign snoop_data = data_mem_data_li;
-
-  wire [bindex_width_lp-1:0] snoop_bank = cache_req_addr_i[byte_offset_width_lp+:bindex_width_lp];
-  bsg_decode
-   #(.num_out_p(assoc_p))
-   snoop_offset_decode
-    (.i(snoop_bank)
-     ,.o(snoop_bank_sel_one_hot)
-     );
+  assign snoop_spec = spec_tv_r;
+  assign snoop_uncached = uncached_tv_r;
+  assign snoop_decode = decode_tv_r;
+  assign snoop_bank_sel_one_hot = bank_sel_one_hot_tv_r;
 
   // synopsys translate_off
   if (`BSG_SAFE_CLOG2(block_width_p*sets_p/8) > page_offset_width_gp) begin

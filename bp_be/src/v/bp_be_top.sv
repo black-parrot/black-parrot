@@ -14,10 +14,11 @@ module bp_be_top
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache)
+   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p)
 
    // Default parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
+   , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
   )
   (input                                             clk_i
    , input                                           reset_i
@@ -43,8 +44,7 @@ module bp_be_top
    , input                                           cache_req_lock_i
    , output logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_o
    , output logic                                    cache_req_metadata_v_o
-   , input [paddr_width_p-1:0]                       cache_req_addr_i
-   , input [dword_width_gp-1:0]                      cache_req_data_i
+   , input [dcache_req_id_width_p-1:0]               cache_req_id_i
    , input                                           cache_req_critical_i
    , input                                           cache_req_last_i
    , input                                           cache_req_credits_full_i
@@ -90,6 +90,9 @@ module bp_be_top
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_decode_info_s decode_info_lo;
+
+  logic [wb_pkt_width_lp-1:0] late_wb_pkt;
+  logic late_wb_v_lo, late_wb_force_lo, late_wb_yumi_li;
 
   bp_be_issue_pkt_s issue_pkt;
   logic [vaddr_width_p-1:0] expected_npc_lo;
@@ -150,8 +153,9 @@ module bp_be_top
      ,.interrupt_v_o(interrupt_v)
      ,.dispatch_pkt_i(dispatch_pkt)
      ,.commit_pkt_i(commit_pkt)
-     ,.iwb_pkt_i(iwb_pkt)
-     ,.fwb_pkt_i(fwb_pkt)
+
+     ,.late_wb_pkt_i(late_wb_pkt)
+     ,.late_wb_yumi_i(late_wb_yumi_li)
      );
 
   bp_be_scheduler
@@ -160,10 +164,10 @@ module bp_be_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
+     ,.poison_isd_i(poison_isd_lo)
      ,.resume_i(resume_lo)
      ,.decode_info_i(decode_info_lo)
      ,.issue_pkt_o(issue_pkt)
-     ,.poison_isd_i(poison_isd_lo)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.clear_iss_i(clear_iss_lo)
      ,.expected_npc_i(expected_npc_lo)
@@ -176,11 +180,15 @@ module bp_be_top
      ,.fe_queue_ready_and_o(fe_queue_ready_and_o)
 
      ,.dispatch_pkt_o(dispatch_pkt)
-
      ,.commit_pkt_i(commit_pkt)
-     ,.ptw_fill_pkt_i(ptw_fill_pkt)
      ,.iwb_pkt_i(iwb_pkt)
      ,.fwb_pkt_i(fwb_pkt)
+
+     ,.ptw_fill_pkt_i(ptw_fill_pkt)
+     ,.late_wb_pkt_i(late_wb_pkt)
+     ,.late_wb_v_i(late_wb_v_lo)
+     ,.late_wb_force_i(late_wb_force_lo)
+     ,.late_wb_yumi_o(late_wb_yumi_li)
      );
 
   bp_be_calculator_top
@@ -190,8 +198,6 @@ module bp_be_top
      ,.reset_i(reset_i)
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.dispatch_pkt_i(dispatch_pkt)
-
      ,.decode_info_o(decode_info_lo)
      ,.mem_busy_o(mem_busy_lo)
      ,.mem_ordered_o(mem_ordered_lo)
@@ -199,11 +205,17 @@ module bp_be_top
      ,.fdiv_busy_o(fdiv_busy_lo)
      ,.ptw_busy_o(ptw_busy_lo)
 
+     ,.dispatch_pkt_i(dispatch_pkt)
      ,.br_pkt_o(br_pkt)
      ,.commit_pkt_o(commit_pkt)
-     ,.ptw_fill_pkt_o(ptw_fill_pkt)
      ,.iwb_pkt_o(iwb_pkt)
      ,.fwb_pkt_o(fwb_pkt)
+
+     ,.ptw_fill_pkt_o(ptw_fill_pkt)
+     ,.late_wb_pkt_o(late_wb_pkt)
+     ,.late_wb_v_o(late_wb_v_lo)
+     ,.late_wb_force_o(late_wb_force_lo)
+     ,.late_wb_yumi_i(late_wb_yumi_li)
 
      ,.cache_req_o(cache_req_o)
      ,.cache_req_metadata_o(cache_req_metadata_o)
@@ -211,8 +223,7 @@ module bp_be_top
      ,.cache_req_yumi_i(cache_req_yumi_i)
      ,.cache_req_lock_i(cache_req_lock_i)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-     ,.cache_req_addr_i(cache_req_addr_i)
-     ,.cache_req_data_i(cache_req_data_i)
+     ,.cache_req_id_i(cache_req_id_i)
      ,.cache_req_critical_i(cache_req_critical_i)
      ,.cache_req_last_i(cache_req_last_i)
      ,.cache_req_credits_full_i(cache_req_credits_full_i)

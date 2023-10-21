@@ -176,6 +176,17 @@ module bp_be_issue_queue
             preissue_pkt_cast_o.irs1_v = preissue_v;
             preissue_pkt_cast_o.irs2_v = preissue_v;
           end
+        `RV64_MISC_MEM_OP:
+          casez (preissue_pkt_cast_o.instr)
+            `RV64_CBO_ZERO
+            ,`RV64_CBO_CLEAN
+            ,`RV64_CBO_INVAL
+            ,`RV64_CBO_FLUSH:
+               begin
+                 preissue_pkt_cast_o.irs1_v = preissue_v;
+                 preissue_pkt_cast_o.irs2_v = preissue_v;
+               end
+          endcase
         `RV64_FLOAD_OP:
           begin
             preissue_pkt_cast_o.irs1_v = preissue_v;
@@ -257,7 +268,7 @@ module bp_be_issue_queue
   logic ecall_m_lo, ecall_s_lo, ecall_u_lo;
   logic ebreak_lo, dbreak_lo;
   logic dret_lo, mret_lo, sret_lo;
-  logic wfi_lo, sfence_vma_lo, fencei_lo;
+  logic wfi_lo, sfence_vma_lo, fencei_lo, csrw_lo;
   bp_be_instr_decoder
    #(.bp_params_p(bp_params_p))
    instr_decoder
@@ -279,6 +290,7 @@ module bp_be_issue_queue
      ,.wfi_o(wfi_lo)
      ,.sfence_vma_o(sfence_vma_lo)
      ,.fencei_o(fencei_lo)
+     ,.csrw_o(csrw_lo)
      );
 
   wire issue_pkt_v = ~empty & ~inject & ~suppress;
@@ -305,6 +317,7 @@ module bp_be_issue_queue
       issue_pkt_cast_o.wfi                  = wfi_lo;
       issue_pkt_cast_o.sfence_vma           = sfence_vma_lo;
       issue_pkt_cast_o.fencei               = fencei_lo;
+      issue_pkt_cast_o.csrw                 = csrw_lo;
 
       issue_pkt_cast_o.pc                   = issue_pc;
       issue_pkt_cast_o.instr                = issue_instr;

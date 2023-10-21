@@ -10,9 +10,12 @@
     ,e_uc_load          = 4'b0011
     ,e_uc_store         = 4'b0100
     ,e_uc_amo           = 4'b0101
-    ,e_cache_inval      = 4'b0110
-    ,e_cache_clean      = 4'b0111
-    ,e_cache_backoff    = 4'b1000
+    ,e_cache_clean      = 4'b0110
+    ,e_cache_inval      = 4'b0111
+    ,e_cache_flush      = 4'b1000
+    ,e_cache_bclean     = 4'b1011
+    ,e_cache_binval     = 4'b1100
+    ,e_cache_bflush     = 4'b1101
   } bp_cache_req_msg_type_e;
 
   typedef enum logic [2:0]
@@ -44,6 +47,39 @@
     ,e_req_amominu = 4'b1010
     ,e_req_amomaxu = 4'b1011
   } bp_cache_req_wr_subop_e;
+
+  typedef enum logic [1:0]
+  { // write cache block
+    e_cache_data_mem_write
+    // read cache block
+    ,e_cache_data_mem_read
+    // write uncached load data
+    ,e_cache_data_mem_uncached
+  } bp_cache_data_mem_opcode_e;
+
+  // Tag mem pkt opcodes
+  typedef enum logic [2:0]
+  {// clear all blocks in a set for a given index
+    e_cache_tag_mem_set_clear
+    // set tag and coherence state for given index and way_id
+    ,e_cache_tag_mem_set_tag
+    // set coherence state for given index and way_id
+    ,e_cache_tag_mem_set_state
+    // invalidate all ways in the set
+    ,e_cache_tag_mem_set_inval
+    // read tag mem packets for writeback and transfer (Used for UCE)
+    ,e_cache_tag_mem_read
+  } bp_cache_tag_mem_opcode_e;
+
+  // Stat mem pkt opcodes
+  typedef enum logic [1:0]
+  { // clear all dirty bits and LRU bits to zero for given index.
+    e_cache_stat_mem_set_clear
+    // read stat_info for given index.
+    ,e_cache_stat_mem_read
+    // clear dirty bit for given index and way_id.
+    ,e_cache_stat_mem_clear_dirty
+  } bp_cache_stat_mem_opcode_e;
 
 `endif
 

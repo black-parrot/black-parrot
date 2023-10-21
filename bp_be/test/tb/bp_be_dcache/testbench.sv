@@ -14,7 +14,7 @@ module testbench
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
    // Tracing parameters
    , parameter cce_trace_p                 = 0
@@ -32,7 +32,7 @@ module testbench
    , parameter dram_type_p                 = BP_DRAM_FLOWVAR // Replaced by the flow with a specific dram_type
 
    // Derived parameters
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    , localparam trace_replay_data_width_lp = ptag_width_p + dcache_pkt_width_lp + 1 + dword_width_gp // The 1 extra bit is for uncached accesses
    , localparam trace_rom_addr_width_lp = 8
@@ -55,8 +55,8 @@ module testbench
   if (num_caches_p == 0)
     $error("Please provide a valid number of caches");
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
 
   // Bit to deal with initial X->0 transition detection
   bit clk_i;
@@ -115,7 +115,7 @@ module testbench
   logic [num_caches_p-1:0][dcache_pkt_width_lp-1:0] dcache_pkt_li;
   logic [num_caches_p-1:0][ptag_width_p-1:0] ptag_li;
   logic [num_caches_p-1:0] uncached_li;
-  logic [num_caches_p-1:0][dword_width_gp-1:0] st_data_li, st_data_r;
+  logic [num_caches_p-1:0][dpath_width_gp-1:0] st_data_li, st_data_r;
   logic [num_caches_p-1:0] dcache_ready_li;
 
   logic [num_caches_p-1:0] fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
@@ -188,7 +188,7 @@ module testbench
       assign uncached_li[i] = trace_data_lo[i][(dword_width_gp+dcache_pkt_width_lp+ptag_width_p)+:1];
 
       bsg_dff
-       #(.width_p(dword_width_gp))
+       #(.width_p(dpath_width_gp))
        st_data_reg
         (.clk_i(clk_i)
          ,.data_i(st_data_li[i])

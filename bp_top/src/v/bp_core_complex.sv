@@ -62,7 +62,7 @@ module bp_core_complex
    , output logic [S:N][cc_x_dim_p-1:0][dma_noc_ral_link_width_lp-1:0] dma_link_o
    );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, coh_noc_ral_link_s);
   `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, dma_noc_ral_link_s);
 

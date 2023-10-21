@@ -12,9 +12,9 @@ module bp_fe_top
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_fe_icache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -35,8 +35,7 @@ module bp_fe_top
    , input                                            cache_req_lock_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
-   , input [paddr_width_p-1:0]                        cache_req_addr_i
-   , input [dword_width_gp-1:0]                       cache_req_data_i
+   , input [icache_req_id_width_p-1:0]                cache_req_id_i
    , input                                            cache_req_critical_i
    , input                                            cache_req_last_i
    , input                                            cache_req_credits_full_i
@@ -59,7 +58,7 @@ module bp_fe_top
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
   `bp_cast_o(bp_fe_queue_s, fe_queue);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
@@ -145,6 +144,7 @@ module bp_fe_top
 
      ,.fetch_instr_v_i(fetch_instr_v_lo)
      ,.fetch_pc_i(fetch_pc_lo)
+     ,.fetch_instr_i(fetch_instr_lo)
      ,.fetch_instr_scan_i(fetch_instr_scan_lo)
      ,.fetch_linear_i(fetch_linear_lo)
      ,.fetch_scan_i(fetch_scan_lo)
@@ -153,7 +153,7 @@ module bp_fe_top
 
   wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
   wire [1:0] r_size_li = 2'b10;
-  logic itlb_r_v_li, itlb_w_v_li, itlb_flush_v_li;
+  logic itlb_r_v_li, itlb_w_v_li, itlb_flush_v_li, itlb_fence_v_li;
 
   bp_pte_leaf_s w_tlb_entry_li;
   wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.npc[vaddr_width_p-1-:vtag_width_p];
@@ -168,6 +168,7 @@ module bp_fe_top
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(itlb_els_4k_p)
+     ,.tlb_els_2m_p(itlb_els_2m_p)
      ,.tlb_els_1g_p(itlb_els_1g_p)
      )
    immu
@@ -175,6 +176,7 @@ module bp_fe_top
      ,.reset_i(reset_i)
 
      ,.flush_i(itlb_flush_v_li)
+     ,.fence_i(itlb_fence_v_li)
      ,.priv_mode_i(shadow_priv_r)
      ,.trans_en_i(shadow_translation_en_r)
      // Supervisor use of user memory is always disabled for immu
@@ -193,6 +195,7 @@ module bp_fe_top
      ,.r_instr_i(1'b1)
      ,.r_load_i('0)
      ,.r_store_i('0)
+     ,.r_cbo_i('0)
      ,.r_eaddr_i(r_eaddr_li)
      ,.r_size_i(r_size_li)
 
@@ -248,6 +251,7 @@ module bp_fe_top
      ,.data_v_o(icache_data_v_lo)
      ,.spec_v_o(icache_spec_v_lo)
      ,.fence_v_o(icache_fence_v_lo)
+     ,.scan_i(fetch_scan_lo)
      ,.yumi_i(icache_yumi_li)
 
      ,.cache_req_o(cache_req_o)
@@ -256,8 +260,7 @@ module bp_fe_top
      ,.cache_req_lock_i(cache_req_lock_i)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-     ,.cache_req_addr_i(cache_req_addr_i)
-     ,.cache_req_data_i(cache_req_data_i)
+     ,.cache_req_id_i(cache_req_id_i)
      ,.cache_req_critical_i(cache_req_critical_i)
      ,.cache_req_last_i(cache_req_last_i)
      ,.cache_req_credits_full_i(cache_req_credits_full_i)
@@ -295,6 +298,14 @@ module bp_fe_top
      );
   wire if2_exception_v = ~poison_isd_lo & fe_queue_ready_and_i & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_spec_v_lo);
 
+  bp_fe_instr_scan_s icache_instr_scan_lo;
+  bp_fe_instr_scan
+   #(.bp_params_p(bp_params_p))
+   instr_scan
+    (.instr_i(icache_data_lo)
+     ,.scan_o(icache_instr_scan_lo)
+     );
+
   if (compressed_support_p)
     begin : realigner
       bp_fe_realigner
@@ -307,6 +318,7 @@ module bp_fe_top
          ,.if2_exception_v_i(if2_exception_v)
          ,.if2_pc_i(if2_pc_lo)
          ,.if2_data_i(icache_data_lo)
+         ,.if2_instr_scan_i(icache_instr_scan_lo)
          ,.if2_taken_branch_site_i(if2_taken_branch_site_lo)
          ,.if2_yumi_o(if2_yumi_lo)
 
@@ -319,6 +331,7 @@ module bp_fe_top
          ,.fetch_exception_v_o(fetch_exception_v_lo)
          ,.fetch_pc_o(fetch_pc_lo)
          ,.fetch_instr_o(fetch_instr_lo)
+         ,.fetch_instr_scan_o(fetch_instr_scan_lo)
          ,.fetch_partial_o(fetch_partial_lo)
          ,.fetch_linear_o(fetch_linear_lo)
          ,.fetch_eager_o(fetch_eager_lo)
@@ -333,19 +346,13 @@ module bp_fe_top
       assign fetch_exception_v_lo = if2_exception_v;
       assign fetch_pc_lo = if2_pc_lo;
       assign fetch_instr_lo = icache_data_lo;
+      assign fetch_instr_scan_lo = icache_instr_scan_lo;
       assign fetch_partial_lo = '0;
       assign fetch_linear_lo = '0;
       assign fetch_eager_lo = '0;
       assign fetch_scan_lo = '0;
       assign fetch_rebase_lo = '0;
     end
-
-  bp_fe_instr_scan
-   #(.bp_params_p(bp_params_p))
-   instr_scan
-    (.instr_i(fetch_instr_lo)
-     ,.scan_o(fetch_instr_scan_lo)
-     );
 
   assign fe_queue_v_o = fetch_instr_v_lo | fetch_exception_v_lo;
 
@@ -413,6 +420,7 @@ module bp_fe_top
      ,.itlb_r_v_o(itlb_r_v_li)
      ,.itlb_w_v_o(itlb_w_v_li)
      ,.itlb_flush_v_o(itlb_flush_v_li)
+     ,.itlb_fence_v_o(itlb_fence_v_li)
      ,.icache_v_o(icache_v_li)
      ,.icache_force_o(icache_force_li)
      ,.icache_pkt_o(icache_pkt_li)

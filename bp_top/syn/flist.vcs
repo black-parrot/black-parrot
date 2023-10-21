@@ -151,6 +151,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_muxi2_gatestack.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_nor2.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_nor3.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_nand.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_popcount.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_reduce.v
@@ -246,7 +247,7 @@ $BP_ME_DIR/src/v/lce/bp_lce_req.sv
 $BP_ME_DIR/src/v/lce/bp_lce_cmd.sv
 # Cache
 $BP_ME_DIR/src/v/dev/bp_me_bedrock_register.sv
-$BP_ME_DIR/src/v/dev/bp_me_cce_to_cache.sv
+$BP_ME_DIR/src/v/dev/bp_me_cache_controller.sv
 $BP_ME_DIR/src/v/dev/bp_me_dram_hash_decode.sv
 $BP_ME_DIR/src/v/dev/bp_me_dram_hash_encode.sv
 $BP_ME_DIR/src/v/dev/bp_me_cache_slice.sv

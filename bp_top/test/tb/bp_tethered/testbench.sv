@@ -53,7 +53,7 @@ module testbench
    // Synthesis parameters
    , parameter no_bind_p                   = 0
 
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
    )
   (output bit reset_i);
 
@@ -69,7 +69,7 @@ module testbench
     return (`BP_SIM_CLK_PERIOD);
   endfunction
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
 // Bit to deal with initial X->0 transition detection
   bit clk_i;
@@ -140,12 +140,12 @@ module testbench
   logic proc_rev_v_lo, proc_rev_ready_and_li;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
-  bsg_cache_dma_pkt_s [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_lo;
-  logic [num_cce_p-1:0][l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
-  logic [num_cce_p-1:0][l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
-  logic [num_cce_p-1:0][l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
-  logic [num_cce_p-1:0][l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+  bsg_cache_dma_pkt_s [num_cce_p-1:0][l2_dmas_p-1:0] dma_pkt_lo;
+  logic [num_cce_p-1:0][l2_dmas_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [num_cce_p-1:0][l2_dmas_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
+  logic [num_cce_p-1:0][l2_dmas_p-1:0] dma_data_v_lo, dma_data_yumi_li;
+  logic [num_cce_p-1:0][l2_dmas_p-1:0][l2_fill_width_p-1:0] dma_data_li;
+  logic [num_cce_p-1:0][l2_dmas_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
 
   wire [mem_noc_did_width_p-1:0] proc_did_li = 1;
   wire [mem_noc_did_width_p-1:0] host_did_li = '1;
@@ -194,7 +194,7 @@ module testbench
 
   bp_nonsynth_dram
    #(.bp_params_p(bp_params_p)
-     ,.num_dma_p(num_cce_p*l2_banks_p)
+     ,.num_dma_p(num_cce_p*l2_dmas_p)
      ,.preload_mem_p(preload_mem_p)
      ,.dram_type_p(dram_type_p)
      ,.mem_bytes_p(2**29)
@@ -396,6 +396,7 @@ module testbench
            ,.block_width_p(block_width_p)
            ,.fill_width_p(fill_width_p)
            ,.ctag_width_p(ctag_width_p)
+           ,.id_width_p(id_width_p)
            )
          icache_tracer
           (.clk_i(clk_i & testbench.icache_trace_en_lo)
@@ -412,6 +413,7 @@ module testbench
            ,.block_width_p(block_width_p)
            ,.fill_width_p(fill_width_p)
            ,.ctag_width_p(ctag_width_p)
+           ,.id_width_p(id_width_p)
            )
          dcache_tracer
           (.clk_i(clk_i & testbench.dcache_trace_en_lo)
@@ -430,16 +432,18 @@ module testbench
 
            ,.mhartid_i(be.calculator.pipe_sys.csr.cfg_bus_cast_i.core_id)
 
-           ,.itlb_clear_i(fe.immu.tlb.flush_i)
+           ,.itlb_clear_i(fe.immu.tlb.fence_i)
            ,.itlb_fill_v_i(fe.immu.tlb.w_v_li)
            ,.itlb_fill_g_i(fe.immu.tlb.entry_cast_i.gigapage)
+           ,.itlb_fill_m_i(fe.immu.tlb.entry_cast_i.megapage)
            ,.itlb_vtag_i(fe.immu.tlb.vtag_i)
            ,.itlb_entry_i(fe.immu.tlb.entry_i)
            ,.itlb_r_v_i(fe.immu.tlb.r_v_li)
 
-           ,.dtlb_clear_i(be.calculator.pipe_mem.dmmu.tlb.flush_i)
+           ,.dtlb_clear_i(be.calculator.pipe_mem.dmmu.tlb.fence_i)
            ,.dtlb_fill_v_i(be.calculator.pipe_mem.dmmu.tlb.w_v_li)
            ,.dtlb_fill_g_i(be.calculator.pipe_mem.dmmu.tlb.entry_cast_i.gigapage)
+           ,.dtlb_fill_m_i(be.calculator.pipe_mem.dmmu.tlb.entry_cast_i.megapage)
            ,.dtlb_vtag_i(be.calculator.pipe_mem.dmmu.tlb.vtag_i)
            ,.dtlb_entry_i(be.calculator.pipe_mem.dmmu.tlb.entry_i)
            ,.dtlb_r_v_i(be.calculator.pipe_mem.dmmu.tlb.r_v_li)
@@ -470,7 +474,6 @@ module testbench
 
           ,.mispredict_i(be.director.npc_mismatch_v)
           ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_and_o)
-          ,.long_haz_i(be.detector.long_haz_v)
           ,.control_haz_i(be.detector.control_haz_v)
           ,.data_haz_i(be.detector.data_haz_v)
           ,.aux_dep_i((be.detector.dep_status_r[0].aux_iwb_v
@@ -769,7 +772,7 @@ module testbench
    if_verif
     ();
 
-  if (dram_type_p == "axi" && (num_cce_p*l2_banks_p) > 16)
+  if (dram_type_p == "axi" && (num_cce_p*l2_dmas_p) > 16)
     $error("AXI memory does not support >16 caches without increasing bsg_round_robin_arb size");
 
   `ifndef VERILATOR

@@ -21,10 +21,9 @@ module bp_core_tile
  import bsg_wormhole_router_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
 
    // Wormhole parameters
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
@@ -55,9 +54,8 @@ module bp_core_tile
    , input [dma_noc_ral_link_width_lp-1:0]                    dma_link_i
    );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
   `declare_bsg_ready_and_link_sif_s(dma_noc_flit_width_p, bp_dma_ready_and_link_s);
 
@@ -506,12 +504,12 @@ module bp_core_tile
   logic mem_rev_v_li, mem_rev_ready_and_lo;
 
   `declare_bsg_cache_dma_pkt_s(daddr_width_p, l2_block_size_in_words_p);
-  bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo;
-  logic [l2_banks_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
-  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_li;
-  logic [l2_banks_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
-  logic [l2_banks_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
-  logic [l2_banks_p-1:0] dma_data_v_lo, dma_data_yumi_li;
+  bsg_cache_dma_pkt_s [l2_dmas_p-1:0] dma_pkt_lo;
+  logic [l2_dmas_p-1:0] dma_pkt_v_lo, dma_pkt_yumi_li;
+  logic [l2_dmas_p-1:0][l2_fill_width_p-1:0] dma_data_li;
+  logic [l2_dmas_p-1:0] dma_data_v_li, dma_data_ready_and_lo;
+  logic [l2_dmas_p-1:0][l2_fill_width_p-1:0] dma_data_lo;
+  logic [l2_dmas_p-1:0] dma_data_v_lo, dma_data_yumi_li;
   bp_core
    #(.bp_params_p(bp_params_p))
    core
@@ -623,8 +621,8 @@ module bp_core_tile
      ,.mem_fwd_ready_and_i(mem_fwd_ready_and_li)
      );
 
-  bp_dma_ready_and_link_s [l2_banks_p-1:0] dma_link_lo, dma_link_li;
-  for (genvar i = 0; i < l2_banks_p; i++)
+  bp_dma_ready_and_link_s [l2_dmas_p-1:0] dma_link_lo, dma_link_li;
+  for (genvar i = 0; i < l2_dmas_p; i++)
     begin : dma
       wire [dma_noc_cord_width_p-1:0] cord_li = my_cord_i[coh_noc_x_cord_width_p+:dma_noc_y_cord_width_p];
       wire [dma_noc_cid_width_p-1:0]   cid_li = i;
@@ -671,7 +669,7 @@ module bp_core_tile
      ,.len_width_p(dma_noc_len_width_p)
      ,.cid_width_p(dma_noc_cid_width_p)
      ,.cord_width_p(dma_noc_cord_width_p)
-     ,.num_in_p(l2_banks_p)
+     ,.num_in_p(l2_dmas_p)
      ,.hold_on_valid_p(1)
      )
    dma_concentrate

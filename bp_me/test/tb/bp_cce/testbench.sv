@@ -41,9 +41,8 @@ module testbench
    , localparam trace_replay_data_width_lp=`bp_me_nonsynth_tr_pkt_width(paddr_width_p, dword_width_gp)
    , localparam trace_rom_addr_width_lp = 20
 
-   `declare_bp_bedrock_lce_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache)
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache)
    )
   (output bit reset_i);
 
@@ -69,9 +68,8 @@ module testbench
     return (`BP_SIM_CLK_PERIOD);
   endfunction
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
-  `declare_bp_bedrock_lce_if(paddr_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p);
-  `declare_bp_bedrock_mem_if(paddr_width_p, did_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_me_nonsynth_tr_pkt_s(paddr_width_p, dword_width_gp);
 
   // Bit to deal with initial X->0 transition detection
@@ -288,14 +286,13 @@ module testbench
      ,.msg_ready_and_i(lce_cmd_ready_and_lo)
      );
 
-  `declare_bp_cache_engine_if(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache);
 
   bp_cache_req_s [num_lce_p-1:0] cache_req_lo;
   logic [num_lce_p-1:0] cache_req_v_lo, cache_req_yumi_li, cache_req_lock_li;
   bp_cache_req_metadata_s [num_lce_p-1:0] cache_req_metadata_lo;
   logic [num_lce_p-1:0] cache_req_metadata_v_lo;
-  logic [num_lce_p-1:0][paddr_width_p-1:0] cache_req_addr_li;
-  logic [num_lce_p-1:0][dword_width_gp-1:0] cache_req_data_li;
+  logic [num_lce_p-1:0] cache_req_id_li;
   logic [num_lce_p-1:0] cache_req_critical_li, cache_req_last_li;
   logic [num_lce_p-1:0] cache_req_credits_full_li, cache_req_credits_empty_li;
 
@@ -385,8 +382,7 @@ module testbench
        ,.cache_req_lock_i(cache_req_lock_li[i])
        ,.cache_req_metadata_o(cache_req_metadata_lo[i])
        ,.cache_req_metadata_v_o(cache_req_metadata_v_lo[i])
-       ,.cache_req_addr_i(cache_req_addr_li[i])
-       ,.cache_req_data_i(cache_req_data_li[i])
+       ,.cache_req_id_i(cache_req_id_li[i])
        ,.cache_req_critical_i(cache_req_critical_li[i])
        ,.cache_req_last_i(cache_req_last_li[i])
        ,.cache_req_credits_full_i(cache_req_credits_full_li[i])
@@ -420,6 +416,7 @@ module testbench
        ,.sets_p(icache_sets_p)
        ,.block_width_p(bedrock_block_width_p)
        ,.fill_width_p(bedrock_fill_width_p)
+       ,.id_width_p(icache_req_id_width_p)
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
        ,.ctag_width_p(icache_ctag_width_p)
@@ -428,6 +425,7 @@ module testbench
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
+       ,.did_i('0)
        ,.lce_id_i(lce_id_width_p'(i))
        ,.lce_mode_i(cfg_bus_lo.icache_mode)
 
@@ -437,8 +435,7 @@ module testbench
        ,.cache_req_lock_o(cache_req_lock_li[i])
        ,.cache_req_metadata_i(cache_req_metadata_lo[i])
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
-       ,.cache_req_addr_o(cache_req_addr_li[i])
-       ,.cache_req_data_o(cache_req_data_li[i])
+       ,.cache_req_id_o(cache_req_id_li[i])
        ,.cache_req_critical_o(cache_req_critical_li[i])
        ,.cache_req_last_o(cache_req_last_li[i])
        ,.cache_req_credits_full_o(cache_req_credits_full_li[i])
