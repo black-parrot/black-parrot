@@ -10,8 +10,12 @@
     ,e_uc_load          = 4'b0011
     ,e_uc_store         = 4'b0100
     ,e_uc_amo           = 4'b0101
-    ,e_cache_inval      = 4'b0110
-    ,e_cache_clean      = 4'b0111
+    ,e_cache_clean      = 4'b0110
+    ,e_cache_inval      = 4'b0111
+    ,e_cache_flush      = 4'b1000
+    ,e_cache_bclean     = 4'b1011
+    ,e_cache_binval     = 4'b1100
+    ,e_cache_bflush     = 4'b1101
   } bp_cache_req_msg_type_e;
 
   typedef enum logic [2:0]

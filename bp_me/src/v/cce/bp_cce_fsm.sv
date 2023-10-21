@@ -1027,6 +1027,7 @@ module bp_cce_fsm
           fsm_fwd_header_lo.addr = fsm_req_header_li.addr;
           fsm_fwd_header_lo.size = fsm_req_header_li.size;
           fsm_fwd_header_lo.msg_type.fwd = e_bedrock_mem_uc_wr;
+          fsm_fwd_header_lo.subop = fsm_req_header_li.subop;
           fsm_fwd_header_lo.payload.lce_id = fsm_req_header_li.payload.src_id;
           fsm_fwd_header_lo.payload.src_did = fsm_req_header_li.payload.src_did;
           fsm_fwd_header_lo.payload.uncached = 1'b1;
@@ -1126,6 +1127,7 @@ module bp_cce_fsm
 
             mshr_n.paddr = fsm_req_header_li.addr;
             mshr_n.msg_size = fsm_req_header_li.size;
+            mshr_n.msg_subop = fsm_req_header_li.subop;
             mshr_n.flags.uncached = 1'b1;
             mshr_n.flags.write_not_read = (fsm_req_header_li.msg_type.req == e_bedrock_req_uc_wr);
 
@@ -1162,6 +1164,7 @@ module bp_cce_fsm
           fsm_fwd_header_lo.addr = mshr_r.paddr;
           fsm_fwd_header_lo.size = mshr_r.msg_size;
           fsm_fwd_header_lo.msg_type.fwd = e_bedrock_mem_uc_wr;
+          fsm_fwd_header_lo.subop = mshr_r.msg_subop;
           fsm_fwd_header_lo.payload.lce_id = mshr_r.lce_id;
           fsm_fwd_header_lo.payload.src_did = fsm_req_header_li.payload.src_did;
           fsm_fwd_header_lo.payload.uncached = 1'b1;
@@ -1669,7 +1672,7 @@ module bp_cce_fsm
           // v->y on lce req header
           // r&v on lce req data
           fsm_fwd_v_lo = fsm_req_v_li;
-          fsm_req_yumi_lo = fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo;
+          fsm_req_yumi_lo = fsm_fwd_ready_and_li & fsm_fwd_v_lo;
 
           // set message type based on request message type
           unique case (fsm_req_header_li.msg_type.req)
@@ -1680,6 +1683,7 @@ module bp_cce_fsm
           endcase
           // uncached/amo address must be aligned appropriate to the request size
           // in the LCE request (which is stored in the MSHR)
+          fsm_fwd_header_lo.subop = mshr_r.msg_subop;
           fsm_fwd_header_lo.addr = mshr_r.paddr;
           fsm_fwd_header_lo.size = mshr_r.msg_size;
           // TODO: uncomment/modify when implementing atomics

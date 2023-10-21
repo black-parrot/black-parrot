@@ -333,8 +333,8 @@ module bp_lce_cmd
     state_n = state_r;
 
     credit_return_o = '0;
-    cache_req_done_o = '0;
     // raised request is fully resolved
+    cache_req_done_o = '0;
     cache_req_last_o = 1'b0;
     cache_req_critical_o = 1'b0;
     cache_req_id_o = '0; // Only 1 outstanding request supported

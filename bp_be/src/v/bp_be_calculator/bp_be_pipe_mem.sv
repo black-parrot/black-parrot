@@ -168,14 +168,16 @@ module bp_be_pipe_mem
 
   /* Control signals */
   wire is_req    = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
-  wire is_store  = is_req & decode.dcache_w_v;
+  wire is_store  = is_req & (decode.dcache_w_v | decode.dcache_cbo_v);
   wire is_load   = is_req & decode.dcache_r_v;
+  wire is_cbo    = is_req & decode.dcache_cbo_v;
 
-  // Calculate cache access eaddr
+  // Calculate cache access eaddr, align CBO addresses
+  localparam block_offset_width_lp = `BSG_SAFE_CLOG2(dcache_block_width_p/8);
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
 
   // D-TLB connections
-  assign dtlb_r_v        = is_store | is_load;
+  assign dtlb_r_v        = is_store | is_load | is_cbo;
   assign dtlb_w_v        = commit_pkt.dtlb_fill_v;
   assign dtlb_w_vtag     = commit_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
   assign dtlb_w_entry    = commit_pkt.pte_leaf;
@@ -225,6 +227,7 @@ module bp_be_pipe_mem
      ,.r_instr_i('0)
      ,.r_load_i(is_load)
      ,.r_store_i(is_store)
+     ,.r_cbo_i(is_cbo)
      ,.r_eaddr_i(eaddr)
      ,.r_size_i(size)
 

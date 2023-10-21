@@ -136,6 +136,8 @@ module bp_lce_req
   wire miss_load_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_load};
   wire miss_store_v_li  = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_store};
   wire miss_v_li        = cache_req_v_i & miss_load_v_li | miss_store_v_li;
+  wire bclean_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_bclean};
+  wire clean_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clean};
   wire uc_load_v_li     = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
   wire uc_amo_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
   wire uc_store_v_li    = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
@@ -176,6 +178,9 @@ module bp_lce_req
 
   wire miss_load_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
+  wire miss_v_r        = miss_load_v_r | miss_store_v_r;
+  wire bflush_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_cache_bclean, e_cache_binval, e_cache_bflush};
+  wire clean_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_clean};
   wire uc_load_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire uc_amo_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
   wire uc_store_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
@@ -233,31 +238,33 @@ module bp_lce_req
       default : req_subop = e_bedrock_store;
     endcase
 
-  always_comb begin
-    // Request message defaults
-    fsm_req_header_lo = '0;
-    fsm_req_header_lo.addr = cache_req_r.addr;
-    fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
-    fsm_req_header_lo.payload.dst_id = req_cce_id_lo;
-    fsm_req_header_lo.payload.src_id = lce_id_i;
-    fsm_req_header_lo.payload.src_did = did_i;
-    fsm_req_header_lo.payload.lru_way_id = lce_assoc_width_p'(cache_req_metadata.hit_or_repl_way);
-    fsm_req_header_lo.payload.non_exclusive =
-      (miss_load_v_r && (non_excl_reads_p == 1)) ? e_bedrock_req_non_excl : e_bedrock_req_excl;
-    fsm_req_header_lo.subop = req_subop;
-    fsm_req_data_lo = cache_req_r.data;
+  always_comb
+    begin
+      // Request message defaults
+      fsm_req_header_lo = '0;
+      fsm_req_header_lo.addr = cache_req_r.addr;
+      fsm_req_header_lo.size = bp_bedrock_msg_size_e'(cache_req_r.size);
+      fsm_req_header_lo.payload.dst_id = req_cce_id_lo;
+      fsm_req_header_lo.payload.src_id = lce_id_i;
+      fsm_req_header_lo.payload.src_did = did_i;
+      fsm_req_header_lo.payload.lru_way_id = lce_assoc_width_p'(cache_req_metadata.hit_or_repl_way);
+      fsm_req_header_lo.payload.non_exclusive =
+        (miss_load_v_r && (non_excl_reads_p == 1)) ? e_bedrock_req_non_excl : e_bedrock_req_excl;
+      fsm_req_header_lo.subop = bflush_v_r ? e_bedrock_amoor : req_subop;
+      fsm_req_data_lo = cache_req_r.data;
 
-    // Send request header when able
-    // requires valid cache request and possibly valid metadata (cached requests only)
-    unique case (cache_req_r.msg_type)
-      e_uc_store  : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_wr;
-      e_uc_load   : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_rd;
-      e_uc_amo    : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_amo;
-      e_miss_load : fsm_req_header_lo.msg_type.req = e_bedrock_req_rd_miss;
-      e_miss_store: fsm_req_header_lo.msg_type.req = e_bedrock_req_wr_miss;
-      default: begin end
-    endcase
-  end
+      // Send request header when able
+      // requires valid cache request and possibly valid metadata (cached requests only)
+      unique case (cache_req_r.msg_type)
+        e_cache_bflush: fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_wr;
+        e_uc_store    : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_wr;
+        e_uc_load     : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_rd;
+        e_uc_amo      : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_amo;
+        e_miss_load   : fsm_req_header_lo.msg_type.req = e_bedrock_req_rd_miss;
+        e_miss_store  : fsm_req_header_lo.msg_type.req = e_bedrock_req_wr_miss;
+        default: begin end
+      endcase
+    end
 
   always_comb
     begin
