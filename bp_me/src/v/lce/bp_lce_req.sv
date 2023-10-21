@@ -75,7 +75,6 @@ module bp_lce_req
     // can be raised at any time after the LCE request sends out
     , input                                          credit_return_i
     , input                                          cache_req_done_i
-    , output logic                                   backoff_o
 
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
@@ -91,10 +90,12 @@ module bp_lce_req
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_i(bp_cache_req_metadata_s, cache_req_metadata);
 
-  enum logic [1:0] {e_reset, e_ready, e_request} state_n, state_r;
+  enum logic [2:0] {e_reset, e_ready, e_request, e_send, e_backoff} state_n, state_r;
   wire is_reset   = (state_r == e_reset);
   wire is_ready   = (state_r == e_ready);
   wire is_request = (state_r == e_request);
+  wire is_send    = (state_r == e_send);
+  wire is_backoff = (state_r == e_backoff);
 
   logic cache_req_ready_lo;
   bp_cache_req_s cache_req_r;
@@ -140,9 +141,9 @@ module bp_lce_req
   wire miss_v_li        = cache_req_v_i & miss_load_v_li | miss_store_v_li;
   wire uc_load_v_li     = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
   wire uc_amo_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
-  wire backoff_v_li     = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_backoff};
   wire uc_store_v_li    = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
-  wire nonblocking_v_li = backoff_v_li | uc_store_v_li;
+  wire blocking_v_li    = miss_load_v_li | miss_store_v_li | uc_load_v_li | uc_amo_v_li;
+  wire nonblocking_v_li = uc_store_v_li;
 
   bp_bedrock_lce_req_header_s fsm_req_header_lo;
   logic [paddr_width_p-1:0] fsm_req_addr_lo;
@@ -180,10 +181,9 @@ module bp_lce_req
   wire miss_store_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
   wire uc_load_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire uc_amo_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
-  wire backoff_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_cache_backoff};
   wire uc_store_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
-  wire nonblocking_v_r = backoff_v_r | uc_store_v_r;
   wire blocking_v_r    = miss_load_v_r | miss_store_v_r | uc_load_v_r | uc_amo_v_r;
+  wire nonblocking_v_r = uc_store_v_r;
 
   // Outstanding request credit counter
   // one credit used per LCE request sent
@@ -203,22 +203,6 @@ module bp_lce_req
       );
   assign credits_full_o  = ~cache_req_ready_lo && (credit_count_lo == credits_p);
   assign credits_empty_o = ~cache_req_v_r && (credit_count_lo == '0);
-
-  // Linear backoff
-  localparam lock_max_limit_lp = 7;
-  logic [`BSG_SAFE_CLOG2(lock_max_limit_lp+1)-1:0] lock_cnt_r;
-  wire lock_inc = backoff_v_r || (lock_cnt_r > '0);
-  bsg_counter_clear_up
-   #(.max_val_p(lock_max_limit_lp), .init_val_p(0), .disable_overflow_warning_p(1))
-   lock_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i('0)
-     ,.up_i(lock_inc)
-     ,.count_o(lock_cnt_r)
-     );
-  assign backoff_o = (lock_cnt_r != '0);
 
   // Request Address to CCE
   logic [cce_id_width_p-1:0] req_cce_id_lo;
@@ -289,10 +273,17 @@ module bp_lce_req
           begin
             cache_req_yumi_o = cache_req_v_i & cache_req_ready_lo & (~cache_req_v_r | nonblocking_v_li);
 
-            fsm_req_v_lo = cache_req_v_r & ~backoff_v_r & (credit_count_lo < credits_p);
-      
-            cache_req_done = fsm_req_ready_and_li & nonblocking_v_r;
-            state_n = (fsm_req_v_lo & fsm_req_ready_and_li & blocking_v_r) ? e_request : state_r;
+            state_n = cache_req_yumi_o
+                      ? blocking_v_li
+                        ? e_send
+                        : e_ready
+                      : cache_req_v_i ? e_backoff : state_r;
+          end
+        e_send:
+          begin
+            fsm_req_v_lo = cache_req_v_r & (credit_count_lo < credits_p);
+
+            state_n = (fsm_req_ready_and_li & fsm_req_v_lo & fsm_req_last_lo) ? e_request : state_r;
           end
         e_request:
           begin
@@ -300,9 +291,21 @@ module bp_lce_req
 
             state_n = cache_req_done ? e_ready : state_r;
           end
+        e_backoff:
+          begin
+            state_n = fsm_req_ready_and_li ? e_ready : state_r;
+          end
         // e_reset:
         default : state_n = cache_init_done_i ? e_ready : state_r;
       endcase
+
+      // Fire off a non-blocking request opportunistically if we have one
+      if (nonblocking_v_r & ~fsm_req_v_lo)
+        begin
+          fsm_req_v_lo = (credit_count_lo < credits_p);
+
+          cache_req_done = fsm_req_ready_and_li & fsm_req_v_lo & fsm_req_last_lo;
+        end
     end
 
   // synopsys sync_set_reset "reset_i"

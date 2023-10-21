@@ -93,6 +93,8 @@
     ,e_dcache_op_amominud = 6'b100000
     ,e_dcache_op_amomaxud = 6'b100001
 
+    ,e_dcache_op_ptw      = 6'b111000
+
     ,e_dcache_op_clean    = 6'b111110
   } bp_be_dcache_fu_op_e;
 

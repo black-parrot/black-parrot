@@ -69,7 +69,7 @@ module bp_mmu
       default: r_misaligned = '0;
     endcase
 
-  logic r_instr_r, r_load_r, r_store_r, r_misaligned_r, r_trans_en_r;
+  logic r_instr_r, r_load_r, r_store_r, r_misaligned_r, trans_en_r;
   logic [etag_width_p-1:0] r_etag_r;
   wire [etag_width_p-1:0] r_etag_li = r_eaddr_i[dword_width_gp-1-:etag_width_p];
   bsg_dff_reset_en

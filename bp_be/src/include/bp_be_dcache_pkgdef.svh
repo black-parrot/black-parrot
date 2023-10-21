@@ -31,6 +31,7 @@
     logic                         byte_op;
     logic                         clean_op;
     logic                         uncached_op;
+    logic                         ptw_op;
     logic                         lr_op;
     logic                         sc_op;
     logic                         amo_op;

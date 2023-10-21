@@ -68,7 +68,6 @@ module bp_lce_cmd
     // block (miss) on uncached stores
     , output logic                                   credit_return_o
     , output logic                                   cache_req_done_o
-    , input                                          backoff_i
 
     // LCE-CCE Interface
     // BedRock Burst protocol: ready&valid
@@ -419,11 +418,11 @@ module bp_lce_cmd
           e_bedrock_cmd_set_clear: begin
             tag_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
-            tag_mem_pkt_v_o = fsm_cmd_v_li & ~backoff_i;
+            tag_mem_pkt_v_o = fsm_cmd_v_li;
 
             stat_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
-            stat_mem_pkt_v_o = fsm_cmd_v_li & ~backoff_i;
+            stat_mem_pkt_v_o = fsm_cmd_v_li;
 
             // consume header when tag and stat packets consumed together
             fsm_cmd_yumi_lo = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;

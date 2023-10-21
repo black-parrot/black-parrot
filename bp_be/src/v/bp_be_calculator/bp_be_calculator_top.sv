@@ -39,7 +39,6 @@ module bp_be_calculator_top
 
    // Calculator - Checker interface
    , input [dispatch_pkt_width_lp-1:0]               dispatch_pkt_i
-   , input                                           poison_isd_i
 
    , output logic                                    idiv_busy_o
    , output logic                                    fdiv_busy_o
@@ -188,8 +187,6 @@ module bp_be_calculator_top
   always_comb
     begin
       reservation_n          = dispatch_pkt_cast_i;
-      reservation_n.v       &= ~poison_isd_i;
-      reservation_n.queue_v &= ~poison_isd_i;
       reservation_n.rs1      = bypass_rs[0];
       reservation_n.rs2      = bypass_rs[1];
       reservation_n.imm      = bypass_rs[2];
@@ -404,7 +401,6 @@ module bp_be_calculator_top
 
      ,.ptw_fill_pkt_o(ptw_fill_pkt_o)
      ,.ptw_fill_v_o(ptw_fill_v)
-     ,.ptw_fill_yumi_i(ptw_fill_yumi)
 
      ,.trans_info_i(trans_info_lo)
      );
@@ -458,8 +454,8 @@ module bp_be_calculator_top
    #(.inputs_p(1+num_late_wb_lp), .lo_to_hi_p(1))
    late_wb_arb
     (.ready_i(1'b1)
-     ,.reqs_i({ptw_fill_v, late_wb_reqs_li})
-     ,.grants_o({ptw_fill_yumi, late_wb_grants_lo})
+     ,.reqs_i({late_wb_reqs_li, ptw_fill_v})
+     ,.grants_o({late_wb_grants_lo, ptw_fill_yumi})
      );
 
   bp_be_wb_pkt_s late_wb_pkt_sel;
@@ -475,7 +471,7 @@ module bp_be_calculator_top
 
   assign late_wb_pkt_cast_o = late_wb_pkt_sel;
   assign late_wb_v_o = |late_wb_grants_lo;
-  assign late_wb_force_o = pipe_mem_late_wb_v;
+  assign late_wb_force_o = pipe_mem_late_wb_v | ptw_fill_v;
 
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
   // Else, mux in the previous stage of the completion pipe. Since we are single issue and have
