@@ -146,74 +146,76 @@ module bp_cacc_tile
      ,.mem_rev_ready_and_o(mem_rev_ready_and_lo)
      );
 
-  if (cacc_type_p == e_cacc_vdp) begin : cacc_vdp
-    bp_cacc_vdp
-     #(.bp_params_p(bp_params_p))
-     accelerator_link
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
+  if (cacc_type_p == e_cacc_vdp)
+    begin : cacc_vdp
+      bp_cacc_vdp
+       #(.bp_params_p(bp_params_p))
+       accelerator_link
+        (.clk_i(clk_i)
+         ,.reset_i(reset_r)
 
-       ,.lce_id_i(lce_id_li)
+         ,.lce_id_i(lce_id_li)
 
-       ,.mem_fwd_header_i(mem_fwd_header_lo)
-       ,.mem_fwd_data_i(mem_fwd_data_lo)
-       ,.mem_fwd_v_i(mem_fwd_v_lo)
-       ,.mem_fwd_ready_and_o(mem_fwd_ready_and_li)
+         ,.mem_fwd_header_i(mem_fwd_header_lo)
+         ,.mem_fwd_data_i(mem_fwd_data_lo)
+         ,.mem_fwd_v_i(mem_fwd_v_lo)
+         ,.mem_fwd_ready_and_o(mem_fwd_ready_and_li)
 
-       ,.mem_rev_header_o(mem_rev_header_li)
-       ,.mem_rev_data_o(mem_rev_data_li)
-       ,.mem_rev_v_o(mem_rev_v_li)
-       ,.mem_rev_ready_and_i(mem_rev_ready_and_lo)
+         ,.mem_rev_header_o(mem_rev_header_li)
+         ,.mem_rev_data_o(mem_rev_data_li)
+         ,.mem_rev_v_o(mem_rev_v_li)
+         ,.mem_rev_ready_and_i(mem_rev_ready_and_lo)
 
-       ,.lce_req_header_o(lce_req_header_lo)
-       ,.lce_req_data_o(lce_req_data_lo)
-       ,.lce_req_v_o(lce_req_v_lo)
-       ,.lce_req_ready_and_i(lce_req_ready_and_li)
+         ,.lce_req_header_o(lce_req_header_lo)
+         ,.lce_req_data_o(lce_req_data_lo)
+         ,.lce_req_v_o(lce_req_v_lo)
+         ,.lce_req_ready_and_i(lce_req_ready_and_li)
 
-       ,.lce_cmd_header_i(lce_cmd_header_li)
-       ,.lce_cmd_data_i(lce_cmd_data_li)
-       ,.lce_cmd_v_i(lce_cmd_v_li)
-       ,.lce_cmd_ready_and_o(lce_cmd_ready_and_lo)
+         ,.lce_cmd_header_i(lce_cmd_header_li)
+         ,.lce_cmd_data_i(lce_cmd_data_li)
+         ,.lce_cmd_v_i(lce_cmd_v_li)
+         ,.lce_cmd_ready_and_o(lce_cmd_ready_and_lo)
 
-       ,.lce_fill_header_i(lce_fill_header_li)
-       ,.lce_fill_data_i(lce_fill_data_li)
-       ,.lce_fill_v_i(lce_fill_v_li)
-       ,.lce_fill_ready_and_o(lce_fill_ready_and_lo)
+         ,.lce_fill_header_i(lce_fill_header_li)
+         ,.lce_fill_data_i(lce_fill_data_li)
+         ,.lce_fill_v_i(lce_fill_v_li)
+         ,.lce_fill_ready_and_o(lce_fill_ready_and_lo)
 
-       ,.lce_fill_header_o(lce_fill_header_lo)
-       ,.lce_fill_data_o(lce_fill_data_lo)
-       ,.lce_fill_v_o(lce_fill_v_lo)
-       ,.lce_fill_ready_and_i(lce_fill_ready_and_li)
+         ,.lce_fill_header_o(lce_fill_header_lo)
+         ,.lce_fill_data_o(lce_fill_data_lo)
+         ,.lce_fill_v_o(lce_fill_v_lo)
+         ,.lce_fill_ready_and_i(lce_fill_ready_and_li)
 
-       ,.lce_resp_header_o(lce_resp_header_lo)
-       ,.lce_resp_data_o(lce_resp_data_lo)
-       ,.lce_resp_v_o(lce_resp_v_lo)
-       ,.lce_resp_ready_and_i(lce_resp_ready_and_li)
-       );
-  end
-  else begin : none
-    assign mem_fwd_ready_and_li = '0;
+         ,.lce_resp_header_o(lce_resp_header_lo)
+         ,.lce_resp_data_o(lce_resp_data_lo)
+         ,.lce_resp_v_o(lce_resp_v_lo)
+         ,.lce_resp_ready_and_i(lce_resp_ready_and_li)
+         );
+    end
+  else
+    begin : none
+      assign mem_fwd_ready_and_li = '0;
 
-    assign mem_rev_header_li = '0;
-    assign mem_rev_data_li = '0;
-    assign mem_rev_v_li = '0;
+      assign mem_rev_header_li = '0;
+      assign mem_rev_data_li = '0;
+      assign mem_rev_v_li = '0;
 
-    assign lce_req_header_lo = '0;
-    assign lce_req_data_lo = '0;
-    assign lce_req_v_lo = '0;
+      assign lce_req_header_lo = '0;
+      assign lce_req_data_lo = '0;
+      assign lce_req_v_lo = '0;
 
-    assign lce_cmd_ready_and_lo = '0;
+      assign lce_cmd_ready_and_lo = '0;
 
-    assign lce_fill_header_lo = '0;
-    assign lce_fill_data_lo = '0;
-    assign lce_fill_v_lo = '0;
+      assign lce_fill_header_lo = '0;
+      assign lce_fill_data_lo = '0;
+      assign lce_fill_v_lo = '0;
 
-    assign lce_fill_ready_and_lo = '0;
+      assign lce_fill_ready_and_lo = '0;
 
-    assign lce_resp_header_lo = '0;
-    assign lce_resp_data_lo = '0;
-    assign lce_resp_v_lo = '0;
-  end
+      assign lce_resp_header_lo = '0;
+      assign lce_resp_data_lo = '0;
+      assign lce_resp_v_lo = '0;
+    end
 
   // Burst to WH (lce_req_header_lo)
   bp_me_cce_id_to_cord

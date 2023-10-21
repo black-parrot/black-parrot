@@ -260,7 +260,8 @@ module bp_be_detector
                      | (mem_busy_i & decode.pipe_mem_early_v)
                      | (mem_busy_i & decode.pipe_mem_final_v)
                      | (fdiv_busy_i & decode.pipe_long_v)
-                     | (idiv_busy_i & decode.pipe_long_v);
+                     | (idiv_busy_i & decode.pipe_long_v)
+                     | late_wb_yumi_i;
     end
 
   // Dispatch if we have a valid issue. Don't stall on data hazards for exceptions

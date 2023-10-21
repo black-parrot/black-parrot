@@ -187,20 +187,6 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
-      /* Trans info */                                                                             \
-      logic [ptag_width_p-1:0]       base_ppn;                                                     \
-      logic [rv64_priv_width_gp-1:0] priv_mode;                                                    \
-      logic                          mstatus_sum;                                                  \
-      logic                          mstatus_mxr;                                                  \
-      logic                          instr_miss_v;                                                 \
-      logic                          load_miss_v;                                                  \
-      logic                          store_miss_v;                                                 \
-      logic                          partial;                                                      \
-      logic [vaddr_width_mp-1:0]     vaddr;                                                        \
-    }  bp_be_ptw_miss_pkt_s;                                                                       \
-                                                                                                   \
-    typedef struct packed                                                                          \
-    {                                                                                              \
       logic v;                                                                                     \
       logic itlb_fill_v;                                                                           \
       logic dtlb_fill_v;                                                                           \
@@ -283,9 +269,6 @@
      + $bits(rv64_fflags_s)                                                                        \
      )
 
-  `define bp_be_ptw_miss_pkt_width(vaddr_width_mp, ptag_width_mp) \
-    (ptag_width_mp + rv64_priv_width_gp + 6 + vaddr_width_mp)
-
   `define bp_be_ptw_fill_pkt_width(vaddr_width_mp, paddr_width_mp) \
     (7                                                                                             \
      + vaddr_width_mp                                                                              \
@@ -296,7 +279,7 @@
     (rv64_priv_width_gp+ptag_width_mp+3)
 
   `define bp_be_decode_info_width \
-    (13)
+    (rv64_priv_width_gp+11)
 
 `endif
 

@@ -10,8 +10,9 @@ module wrapper
    , parameter assoc_p = icache_assoc_p
    , parameter block_width_p = icache_block_width_p
    , parameter fill_width_p = icache_fill_width_p
+   , parameter id_width_p = icache_req_id_width_p
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, icache)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
@@ -55,8 +56,7 @@ module wrapper
   logic cache_req_v_lo;
   logic [icache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
   logic cache_req_metadata_v_lo;
-  logic [paddr_width_p-1:0] cache_req_addr_li;
-  logic [dword_width_gp-1:0] cache_req_data_li;
+  logic [icache_req_id_width_p-1:0] cache_req_id_li;
   logic cache_req_critical_li, cache_req_last_li;
   logic cache_req_credits_full_li, cache_req_credits_empty_li;
 
@@ -130,8 +130,7 @@ module wrapper
      ,.cache_req_lock_i(cache_req_lock_li)
      ,.cache_req_metadata_o(cache_req_metadata_lo)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_lo)
-     ,.cache_req_addr_i(cache_req_addr_li)
-     ,.cache_req_data_i(cache_req_data_li)
+     ,.cache_req_id_i(cache_req_id_li)
      ,.cache_req_critical_i(cache_req_critical_li)
      ,.cache_req_last_i(cache_req_last_li)
      ,.cache_req_credits_full_i(cache_req_credits_full_li)
@@ -181,6 +180,7 @@ module wrapper
        ,.sets_p(icache_sets_p)
        ,.block_width_p(icache_block_width_p)
        ,.fill_width_p(icache_fill_width_p)
+       ,.id_width_p(icache_req_id_width_p)
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
        ,.non_excl_reads_p(1)
@@ -190,6 +190,7 @@ module wrapper
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
+       ,.did_i('0)
        ,.lce_id_i(cfg_bus_cast_i.icache_id)
        ,.lce_mode_i(cfg_bus_cast_i.icache_mode)
 
@@ -199,8 +200,7 @@ module wrapper
        ,.cache_req_lock_o(cache_req_lock_li)
        ,.cache_req_metadata_i(cache_req_metadata_lo)
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-       ,.cache_req_addr_o(cache_req_addr_li)
-       ,.cache_req_data_o(cache_req_data_li)
+       ,.cache_req_id_o(cache_req_id_li)
        ,.cache_req_critical_o(cache_req_critical_li)
        ,.cache_req_last_o(cache_req_last_li)
        ,.cache_req_credits_full_o(cache_req_credits_full_li)
@@ -295,6 +295,7 @@ module wrapper
        ,.block_width_p(icache_block_width_p)
        ,.fill_width_p(icache_fill_width_p)
        ,.ctag_width_p(icache_ctag_width_p)
+       ,.id_width_p(icache_req_id_width_p)
        ,.writeback_p(icache_features_p[e_cfg_writeback])
        )
      icache_uce
@@ -309,8 +310,7 @@ module wrapper
        ,.cache_req_lock_o(cache_req_lock_li)
        ,.cache_req_metadata_i(cache_req_metadata_lo)
        ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-       ,.cache_req_addr_o(cache_req_addr_li)
-       ,.cache_req_data_o(cache_req_data_li)
+       ,.cache_req_id_o(cache_req_id_li)
        ,.cache_req_critical_o(cache_req_critical_li)
        ,.cache_req_last_o(cache_req_last_li)
        ,.cache_req_credits_full_o(cache_req_credits_full_li)

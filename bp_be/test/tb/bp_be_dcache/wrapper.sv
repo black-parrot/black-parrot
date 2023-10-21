@@ -17,8 +17,9 @@ module wrapper
    , parameter assoc_p = dcache_assoc_p
    , parameter block_width_p = dcache_block_width_p
    , parameter fill_width_p = dcache_fill_width_p
+   , parameter id_width_p = dcache_req_id_width_p
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, dcache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, dcache_ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, dcache)
 
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
@@ -72,8 +73,6 @@ module wrapper
   logic [num_caches_p-1:0] cache_req_v_lo, cache_req_metadata_v_lo;
   logic [num_caches_p-1:0] cache_req_yumi_lo, cache_req_lock_lo;
   logic [num_caches_p-1:0] cache_req_last_lo, cache_req_critical_lo;
-  logic [num_caches_p-1:0][paddr_width_p-1:0] cache_req_addr_lo;
-  logic [num_caches_p-1:0][dword_width_gp-1:0] cache_req_data_lo;
   logic [num_caches_p-1:0][dcache_req_width_lp-1:0] cache_req_lo;
   logic [num_caches_p-1:0][dcache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
 
@@ -217,8 +216,6 @@ module wrapper
       ,.cache_req_metadata_v_o(cache_req_metadata_v_lo[i])
       ,.cache_req_yumi_i(cache_req_yumi_lo[i])
       ,.cache_req_lock_i(cache_req_lock_lo[i])
-      ,.cache_req_addr_i(cache_req_addr_lo[i])
-      ,.cache_req_data_i(cache_req_data_lo[i])
       ,.cache_req_critical_i(cache_req_critical_lo[i])
       ,.cache_req_last_i(cache_req_last_lo[i])
       ,.cache_req_credits_full_i(cache_req_credits_full_lo[i])
@@ -251,6 +248,7 @@ module wrapper
              ,.timeout_max_limit_p(4)
              ,.credits_p(coh_noc_max_credits_p)
              ,.ctag_width_p(dcache_ctag_width_p)
+             ,.id_width_p(id_width_p)
              )
            dcache_lce
             (.clk_i(clk_i)
@@ -266,8 +264,6 @@ module wrapper
              ,.cache_req_lock_o(cache_req_lock_lo[i])
              ,.cache_req_metadata_i(cache_req_metadata_lo[i])
              ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
-             ,.cache_req_addr_o(cache_req_addr_lo[i])
-             ,.cache_req_data_o(cache_req_data_lo[i])
              ,.cache_req_critical_o(cache_req_critical_lo[i])
              ,.cache_req_last_o(cache_req_last_lo[i])
              ,.cache_req_credits_full_o(cache_req_credits_full_lo[i])
@@ -326,6 +322,7 @@ module wrapper
             ,.block_width_p(block_width_p)
             ,.fill_width_p(fill_width_p)
             ,.ctag_width_p(dcache_ctag_width_p)
+            ,.id_width_p(id_width_p)
             ,.writeback_p(!wt_p)
             )
           dcache_uce
@@ -340,8 +337,6 @@ module wrapper
             ,.cache_req_lock_o(cache_req_lock_lo)
             ,.cache_req_metadata_i(cache_req_metadata_lo)
             ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
-            ,.cache_req_addr_o(cache_req_addr_lo)
-            ,.cache_req_data_o(cache_req_data_lo)
             ,.cache_req_critical_o(cache_req_critical_lo)
             ,.cache_req_last_o(cache_req_last_lo)
             ,.cache_req_credits_full_o(cache_req_credits_full_lo)
@@ -399,8 +394,8 @@ module wrapper
        #(.bp_params_p(bp_params_p)
          ,.block_width_p(block_width_p)
          ,.data_width_p(fill_width_p)
-         ,.payload_width_p(lce_req_payload_width_lp)
          ,.stream_mask_p(lce_req_stream_mask_gp)
+         ,.payload_width_p(lce_req_payload_width_lp)
          ,.num_source_p(num_lce_p)
          ,.num_sink_p(num_cce_p)
          )

@@ -51,8 +51,9 @@ module bp_be_ptw
   `bp_cast_i(bp_be_trans_info_s, trans_info);
   `bp_cast_o(bp_be_ptw_fill_pkt_s, ptw_fill_pkt);
 
-  enum logic [2:0] {e_idle, e_send_load, e_check_load, e_writeback} state_n, state_r;
+  enum logic [2:0] {e_idle, e_wait, e_send_load, e_check_load, e_writeback} state_n, state_r;
   wire is_idle    = (state_r == e_idle);
+  wire is_wait    = (state_r == e_wait);
   wire is_send    = (state_r == e_send_load);
   wire is_check   = (state_r == e_check_load);
   wire is_write   = (state_r == e_writeback);
@@ -119,7 +120,8 @@ module bp_be_ptw
   wire tlb_miss_v               = commit_pkt_cast_i.itlb_miss | commit_pkt_cast_i.dtlb_store_miss | commit_pkt_cast_i.dtlb_load_miss;
 
   wire walk_start               = is_idle  & tlb_miss_v;
-  wire walk_send                = is_send  & ordered_i;
+  wire walk_ready               = is_wait  & ordered_i;
+  wire walk_send                = is_send;
   wire walk_replay              = is_check & ~dcache_early_v_i & ~dcache_early_req_i;
   wire walk_next                = is_write & dcache_final_v_i & ~(pte_is_leaf | page_fault_v);
   wire walk_done                = is_write & dcache_final_v_i &  (pte_is_leaf | page_fault_v);
@@ -184,8 +186,9 @@ module bp_be_ptw
   // Because internal dcache flushing is a possibility, we need to manually replay
   //   rather than relying on the late writeback
   always_comb
-    case(state_r)
-      e_idle      : state_n = walk_start         ? e_send_load  : e_idle;
+    case (state_r)
+      e_idle      : state_n = walk_start         ? e_wait       : e_idle;
+      e_wait      : state_n = walk_ready         ? e_send_load  : e_wait;
       e_send_load : state_n = walk_send          ? e_check_load : e_send_load;
       e_check_load: state_n = walk_replay        ? e_send_load  : e_writeback;
       e_writeback : state_n = walk_done

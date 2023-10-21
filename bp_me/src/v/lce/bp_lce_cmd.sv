@@ -23,9 +23,10 @@ module bp_lce_cmd
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(fill_width_p)
    , parameter `BSG_INV_PARAM(ctag_width_p)
+   , parameter `BSG_INV_PARAM(id_width_p)
 
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
   )
   (
     input                                            clk_i
@@ -60,6 +61,7 @@ module bp_lce_cmd
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
     // cache_req_last_o is routed to the cache to indicate a blocking request is complete
+    , output logic [id_width_p-1:0]                  cache_req_id_o
     , output logic                                   cache_req_critical_o
     , output logic                                   cache_req_last_o
 
@@ -88,7 +90,7 @@ module bp_lce_cmd
     );
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
   `bp_cast_o(bp_bedrock_lce_fill_header_s, lce_fill_header);
   `bp_cast_o(bp_bedrock_lce_resp_header_s, lce_resp_header);
@@ -335,6 +337,7 @@ module bp_lce_cmd
     // raised request is fully resolved
     cache_req_last_o = 1'b0;
     cache_req_critical_o = 1'b0;
+    cache_req_id_o = '0; // Only 1 outstanding request supported
 
     // LCE-CCE Interface signals
     fsm_cmd_yumi_lo = 1'b0;

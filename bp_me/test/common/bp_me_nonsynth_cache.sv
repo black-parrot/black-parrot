@@ -31,6 +31,7 @@ module bp_me_nonsynth_cache
     , parameter assoc_p = 8
     , parameter block_width_p = 512
     , parameter fill_width_p = 64
+    , parameter id_width_p = 1
 
     , localparam lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
     , localparam lg_assoc_lp=`BSG_SAFE_CLOG2(assoc_p)
@@ -46,7 +47,7 @@ module bp_me_nonsynth_cache
 
     , localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp+lg_sets_lp)
 
-    `declare_bp_cache_engine_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache)
+    `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
    )
    (
     input                                                   clk_i
@@ -71,8 +72,7 @@ module bp_me_nonsynth_cache
     , input                                                 cache_req_lock_i
     , output logic [cache_req_metadata_width_lp-1:0]        cache_req_metadata_o
     , output logic                                          cache_req_metadata_v_o
-    , input [paddr_width_p-1:0]                             cache_req_addr_i
-    , input [dword_width_gp-1:0]                            cache_req_data_i
+    , input [id_width_p-1:0]                                cache_req_id_i
     , input                                                 cache_req_critical_i
     , input                                                 cache_req_last_i
     , input                                                 cache_req_credits_full_i
@@ -95,7 +95,7 @@ module bp_me_nonsynth_cache
     , output logic [cache_stat_info_width_lp-1:0]           stat_mem_o
    );
 
-  `declare_bp_cache_engine_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
 
     localparam bp_cache_req_size_e block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
 
