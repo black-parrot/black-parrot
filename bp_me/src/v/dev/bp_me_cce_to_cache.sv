@@ -351,10 +351,11 @@ module bp_me_cce_to_cache
                   e_bedrock_msg_size_2: cache_pkt.opcode = LH;
                   e_bedrock_msg_size_4: cache_pkt.opcode = LW;
                   e_bedrock_msg_size_8: cache_pkt.opcode = LD;
-                  e_bedrock_msg_size_16
-                  ,e_bedrock_msg_size_32
-                  ,e_bedrock_msg_size_64: cache_pkt.opcode = LD;
-                  default: cache_pkt.opcode = LB;
+                  //e_bedrock_msg_size_16
+                  //,e_bedrock_msg_size_32
+                  //,e_bedrock_msg_size_64
+                  //,e_bedrock_msg_size_128
+                  default: cache_pkt.opcode = LM;
                 endcase
               e_bedrock_mem_uc_wr
               ,e_bedrock_mem_wr
@@ -376,10 +377,11 @@ module bp_me_cce_to_cache
                       e_bedrock_amomaxu: cache_pkt.opcode = is_word_op ? AMOMAXU_W : AMOMAXU_D;
                       default : begin end
                     endcase
-                  e_bedrock_msg_size_16
-                  ,e_bedrock_msg_size_32
-                  ,e_bedrock_msg_size_64: cache_pkt.opcode = SD;
-                  default: cache_pkt.opcode = LB;
+                  //e_bedrock_msg_size_16
+                  //,e_bedrock_msg_size_32
+                  //,e_bedrock_msg_size_64
+                  //,e_bedrock_msg_size_128
+                  default: cache_pkt.opcode = SM;
                 endcase
               default: cache_pkt.opcode = LB;
             endcase
