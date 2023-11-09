@@ -172,7 +172,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator.sv
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_in.sv
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator_out.sv
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router.sv
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_in.sv
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.sv
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.sv
