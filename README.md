@@ -13,11 +13,15 @@ BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, R
     - Combat NIH, welcome external contributions and strive for infrastructure agnosticism.
 
 ## Project Status
-BlackParrot v 1.0 was released in March 2020 and has been up and quad core silicon has been running in the lab since April 2020. It supports configurations scaling up to a 16-core cache coherent multicore, including the baseline user and privilege mode functionality to run Linux. An optimized single core variant of BlackParrot (also Linux-capable) is also available. Currently, the core supports RV64IMAFD, with C support on the way!
+BlackParrot v 1.0 was released in March 2020 and has been up and quad core silicon has been running in the lab since April 2020. It supports configurations scaling up to a 16-core+ cache coherent multicore, including the baseline user and privilege mode functionality to run Linux. An optimized single core variant of BlackParrot (also Linux-capable) is also available. Currently, the core supports RV64IMAFDCSU_Zfencei_Zicsr_Zcbo on the way!
 
 Development of BlackParrot continues, and we are very excited about what we are releasing next!
 
-A 12nm BlackParrot multicore chip was taped out in July 2019.
+A 12nm quad-core BlackParrot multicore chip was taped out in July 2019.
+
+A 12nm BlackParrot dual-core accelerator host was taped out in July 2020.
+
+A 28nm heterogeneous dual-core BlackParrot was taped out in August 2022.
 
 ## Press
 We presented BlackParrot at the December 2020 RISC-V Summit! [slides](https://drive.google.com/file/d/1JPIidbk4pTuCgfV8uXorm-SdgOlQ0gTM/view?usp=sharing)
@@ -61,7 +65,7 @@ Once you've built and validate your BlackParrot program and are ready to run on 
 [Accelerator Guide](docs/accelerator_guide.md)
 
 ## Hardware Development Kit
-Coming Soon!
+[BlackParrot Subsystems](https://github.com/black-parrot-hdk/black-parrot-subsystems)
 
 ## Interface Specification
 
@@ -95,8 +99,6 @@ Upon commit to the listed branch, a functional regression consisting of full-sys
 Our goal with BlackParrot is to bootstrap a community-maintained RISC-V core, and we would love for you to get involved. Here are a few starter projects you could do to get your feet wet! Contact us more for details.
 
 - Our integer divider could be parameterized to iterate faster on smaller numbers. (Note: Currently somebody is working on this.)
-- Our floating point divider could be parameterized to do two iterates per cycle.
-- We would like to configure BlackParrot for ultra-tiny caches (e.g. 8-way set associative, 4 sets, 2 word = 16 byte cache lines)
 - We could use a stream buffer (prefetcher) implementation for our L2 cache.
 - Add a parameter to enable / disable FPU logic (including register file, bypass paths, FP divider and FMAC, etc.)
 - Improve the mapping to FPGA 
