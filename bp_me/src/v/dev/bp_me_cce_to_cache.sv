@@ -119,10 +119,12 @@ module bp_me_cce_to_cache
   wire is_word_op = fsm_fwd_v_li & (fsm_fwd_header_li.size == e_bedrock_msg_size_4);
   wire is_csr     = fsm_fwd_v_li & (local_addr_cast < dram_base_addr_gp);
   wire is_tagfl   = is_csr && (local_addr_cast.addr == cache_tagfl_addr_gp);
+  wire is_afl     = is_csr && (local_addr_cast.addr == cache_afl_addr_gp);
+  wire is_ainv    = is_csr && (local_addr_cast.addr == cache_ainv_addr_gp);
+  wire is_aflinv  = is_csr && (local_addr_cast.addr == cache_aflinv_addr_gp);
   wire is_tagfl_all    = is_csr && (local_addr_cast.addr == cache_tagfl_all_addr_gp);
   wire is_taginv_all   = is_csr && (local_addr_cast.addr == cache_taginv_all_addr_gp);
   wire is_tagflinv_all = is_csr && (local_addr_cast.addr == cache_tagflinv_all_addr_gp);
-  wire [daddr_width_p-1:0] tagfl_addr = fsm_fwd_data_li[0+:lg_l2_sets_lp+lg_l2_assoc_lp] << l2_block_offset_width_lp;
 
   // cache packet data and mask mux elements
   // each mux has one element per power of 2 in [1, N] where N is log2(L2 data width bytes)
@@ -195,10 +197,11 @@ module bp_me_cce_to_cache
      );
 
   // Swizzle address bits for L2 cache command
+  wire [daddr_width_p-1:0] bank_addr_li = is_csr ? fsm_fwd_data_li[0+:daddr_width_p] : fsm_fwd_addr_li[0+:daddr_width_p];
   bp_me_dram_hash_encode
    #(.bp_params_p(bp_params_p))
    fsm_fwd_hash
-    (.daddr_i(fsm_fwd_addr_li[0+:daddr_width_p])
+    (.daddr_i(bank_addr_li)
      ,.daddr_o(cache_pkt_addr_lo)
      ,.bank_o(cache_fwd_bank_lo)
      );
@@ -395,10 +398,16 @@ module bp_me_cce_to_cache
             else if (is_tagflinv_all) begin
               state_n = e_flinv_tag;
             end
-            else if (is_tagfl) begin
+            else if (is_csr) begin
               //TODO: add valid/yumi signals
-              cache_pkt.opcode = TAGFL;
-              cache_pkt.addr = tagfl_addr;
+              cache_pkt_v_o[cache_fwd_bank_lo] = stream_fifo_ready_lo & fsm_fwd_v_li;
+              cache_pkt.opcode = is_aflinv ? AFLINV : (is_ainv ? AINV : (is_afl ? AFL : TAGFL));
+              cache_pkt.addr = cache_pkt_addr_lo;
+              cache_pkt.mask = '1;
+
+              fsm_fwd_yumi_lo = fsm_fwd_v_li & stream_fifo_ready_lo & cache_pkt_yumi_i[cache_fwd_bank_lo];
+              fsm_rev_v_lo = stream_header_v_lo & cache_data_v_i[cache_rev_bank_lo];
+              cache_data_yumi_o[cache_rev_bank_lo] = fsm_rev_ready_and_li & fsm_rev_v_lo;
             end
             else begin
               cache_pkt.addr = cache_pkt_addr_lo;

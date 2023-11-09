@@ -106,7 +106,9 @@ module bp_me_cache_slice
        ,.cache_data_v_i(cache_data_v_lo)
        ,.cache_data_yumi_o(cache_data_yumi_li)
        );
-  
+
+    `declare_bsg_cache_dma_pkt_s(daddr_width_p, dma_mask_width_p);
+    bsg_cache_dma_pkt_s [l2_banks_p-1:0] dma_pkt_lo, dma_pkt_cast_o;
     for (genvar i = 0; i < l2_banks_p; i++)
       begin : bank
       bsg_cache
@@ -140,7 +142,7 @@ module bp_me_cache_slice
          ,.v_o(cache_data_v_lo[i])
          ,.yumi_i(cache_data_yumi_li[i])
 
-         ,.dma_pkt_o(dma_pkt_o[i])
+         ,.dma_pkt_o(dma_pkt_lo[i])
          ,.dma_pkt_v_o(dma_pkt_v_o[i])
          ,.dma_pkt_yumi_i(dma_pkt_ready_and_i[i] & dma_pkt_v_o[i])
 
@@ -154,6 +156,17 @@ module bp_me_cache_slice
 
          ,.v_we_o()
          );
+
+      bp_me_dram_hash_decode
+        #(.bp_params_p(bp_params_p))
+        dma_addr_hash_decode
+         (.daddr_i(dma_pkt_lo[i].addr)
+          ,.daddr_o(dma_pkt_cast_o[i].addr)
+          );
+
+      assign dma_pkt_cast_o[i].write_not_read = dma_pkt_lo[i].write_not_read;
+      assign dma_pkt_cast_o[i].mask = dma_pkt_lo[i].mask;
+      assign dma_pkt_o[i] = dma_pkt_cast_o[i];
     end
   end
   else begin: nol2
