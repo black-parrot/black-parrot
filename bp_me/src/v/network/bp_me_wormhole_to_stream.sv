@@ -107,7 +107,7 @@ module bp_me_wormhole_to_stream
 
      ,.data_i(link_data_i)
      ,.v_i(sipo_v_li)
-     ,.ready_o(sipo_ready_and_lo)
+     ,.ready_and_o(sipo_ready_and_lo)
 
      ,.data_o(wh_hdr_lo)
      ,.v_o(pr_hdr_v_lo)
