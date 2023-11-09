@@ -14,10 +14,10 @@ $(LINT_DIR)/flist.vcs:
 	@echo testbench.sv                              >> $@
 	@echo bsg_tag_boot_rom.v                        >> $@
 	@echo "$(BP_ME_DIR)/test/common/bp_ddr.sv"      >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_dly_line.v"        >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_dmc/bsg_dmc_clk_rst_gen.v"     >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_dly_line.sv"        >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_dmc/bsg_dmc_clk_rst_gen.sv"     >> $@
 	@echo "$(BASEJUMP_STL_DIR)/testing/bsg_dmc/lpddr_verilog_model/mobile_ddr.v" >> $@
 
 LINT_COLLATERAL = $(addprefix $(LINT_DIR)/, flist.vcs wrapper.sv testbench.sv bsg_tag_boot_rom.v)
@@ -46,10 +46,10 @@ $(BUILD_DIR)/flist.vcs:
 	@echo testbench.sv                              >> $@
 	@echo bsg_tag_boot_rom.v                        >> $@
 	@echo "$(BP_ME_DIR)/test/common/bp_ddr.sv"      >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_dly_line.v"        >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_dmc/bsg_dmc_clk_rst_gen.v"     >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_dly_line.sv"        >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_dmc/bsg_dmc_clk_rst_gen.sv"     >> $@
 	@echo "$(BASEJUMP_STL_DIR)/testing/bsg_dmc/lpddr_verilog_model/mobile_ddr.v" >> $@
 
 BUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv testbench.sv bsg_tag_boot_rom.v)

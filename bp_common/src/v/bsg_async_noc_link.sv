@@ -1,6 +1,6 @@
 
-`include "bsg_defines.v"
-`include "bsg_noc_links.vh"
+`include "bsg_defines.sv"
+`include "bsg_noc_links.svh"
 
 module bsg_async_noc_link
  import bsg_noc_pkg::*;

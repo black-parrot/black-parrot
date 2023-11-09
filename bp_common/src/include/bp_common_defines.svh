@@ -1,7 +1,7 @@
 `ifndef BP_COMMON_DEFINES_SVH
 `define BP_COMMON_DEFINES_SVH
 
-  `include "bsg_defines.v"
+  `include "bsg_defines.sv"
   `include "bp_common_addr_defines.svh"
   `include "bp_common_aviary_defines.svh"
   `include "bp_common_aviary_custom_defines.svh"

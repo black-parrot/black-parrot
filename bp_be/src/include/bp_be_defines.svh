@@ -7,7 +7,7 @@
 `ifndef BP_BE_DEFINES_SVH
 `define BP_BE_DEFINES_SVH
 
-  `include "bsg_defines.v"
+  `include "bsg_defines.sv"
   `include "bp_common_core_if.svh"
   `include "bp_be_dcache_defines.svh"
   `include "HardFloat_consts.vi"

@@ -4,7 +4,7 @@
  *
  */
 
-`include "bsg_noc_links.vh"
+`include "bsg_noc_links.svh"
 
 `include "bp_common_defines.svh"
 `include "bp_top_defines.svh"

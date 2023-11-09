@@ -13,8 +13,8 @@
 `ifndef BP_COMMON_BEDROCK_WORMHOLE_DEFINES_SVH
 `define BP_COMMON_BEDROCK_WORMHOLE_DEFINES_SVH
 
-`include "bsg_noc_links.vh"
-`include "bsg_wormhole_router.vh"
+`include "bsg_noc_links.svh"
+`include "bsg_wormhole_router.svh"
 
   /*
    * BedRock LCE Coherence Network Wormhole Packet Definitions

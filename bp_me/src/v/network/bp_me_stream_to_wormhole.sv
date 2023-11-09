@@ -33,7 +33,7 @@
  *
  */
 
-`include "bsg_defines.v"
+`include "bsg_defines.sv"
 `include "bp_common_defines.svh"
 
 module bp_me_stream_to_wormhole

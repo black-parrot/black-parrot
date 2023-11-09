@@ -9,8 +9,8 @@
 `include "bp_be_defines.svh"
 `include "bp_me_defines.svh"
 `include "bp_top_defines.svh"
-`include "bsg_cache.vh"
-`include "bsg_noc_links.vh"
+`include "bsg_cache.svh"
+`include "bsg_noc_links.svh"
 
 module bp_core
  import bp_common_pkg::*;

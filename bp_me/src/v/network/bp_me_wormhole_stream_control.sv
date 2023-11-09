@@ -24,7 +24,7 @@
  *
  */
 
-`include "bsg_defines.v"
+`include "bsg_defines.sv"
 
 module bp_me_wormhole_stream_control
  #(parameter `BSG_INV_PARAM(len_width_p)

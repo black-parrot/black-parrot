@@ -4,7 +4,7 @@
  *  bsg_serial_in_parallel_out_passthrough_dynamic.v
  */
 
-`include "bsg_defines.v"
+`include "bsg_defines.sv"
 
 module bsg_serial_in_parallel_out_passthrough_dynamic
  #(parameter `BSG_INV_PARAM(width_p)
