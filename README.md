@@ -33,7 +33,7 @@ Simulation Environment](https://github.com/black-parrot/black-parrot-sim), which
 BlackParrot RTL and SDK in a compatible manner. We intend to release several examples of BlackParrot
 environments which package the RTL, SDK and HDK together for evaluation.
 
-To set up your own BlackParrot environment, cloning a version of the [BlackParrot SDK](https://github.com/black-parrot-sdk/black-parrot-sdk) as 'sdk' in the same directory as the BlackParrot RTL is all that is strictly required, although the repositories are not guaranteed to be in sync after pulling from master of each.
+To set up your own BlackParrot environment, cloning a version of the [BlackParrot SDK](https://github.com/black-parrot-sdk/black-parrot-sdk) and a version of the [BlackParrot Tools](https://github.com/black-parrot/black-parrot-tools) in the same directory as this repository is all that is strictly required, although the repositories are not guaranteed to be in sync after pulling from master of each.
 
 Once you have a BlackParrot environment set up, you can follow the RTL evaluation guide here to
 test the core RTL: [Evaluation Guide](docs/eval_guide.md)
