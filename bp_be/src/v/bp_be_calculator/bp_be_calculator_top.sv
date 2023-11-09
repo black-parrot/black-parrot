@@ -451,7 +451,7 @@ module bp_be_calculator_top
   bsg_arb_fixed
    #(.inputs_p(1+num_late_wb_lp), .lo_to_hi_p(1))
    late_wb_arb
-    (.ready_i(1'b1)
+    (.ready_then_i(1'b1)
      ,.reqs_i({late_wb_reqs_li, ptw_fill_v})
      ,.grants_o({late_wb_grants_lo, ptw_fill_yumi})
      );

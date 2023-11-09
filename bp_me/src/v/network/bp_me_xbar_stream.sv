@@ -59,7 +59,7 @@ module bp_me_xbar_stream
 
          ,.data_i({msg_dst_i[i], msg_data_i[i], msg_header_i[i]})
          ,.v_i(msg_v_i[i])
-         ,.ready_o(msg_ready_and_o[i])
+         ,.ready_param_o(msg_ready_and_o[i])
 
          ,.data_o({msg_dst_li[i], msg_data_li[i], msg_header_li[i]})
          ,.v_o(msg_v_li[i])

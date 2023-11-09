@@ -214,7 +214,7 @@ module bp_lce
 
      ,.data_i({lce_fill_data_lo, lce_fill_header_lo})
      ,.v_i(lce_fill_v_lo)
-     ,.ready_o(lce_fill_ready_and_li)
+     ,.ready_param_o(lce_fill_ready_and_li)
 
      ,.data_o({lce_fill_data_o, lce_fill_header_o})
      ,.v_o(lce_fill_v_o)

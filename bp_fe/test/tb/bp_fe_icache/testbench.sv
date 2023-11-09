@@ -190,7 +190,7 @@ module testbench
 
     // from icache
     ,.v_i(icache_data_v_lo)
-    ,.ready_o(icache_ready_li)
+    ,.ready_param_o(icache_ready_li)
     ,.data_i(icache_data_lo)
 
     // to trace replay

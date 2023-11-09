@@ -106,7 +106,7 @@ module bp_me_nonsynth_cfg_loader
      ,.reset_i(reset_i)
 
      ,.v_i(mem_fwd_yumi_i)
-     ,.ready_i(1'b1)
+     ,.ready_param_i(1'b1)
 
      ,.yumi_i(mem_rev_v_i)
      ,.count_o(credit_count_lo)

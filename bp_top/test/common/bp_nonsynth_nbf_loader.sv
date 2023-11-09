@@ -117,7 +117,7 @@ module bp_nonsynth_nbf_loader
      ,.reset_i(reset_i)
 
      ,.v_i(mem_fwd_v_o)
-     ,.ready_i(mem_fwd_ready_and_i)
+     ,.ready_param_i(mem_fwd_ready_and_i)
 
      ,.yumi_i(mem_rev_v_i)
      ,.count_o(credit_count_lo)

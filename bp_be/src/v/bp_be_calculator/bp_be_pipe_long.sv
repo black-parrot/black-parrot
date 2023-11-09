@@ -80,7 +80,7 @@ module bp_be_pipe_long
     (.clk_i(clk_i)
     ,.reset_i(reset_i | flush_int_li)
     ,.v_i(imulh_v_li)
-    ,.ready_o(imulh_ready_lo)
+    ,.ready_and_o(imulh_ready_lo)
     ,.opA_i(op_a)
     ,.signed_opA_i(signed_opA_li)
     ,.opB_i(op_b)

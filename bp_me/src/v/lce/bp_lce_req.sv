@@ -107,7 +107,7 @@ module bp_lce_req
 
      ,.data_i(cache_req_cast_i)
      ,.v_i(cache_req_yumi_o)
-     ,.ready_o(cache_req_ready_lo)
+     ,.ready_param_o(cache_req_ready_lo)
 
      ,.data_o(cache_req_r)
      ,.v_o(cache_req_v_r)
@@ -124,7 +124,7 @@ module bp_lce_req
 
      ,.data_i(cache_req_metadata_cast_i)
      ,.v_i(cache_req_metadata_v_i & (cache_req_metadata_v_r | ~cache_req_done))
-     ,.ready_o(/* Follows cache req fifo */)
+     ,.ready_param_o(/* Follows cache req fifo */)
 
      ,.data_o(cache_req_metadata_r)
      ,.v_o(cache_req_metadata_v_r)
@@ -199,7 +199,7 @@ module bp_lce_req
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
       ,.v_i(credit_v_li)
-      ,.ready_i(credit_ready_li)
+      ,.ready_param_i(credit_ready_li)
       ,.yumi_i(credit_returned_li)
       ,.count_o(credit_count_lo)
       );
