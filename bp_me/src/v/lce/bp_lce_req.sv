@@ -65,8 +65,8 @@ module bp_lce_req
     , input                                          cache_req_metadata_v_i
 
     // LCE-Cache Interface
-    , output logic                                   credits_full_o
-    , output logic                                   credits_empty_o
+    , output logic                                   cache_req_credits_full_o
+    , output logic                                   cache_req_credits_empty_o
 
     // LCE Cmd - LCE Req Interface
     // request complete signal from LCE Cmd module - Cached Load/Store and Uncached Load
@@ -203,8 +203,8 @@ module bp_lce_req
       ,.yumi_i(credit_returned_li)
       ,.count_o(credit_count_lo)
       );
-  assign credits_full_o  = ~cache_req_ready_lo && (credit_count_lo == credits_p);
-  assign credits_empty_o = ~cache_req_v_r && (credit_count_lo == '0);
+  assign cache_req_credits_full_o  =  cache_req_v_r && (credit_count_lo == credits_p);
+  assign cache_req_credits_empty_o = ~cache_req_v_r && (credit_count_lo == '0);
 
   // Request Address to CCE
   logic [cce_id_width_p-1:0] req_cce_id_lo;
@@ -285,7 +285,7 @@ module bp_lce_req
           end
         e_send:
           begin
-            fsm_req_v_lo = cache_req_v_r & (credit_count_lo < credits_p);
+            fsm_req_v_lo = ~cache_req_credits_full_o;
 
             state_n = (fsm_req_ready_and_li & fsm_req_v_lo & fsm_req_last_lo) ? e_request : state_r;
           end
@@ -306,7 +306,7 @@ module bp_lce_req
       // Fire off a non-blocking request opportunistically if we have one
       if (nonblocking_v_r & ~fsm_req_v_lo)
         begin
-          fsm_req_v_lo = (credit_count_lo < credits_p);
+          fsm_req_v_lo = ~cache_req_credits_full_o;
 
           cache_req_done = fsm_req_ready_and_li & fsm_req_v_lo & fsm_req_last_lo;
         end
