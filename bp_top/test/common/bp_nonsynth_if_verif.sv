@@ -160,6 +160,13 @@ module bp_nonsynth_if_verif
   if ((cce_type_p != e_cce_uce) && (`BSG_SAFE_CLOG2(icache_block_width_p*icache_sets_p/8) > page_offset_width_gp) && (`BSG_SAFE_CLOG2(dcache_block_width_p*dcache_sets_p/8) > page_offset_width_gp))
     $error("Error: Multicore requires total cache size to be equal to 4kB * associativity");
 
+  if (l2_banks_p > 8)
+    $error("L2 banks must be less than 8");
+  if (l2_assoc_p > 8)
+    $error("L2 associativity must be less than 8");
+  if (l2_block_width_p != 512)
+    $error("L2 block width must be 512b");
+
   if (num_cce_p/mc_x_dim_p*l2_dmas_p > 16)
     $error("Round robin arbiter currently only supports 16 entries");
 

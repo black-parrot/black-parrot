@@ -390,8 +390,6 @@ module wrapper
       // Req Crossbar
       bp_me_xbar_stream
        #(.bp_params_p(bp_params_p)
-         ,.block_width_p(block_width_p)
-         ,.data_width_p(fill_width_p)
          ,.stream_mask_p(lce_req_stream_mask_gp)
          ,.payload_width_p(lce_req_payload_width_lp)
          ,.num_source_p(num_lce_p)
@@ -416,8 +414,6 @@ module wrapper
       // Resp Crossbar
       bp_me_xbar_stream
        #(.bp_params_p(bp_params_p)
-         ,.block_width_p(block_width_p)
-         ,.data_width_p(fill_width_p)
          ,.payload_width_p(lce_resp_payload_width_lp)
          ,.stream_mask_p(lce_resp_stream_mask_gp)
          ,.num_source_p(num_lce_p)
@@ -443,8 +439,6 @@ module wrapper
       // from CCE and LCE cmd out to LCE cmd in
       bp_me_xbar_stream
        #(.bp_params_p(bp_params_p)
-         ,.block_width_p(block_width_p)
-         ,.data_width_p(fill_width_p)
          ,.payload_width_p(lce_fill_payload_width_lp)
          ,.stream_mask_p(lce_fill_stream_mask_gp)
          ,.num_source_p(num_lce_p)
@@ -470,8 +464,6 @@ module wrapper
       // from CCE to LCE cmd in
       bp_me_xbar_stream
        #(.bp_params_p(bp_params_p)
-         ,.block_width_p(block_width_p)
-         ,.data_width_p(fill_width_p)
          ,.payload_width_p(lce_cmd_payload_width_lp)
          ,.stream_mask_p(lce_cmd_stream_mask_gp)
          ,.num_source_p(num_cce_p)

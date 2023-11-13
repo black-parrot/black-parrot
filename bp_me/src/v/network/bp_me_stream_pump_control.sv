@@ -25,7 +25,6 @@ module bp_me_stream_pump_control
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    , parameter `BSG_INV_PARAM(payload_width_p)
-   , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(data_width_p)
    , parameter `BSG_INV_PARAM(stream_mask_p)
    , parameter `BSG_INV_PARAM(widest_beat_size_p)
@@ -50,11 +49,11 @@ module bp_me_stream_pump_control
   `bp_cast_i(bp_bedrock_xce_header_s, header);
 
   localparam bytes_lp = data_width_p >> 3;
-  localparam width_lp = `BSG_SAFE_CLOG2(block_width_p/data_width_p);
+  localparam width_lp = `BSG_SAFE_CLOG2(bedrock_block_width_p/data_width_p);
   localparam offset_width_lp = `BSG_SAFE_CLOG2(bytes_lp);
   wire [$bits(bp_bedrock_msg_size_e)-1:0] beat_size = `BSG_SAFE_CLOG2(bytes_lp);
 
-  if (block_width_p == data_width_p)
+  if (bedrock_block_width_p == data_width_p)
     begin : z
       assign addr_o = header_cast_i.addr;
       assign first_o = 1'b1;
@@ -159,13 +158,13 @@ module bp_me_stream_pump_control
          ,.data_o(wrap_lo)
          );
 
-      localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3);
+      localparam block_offset_width_lp = `BSG_SAFE_CLOG2(bedrock_block_width_p >> 3);
       wire [`BSG_SAFE_MINUS(width_lp,1):0] wrap_cnt = is_ready ? first_cnt : wrap_lo;
       wire [paddr_width_p-1:block_offset_width_lp] high_bits =
         header_cast_i.addr[paddr_width_p-1:block_offset_width_lp];
       wire [offset_width_lp-1:0] low_bits = header_cast_i.addr[0+:offset_width_lp];
 
-      assign addr_o = {high_bits, {block_width_p>data_width_p{wrap_cnt}}, low_bits} & final_mask;
+      assign addr_o = {high_bits, {bedrock_block_width_p>data_width_p{wrap_cnt}}, low_bits} & final_mask;
 
       always_comb
         case (state_r)
@@ -180,10 +179,6 @@ module bp_me_stream_pump_control
         else
           state_r <= state_n;
     end
-
-  // parameter check
-  if (block_width_p % data_width_p)
-    $error("block_width_p must be multiple of data_width_p");
 
 endmodule
 

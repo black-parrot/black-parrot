@@ -151,8 +151,7 @@ module bp_lce_req
   logic fsm_req_new_lo, fsm_req_critical_lo, fsm_req_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(fill_width_p)
-     ,.block_width_p(block_width_p)
+     ,.data_width_p(fill_width_p)
      ,.payload_width_p(lce_req_payload_width_lp)
      ,.msg_stream_mask_p(lce_req_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_req_stream_mask_gp)

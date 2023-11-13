@@ -169,26 +169,29 @@ module bp_unicore
       wire is_host_fwd     = is_my_core & is_local & (device_fwd_li == host_dev_gp);
 
       wire is_io_fwd       = is_host_fwd | is_other_hio | is_other_core;
-      wire is_l2s_fwd       = ~is_local & ~is_io_fwd;
+      wire is_l2s_fwd      = ~is_local & ~is_io_fwd;
       wire is_loopback_fwd = ~is_cfg_fwd & ~is_clint_fwd & ~is_io_fwd & ~is_l2s_fwd;
 
       localparam lg_l2_slices_lp = `BSG_SAFE_CLOG2(l2_slices_p);
-      logic [lg_l2_slices_lp-1:0] slice_id;
+      logic [lg_l2_slices_lp-1:0] slice;
       bp_me_dram_hash_encode
        #(.bp_params_p(bp_params_p))
        slice_select
-        (.daddr_i(local_addr[0+:daddr_width_p])
+        (.paddr_i(local_addr)
+         ,.data_i()
+
+         ,.dram_o()
          ,.daddr_o()
-         ,.cce_o()
-         ,.slice_o(slice_id)
+         ,.slice_o(slice)
          ,.bank_o()
+         ,.data_o()
          );
 
       logic [l2_slices_p-1:0] is_l2s_slice_fwd;
       bsg_decode_with_v
        #(.num_out_p(l2_slices_p))
        slice_decode
-        (.i(slice_id)
+        (.i(slice)
          ,.v_i(is_l2s_fwd)
          ,.o(is_l2s_slice_fwd)
          );
@@ -220,8 +223,6 @@ module bp_unicore
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.stream_mask_p(mem_fwd_stream_mask_gp)
      ,.num_source_p(num_proc_lp)
@@ -245,8 +246,6 @@ module bp_unicore
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.stream_mask_p(mem_rev_stream_mask_gp)
      ,.num_source_p(num_dev_lp)
