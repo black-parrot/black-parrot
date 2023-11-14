@@ -256,6 +256,7 @@ module bp_nonsynth_dram
          ,.axi_data_width_p(axi_data_width_p)
          ,.axi_burst_len_p(axi_burst_len_p)
          ,.axi_burst_type_p(e_axi_burst_wrap)
+         ,.ordering_en_p(1)
          )
       cache2axi
         (.clk_i(clk_i)
