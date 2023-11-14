@@ -13,7 +13,7 @@ $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3.sv
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_map.sv
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.sv
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.sv
-$BASEJUMP_STL_DIR/testing/bsg_cache/common/bsg_nonsynth_random_yumi_gen.v
+$BASEJUMP_STL_DIR/testing/bsg_cache/common/bsg_nonsynth_random_yumi_gen.sv
 # top files
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.sv
 $BP_BE_DIR/test/common/bp_be_nonsynth_dcache_tracer.sv
