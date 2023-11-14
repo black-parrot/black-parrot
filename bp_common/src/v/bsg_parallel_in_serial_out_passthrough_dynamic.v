@@ -9,7 +9,7 @@
 //     multiplex multiple inputs and can change which input they multiplex
 //     on the fly based on arrival of new inputs.
 
-`include "bsg_defines.v"
+`include "bsg_defines.sv"
 
 module bsg_parallel_in_serial_out_passthrough_dynamic #( parameter `BSG_INV_PARAM(width_p    )
                                                        , parameter `BSG_INV_PARAM(els_p      )

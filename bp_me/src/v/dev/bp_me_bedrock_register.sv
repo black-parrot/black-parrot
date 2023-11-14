@@ -85,7 +85,7 @@ module bp_me_bedrock_register
 
      ,.data_i({mem_fwd_data_i, mem_fwd_header_cast_i})
      ,.v_i(mem_fwd_v_i)
-     ,.ready_o(mem_fwd_ready_and_o)
+     ,.ready_and_o(mem_fwd_ready_and_o)
 
      ,.data_o({mem_fwd_data_li, mem_fwd_header_li})
      ,.v_o(mem_fwd_v_li)

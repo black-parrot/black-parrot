@@ -5,7 +5,7 @@
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
-`include "bsg_cache.vh"
+`include "bsg_cache.svh"
 
 module bp_nonsynth_mem
  import bp_common_pkg::*;

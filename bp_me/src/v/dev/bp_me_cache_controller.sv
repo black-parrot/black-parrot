@@ -15,7 +15,7 @@
 
 `include "bp_common_defines.svh"
 `include "bp_me_defines.svh"
-`include "bsg_cache.vh"
+`include "bsg_cache.svh"
 
 module bp_me_cache_controller
  import bp_common_pkg::*;
@@ -214,7 +214,7 @@ module bp_me_cache_controller
 
      ,.data_i({cache_fwd_bank_lo, fsm_fwd_header_li})
      ,.v_i(fsm_fwd_yumi_lo & fsm_fwd_new_li)
-     ,.ready_o(stream_fifo_ready_lo)
+     ,.ready_param_o(stream_fifo_ready_lo)
 
      ,.data_o({cache_rev_bank_lo, fsm_rev_header_lo})
      ,.v_o(stream_header_v_lo)

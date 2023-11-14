@@ -48,7 +48,7 @@ module bp_me_stream_gearbox
 
          ,.data_i({msg_header_cast_i, msg_data_i})
          ,.v_i(msg_v_i)
-         ,.ready_o(msg_ready_and_o)
+         ,.ready_param_o(msg_ready_and_o)
 
          ,.data_o({msg_header_li, msg_data_li})
          ,.v_o(msg_v_li)

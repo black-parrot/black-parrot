@@ -493,7 +493,7 @@ module testbench
       // from LCE
       ,.v_i(lce_fill_out_v[i])
       ,.data_i({lce_fill_out_data[i], lce_fill_out_header[i]})
-      ,.ready_o(lce_fill_out_ready_and[i])
+      ,.ready_param_o(lce_fill_out_ready_and[i])
       // to xbar
       ,.v_o(buf_lce_fill_out_v[i])
       ,.data_o({buf_lce_fill_out_data[i], buf_lce_fill_out_header[i]})
@@ -560,7 +560,7 @@ module testbench
     ,.reset_i(reset_i)
     // from CCE
     ,.v_i(mem_fwd_v)
-    ,.ready_o(mem_fwd_ready_and)
+    ,.ready_param_o(mem_fwd_ready_and)
     ,.data_i({mem_fwd_data, mem_fwd_header})
     // to memory
     ,.v_o(mem_fwd_v_lo)
@@ -582,7 +582,7 @@ module testbench
     ,.reset_i(reset_i)
     // from memory
     ,.v_i(mem_rev_v_li)
-    ,.ready_o(mem_rev_ready_and_lo)
+    ,.ready_param_o(mem_rev_ready_and_lo)
     ,.data_i({mem_rev_data_li, mem_rev_li})
     // to CCE
     ,.v_o(mem_rev_v)

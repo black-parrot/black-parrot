@@ -1,5 +1,5 @@
 
-`include "bsg_defines.v"
+`include "bsg_defines.sv"
 
 module bsg_rom_param
  #(parameter `BSG_INV_PARAM(data_width_p)

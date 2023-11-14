@@ -9,7 +9,7 @@
 `ifndef BP_FE_DEFINES_SVH
 `define BP_FE_DEFINES_SVH
 
-  `include "bsg_defines.v"
+  `include "bsg_defines.sv"
   `include "bp_fe_icache_defines.svh"
 
   `define declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_mp, btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp, bht_row_els_mp) \

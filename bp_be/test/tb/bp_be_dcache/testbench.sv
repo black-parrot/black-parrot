@@ -223,7 +223,7 @@ module testbench
 
          // from dcache
          ,.v_i(v_lo[i])
-         ,.ready_o(dcache_ready_li[i])
+         ,.ready_param_o(dcache_ready_li[i])
          ,.data_i(data_lo[i])
 
          // to trace replay

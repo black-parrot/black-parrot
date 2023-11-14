@@ -181,7 +181,7 @@ module bp_cce_msg
      ,.reset_i(reset_i)
      // memory commands consume credits
      ,.v_i(mem_fwd_v_o & mem_fwd_last_i)
-     ,.ready_i(mem_fwd_ready_and_i)
+     ,.ready_param_i(mem_fwd_ready_and_i)
      // memory responses return credits
      ,.yumi_i(mem_rev_yumi_o & mem_rev_last_i)
      ,.count_o(mem_credit_count_lo)

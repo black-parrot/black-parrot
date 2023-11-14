@@ -10,8 +10,8 @@ $(LINT_DIR)/flist.vcs:
 	@sed -i "s#.*bp_common_pkg.sv#$(BP_COMMON_DIR)/test/common/bp_common_test_pkg.sv#g" $@
 	@echo wrapper.sv                             >> $@
 	@echo testbench.sv                           >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv" >> $@
 
 LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, flist.vcs testbench.sv wrapper.sv)
 
@@ -25,8 +25,8 @@ $(BUILD_DIR)/flist.vcs:
 	@sed -i "s#.*bp_common_pkg.sv#$(BP_COMMON_DIR)/test/common/bp_common_test_pkg.sv#g" $@
 	@echo wrapper.sv                             >> $@
 	@echo testbench.sv                           >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv" >> $@
 
 BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv testbench.sv)
 

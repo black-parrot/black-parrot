@@ -1,5 +1,5 @@
 
-`include "bsg_defines.v"
+`include "bsg_defines.sv"
 
 // This module buffers data on a synchronous read, useful for buffering
 //   things like an synchronous SRAM read

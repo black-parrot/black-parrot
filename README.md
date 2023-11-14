@@ -13,11 +13,15 @@ BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, R
     - Combat NIH, welcome external contributions and strive for infrastructure agnosticism.
 
 ## Project Status
-BlackParrot v 1.0 was released in March 2020 and has been up and quad core silicon has been running in the lab since April 2020. It supports configurations scaling up to a 16-core cache coherent multicore, including the baseline user and privilege mode functionality to run Linux. An optimized single core variant of BlackParrot (also Linux-capable) is also available. Currently, the core supports RV64IMAFD, with C support on the way!
+BlackParrot v 1.0 was released in March 2020 and has been up and quad core silicon has been running in the lab since April 2020. It supports configurations scaling up to a 16-core+ cache coherent multicore, including the baseline user and privilege mode functionality to run Linux. An optimized single core variant of BlackParrot (also Linux-capable) is also available. Currently, the core supports RV64IMAFDCSU_Zfencei_Zicsr_Zcbo on the way!
 
 Development of BlackParrot continues, and we are very excited about what we are releasing next!
 
-A 12nm BlackParrot multicore chip was taped out in July 2019.
+A 12nm quad-core BlackParrot multicore chip was taped out in July 2019.
+
+A 12nm BlackParrot dual-core accelerator host was taped out in July 2020.
+
+A 28nm heterogeneous dual-core BlackParrot was taped out in August 2022.
 
 ## Press
 We presented BlackParrot at the December 2020 RISC-V Summit! [slides](https://drive.google.com/file/d/1JPIidbk4pTuCgfV8uXorm-SdgOlQ0gTM/view?usp=sharing)
@@ -33,7 +37,7 @@ Simulation Environment](https://github.com/black-parrot/black-parrot-sim), which
 BlackParrot RTL and SDK in a compatible manner. We intend to release several examples of BlackParrot
 environments which package the RTL, SDK and HDK together for evaluation.
 
-To set up your own BlackParrot environment, cloning a version of the [BlackParrot SDK](https://github.com/black-parrot-sdk/black-parrot-sdk) as 'sdk' in the same directory as the BlackParrot RTL is all that is strictly required, although the repositories are not guaranteed to be in sync after pulling from master of each.
+To set up your own BlackParrot environment, cloning a version of the [BlackParrot SDK](https://github.com/black-parrot-sdk/black-parrot-sdk) and a version of the [BlackParrot Tools](https://github.com/black-parrot/black-parrot-tools) in the same directory as this repository is all that is strictly required, although the repositories are not guaranteed to be in sync after pulling from master of each.
 
 Once you have a BlackParrot environment set up, you can follow the RTL evaluation guide here to
 test the core RTL: [Evaluation Guide](docs/eval_guide.md)
@@ -61,7 +65,7 @@ Once you've built and validate your BlackParrot program and are ready to run on 
 [Accelerator Guide](docs/accelerator_guide.md)
 
 ## Hardware Development Kit
-Coming Soon!
+[BlackParrot Subsystems](https://github.com/black-parrot-hdk/black-parrot-subsystems)
 
 ## Interface Specification
 
@@ -95,8 +99,6 @@ Upon commit to the listed branch, a functional regression consisting of full-sys
 Our goal with BlackParrot is to bootstrap a community-maintained RISC-V core, and we would love for you to get involved. Here are a few starter projects you could do to get your feet wet! Contact us more for details.
 
 - Our integer divider could be parameterized to iterate faster on smaller numbers. (Note: Currently somebody is working on this.)
-- Our floating point divider could be parameterized to do two iterates per cycle.
-- We would like to configure BlackParrot for ultra-tiny caches (e.g. 8-way set associative, 4 sets, 2 word = 16 byte cache lines)
 - We could use a stream buffer (prefetcher) implementation for our L2 cache.
 - Add a parameter to enable / disable FPU logic (including register file, bypass paths, FP divider and FMAC, etc.)
 - Improve the mapping to FPGA 

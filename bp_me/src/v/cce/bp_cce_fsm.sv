@@ -536,7 +536,7 @@ module bp_cce_fsm
      ,.reset_i(reset_i)
      // memory commands consume credits
      ,.v_i(fsm_fwd_v_lo & fsm_fwd_last_lo)
-     ,.ready_i(fsm_fwd_ready_and_li)
+     ,.ready_param_i(fsm_fwd_ready_and_li)
      // memory responses return credits
      ,.yumi_i(fsm_rev_yumi_lo & fsm_rev_last_li)
      ,.count_o(mem_credit_count_lo)

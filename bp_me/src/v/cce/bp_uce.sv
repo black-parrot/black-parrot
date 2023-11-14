@@ -155,7 +155,7 @@ module bp_uce
 
      ,.data_i(cache_req_cast_i)
      ,.v_i(cache_req_yumi_o)
-     ,.ready_o(cache_req_ready_lo)
+     ,.ready_param_o(cache_req_ready_lo)
 
      ,.data_o(cache_req_r)
      ,.v_o(cache_req_v_r)
@@ -172,7 +172,7 @@ module bp_uce
 
      ,.data_i(cache_req_metadata_cast_i)
      ,.v_i(cache_req_metadata_v_i & (cache_req_metadata_v_r | ~cache_req_done))
-     ,.ready_o(/* Follows cache req fifo */)
+     ,.ready_param_o(/* Follows cache req fifo */)
 
      ,.data_o(cache_req_metadata_r)
      ,.v_o(cache_req_metadata_v_r)
@@ -370,7 +370,7 @@ module bp_uce
 
      // credit consumed when memory command sends
      ,.v_i(fsm_fwd_v_lo & fsm_fwd_last_lo)
-     ,.ready_i(fsm_fwd_ready_and_li)
+     ,.ready_param_i(fsm_fwd_ready_and_li)
 
      // credit returned when memory response fully consumed
      ,.yumi_i(fsm_rev_yumi_lo & fsm_rev_last_li)

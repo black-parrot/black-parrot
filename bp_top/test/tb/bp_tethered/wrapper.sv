@@ -7,7 +7,7 @@
 `include "bp_common_defines.svh"
 `include "bp_be_defines.svh"
 `include "bp_me_defines.svh"
-`include "bsg_noc_links.vh"
+`include "bsg_noc_links.svh"
 
 module wrapper
  import bsg_wormhole_router_pkg::*;
