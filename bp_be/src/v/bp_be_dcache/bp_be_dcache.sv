@@ -339,10 +339,11 @@ module bp_be_dcache
   // Causes segfault in Synopsys DC O-2018.06-SP4
   // wire [ctag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
   wire [ctag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
+  wire [ptag_width_p-1:ctag_width_p] ptag_high_li = ptag_i >> ctag_width_p;
 
   logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
-    wire tag_match_tl      = (ctag_li == tag_mem_data_lo[i].tag);
+    wire tag_match_tl      = ~|ptag_high_li & (ctag_li == tag_mem_data_lo[i].tag);
     assign way_v_tl[i]     = (tag_mem_data_lo[i].state != e_COH_I);
     assign load_hit_tl[i]  = tag_match_tl & (tag_mem_data_lo[i].state != e_COH_I);
     assign store_hit_tl[i] = tag_match_tl & (tag_mem_data_lo[i].state inside {e_COH_M, e_COH_E});
@@ -508,7 +509,7 @@ module bp_be_dcache
 
   wire fencei_miss_tv   = decode_tv_r.fencei_op & gdirty_r;
   wire engine_miss_tv   = cache_req_v_o & ~cache_req_yumi_i;
-  wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | engine_miss_tv;
+  wire any_miss_tv      = ldst_miss_tv | fencei_miss_tv | engine_miss_tv | blocking_req;
 
   assign data_o = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : final_data;
 

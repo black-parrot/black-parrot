@@ -111,16 +111,16 @@ module bp_uce
     ,e_flush_scan
     ,e_flush_write
     ,e_flush_fence
-    ,e_ready
-    ,e_uc_writeback_evict
+    ,e_ready //7
+    ,e_uc_writeback_evict //8
     ,e_uc_writeback_write_req
-    ,e_send_critical
+    ,e_send_critical //A
     ,e_writeback_evict
     ,e_writeback_read_wait
     ,e_writeback_write_req
     ,e_write_wait
-    ,e_read_wait
-    ,e_uc_read_wait
+    ,e_read_wait //F
+    ,e_uc_read_wait //10
   } state_n, state_r;
 
   wire is_reset           = (state_r == e_reset);
@@ -544,9 +544,7 @@ module bp_uce
                           ? e_clear
                           : (uc_hit_v_li & (writeback_p == 1))
                             ? e_uc_writeback_evict
-                            : (uc_store_v_li || wt_store_v_li)
-                              ? e_ready
-                              : e_send_critical
+                            : e_send_critical
                       : state_r;
           end
 
@@ -564,10 +562,10 @@ module bp_uce
             stat_mem_pkt_v_o = cache_req_metadata.dirty;
 
             state_n = ~cache_req_metadata.dirty
-                      ? uc_store_v_r ? e_ready : e_send_critical
-                      : (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
+                      ? (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
                         ? e_uc_writeback_write_req
-                        : state_r;
+                        : state_r
+                      : e_send_critical;
           end
 
         e_uc_writeback_write_req:
@@ -581,9 +579,7 @@ module bp_uce
             fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
             state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo)
-                      ? uc_store_v_r
-                        ? e_ready
-                        : e_send_critical
+                      ? e_send_critical
                       : state_r;
           end
 
@@ -597,7 +593,7 @@ module bp_uce
               fsm_fwd_header_lo.payload.lce_id = lce_id_i;
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
-              state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo)
+              state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo)
                         ? cache_req_metadata.dirty
                           ? e_writeback_evict
                           : e_read_wait
@@ -615,6 +611,21 @@ module bp_uce
               fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
 
               state_n = (fsm_fwd_ready_and_li & fsm_fwd_v_lo) ? e_uc_read_wait : state_r;
+            end
+          else if (uc_store_v_r)
+            begin
+              fsm_fwd_header_lo.msg_type = e_bedrock_mem_uc_wr;
+              fsm_fwd_header_lo.addr     = cache_req_r.addr;
+              fsm_fwd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
+              fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
+              fsm_fwd_header_lo.payload.lce_id = lce_id_i;
+              fsm_fwd_header_lo.subop    = mem_wr_subop;
+              fsm_fwd_data_lo            = {fill_width_p/dword_width_gp{cache_req_r.data}};
+              fsm_fwd_v_lo = (credit_count_lo < coh_noc_max_credits_p);
+
+              cache_req_done = fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_last_lo;
+
+              state_n = cache_req_done ? e_ready : state_r;
             end
 
         e_writeback_evict:
