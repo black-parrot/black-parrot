@@ -624,8 +624,8 @@ module bp_uce
             state_n = cache_req_metadata.dirty
                       ? (data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
                         ? e_uc_writeback_write_req
-                        : e_send_critical
-                      : state_r;
+                        : state_r
+                      : e_send_critical;
           end
 
         e_uc_writeback_write_req:
