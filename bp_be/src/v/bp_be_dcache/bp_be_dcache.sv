@@ -347,10 +347,11 @@ module bp_be_dcache
   // Causes segfault in Synopsys DC O-2018.06-SP4
   // wire [ctag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
   wire [ctag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
+  wire [ptag_width_p-1:ctag_width_p] ptag_high_li = ptag_i >> ctag_width_p;
 
   logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
-    wire tag_match_tl      = (ctag_li == tag_mem_data_lo[i].tag);
+    wire tag_match_tl      = ~|ptag_high_li & (ctag_li == tag_mem_data_lo[i].tag);
     assign way_v_tl[i]     = (tag_mem_data_lo[i].state != e_COH_I);
     assign load_hit_tl[i]  = tag_match_tl & (tag_mem_data_lo[i].state != e_COH_I);
     assign store_hit_tl[i] = tag_match_tl & (tag_mem_data_lo[i].state inside {e_COH_M, e_COH_E});
@@ -455,6 +456,7 @@ module bp_be_dcache
      ,.addr_o(load_hit_way_tv)
      ,.v_o(load_hit_tv)
      );
+  wire uncached_hit_tv = uncached_tv_r & load_hit_tv;
 
   logic [assoc_p-1:0] ld_data_way_select_tv;
   bsg_adder_one_hot
@@ -529,7 +531,7 @@ module bp_be_dcache
   wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & ~nonblocking_req & writeback_p;
   wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv & ~nonblocking_req;
 
-  wire blocking_miss_tv    = load_miss_tv | store_miss_tv;
+  wire blocking_miss_tv    = blocking_req;
   wire nonblocking_miss_tv = nonblocking_req & ~cache_req_yumi_i;
   wire engine_miss_tv      = cache_req_v_o & ~cache_req_yumi_i;
   wire any_miss_tv         = blocking_miss_tv | nonblocking_miss_tv | engine_miss_tv;

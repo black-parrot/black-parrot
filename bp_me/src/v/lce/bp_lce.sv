@@ -157,8 +157,8 @@ module bp_lce
      ,.cache_req_yumi_o(cache_req_yumi_o)
      ,.cache_req_metadata_i(cache_req_metadata_i)
      ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
-     ,.credits_full_o(cache_req_credits_full_o)
-     ,.credits_empty_o(cache_req_credits_empty_o)
+     ,.cache_req_credits_full_o(cache_req_credits_full_o)
+     ,.cache_req_credits_empty_o(cache_req_credits_empty_o)
      ,.credit_return_i(credit_return_lo)
      ,.cache_req_done_i(cache_req_done_lo)
 
