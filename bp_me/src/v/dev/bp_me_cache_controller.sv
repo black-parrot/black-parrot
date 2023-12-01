@@ -71,7 +71,7 @@ module bp_me_cache_controller
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = {l2_banks_p{cache_pkt}};
 
-  enum logic [1:0] {e_reset, e_clear, e_drain, e_ready} state_n, state_r;
+  enum logic [2:0] {e_reset, e_clear, e_drain, e_ready, e_uc_flush} state_n, state_r;
   wire is_reset  = (state_r == e_reset);
   wire is_clear  = (state_r == e_clear);
   wire is_drain  = (state_r == e_drain);
@@ -85,7 +85,7 @@ module bp_me_cache_controller
 
   bp_bedrock_mem_rev_header_s fsm_rev_header_lo;
   logic [l2_data_width_p-1:0] fsm_rev_data_lo;
-  logic fsm_rev_v_lo, fsm_rev_ready_and_li;
+  logic fsm_rev_v_lo, fsm_rev_ready_then_li;
   logic [paddr_width_p-1:0] fsm_rev_addr_lo;
   logic fsm_rev_new_lo, fsm_rev_critical_lo, fsm_rev_last_lo;
 
@@ -135,7 +135,7 @@ module bp_me_cache_controller
      ,.out_fsm_header_i(fsm_rev_header_lo)
      ,.out_fsm_data_i(fsm_rev_data_lo)
      ,.out_fsm_v_i(fsm_rev_v_lo)
-     ,.out_fsm_ready_and_o(fsm_rev_ready_and_li)
+     ,.out_fsm_ready_then_o(fsm_rev_ready_then_li)
 
      ,.out_fsm_metadata_o(fsm_rev_metadata_lo)
      ,.out_fsm_addr_o(fsm_rev_addr_lo)
@@ -147,6 +147,22 @@ module bp_me_cache_controller
   bp_local_addr_s local_addr_li;
   assign local_addr_li = fsm_fwd_addr_li;
   wire is_word_op = (fsm_fwd_header_li.size == e_bedrock_msg_size_4);
+  wire is_uc_op   = (fsm_fwd_header_li.msg_type inside {e_bedrock_mem_uc_wr, e_bedrock_mem_uc_rd});
+
+  logic [lg_l2_blocks_lp-1:0] set_cnt;
+  logic set_clear, set_up;
+  bsg_counter_clear_up
+   #(.max_val_p(l2_blocks_lp-1), .init_val_p(0))
+   set_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(set_clear)
+     ,.up_i(set_up)
+     ,.count_o(set_cnt)
+     );
+  wire set_done = (set_cnt == l2_blocks_lp-1);
+  wire [lg_l2_banks_lp-1:0] cnt_bank_lo = set_cnt / l2_blocks_per_bank_lp;
 
   // cache packet data and mask mux elements
   // each mux has one element per power of 2 in [1, N] where N is log2(L2 data width bytes)
@@ -210,24 +226,35 @@ module bp_me_cache_controller
      );
 
   // Swizzle address bits for L2 cache command
-  logic cache_pkt_dram_lo;
-  logic [daddr_width_p-1:0] cache_pkt_daddr_lo;
-  logic [l2_data_width_p-1:0] cache_pkt_data_lo;
-  logic [lg_l2_banks_lp-1:0] cache_pkt_bank_lo;
+  logic fwd_pkt_dram_lo;
+  logic [daddr_width_p-1:0] fwd_pkt_daddr_lo;
+  logic [l2_data_width_p-1:0] fwd_pkt_data_lo;
+  logic [lg_l2_banks_lp-1:0] fwd_pkt_bank_lo;
   bp_me_dram_hash_encode
    #(.bp_params_p(bp_params_p))
    bank_select
     (.paddr_i(fsm_fwd_addr_li)
      ,.data_i(fsm_fwd_data_li)
 
-     ,.dram_o(cache_pkt_dram_lo)
-     ,.daddr_o(cache_pkt_daddr_lo)
-     ,.bank_o(cache_pkt_bank_lo)
-     ,.data_o(cache_pkt_data_lo)
+     ,.dram_o(fwd_pkt_dram_lo)
+     ,.daddr_o(fwd_pkt_daddr_lo)
+     ,.bank_o(fwd_pkt_bank_lo)
+     ,.data_o(fwd_pkt_data_lo)
      ,.slice_o()
      );
 
-  assign fsm_fwd_metadata_li = {cache_pkt_bank_lo, fsm_fwd_header_li};
+  logic cache_pkt_v_lo;
+  wire [lg_l2_banks_lp-1:0] cache_pkt_bank_lo = is_clear ? cnt_bank_lo : fwd_pkt_bank_lo;
+  bsg_decode_with_v
+   #(.num_out_p(l2_banks_p))
+   decode
+    (.i(cache_pkt_bank_lo)
+     ,.v_i(cache_pkt_v_lo)
+     ,.o(cache_pkt_v_o)
+     );
+  wire cache_pkt_yumi_li = fsm_fwd_v_li & cache_pkt_yumi_i[cache_pkt_bank_lo];
+
+  assign fsm_fwd_metadata_li = {fwd_pkt_bank_lo, fsm_fwd_header_li};
   assign {cache_rev_bank_lo, fsm_rev_header_lo} = fsm_rev_metadata_lo;
 
   // mem_rev data selection
@@ -265,25 +292,11 @@ module bp_me_cache_controller
     ,.data_o(fsm_rev_data_lo)
     );
 
-  logic [lg_l2_blocks_lp-1:0] set_cnt;
-  logic set_clear, set_up;
-  bsg_counter_clear_up
-   #(.max_val_p(l2_blocks_lp-1), .init_val_p(0))
-   set_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(set_clear)
-     ,.up_i(set_up)
-     ,.count_o(set_cnt)
-     );
-  wire set_done = (set_cnt == l2_blocks_lp-1);
-
   // FSM
   always_comb
     begin
       cache_pkt     = '0;
-      cache_pkt_v_o = '0;
+      cache_pkt_v_lo = '0;
       cache_data_yumi_o = '0;
 
       fsm_fwd_yumi_lo = 1'b0;
@@ -302,16 +315,16 @@ module bp_me_cache_controller
           end
         e_clear:
           begin
-            cache_pkt_v_o = 1'b1 << (set_cnt / l2_blocks_per_bank_lp);
+            cache_pkt_v_lo = 1'b1;
             cache_pkt.opcode = TAGST;
             cache_pkt.addr   = set_cnt << l2_block_offset_width_lp;
             cache_pkt.data   = '0;
             cache_pkt.mask   = '0;
 
-            cache_data_yumi_o = cache_data_v_i;
-
             set_up = ~set_done;
             set_clear = set_done & |cache_pkt_yumi_i;
+
+            cache_data_yumi_o = cache_data_v_i;
 
             state_n = set_clear ? e_drain : e_clear;
           end
@@ -319,11 +332,11 @@ module bp_me_cache_controller
           begin
             cache_data_yumi_o = cache_data_v_i;
 
-            state_n = cache_data_v_i ? e_drain : e_ready;
+            state_n = (fsm_rev_ready_then_li | cache_data_v_i) ? e_drain : e_ready;
           end
         e_ready:
           begin
-            if (!cache_pkt_dram_lo)
+            if (!fwd_pkt_dram_lo)
               unique casez (local_addr_li.addr)
                 // Tag ops
                 cache_tagfl_match_addr_gp  : cache_pkt.opcode = TAGFL;
@@ -334,7 +347,7 @@ module bp_me_cache_controller
                 cache_afl_match_addr_gp    : cache_pkt.opcode = AFL;
                 cache_aflinv_match_addr_gp : cache_pkt.opcode = AFLINV;
                 cache_ainv_match_addr_gp   : cache_pkt.opcode = AINV;
-                cache_alock_match_addr_gp  : cache_pkt.opcode = cache_pkt_data_lo[0] ? ALOCK : AUNLOCK;
+                cache_alock_match_addr_gp  : cache_pkt.opcode = fwd_pkt_data_lo[0] ? ALOCK : AUNLOCK;
                 default : begin end
               endcase
             else
@@ -381,21 +394,40 @@ module bp_me_cache_controller
                 default: cache_pkt.opcode = LB;
               endcase
 
-            cache_pkt.addr = cache_pkt_daddr_lo;
-            cache_pkt.data = cache_pkt_data_lo;
-            // This mask is only used for the LM/SM operations for >64 bit mask operations,
-            // but it gets set regardless of operation
+            cache_pkt.addr = fwd_pkt_daddr_lo;
+            cache_pkt.data = fwd_pkt_data_lo;
             cache_pkt.mask = cache_pkt_mask_lo;
 
-            cache_pkt_v_o[cache_pkt_bank_lo] = fsm_fwd_v_li;
-            // fsm_fwd_v_li is not strictly necessary, but avoids x-prop caused by
-            fsm_fwd_yumi_lo = fsm_fwd_v_li & cache_pkt_yumi_i[cache_pkt_bank_lo];
+            if (is_uc_op)
+              begin
+                cache_pkt_v_lo = fsm_fwd_v_li;
+                fsm_fwd_yumi_lo = cache_pkt_yumi_li & ~fsm_fwd_last_li;
+
+                state_n = (fsm_fwd_v_li & fsm_fwd_last_li & cache_pkt_yumi_li) ? e_uc_flush : state_r;
+              end
+            else
+              begin
+                cache_pkt_v_lo = fsm_fwd_v_li;
+                fsm_fwd_yumi_lo = cache_pkt_yumi_li;
+              end
+          end
+        e_uc_flush:
+          begin
+            cache_pkt_v_lo = fsm_fwd_v_li;
+            cache_pkt.opcode = AFLINV;
+            cache_pkt.addr = fwd_pkt_daddr_lo;
+            cache_pkt.data = fwd_pkt_data_lo;
+            cache_pkt.mask = cache_pkt_mask_lo;
+
+            fsm_fwd_yumi_lo = cache_pkt_yumi_li;
+
+            state_n = fsm_fwd_yumi_lo ? e_drain : state_r;
           end
         default : begin end
       endcase
 
-      fsm_rev_v_lo = cache_data_v_i[cache_rev_bank_lo];
-      cache_data_yumi_o[cache_rev_bank_lo] = fsm_rev_ready_and_li & fsm_rev_v_lo;
+      fsm_rev_v_lo = fsm_rev_ready_then_li & cache_data_v_i[cache_rev_bank_lo];
+      cache_data_yumi_o = fsm_rev_ready_then_li ? (fsm_rev_v_lo << cache_rev_bank_lo) : cache_data_v_i;
     end
 
   // synopsys sync_set_reset "reset_i"

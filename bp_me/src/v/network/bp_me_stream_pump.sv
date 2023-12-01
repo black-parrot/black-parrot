@@ -54,7 +54,7 @@ module bp_me_stream_pump
    , input [out_header_width_lp-1:0]                out_fsm_header_i
    , input [out_data_width_p-1:0]                   out_fsm_data_i
    , input                                          out_fsm_v_i
-   , output logic                                   out_fsm_ready_and_o
+   , output logic                                   out_fsm_ready_then_o
 
    , output logic [metadata_fifo_width_p-1:0]       out_fsm_metadata_o
    , output logic [paddr_width_p-1:0]               out_fsm_addr_o
@@ -129,18 +129,18 @@ module bp_me_stream_pump
 
      ,.data_i(in_fsm_metadata_i)
      ,.v_i(in_fsm_yumi_i)
-     ,.ready_o(stream_fifo_ready_lo)
+     ,.ready_param_o(stream_fifo_ready_lo)
 
      ,.data_o(out_fsm_metadata_o)
      ,.v_o(stream_fifo_v_lo)
      ,.yumi_i(stream_fifo_yumi_li)
      );
-  assign stream_fifo_yumi_li = out_fsm_ready_and_o & out_fsm_v_i;
+  assign stream_fifo_yumi_li = out_fsm_ready_then_o & out_fsm_v_i;
 
-  assign in_fsm_v_o          = stream_fifo_ready_lo & in_fsm_v_lo;
-  assign in_fsm_yumi_li      = stream_fifo_ready_lo & in_fsm_yumi_i;
-  assign out_fsm_v_li        = stream_fifo_v_lo     & out_fsm_v_i;
-  assign out_fsm_ready_and_o = stream_fifo_v_lo     & out_fsm_ready_and_lo;
+  assign in_fsm_v_o           = stream_fifo_ready_lo & in_fsm_v_lo;
+  assign in_fsm_yumi_li       = stream_fifo_ready_lo & in_fsm_yumi_i;
+  assign out_fsm_v_li         = stream_fifo_v_lo     & out_fsm_v_i;
+  assign out_fsm_ready_then_o = stream_fifo_v_lo     & out_fsm_ready_and_lo;
 
 endmodule
 
