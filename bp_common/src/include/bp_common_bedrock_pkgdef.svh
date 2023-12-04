@@ -45,10 +45,11 @@
   {
     e_bedrock_mem_rd       = 4'b0000  // Cache block fetch / load / Get (cached in L2/LLC)
     ,e_bedrock_mem_wr      = 4'b0001  // Cache block write / writeback / store / Put (cached in L2/LLC)
-    ,e_bedrock_mem_uc_rd   = 4'b0010  // Uncached load (uncached in L2/LLC)
-    ,e_bedrock_mem_uc_wr   = 4'b0011  // Uncached store (uncached in L2/LLC)
-    ,e_bedrock_mem_pre     = 4'b0100  // Pre-fetch block request from CCE, fill into L2/LLC if able
-    ,e_bedrock_mem_amo     = 4'b0101  // Atomic operation in L2/LLC
+    ,e_bedrock_mem_amo     = 4'b0010  // Atomic operation (cached in L2/LLC)
+    ,e_bedrock_mem_uc_rd   = 4'b0011  // Uncached load (uncached in L2/LLC)
+    ,e_bedrock_mem_uc_wr   = 4'b0100  // Uncached store (uncached in L2/LLC)
+    ,e_bedrock_mem_uc_amo  = 4'b0101  // Uncached store (uncached in L2/LLC)
+    ,e_bedrock_mem_pre     = 4'b1000  // Pre-fetch block request from CCE, fill into L2/LLC if able
   } bp_bedrock_fwd_type_e;
 
   // rev messages are identical to fwd messages and can be safely casted between

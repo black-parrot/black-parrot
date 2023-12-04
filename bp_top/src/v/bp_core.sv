@@ -195,7 +195,7 @@ module bp_core
       localparam lg_l2_slices_lp = `BSG_SAFE_CLOG2(l2_slices_p);
       logic [lg_l2_slices_lp-1:0] slice_id;
       bp_me_dram_hash_encode
-       #(.bp_params_p(bp_params_p), .l2s_dev_base_id_p(l2s_dev_base_id_lp))
+       #(.bp_params_p(bp_params_p))
        slice_select
         (.paddr_i(local_addr)
          ,.data_i()

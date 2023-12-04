@@ -238,14 +238,23 @@ module bp_cce_msg
      ,.o(pe_lce_id_one_hot)
      );
 
-  // CCE PMA - Mem responses
-  logic resp_pma_cacheable_addr_lo;
+  logic fwd_pma_cacheable_addr_li;
   bp_cce_pma
     #(.bp_params_p(bp_params_p))
-    resp_pma
+    fwd_pma
+      (.paddr_i(mem_fwd_header_cast_o.addr)
+       ,.paddr_v_i(mem_fwd_v_o)
+       ,.cacheable_addr_o(fwd_pma_cacheable_addr_li)
+       );
+
+  // CCE PMA - Mem responses
+  logic rev_pma_cacheable_addr_lo;
+  bp_cce_pma
+    #(.bp_params_p(bp_params_p))
+    rev_pma
       (.paddr_i(mem_rev_header_cast_i.addr)
        ,.paddr_v_i(mem_rev_v_i)
-       ,.cacheable_addr_o(resp_pma_cacheable_addr_lo)
+       ,.cacheable_addr_o(rev_pma_cacheable_addr_lo)
        );
 
   // Normal mode FSM states
@@ -456,7 +465,7 @@ module bp_cce_msg
         end // speculative response
 
         // non-speculative memory access, forward directly to LCE
-        else if (mem_rev_header_cast_i.msg_type == e_bedrock_mem_rd) begin
+        else if (mem_rev_header_cast_i.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd}) begin
           // forward the header this cycle
           // forward data next cycle(s)
 
@@ -470,7 +479,7 @@ module bp_cce_msg
           mem_rev_yumi_o = lce_cmd_ready_and_i & lce_cmd_v_o;
 
           // command header
-          lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_data;
+          lce_cmd_header_cast_o.msg_type = mem_rev_header_cast_i.payload.uncached ? e_bedrock_cmd_uc_data : e_bedrock_cmd_data;
           lce_cmd_header_cast_o.addr = mem_rev_header_cast_i.addr;
           lce_cmd_header_cast_o.size = mem_rev_header_cast_i.size;
 
@@ -485,92 +494,48 @@ module bp_cce_msg
 
           // decrement pending bit on last beat
           // must be on last beat to prevent speculative bit read-write race
-          pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i;
+          pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i & (~mem_rev_header_cast_i.payload.uncached | rev_pma_cacheable_addr_lo);
           pending_w_addr_o = mem_rev_header_cast_i.addr;
           pending_o = 1'b0;
 
         end // rd, wr miss from LCE
 
-        // Uncached load response - forward data to LCE
-        else if (mem_rev_header_cast_i.msg_type == e_bedrock_mem_uc_rd) begin
-          // forward the header this cycle
-          // forward data next cycle(s)
-
-          // inform ucode decode that this unit is using the LCE Command network
-          lce_cmd_busy_o = 1'b1;
-          mem_rev_busy_o = 1'b1;
-
-          // send LCE command header, but don't ack the mem response beat since its data
-          // will send after the header sends.
-          lce_cmd_v_o = mem_rev_v_i;
-          mem_rev_yumi_o = lce_cmd_ready_and_i & lce_cmd_v_o;
-
-          // command header
-          lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_uc_data;
-          lce_cmd_header_cast_o.addr = mem_rev_header_cast_i.addr;
-          lce_cmd_header_cast_o.size = mem_rev_header_cast_i.size;
-
-          // command payload
-          lce_cmd_header_cast_o.payload.dst_id = mem_rev_header_cast_i.payload.lce_id;
-          lce_cmd_header_cast_o.payload.src_did = mem_rev_header_cast_i.payload.src_did;
-
-          // command data
-          lce_cmd_data_o = mem_rev_data_i;
-
-          // decrement pending bits if operating in normal mode and request was made
-          // to coherent memory space
-          // must be on last beat to prevent speculative bit read-write race
-          pending_w_v_o = (mem_rev_yumi_o & mem_rev_last_i) & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
-          pending_w_addr_o = mem_rev_header_cast_i.addr;
-          pending_o = 1'b0;
-
-        end // uc_rd
-
         // Uncached store response, send UC Store Done to requesting LCE
-        else if (mem_rev_header_cast_i.msg_type == e_bedrock_mem_uc_wr) begin
+        else if (mem_rev_header_cast_i.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr}) begin
           // forward the header this cycle
           // forward data next cycle(s)
 
           // inform ucode decode that this unit is using the LCE Command network
-          lce_cmd_busy_o = 1'b1;
           mem_rev_busy_o = 1'b1;
 
-          // handshaking
-          // r&v for LCE command header
-          // valid->yumi for mem response header
-          lce_cmd_v_o = mem_rev_v_i;
-          mem_rev_yumi_o = lce_cmd_ready_and_i & lce_cmd_v_o;
+          if (mem_rev_header_cast_i.payload.uncached) begin
+            lce_cmd_busy_o = 1'b1;
+            // handshaking
+            // r&v for LCE command header
+            // valid->yumi for mem response header
+            lce_cmd_v_o = mem_rev_v_i;
+            mem_rev_yumi_o = lce_cmd_ready_and_i & lce_cmd_v_o;
 
-          // command header
-          lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_uc_st_done;
-          lce_cmd_header_cast_o.addr = mem_rev_header_cast_i.addr;
-          // leave size as '0 equivalent, no data in this message
+            // command header
+            lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_uc_st_done;
+            lce_cmd_header_cast_o.addr = mem_rev_header_cast_i.addr;
+            // leave size as '0 equivalent, no data in this message
 
-          // command payload
-          lce_cmd_header_cast_o.payload.dst_id = mem_rev_header_cast_i.payload.lce_id;
-          lce_cmd_header_cast_o.payload.src_did = mem_rev_header_cast_i.payload.src_did;
+            // command payload
+            lce_cmd_header_cast_o.payload.dst_id = mem_rev_header_cast_i.payload.lce_id;
+            lce_cmd_header_cast_o.payload.src_did = mem_rev_header_cast_i.payload.src_did;
+          end else begin
+            mem_rev_yumi_o = mem_rev_v_i;
+          end
 
           // decrement pending bits if operating in normal mode and request was made
           // to coherent memory space
           // must be on last beat to prevent speculative bit read-write race
-          pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
+          pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i & (~mem_rev_header_cast_i.payload.uncached | rev_pma_cacheable_addr_lo);
           pending_w_addr_o = mem_rev_header_cast_i.addr;
           pending_o = 1'b0;
 
         end // uc_wr
-
-        // Dequeue memory writeback response, don't do anything with it
-        // decrement pending bit
-        else if (mem_rev_header_cast_i.msg_type == e_bedrock_mem_wr) begin
-
-          mem_rev_busy_o = 1'b1;
-
-          mem_rev_yumi_o = mem_rev_v_i;
-          pending_w_v_o = mem_rev_yumi_o & mem_rev_last_i;
-          pending_w_addr_o = mem_rev_header_cast_i.addr;
-          pending_o = 1'b0;
-
-        end // wb
 
       end // mem_rev handling
     end // auto_fwd_i enabled or uncached only mode
@@ -634,7 +599,7 @@ module bp_cce_msg
           // form message
           mem_fwd_header_cast_o.addr = lce_req_header_cast_i.addr;
           mem_fwd_header_cast_o.size = lce_req_header_cast_i.size;
-          mem_fwd_header_cast_o.msg_type.fwd = e_bedrock_mem_uc_wr;
+          mem_fwd_header_cast_o.msg_type.fwd = fwd_pma_cacheable_addr_li ? e_bedrock_mem_wr : e_bedrock_mem_uc_wr;
           mem_fwd_header_cast_o.payload.lce_id = lce_req_header_cast_i.payload.src_id;
           mem_fwd_header_cast_o.payload.src_did = lce_req_header_cast_i.payload.src_did;
           mem_fwd_header_cast_o.payload.uncached = 1'b1;
@@ -655,7 +620,7 @@ module bp_cce_msg
           mem_fwd_header_cast_o.payload.lce_id = lce_req_header_cast_i.payload.src_id;
           mem_fwd_header_cast_o.payload.src_did = lce_req_header_cast_i.payload.src_did;
           mem_fwd_header_cast_o.payload.uncached = 1'b1;
-          mem_fwd_header_cast_o.msg_type.fwd = e_bedrock_mem_uc_rd;
+          mem_fwd_header_cast_o.msg_type.fwd = fwd_pma_cacheable_addr_li ? e_bedrock_mem_rd : e_bedrock_mem_uc_rd;
 
           mem_fwd_stall_o = ~lce_req_yumi_o;
 

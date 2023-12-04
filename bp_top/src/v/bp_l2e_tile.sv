@@ -297,7 +297,6 @@ module bp_l2e_tile
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
      ,.stream_mask_p(mem_rev_stream_mask_gp)
      ,.num_source_p(3)
      ,.num_sink_p(1)

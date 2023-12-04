@@ -19,25 +19,18 @@
  */
 
 `include "bp_common_defines.svh"
-`include "bp_me_defines.svh"
 
 module bp_cce_pma
-  import bp_common_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    `declare_bp_proc_params(bp_params_p)
-  )
-  (input [paddr_width_p-1:0]                           paddr_i
-   , input                                             paddr_v_i
-   , output logic                                      cacheable_addr_o
-  );
+ import bp_common_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_default_cfg
+   `declare_bp_proc_params(bp_params_p)
+   )
+  (input [paddr_width_p-1:0] paddr_i
+   , input                   paddr_v_i
+   , output logic            cacheable_addr_o
+   );
 
-  always_comb begin
-
-    cacheable_addr_o = paddr_v_i
-                       ? (paddr_i >= dram_base_addr_gp) && (paddr_i < dram_uc_base_addr_gp)
-                       : 1'b0;
-
-  end
+  assign cacheable_addr_o = paddr_v_i & (paddr_i >= dram_base_addr_gp) & (paddr_i < dram_l2uc_base_addr_gp);
 
 endmodule
 
