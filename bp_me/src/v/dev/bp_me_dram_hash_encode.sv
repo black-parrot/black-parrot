@@ -68,8 +68,6 @@ module bp_me_dram_hash_encode
   assign daddr_o =                     is_tag_op ? tag_addr          : addr          ;
   assign slice_o = (l2_slices_p > 1) ? is_tag_op ? tag_slice         : slice     : '0;
   assign bank_o  = (l2_banks_p  > 1) ? is_tag_op ? tag_addr_li.bank  : bank      : '0;
-  assign index_o = (l2_sets_p   > 1) ? is_tag_op ? tag_addr_li.index : '0        : '0;
-  assign way_o   = (l2_assoc_p  > 1) ? is_tag_op ? tag_addr_li.way   : '0        : '0;
   assign data_o  = data_i;
 
 endmodule

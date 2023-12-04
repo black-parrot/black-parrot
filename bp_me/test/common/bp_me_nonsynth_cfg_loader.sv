@@ -176,21 +176,12 @@ module bp_me_nonsynth_cfg_loader
         state_r <= state_n;
     end
 
-  logic fwd_mem_cacheable_addr_lo;
-  bp_cce_pma
-   #(.bp_params_p(bp_params_p))
-   fwd_pma
-    (.paddr_i(mem_fwd_cast_o.addr)
-     ,.paddr_v_i(mem_fwd_v_o)
-     ,.cacheable_addr_o(fwd_mem_cacheable_addr_lo)
-     );
-
   always_comb
     begin
       mem_fwd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
 
       // uncached store
-      mem_fwd_cast_o.msg_type             = cfg_w_v_lo ? fwd_mem_cacheable_addr_lo ? e_bedrock_mem_wr : e_bedrock_mem_uc_wr : fwd_mem_cacheable_addr_lo ? e_bedrock_mem_rd : e_bedrock_mem_uc_rd;
+      mem_fwd_cast_o.msg_type             = cfg_w_v_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
       mem_fwd_cast_o.subop                = e_bedrock_store;
       mem_fwd_cast_o.addr                 = local_addr_lo;
       mem_fwd_payload                     = '0;

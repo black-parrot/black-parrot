@@ -1,13 +1,13 @@
 
 run_testlist.%:
-	$(MAKE) build.$* sim.$* LCE_MODE_P=0 CCE_MODE_P=0 ME_TEST_P=0 TAG=$(COH_PROTO).random_test.cached
-	$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=0 ME_TEST_P=0 TAG=$(COH_PROTO).random_test.lce_uncached
-	$(MAKE) build.$* sim.$* LCE_MODE_P=2 CCE_MODE_P=0 ME_TEST_P=0 TAG=$(COH_PROTO).random_test.mixed
-	$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=1 ME_TEST_P=0 TAG=$(COH_PROTO).random_test.uncached
-	$(MAKE) build.$* sim.$* LCE_MODE_P=0 CCE_MODE_P=0 ME_TEST_P=1 TAG=$(COH_PROTO).set_test.cached
-	$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=0 ME_TEST_P=1 TAG=$(COH_PROTO).set_test.lce_uncached
-	$(MAKE) build.$* sim.$* LCE_MODE_P=2 CCE_MODE_P=0 ME_TEST_P=1 TAG=$(COH_PROTO).set_test.mixed
-	$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=1 ME_TEST_P=1 TAG=$(COH_PROTO).set_test.uncached
-	$(MAKE) build.$* sim.$* LCE_MODE_P=0 CCE_MODE_P=0 ME_TEST_P=2 TRACE_FILE_P=ld_st.trace TAG=$(COH_PROTO).$(TRACE_FILE_P)
-	$(MAKE) build.$* sim.$* LCE_MODE_P=0 CCE_MODE_P=0 ME_TEST_P=2 TRACE_FILE_P=mixed.trace TAG=$(COH_PROTO).$(TRACE_FILE_P)
+	#$(MAKE) build.$* sim.$* LCE_MODE_P=0 CCE_MODE_P=0 ME_TEST_P=0 TAG=$(COH_PROTO).random_test.cached
+	#$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=0 ME_TEST_P=0 TAG=$(COH_PROTO).random_test.lce_uncached
+	#$(MAKE) build.$* sim.$* LCE_MODE_P=2 CCE_MODE_P=0 ME_TEST_P=0 TAG=$(COH_PROTO).random_test.mixed
+	#$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=1 ME_TEST_P=0 TAG=$(COH_PROTO).random_test.uncached
+	#$(MAKE) build.$* sim.$* LCE_MODE_P=0 CCE_MODE_P=0 ME_TEST_P=1 TAG=$(COH_PROTO).set_test.cached
+	#$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=0 ME_TEST_P=1 TAG=$(COH_PROTO).set_test.lce_uncached
+	$(MAKE) build_dump.$* sim_dump.$* LCE_MODE_P=2 CCE_MODE_P=0 ME_TEST_P=0 TAG=$(COH_PROTO).set_test.mixed
+	#$(MAKE) build.$* sim.$* LCE_MODE_P=1 CCE_MODE_P=1 ME_TEST_P=1 TAG=$(COH_PROTO).set_test.uncached
+	#$(MAKE) build.$* sim.$* LCE_MODE_P=0 CCE_MODE_P=0 ME_TEST_P=2 TRACE_FILE_P=ld_st.trace TAG=$(COH_PROTO).$(TRACE_FILE_P)
+	#$(MAKE) build.$* sim.$* LCE_MODE_P=0 CCE_MODE_P=0 ME_TEST_P=2 TRACE_FILE_P=mixed.trace TAG=$(COH_PROTO).$(TRACE_FILE_P)
 

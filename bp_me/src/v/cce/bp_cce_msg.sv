@@ -243,7 +243,7 @@ module bp_cce_msg
     #(.bp_params_p(bp_params_p))
     fwd_pma
       (.paddr_i(mem_fwd_header_cast_o.addr)
-       ,.paddr_v_i(mem_fwd_v_o)
+       ,.paddr_v_i(mem_fwd_v_o & cce_normal_mode_r)
        ,.cacheable_addr_o(fwd_pma_cacheable_addr_li)
        );
 
@@ -253,7 +253,7 @@ module bp_cce_msg
     #(.bp_params_p(bp_params_p))
     rev_pma
       (.paddr_i(mem_rev_header_cast_i.addr)
-       ,.paddr_v_i(mem_rev_v_i)
+       ,.paddr_v_i(mem_rev_v_i & cce_normal_mode_r)
        ,.cacheable_addr_o(rev_pma_cacheable_addr_lo)
        );
 
@@ -505,11 +505,12 @@ module bp_cce_msg
           // forward the header this cycle
           // forward data next cycle(s)
 
-          // inform ucode decode that this unit is using the LCE Command network
           mem_rev_busy_o = 1'b1;
 
           if (mem_rev_header_cast_i.payload.uncached) begin
+            // inform ucode decode that this unit is using the LCE Command network
             lce_cmd_busy_o = 1'b1;
+
             // handshaking
             // r&v for LCE command header
             // valid->yumi for mem response header
@@ -700,78 +701,51 @@ module bp_cce_msg
               | ~decoded_inst_i.pending_w_v) begin
 
             // defaults
-            mem_fwd_header_cast_o.msg_type.fwd = decoded_inst_i.mem_fwd;
+            if (decoded_inst_i.mem_fwd == e_bedrock_mem_wr)
+              mem_fwd_header_cast_o.msg_type.fwd =
+                fwd_pma_cacheable_addr_li ? e_bedrock_mem_wr : e_bedrock_mem_uc_wr;
+            else if (decoded_inst_i.mem_fwd == e_bedrock_mem_rd)
+              mem_fwd_header_cast_o.msg_type.fwd =
+                fwd_pma_cacheable_addr_li ? e_bedrock_mem_rd : e_bedrock_mem_uc_rd;
+            else if (decoded_inst_i.mem_fwd == e_bedrock_mem_amo)
+              mem_fwd_header_cast_o.msg_type.fwd =
+                fwd_pma_cacheable_addr_li ? e_bedrock_mem_amo : e_bedrock_mem_uc_amo;
+            
             mem_fwd_header_cast_o.addr = addr_i;
             mem_fwd_header_cast_o.size = mshr.msg_size;
             mem_fwd_header_cast_o.payload.lce_id = lce_i;
             mem_fwd_header_cast_o.payload.way_id = way_i;
             mem_fwd_header_cast_o.payload.src_did = mshr.src_did;
             mem_fwd_header_cast_o.payload.state = mshr.next_coh_state;
+            mem_fwd_header_cast_o.payload.uncached = mshr.flags.uncached;
 
             // set speculative bit if instruction indicates it will be written
-            mem_fwd_header_cast_o.payload.speculative = decoded_inst_i.spec_w_v & decoded_inst_i.spec_v
-                                                         & decoded_inst_i.spec_bits.spec;
+            mem_fwd_header_cast_o.payload.speculative =
+              decoded_inst_i.spec_w_v & decoded_inst_i.spec_v & decoded_inst_i.spec_bits.spec;
 
             unique case (decoded_inst_i.mem_fwd)
               // uncached read - send single beat, no data
-              e_bedrock_mem_uc_rd: begin
+              e_bedrock_mem_uc_rd, e_bedrock_mem_rd: begin
                 mem_fwd_v_o = ~mem_credits_empty;
-                // set uncached bit
-                mem_fwd_header_cast_o.payload.uncached = 1'b1;
                 // stall if single beat doesn't send
-                mem_fwd_stall_o = ~(mem_fwd_ready_and_i & mem_fwd_v_o);
-              end
-
-              // cached read - send single beat, no data
-              e_bedrock_mem_rd: begin
-                mem_fwd_v_o = ~mem_credits_empty;
-                mem_fwd_header_cast_o.addr = addr_i;
-                // set uncached bit based on uncached flag in MSHR
-                // this bit indicates if the LCE should receive the data as cached or uncached
-                // when it returns from memory
-                mem_fwd_header_cast_o.payload.uncached = mshr.flags.uncached;
-                // stall if single beat doesn't send
-                mem_fwd_stall_o = ~(mem_fwd_ready_and_i & mem_fwd_v_o);
+                mem_fwd_stall_o = ~(mem_fwd_ready_and_i & mem_fwd_v_o & mem_fwd_last_i);
               end
 
               // uncached store - send one or more beats with data from LCE Request
-              e_bedrock_mem_uc_wr: begin
-                mem_fwd_v_o = lce_req_v_i & ~mem_credits_empty;
-                lce_req_yumi_o = mem_fwd_ready_and_i & mem_fwd_v_o;
+              e_bedrock_mem_uc_wr, e_bedrock_mem_wr: begin
+                mem_fwd_v_o = ~mem_credits_empty & (mshr.flags.uncached ? lce_req_v_i : lce_resp_v_i);
+                lce_req_yumi_o = mshr.flags.uncached & mem_fwd_ready_and_i & mem_fwd_v_o;
+                lce_resp_yumi_o = ~mshr.flags.uncached & mem_fwd_ready_and_i & mem_fwd_v_o;
 
                 // patch through data
-                mem_fwd_data_o = lce_req_data_i;
-
-                // set uncached bit
-                mem_fwd_header_cast_o.payload.uncached = 1'b1;
+                mem_fwd_data_o = mshr.flags.uncached ? lce_req_data_i : lce_resp_data_i;
 
                 // stall until the message send completes
                 mem_fwd_stall_o = ~(mem_fwd_ready_and_i & mem_fwd_v_o & mem_fwd_last_i);
-
-              end
-
-              // cached store - send one or more beats with data from LCE response
-              e_bedrock_mem_wr: begin
-                mem_fwd_v_o = lce_resp_v_i & ~mem_credits_empty;
-                lce_resp_yumi_o = mem_fwd_ready_and_i & mem_fwd_v_o;
-
-                // patch through data
-                mem_fwd_data_o = lce_resp_data_i;
-
-                mem_fwd_header_cast_o.addr = addr_i;
-                // set uncached bit based on uncached flag in MSHR
-                // this bit indicates if the LCE should receive the data as cached or uncached
-                // when it returns from memory
-                mem_fwd_header_cast_o.payload.uncached = mshr.flags.uncached;
-
-                // stall until the message send completes
-                mem_fwd_stall_o = ~(mem_fwd_ready_and_i & mem_fwd_v_o & mem_fwd_last_i);
-
               end
 
               e_bedrock_mem_pre: begin
                 // TODO: implement prefetch functionality
-                mem_fwd_header_cast_o.payload.prefetch = 1'b1;
               end
 
               default: begin

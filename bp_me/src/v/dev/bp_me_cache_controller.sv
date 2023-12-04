@@ -244,16 +244,17 @@ module bp_me_cache_controller
      );
 
   logic cache_pkt_v_lo;
-  wire [lg_l2_banks_lp-1:0] cache_pkt_bank_lo = is_clear ? cnt_bank_lo : fwd_pkt_bank_lo;
+  wire [lg_l2_banks_lp-1:0] cache_fwd_bank_lo = is_clear ? cnt_bank_lo : fwd_pkt_bank_lo;
   bsg_decode_with_v
    #(.num_out_p(l2_banks_p))
    decode
-    (.i(cache_pkt_bank_lo)
+    (.i(cache_fwd_bank_lo)
      ,.v_i(cache_pkt_v_lo)
      ,.o(cache_pkt_v_o)
      );
-  wire cache_pkt_yumi_li = fsm_fwd_v_li & cache_pkt_yumi_i[cache_pkt_bank_lo];
+  wire cache_pkt_yumi_li = fsm_fwd_v_li & cache_pkt_yumi_i[cache_fwd_bank_lo];
 
+  logic [lg_l2_banks_lp-1:0] cache_rev_bank_lo;
   assign fsm_fwd_metadata_li = {fwd_pkt_bank_lo, fsm_fwd_header_li};
   assign {cache_rev_bank_lo, fsm_rev_header_lo} = fsm_rev_metadata_lo;
 

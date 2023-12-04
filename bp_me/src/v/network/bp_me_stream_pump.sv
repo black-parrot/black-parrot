@@ -117,7 +117,7 @@ module bp_me_stream_pump
      ,.fsm_last_o(out_fsm_last_o)
      );
 
-  logic stream_fifo_ready_lo, stream_fifo_yumi_li;
+  logic stream_fifo_ready_lo, stream_fifo_v_lo, stream_fifo_yumi_li;
   bsg_fifo_1r1w_small
    #(.width_p(metadata_fifo_width_p)
      ,.els_p(metadata_fifo_els_p)

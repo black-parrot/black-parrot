@@ -828,7 +828,6 @@ module bp_cce
 
   // Instruction Stall Detection
   bp_cce_inst_stall
-    #()
     inst_stall
      (.decoded_inst_i(decoded_inst_lo)
 

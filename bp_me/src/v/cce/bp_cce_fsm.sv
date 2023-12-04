@@ -438,7 +438,7 @@ module bp_cce_fsm
    #(.bp_params_p(bp_params_p))
    rev_pma
     (.paddr_i(fsm_rev_addr_li)
-     ,.paddr_v_i(fsm_rev_v_li)
+     ,.paddr_v_i(fsm_rev_v_li & cce_normal_mode_r)
      ,.cacheable_addr_o(rev_pma_cacheable_addr_lo)
      );
 

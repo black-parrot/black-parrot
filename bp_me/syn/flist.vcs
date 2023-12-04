@@ -192,6 +192,7 @@ $BP_ME_DIR/src/v/dev/bp_me_cfg_slice.sv
 $BP_ME_DIR/src/v/network/bp_me_addr_to_cce_id.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_gearbox.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_control.sv
