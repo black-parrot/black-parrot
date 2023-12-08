@@ -49,7 +49,7 @@ module bp_nonsynth_nbf_loader
   localparam max_nbf_index_lp = 2**25;
   localparam nbf_index_width_lp = `BSG_SAFE_CLOG2(max_nbf_index_lp);
   localparam nbf_data_width_lp = 64;
-  localparam nbf_addr_width_lp = (paddr_width_p+3)/4*4;
+  localparam nbf_addr_width_lp = nbf_data_width_lp;
   localparam nbf_opcode_width_lp = 8;
   typedef struct packed
   {

@@ -246,7 +246,7 @@ module bp_nonsynth_host
   assign pc_gen_trace_en_o   = pc_gen_trace_p;
   assign pc_profile_en_o     = pc_profile_p;
   assign branch_profile_en_o = br_profile_p;
-  assign cosim_en_o          = cosim_p;
+  assign cosim_en_o          = cosim_p & ~&finish_r;
   assign dev_trace_en_o      = dev_trace_p;
 
   assign data_li[0] = '0;

@@ -36,27 +36,6 @@ else
 	export AMOEN ?= $(_AMOEN)
 endif
 
-e_bp_unicore_megaparrot_cfg_paddr_width               := 56
-e_bp_multicore_1_megaparrot_cfg_paddr_width           := 56
-e_bp_multicore_1_cce_ucode_megaparrot_cfg_paddr_width := 56
-
-e_bp_unicore_miniparrot_cfg_paddr_width               := 34
-e_bp_multicore_1_miniparrot_cfg_paddr_width           := 34
-e_bp_multicore_1_cce_ucode_miniparrot_cfg_paddr_width := 34
-
-e_bp_unicore_tinyparrot_cfg_paddr_width               := 34
-e_bp_multicore_1_tinyparrot_cfg_paddr_width           := 34
-e_bp_multicore_1_cce_ucode_tinyparrot_cfg_paddr_width := 34
-
-e_bp_default_cfg_paddr_width                          := 40
-
-_PADDR_WIDTH :=$($(CFG)_paddr_width)
-ifeq ($(_PADDR_WIDTH),)
-	export PADDR_WIDTH ?= 40
-else
-	export PADDR_WIDTH ?= $(_PADDR_WIDTH)
-endif
-
 e_bp_custom_cfg_ucode := 1
 $(CFG)_ucode ?= $(findstring cce_ucode,$(CFG))
 
