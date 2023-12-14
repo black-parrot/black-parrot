@@ -1,10 +1,14 @@
+# Upstream Libraries
 [submodule "external/basejump_stl"]
     path = external/basejump_stl
     url = https://github.com/bespoke-silicon-group/basejump_stl.git
     branch = master
-    update = checkout
+    ignore = untracked
+
+# BlackParrot Library Forks
 [submodule "external/HardFloat"]
     path = external/HardFloat
     url = https://github.com/bsg-external/HardFloat.git
     branch = master
-    update = checkout
+    ignore = untracked
+

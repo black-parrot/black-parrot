@@ -11,7 +11,7 @@ dromajo_cosim_state_t* dromajo_pointer;
 vector<bool>* finish;
 char dromajo_init_done = 0;
 
-extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory_size, bool checkpoint, bool amo_en) {
+extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory_size, bool checkpoint) {
   if (!hartid) {
     if (!dromajo_init_done) {
       dromajo_init_done = 1;
@@ -25,36 +25,18 @@ extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus, int memory
       sprintf(ncpus_str, "--ncpus=%d", ncpus);
       char memsize_str[50];
       sprintf(memsize_str, "--memory_size=%d", memory_size);
-      char mmio_str[50];
-      sprintf(mmio_str, "--mmio_range=0x20000:0x80000000");
       char load_str[50];
       sprintf(load_str, "--load=prog");
-      char amo_str[50];
-      sprintf(amo_str, "--enable_amo");
       char prog_str[50];
       sprintf(prog_str, "prog.elf");
-      char mulh_str[50];
-      sprintf(mulh_str, "--enable_mulh");
 
       if (checkpoint) {
-        if (amo_en) {
-          char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, amo_str, load_str, prog_str, mulh_str};
-          dromajo_pointer = dromajo_cosim_init(8, argv);
-        }
-        else {
-          char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, load_str, prog_str, mulh_str};
-          dromajo_pointer = dromajo_cosim_init(7, argv);
-        }
+        char* argv[] = {dromajo_str, ncpus_str, memsize_str, load_str, prog_str};
+        dromajo_pointer = dromajo_cosim_init(5, argv);
       }
       else {
-        if (amo_en) {
-          char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, amo_str, prog_str, mulh_str};
-          dromajo_pointer = dromajo_cosim_init(7, argv);
-        }
-        else {
-          char* argv[] = {dromajo_str, ncpus_str, memsize_str, mmio_str, prog_str, mulh_str};
-          dromajo_pointer = dromajo_cosim_init(6, argv);
-        }
+        char* argv[] = {dromajo_str, ncpus_str, memsize_str, prog_str};
+        dromajo_pointer = dromajo_cosim_init(4, argv);
       }
     }
   }
@@ -96,5 +78,6 @@ extern "C" bool check_terminate() {
   for (int i = 0; i < finish->size(); i++)
     if (finish->at(i) == false)
       return false;
+
   return true;
 }

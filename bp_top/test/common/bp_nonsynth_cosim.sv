@@ -54,7 +54,7 @@ module bp_nonsynth_cosim
     , input                                   cosim_reset_i
     );
 
-  import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint, bit amo_en);
+  import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
   import "DPI-C" context function int dromajo_step(int hartid,
                                                    longint pc,
                                                    int insn,
@@ -254,7 +254,7 @@ module bp_nonsynth_cosim
 
   always_ff @(negedge reset_i)
     if (cosim_en_i)
-      dromajo_init(string'(config_file_i), mhartid_i, num_core_i, memsize_i, checkpoint_i, amo_en_i);
+      dromajo_init(string'(config_file_i), mhartid_i, num_core_i, memsize_i, checkpoint_i);
 
   wire [dword_width_gp-1:0] cosim_pc_li     = `BSG_SIGN_EXTEND(commit_pc_r, dword_width_gp);
   wire [instr_width_gp-1:0] cosim_instr_li  = commit_instr_r;
@@ -267,7 +267,7 @@ module bp_nonsynth_cosim
   always_ff @(posedge cosim_clk_i)
     if (cosim_reset_i)
       ret_code <= 0;
-    else if (cosim_en_i & commit_fifo_yumi_li & trap_v_r)
+    else if (cosim_en_i & commit_fifo_yumi_li & !finish_r & trap_v_r)
       dromajo_trap(mhartid_i, cosim_cause_li);
     else if (~commit_debug_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
       ret_code <= dromajo_step(mhartid_i, cosim_pc_li, cosim_instr_li, cosim_rd_li, cosim_status_li);

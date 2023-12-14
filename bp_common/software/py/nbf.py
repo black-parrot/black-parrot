@@ -79,7 +79,7 @@ cfg_core_offset = 24
 class NBF:
 
   # constructor
-  def __init__(self, ncpus, ucode_file, mem_file, mem_size, checkpoint_file, config, skip_zeros, addr_width,
+  def __init__(self, ncpus, ucode_file, mem_file, mem_size, checkpoint_file, config, skip_zeros,
           data_width, boot_pc, debug, verify):
 
     # input parameters
@@ -90,8 +90,8 @@ class NBF:
     self.config = config
     self.checkpoint_file = checkpoint_file
     self.skip_zeros = skip_zeros
-    self.addr_width = (addr_width+3)/4*4
     self.data_width = data_width
+    self.addr_width = data_width
     self.boot_pc = boot_pc
     self.debug = debug
     self.verify = verify
@@ -296,7 +296,6 @@ if __name__ == "__main__":
   parser.add_argument("--config", dest='config', action='store_true', help='Do config over nbf')
   parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help='checkpoint nbf file')
   parser.add_argument('--skip_zeros', dest='skip_zeros', action='store_true', help='skip zero DRAM entries')
-  parser.add_argument('--addr_width', type=int, default=40, help='Physical address width')
   parser.add_argument('--data_width', type=int, default=64, help='Data width')
   parser.add_argument('--boot_pc', dest='boot_pc', help='The first PC to be fetched')
   parser.add_argument('--debug', dest='debug', action='store_true', help='Whether to start in debug mode')
@@ -305,5 +304,5 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.mem_size, args.checkpoint_file, args.config,
-          args.skip_zeros, args.addr_width, args.data_width, args.boot_pc, args.debug, args.verify)
+          args.skip_zeros, args.data_width, args.boot_pc, args.debug, args.verify)
   converter.dump()
