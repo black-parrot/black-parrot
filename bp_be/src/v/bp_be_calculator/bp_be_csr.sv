@@ -84,15 +84,15 @@ module bp_be_csr
   `declare_csr(dscratch1);
 
   // We have no vendorid currently
-  wire [dword_width_gp-1:0] mvendorid_lo = 64'h5e5;
+  wire [dword_width_gp-1:0] mvendorid_lo = 64'h0;
   // https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md
   //   Lucky 13 (*v*)
-  wire [dword_width_gp-1:0] marchid_lo = 64'h8000000000000002;
+  wire [dword_width_gp-1:0] marchid_lo = 13;
   // 0: Tapeout 0, July 2019
   // 1: Tapeout 1, June 2021
   // 2: Tapeout 2, Sept 2022
   // 3: Current
-  wire [dword_width_gp-1:0] mimpid_lo  = 64'd1;
+  wire [dword_width_gp-1:0] mimpid_lo  = 64'd3;
   wire [dword_width_gp-1:0] mhartid_lo = cfg_bus_cast_i.core_id;
 
   `declare_csr(mstatus);
