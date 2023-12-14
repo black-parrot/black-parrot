@@ -388,11 +388,11 @@ RV64_BENCHMARK_TESTS := \
 RV64_BENCHMARK_TESTLIST := $(addprefix riscv-tests@, $(RV64_BENCHMARK_TESTS))
 
 RISCV_TESTLIST := \
-	$(RV64_P_ISA_TESTLIST) \
-	$(RV64_V_ISA_TESTLIST) \
-	$(RV64_PT_ISA_TESTLIST)\
-   	$(RV64_VT_ISA_TESTLIST)\
-   	$(RV64_BENCHMARK_TESTLIST)
+    $(RV64_P_ISA_TESTLIST) \
+    $(RV64_V_ISA_TESTLIST) \
+    $(RV64_PT_ISA_TESTLIST)\
+    $(RV64_VT_ISA_TESTLIST)\
+    $(RV64_BENCHMARK_TESTLIST)
 
 COREMARK_TESTS := coremark
 
@@ -531,6 +531,175 @@ RISCVDV_TESTLIST += $(addprefix riscv-dv@, $(addsuffix _16, $(RISCVDV_TESTS)))
 RISCVDV_TESTLIST += $(addprefix riscv-dv@, $(addsuffix _17, $(RISCVDV_TESTS)))
 RISCVDV_TESTLIST += $(addprefix riscv-dv@, $(addsuffix _18, $(RISCVDV_TESTS)))
 RISCVDV_TESTLIST += $(addprefix riscv-dv@, $(addsuffix _19, $(RISCVDV_TESTS)))
+
+COMPLIANCE_TESTS := \
+  add-01.S         \
+  addi-01.S         \
+  addiw-01.S         \
+  addw-01.S         \
+  amoadd.d-01.S         \
+  amoadd.w-01.S         \
+  amoand.d-01.S         \
+  amoand.w-01.S         \
+  amomax.d-01.S         \
+  amomaxu.d-01.S         \
+  amomaxu.w-01.S         \
+  amomax.w-01.S         \
+  amomin.d-01.S         \
+  amominu.d-01.S         \
+  amominu.w-01.S         \
+  amomin.w-01.S         \
+  amoor.d-01.S         \
+  amoor.w-01.S         \
+  amoswap.d-01.S         \
+  amoswap.w-01.S         \
+  amoxor.d-01.S         \
+  amoxor.w-01.S         \
+  and-01.S         \
+  andi-01.S         \
+  auipc-01.S         \
+  beq-01.S         \
+  bge-01.S         \
+  bgeu-01.S         \
+  blt-01.S         \
+  bltu-01.S         \
+  bne-01.S         \
+  cadd-01.S         \
+  caddi-01.S         \
+  caddi16sp-01.S         \
+  caddi4spn-01.S         \
+  caddiw-01.S         \
+  caddw-01.S         \
+  cand-01.S         \
+  candi-01.S         \
+  cbeqz-01.S         \
+  cbnez-01.S         \
+  cebreak-01.S         \
+  cj-01.S         \
+  cjalr-01.S         \
+  cjr-01.S         \
+  cld-01.S         \
+  cldsp-01.S         \
+  cli-01.S         \
+  clui-01.S         \
+  clw-01.S         \
+  clwsp-01.S         \
+  cmv-01.S         \
+  cnop-01.S         \
+  cor-01.S         \
+  csd-01.S         \
+  csdsp-01.S         \
+  cslli-01.S         \
+  csrai-01.S         \
+  csrli-01.S         \
+  csub-01.S         \
+  csubw-01.S         \
+  csw-01.S         \
+  cswsp-01.S         \
+  cxor-01.S         \
+  div-01.S         \
+  divu-01.S         \
+  divuw-01.S         \
+  divw-01.S         \
+  ebreak.S         \
+  ecall.S         \
+  fcvt.d.l_b25-01.S         \
+  fcvt.d.l_b26-01.S         \
+  fcvt.d.lu_b25-01.S         \
+  fcvt.d.lu_b26-01.S         \
+  fcvt.l.d_b1-01.S         \
+  fcvt.l.d_b22-01.S         \
+  fcvt.lu.d_b23-01.S         \
+  fcvt.lu.d_b24-01.S         \
+  fcvt.lu.d_b27-01.S         \
+  fcvt.lu.d_b28-01.S         \
+  fcvt.lu.d_b29-01.S         \
+  fcvt.lu.s_b1-01.S         \
+  fcvt.lu.s_b22-01.S         \
+  fcvt.lu.s_b23-01.S         \
+  fcvt.lu.s_b24-01.S         \
+  fcvt.lu.s_b27-01.S         \
+  fcvt.lu.s_b28-01.S         \
+  fcvt.lu.s_b29-01.S         \
+  fcvt.s.l_b25-01.S         \
+  fcvt.s.l_b26-01.S         \
+  fcvt.s.lu_b25-01.S         \
+  fcvt.s.lu_b26-01.S         \
+  fence-01.S         \
+  Fencei.S         \
+  fmv.d.x_b25-01.S         \
+  fmv.d.x_b26-01.S         \
+  fmv.x.d_b1-01.S         \
+  fmv.x.d_b22-01.S         \
+  fmv.x.d_b23-01.S         \
+  fmv.x.d_b24-01.S         \
+  fmv.x.d_b27-01.S         \
+  fmv.x.d_b28-01.S         \
+  fmv.x.d_b29-01.S         \
+  jal-01.S         \
+  jalr-01.S         \
+  lb-align-01.S         \
+  lbu-align-01.S         \
+  ld-align-01.S         \
+  lh-align-01.S         \
+  lhu-align-01.S         \
+  lui-01.S         \
+  lw-align-01.S         \
+  lwu-align-01.S         \
+  misalign1-jalr-01.S         \
+  misalign2-jalr-01.S         \
+  misalign-beq-01.S         \
+  misalign-bge-01.S         \
+  misalign-bgeu-01.S         \
+  misalign-blt-01.S         \
+  misalign-bltu-01.S         \
+  misalign-bne-01.S         \
+  misalign-jal-01.S         \
+  misalign-ld-01.S         \
+  misalign-lh-01.S         \
+  misalign-lhu-01.S         \
+  misalign-lw-01.S         \
+  misalign-lwu-01.S         \
+  misalign-sd-01.S         \
+  misalign-sh-01.S         \
+  misalign-sw-01.S         \
+  mul-01.S         \
+  mulh-01.S         \
+  mulhsu-01.S         \
+  mulhu-01.S         \
+  mulw-01.S         \
+  or-01.S         \
+  ori-01.S         \
+  rem-01.S         \
+  remu-01.S         \
+  remuw-01.S         \
+  remw-01.S         \
+  sb-align-01.S         \
+  sd-align-01.S         \
+  sh-align-01.S         \
+  sll-01.S         \
+  slli-01.S         \
+  slliw-01.S         \
+  sllw-01.S         \
+  slt-01.S         \
+  slti-01.S         \
+  sltiu-01.S         \
+  sltu-01.S         \
+  sra-01.S         \
+  srai-01.S         \
+  sraiw-01.S         \
+  sraw-01.S         \
+  srl-01.S         \
+  srli-01.S         \
+  srliw-01.S         \
+  srlw-01.S         \
+  sub-01.S         \
+  subw-01.S         \
+  sw-align-01.S         \
+  xor-01.S         \
+  xori-01.S
+
+COMPLIANCE_TESTLIST := $(addprefix compliance@, $(COMPLIANCE_TESTS))
 
 SPEC_TESTS := \
   177.mesa \
