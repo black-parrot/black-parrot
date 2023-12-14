@@ -778,7 +778,8 @@ module bp_be_dcache
   wire wt_req              = v_tv_r & ~uncached_tv_r & decode_tv_r.store_op & ~sc_fail_tv & !writeback_p & ~snoop_tv_r;
 
   // Uncached stores and writethrough requests are non-blocking
-  assign nonblocking_req   = (uncached_store_req | wt_req)
+  assign nonblocking_req   = (uncached_store_req)
+                             || wt_req
                              || (binval_req | bclean_req | bflush_req);
   assign blocking_req      = (load_req | store_req | uncached_amo_req | uncached_load_req)
                              || (inval_req | clean_req | flush_req);
@@ -911,7 +912,7 @@ module bp_be_dcache
   wire tag_mem_slow_write = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
   wire tag_mem_fast_write = (v_tv_r & uncached_tv_r & load_hit_tv & ~snoop_tv_r)
     || (v_tv_r & decode_tv_r.binval_op & load_hit_tv & ~snoop_tv_r);
-  assign tag_mem_write_hazard = (tag_mem_fast_read & tag_mem_fast_write);
+  assign tag_mem_write_hazard = tag_mem_fast_write;
 
   assign tag_mem_v_li = tag_mem_fast_read | tag_mem_slow_read | tag_mem_slow_write | tag_mem_fast_write;
   assign tag_mem_w_li = tag_mem_slow_write | tag_mem_fast_write;
