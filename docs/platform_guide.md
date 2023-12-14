@@ -145,19 +145,19 @@ These addresses are per-tile. To access them on a tile N, prepend N to the addre
 |          | putch       | 10_3000-10_3fff | putch[x] puts a character into a private terminal for core x. This is useful for debugging multicore simulations                  |
 | Bootrom* | bootrom     | 11_0000-11_ffff | The bootrom which bootstraps BlackParrot in bootrom configurations                                                                |
 | CFG      | unused      | 20_0000         | Unused.                                                                                                                           |
-|          | freeze      | 20_0004         | Freezes the core, preventing all fetch operations. Will drain the pipeline if set during runtime. Defaults to frozen.             |
-|          | npc         | 20_0008         | When freeze is lowered or a debug irq is raised,this becomes the architectural NPC. Defaults to bootrom address. 16B aligned.     |
-|          | core_id     | 20_000c         | Read-only. This tile's core id. This is a local id within the chip                                                                |
-|          | did         | 20_0010         | Read-only. This tile's domain id. This is an chip-wide identifier                                                                 |
-|          | cord        | 20_0014         | Read-only. This tile's coordinate. In {y,x} format                                                                                |
-|          | host_did    | 20_0018         | Host domain id. This identifies which direction to send host packets, relative to our own domain id                               |
-|          | hio_mask    | 20_001c         | A mask of the upper uncached bits of an address. If an address width an unset domain bit is loaded, it will cause an access fault |
+|          | freeze      | 20_0008         | Freezes the core, preventing all fetch operations. Will drain the pipeline if set during runtime. Defaults to frozen.             |
+|          | npc         | 20_0010         | When freeze is lowered or a debug irq is raised,this becomes the architectural NPC. Defaults to bootrom address. 16B aligned.     |
+|          | core_id     | 20_0018         | Read-only. This tile's core id. This is a local id within the chip                                                                |
+|          | did         | 20_0020         | Read-only. This tile's domain id. This is an chip-wide identifier                                                                 |
+|          | cord        | 20_0028         | Read-only. This tile's coordinate. In {y,x} format                                                                                |
+|          | host_did    | 20_0030         | Host domain id. This identifies which direction to send host packets, relative to our own domain id                               |
+|          | hio_mask    | 20_0038         | A mask of the upper uncached bits of an address. If an address width an unset domain bit is loaded, it will cause an access fault |
 |          | icache_id   | 20_0200         | Read-only. The I$ Engine ID.                                                                                                      |
-|          | icache_mode | 20_0204         | The I$ mode. Either uncached, cached, or nonspec (will not send a speculative miss)                                               |
+|          | icache_mode | 20_0208         | The I$ mode. Either uncached, cached, or nonspec (will not send a speculative miss)                                               |
 |          | dcache_id   | 20_0400         | Read-only. The D$ Engine ID.                                                                                                      |
-|          | dcache_mode | 20_0404         | The D$ mode. Either uncached or cached. (D$ will never send speculative misses)                                                   |
+|          | dcache_mode | 20_0408         | The D$ mode. Either uncached or cached. (D$ will never send speculative misses)                                                   |
 |          | cce_id      | 20_0600         | Read-only. The CCE Engine ID.                                                                                                     |
-|          | cce_mode    | 20_0604         | The CCE mode. Either uncached or cached. Undefined behavior results when sending cached requests to a CCE in uncached mode        |
+|          | cce_mode    | 20_0608         | The CCE mode. Either uncached or cached. Undefined behavior results when sending cached requests to a CCE in uncached mode        |
 |          | cce_ucode   | 20_8000-20_8fff | The CCE instruction RAM. Must be written before enabling cached mode in a microcoded CCE                                          |
 | CLINT    | mipi        | 30_0000         | mip (software interrupt) bit                                                                                                      |
 |          | mtimecmp    | 30_4000         | Timer compare register. When mtime > mtimecmp, a timer irq is raised in the core                                                  |
