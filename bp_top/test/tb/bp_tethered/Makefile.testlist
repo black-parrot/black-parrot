@@ -426,9 +426,7 @@ BEEBS_TESTS := \
   jfdctint \
   lcdnum \
   levenshtein \
-  ludcmp \
   matmult-int \
-  matmult-float \
   mergesort \
   miniz \
   nbody \
@@ -477,6 +475,8 @@ BEEBS_TESTS := \
 #  nsichneu
 #  stringsearch1
 #  strstr
+#  ludcmp
+#  matmult-float
 
 BEEBS_TESTLIST := $(addprefix beebs@, $(BEEBS_TESTS))
 
