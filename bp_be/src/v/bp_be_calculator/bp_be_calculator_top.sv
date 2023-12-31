@@ -490,7 +490,8 @@ module bp_be_calculator_top
       comp_stage_n[3].rd_data    |= pipe_mul_data_v_lo         ? pipe_mul_data_lo         : '0;
       comp_stage_n[4].rd_data    |= pipe_fma_data_v_lo         ? pipe_fma_data_lo         : '0;
 
-      comp_stage_n[0].fflags     |= injection                  ? dispatch_pkt_cast_i.rs1  : '0;
+      // Injected instructions can carry a payload in imm
+      comp_stage_n[0].fflags     |= injection                  ? dispatch_pkt_cast_i.imm  : '0;
       comp_stage_n[2].fflags     |= pipe_aux_data_v_lo         ? pipe_aux_fflags_lo       : '0;
       comp_stage_n[4].fflags     |= pipe_fma_data_v_lo         ? pipe_fma_fflags_lo       : '0;
 
