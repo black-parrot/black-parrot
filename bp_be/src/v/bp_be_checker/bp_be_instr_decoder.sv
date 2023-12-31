@@ -255,7 +255,6 @@ module bp_be_instr_decoder
             decode_cast_o.dcache_w_v = 1'b1;
             decode_cast_o.mem_v      = 1'b1;
             decode_cast_o.ops_v      = instr inside {`RV64_FS_W};
-            decode_cast_o.fflags_w_v = 1'b1;
 
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
 
@@ -422,7 +421,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FCVT_DS};
                   decode_cast_o.fu_op        = e_aux_op_f2f;
                 end
@@ -430,7 +428,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.opw_v        = instr inside {`RV64_FCVT_WS};
                   decode_cast_o.ops_v        = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_f2i;
@@ -439,7 +436,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.opw_v        = instr inside {`RV64_FCVT_WUS};
                   decode_cast_o.ops_v        = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_f2iu;
@@ -448,7 +444,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.opw_v        = instr inside {`RV64_FCVT_SW};
                   decode_cast_o.ops_v        = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_i2f;
@@ -457,7 +452,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.opw_v        = instr inside {`RV64_FCVT_SWU};
                   decode_cast_o.ops_v        = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_iu2f;
@@ -466,7 +460,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.opw_v        = instr inside {`RV64_FCVT_WD};
                   decode_cast_o.fu_op        = e_aux_op_f2i;
                 end
@@ -474,7 +467,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.opw_v        = instr inside {`RV64_FCVT_WUD};
                   decode_cast_o.fu_op        = e_aux_op_f2iu;
                 end
@@ -482,7 +474,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.opw_v        = instr inside {`RV64_FCVT_DW};
                   decode_cast_o.fu_op        = e_aux_op_i2f;
                 end
@@ -490,7 +481,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.opw_v        = instr inside {`RV64_FCVT_DWU};
                   decode_cast_o.fu_op        = e_aux_op_iu2f;
                 end
@@ -498,7 +488,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.opw_v        = instr inside {`RV64_FMV_XW};
                   decode_cast_o.ops_v        = instr inside {`RV64_FMV_XW};
                   decode_cast_o.fu_op        = e_aux_op_fmvi;
@@ -507,7 +496,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.opw_v        = instr inside {`RV64_FMV_WX};
                   decode_cast_o.ops_v        = instr inside {`RV64_FMV_WX};
                   decode_cast_o.fu_op        = e_aux_op_imvf;
@@ -516,7 +504,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FSGNJ_S};
                   decode_cast_o.fu_op        = e_aux_op_fsgnj;
                 end
@@ -524,7 +511,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FSGNJN_S};
                   decode_cast_o.fu_op        = e_aux_op_fsgnjn;
                 end
@@ -532,7 +518,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FSGNJX_S};
                   decode_cast_o.fu_op        = e_aux_op_fsgnjx;
                 end
@@ -540,7 +525,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FMIN_S};
                   decode_cast_o.fu_op        = e_aux_op_fmin;
                 end
@@ -548,7 +532,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FMAX_S};
                   decode_cast_o.fu_op        = e_aux_op_fmax;
                 end
@@ -556,7 +539,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FEQ_S};
                   decode_cast_o.fu_op        = e_aux_op_feq;
                 end
@@ -564,7 +546,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FLT_S};
                   decode_cast_o.fu_op        = e_aux_op_flt;
                 end
@@ -572,7 +553,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FLE_S};
                   decode_cast_o.fu_op        = e_aux_op_fle;
                 end
@@ -580,7 +560,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FCLASS_S};
                   decode_cast_o.fu_op        = e_aux_op_fclass;
                 end
@@ -588,7 +567,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_fma_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FADD_S};
                   decode_cast_o.fu_op        = e_fma_op_fadd;
                 end
@@ -596,7 +574,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_fma_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FSUB_S};
                   decode_cast_o.fu_op        = e_fma_op_fsub;
                 end
@@ -604,7 +581,6 @@ module bp_be_instr_decoder
                 begin
                   decode_cast_o.pipe_fma_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.fflags_w_v   = 1'b1;
                   decode_cast_o.ops_v        = instr inside {`RV64_FMUL_S};
                   decode_cast_o.fu_op        = e_fma_op_fmul;
                 end
@@ -633,7 +609,6 @@ module bp_be_instr_decoder
           begin
             decode_cast_o.pipe_fma_v = 1'b1;
             decode_cast_o.frf_w_v    = 1'b1;
-            decode_cast_o.fflags_w_v = 1'b1;
             decode_cast_o.ops_v      = (instr.fmt == e_fmt_single);
 
             casez (instr.opcode)

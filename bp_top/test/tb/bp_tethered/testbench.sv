@@ -338,7 +338,6 @@ module testbench
 
            ,.npc_i(calculator.pipe_sys.csr.apc_r)
            ,.instret_i(calculator.commit_pkt_cast_o.instret)
-           ,.finish_i(testbench.finish_lo)
            );
 
 
@@ -510,7 +509,7 @@ module testbench
                         )
           ,.sb_iwaw_dep_i(be.detector.ird_sb_waw_haz_v & be.detector.data_haz_v)
           ,.sb_fwaw_dep_i(be.detector.frd_sb_waw_haz_v & be.detector.data_haz_v)
-          ,.struct_haz_i(be.detector.struct_haz_v)
+          ,.struct_haz_i(be.detector.struct_haz_v | be.scheduler.late_wb_yumi_o)
           ,.idiv_haz_i(be.detector.idiv_busy_i & be.detector.issue_pkt_cast_i.decode.pipe_long_v)
           ,.fdiv_haz_i(be.detector.fdiv_busy_i & be.detector.issue_pkt_cast_i.decode.pipe_long_v)
           ,.ptw_busy_i(be.detector.ptw_busy_i)

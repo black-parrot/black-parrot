@@ -39,10 +39,9 @@ module bp_be_detector
    , input                             mem_busy_i
    , input                             mem_ordered_i
    , input                             ptw_busy_i
-   , input                             irq_pending_i
 
    // Pipeline control signals from the checker to the calculator
-   , output logic                      dispatch_v_o
+   , output logic                      hazard_v_o
    , output logic                      interrupt_v_o
    , input [dispatch_pkt_width_lp-1:0] dispatch_pkt_i
    , input [commit_pkt_width_lp-1:0]   commit_pkt_i
@@ -230,12 +229,11 @@ module bp_be_detector
       fence_haz_v        = decode.fence_v & ~mem_ordered_i;
       cmd_haz_v          = cmd_full_i;
 
-      // TODO: Pessimistic, could have a separate fflags r/w_v
       fflags_haz_v = (decode.csr_r_v | decode.csr_w_v)
-                     & ((dep_status_r[0].fflags_w_v)
-                        | (dep_status_r[1].fflags_w_v)
-                        | (dep_status_r[2].fflags_w_v)
-                        | (dep_status_r[3].fflags_w_v)
+                     & (dep_status_r[0].fflags_v
+                        | dep_status_r[1].fflags_v
+                        | dep_status_r[2].fflags_v
+                        | dep_status_r[3].fflags_v
                         | fdiv_busy_i
                         );
 
@@ -260,38 +258,36 @@ module bp_be_detector
                      | (mem_busy_i & decode.pipe_mem_early_v)
                      | (mem_busy_i & decode.pipe_mem_final_v)
                      | (fdiv_busy_i & decode.pipe_long_v)
-                     | (idiv_busy_i & decode.pipe_long_v)
-                     | late_wb_yumi_i;
+                     | (idiv_busy_i & decode.pipe_long_v);
     end
 
   // Dispatch if we have a valid issue. Don't stall on data hazards for exceptions
-  assign dispatch_v_o = issue_pkt_cast_i.v & ~data_haz_v & ~control_haz_v & ~struct_haz_v;
-  // Don't interrupt PTW. This could be made okay if we save the current privilege mode as well
-  //   as the PTE mode
-  assign interrupt_v_o = ~ptw_busy_i & ~cmd_full_i & irq_pending_i;
+  assign hazard_v_o = struct_haz_v | control_haz_v | data_haz_v;
 
+  bp_be_decode_s dep_decode;
   bp_be_dep_status_s dep_status_n;
+  assign dep_decode = dispatch_pkt_cast_i.decode;
   always_comb
     begin
-      dep_status_n.v          = dispatch_pkt_cast_i.v;
-      dep_status_n.eint_iwb_v = dispatch_pkt_cast_i.decode.pipe_int_v       & dispatch_pkt_cast_i.decode.irf_w_v  & ~ispec_v_o;
-      dep_status_n.eint_fwb_v = dispatch_pkt_cast_i.decode.pipe_int_v       & dispatch_pkt_cast_i.decode.frf_w_v;
-      dep_status_n.fint_iwb_v = dispatch_pkt_cast_i.decode.pipe_int_v       & dispatch_pkt_cast_i.decode.irf_w_v  &  ispec_v_o;
-      dep_status_n.fint_fwb_v = dispatch_pkt_cast_i.decode.pipe_int_v       & dispatch_pkt_cast_i.decode.frf_w_v;
-      dep_status_n.aux_iwb_v  = dispatch_pkt_cast_i.decode.pipe_aux_v       & dispatch_pkt_cast_i.decode.irf_w_v;
-      dep_status_n.aux_fwb_v  = dispatch_pkt_cast_i.decode.pipe_aux_v       & dispatch_pkt_cast_i.decode.frf_w_v;
-      dep_status_n.emem_iwb_v = dispatch_pkt_cast_i.decode.pipe_mem_early_v & dispatch_pkt_cast_i.decode.irf_w_v;
-      dep_status_n.emem_fwb_v = dispatch_pkt_cast_i.decode.pipe_mem_early_v & dispatch_pkt_cast_i.decode.frf_w_v;
-      dep_status_n.fmem_iwb_v = dispatch_pkt_cast_i.decode.pipe_mem_final_v & dispatch_pkt_cast_i.decode.irf_w_v;
-      dep_status_n.fmem_fwb_v = dispatch_pkt_cast_i.decode.pipe_mem_final_v & dispatch_pkt_cast_i.decode.frf_w_v;
-      dep_status_n.mul_iwb_v  = dispatch_pkt_cast_i.decode.pipe_mul_v       & dispatch_pkt_cast_i.decode.irf_w_v;
-      dep_status_n.mul_fwb_v  = dispatch_pkt_cast_i.decode.pipe_mul_v       & dispatch_pkt_cast_i.decode.frf_w_v;
-      dep_status_n.fma_iwb_v  = dispatch_pkt_cast_i.decode.pipe_fma_v       & dispatch_pkt_cast_i.decode.irf_w_v;
-      dep_status_n.fma_fwb_v  = dispatch_pkt_cast_i.decode.pipe_fma_v       & dispatch_pkt_cast_i.decode.frf_w_v;
-      dep_status_n.long_iwb_v = dispatch_pkt_cast_i.decode.pipe_long_v      & dispatch_pkt_cast_i.decode.irf_w_v;
-      dep_status_n.long_fwb_v = dispatch_pkt_cast_i.decode.pipe_long_v      & dispatch_pkt_cast_i.decode.frf_w_v;
-      dep_status_n.fflags_w_v = dispatch_pkt_cast_i.decode.fflags_w_v;
-      dep_status_n.rd_addr    = dispatch_pkt_cast_i.instr.t.rtype.rd_addr;
+      dep_status_n.v           = dispatch_pkt_cast_i.v;
+      dep_status_n.fflags_v    = dispatch_pkt_cast_i.nspec_v | dep_decode.pipe_aux_v | dep_decode.pipe_fma_v;
+      dep_status_n.eint_iwb_v  = dep_decode.pipe_int_v       & dep_decode.irf_w_v  & ~ispec_v_o;
+      dep_status_n.eint_fwb_v  = dep_decode.pipe_int_v       & dep_decode.frf_w_v;
+      dep_status_n.fint_iwb_v  = dep_decode.pipe_int_v       & dep_decode.irf_w_v  &  ispec_v_o;
+      dep_status_n.fint_fwb_v  = dep_decode.pipe_int_v       & dep_decode.frf_w_v;
+      dep_status_n.aux_iwb_v   = dep_decode.pipe_aux_v       & dep_decode.irf_w_v;
+      dep_status_n.aux_fwb_v   = dep_decode.pipe_aux_v       & dep_decode.frf_w_v;
+      dep_status_n.emem_iwb_v  = dep_decode.pipe_mem_early_v & dep_decode.irf_w_v;
+      dep_status_n.emem_fwb_v  = dep_decode.pipe_mem_early_v & dep_decode.frf_w_v;
+      dep_status_n.fmem_iwb_v  = dep_decode.pipe_mem_final_v & dep_decode.irf_w_v;
+      dep_status_n.fmem_fwb_v  = dep_decode.pipe_mem_final_v & dep_decode.frf_w_v;
+      dep_status_n.mul_iwb_v   = dep_decode.pipe_mul_v       & dep_decode.irf_w_v;
+      dep_status_n.mul_fwb_v   = dep_decode.pipe_mul_v       & dep_decode.frf_w_v;
+      dep_status_n.fma_iwb_v   = dep_decode.pipe_fma_v       & dep_decode.irf_w_v;
+      dep_status_n.fma_fwb_v   = dep_decode.pipe_fma_v       & dep_decode.frf_w_v;
+      dep_status_n.long_iwb_v  = dep_decode.pipe_long_v      & dep_decode.irf_w_v;
+      dep_status_n.long_fwb_v  = dep_decode.pipe_long_v      & dep_decode.frf_w_v;
+      dep_status_n.rd_addr     = dispatch_pkt_cast_i.instr.t.rtype.rd_addr;
     end
 
   always_ff @(posedge clk_i)

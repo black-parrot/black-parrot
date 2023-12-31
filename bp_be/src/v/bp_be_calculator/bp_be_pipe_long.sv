@@ -31,14 +31,11 @@ module bp_be_pipe_long
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `bp_cast_o(bp_be_wb_pkt_s, iwb_pkt);
+  `bp_cast_o(bp_be_wb_pkt_s, fwb_pkt);
   bp_be_dispatch_pkt_s reservation;
   rv64_instr_s instr;
   bp_be_decode_s decode;
-  bp_be_wb_pkt_s iwb_pkt;
-  bp_be_wb_pkt_s fwb_pkt;
-
-  assign iwb_pkt_o = iwb_pkt;
-  assign fwb_pkt_o = fwb_pkt;
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
@@ -275,20 +272,18 @@ module bp_be_pipe_long
   assign fbusy_o = fdivsqrt_v_li | ~fdivsqrt_ready_and_lo | fdivsqrt_pending_r;
 
   assign iwb_v_o = ~imask_r & (imulh_v_lo | idiv_v_lo);
-  assign iwb_pkt.ird_w_v    = iwb_v_o;
-  assign iwb_pkt.frd_w_v    = 1'b0;
-  assign iwb_pkt.rd_addr    = ird_addr_r;
-  assign iwb_pkt.rd_data    = ird_data_lo;
-  assign iwb_pkt.fflags_w_v = 1'b0;
-  assign iwb_pkt.fflags     = '0;
+  assign iwb_pkt_cast_o.ird_w_v    = iwb_v_o;
+  assign iwb_pkt_cast_o.frd_w_v    = 1'b0;
+  assign iwb_pkt_cast_o.rd_addr    = ird_addr_r;
+  assign iwb_pkt_cast_o.rd_data    = ird_data_lo;
+  assign iwb_pkt_cast_o.fflags     = '0;
 
   assign fwb_v_o = ~fmask_r & (fdivsqrt_v_lo | fdivsqrt_pending_r);
-  assign fwb_pkt.ird_w_v    = 1'b0;
-  assign fwb_pkt.frd_w_v    = fwb_v_o;
-  assign fwb_pkt.rd_addr    = frd_addr_r;
-  assign fwb_pkt.rd_data    = frd_data_lo;
-  assign fwb_pkt.fflags_w_v = 1'b1;
-  assign fwb_pkt.fflags     = fflags_lo;
+  assign fwb_pkt_cast_o.ird_w_v    = 1'b0;
+  assign fwb_pkt_cast_o.frd_w_v    = fwb_v_o;
+  assign fwb_pkt_cast_o.rd_addr    = frd_addr_r;
+  assign fwb_pkt_cast_o.rd_data    = frd_data_lo;
+  assign fwb_pkt_cast_o.fflags     = fflags_lo & {5{fwb_v_o}};
 
 endmodule
 

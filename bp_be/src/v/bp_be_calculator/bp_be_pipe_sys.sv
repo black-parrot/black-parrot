@@ -91,8 +91,7 @@ module bp_be_pipe_sys
 
   bp_be_retire_pkt_s retire_pkt;
   logic [dword_width_gp-1:0] csr_data_lo;
-  wire [4:0] fflags_acc_li =
-    ({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags);
+  wire [4:0] fflags_acc_li = iwb_pkt.fflags | fwb_pkt.fflags;
   bp_be_csr
    #(.bp_params_p(bp_params_p))
     csr

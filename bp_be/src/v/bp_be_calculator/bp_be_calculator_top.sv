@@ -480,10 +480,9 @@ module bp_be_calculator_top
         begin : comp_stage
           // Normally, shift down in the pipe
           comp_stage_n[i] = (i == 0)
-            ? '{ird_w_v    : late_wb_yumi_i ? late_wb_pkt_cast_o.ird_w_v    : reservation_n.decode.irf_w_v
-                ,frd_w_v   : late_wb_yumi_i ? late_wb_pkt_cast_o.frd_w_v    : reservation_n.decode.frf_w_v
-                ,fflags_w_v: late_wb_yumi_i ? late_wb_pkt_cast_o.fflags_w_v : reservation_n.decode.fflags_w_v
-                ,rd_addr   : late_wb_yumi_i ? late_wb_pkt_cast_o.rd_addr    : reservation_n.instr.t.rtype.rd_addr
+            ? '{ird_w_v    : reservation_n.decode.irf_w_v
+                ,frd_w_v   : reservation_n.decode.frf_w_v
+                ,rd_addr   : reservation_n.instr.t.rtype.rd_addr
                 ,default: '0
                 }
             : comp_stage_r[i-1];
@@ -507,16 +506,19 @@ module bp_be_calculator_top
       comp_stage_n[1].ird_w_v    &= exc_stage_n[1].v;
       comp_stage_n[2].ird_w_v    &= exc_stage_n[2].v;
       comp_stage_n[3].ird_w_v    &= exc_stage_n[3].v;
+      comp_stage_n[4].ird_w_v    &= exc_stage_n[4].v;
 
       comp_stage_n[0].frd_w_v    &= exc_stage_n[0].v;
       comp_stage_n[1].frd_w_v    &= exc_stage_n[1].v;
       comp_stage_n[2].frd_w_v    &= exc_stage_n[2].v;
       comp_stage_n[3].frd_w_v    &= exc_stage_n[3].v;
+      comp_stage_n[4].frd_w_v    &= exc_stage_n[4].v;
 
-      comp_stage_n[0].fflags_w_v &= exc_stage_n[0].v;
-      comp_stage_n[1].fflags_w_v &= exc_stage_n[1].v;
-      comp_stage_n[2].fflags_w_v &= exc_stage_n[2].v;
-      comp_stage_n[3].fflags_w_v &= exc_stage_n[3].v;
+      comp_stage_n[0].fflags     &= {5{exc_stage_n[0].v}};
+      comp_stage_n[1].fflags     &= {5{exc_stage_n[1].v}};
+      comp_stage_n[2].fflags     &= {5{exc_stage_n[2].v}};
+      comp_stage_n[3].fflags     &= {5{exc_stage_n[3].v}};
+      comp_stage_n[4].fflags     &= {5{exc_stage_n[4].v}};
 
       comp_stage_n[3].ird_w_v    &= ~commit_pkt_cast_o.iscore_v;
       comp_stage_n[3].frd_w_v    &= ~commit_pkt_cast_o.fscore_v;

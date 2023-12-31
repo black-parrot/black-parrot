@@ -83,7 +83,7 @@ module bp_be_top
   bp_be_dispatch_pkt_s dispatch_pkt;
   bp_be_branch_pkt_s   br_pkt;
 
-  logic dispatch_v, interrupt_v, ispec_v;
+  logic hazard_v, interrupt_v, ispec_v;
   logic irq_pending_lo, irq_waiting_lo;
 
   bp_be_commit_pkt_s commit_pkt;
@@ -121,11 +121,8 @@ module bp_be_top
      ,.suppress_iss_o(suppress_iss_lo)
      ,.irq_waiting_i(irq_waiting_lo)
      ,.mem_busy_i(mem_busy_lo)
-     ,.cmd_empty_n_o()
-     ,.cmd_empty_r_o()
      ,.cmd_full_n_o(cmd_full_n_lo)
      ,.cmd_full_r_o(cmd_full_r_lo)
-     ,.dispatch_v_i(dispatch_v)
 
      ,.br_pkt_i(br_pkt)
      ,.commit_pkt_i(commit_pkt)
@@ -146,10 +143,9 @@ module bp_be_top
      ,.fdiv_busy_i(fdiv_busy_lo)
      ,.idiv_busy_i(idiv_busy_lo)
      ,.ptw_busy_i(ptw_busy_lo)
-     ,.irq_pending_i(irq_pending_lo)
 
      ,.ispec_v_o(ispec_v)
-     ,.dispatch_v_o(dispatch_v)
+     ,.hazard_v_o(hazard_v)
      ,.interrupt_v_o(interrupt_v)
      ,.dispatch_pkt_i(dispatch_pkt)
      ,.commit_pkt_i(commit_pkt)
@@ -171,9 +167,10 @@ module bp_be_top
      ,.suppress_iss_i(suppress_iss_lo)
      ,.clear_iss_i(clear_iss_lo)
      ,.expected_npc_i(expected_npc_lo)
-     ,.dispatch_v_i(dispatch_v)
-     ,.interrupt_v_i(interrupt_v)
+     ,.hazard_v_i(hazard_v)
      ,.ispec_v_i(ispec_v)
+     ,.irq_pending_i(irq_pending_lo)
+     ,.ptw_busy_i(ptw_busy_lo)
 
      ,.fe_queue_i(fe_queue_i)
      ,.fe_queue_v_i(fe_queue_v_i)

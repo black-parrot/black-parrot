@@ -180,7 +180,6 @@
     logic                             frs3_r_v;
     logic                             irf_w_v;
     logic                             frf_w_v;
-    logic                             fflags_w_v;
     logic                             branch_v;
     logic                             jump_v;
     logic                             fence_v;

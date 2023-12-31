@@ -41,11 +41,8 @@ module bp_be_director
    , output logic                       resume_o
    , input                              irq_waiting_i
    , input                              mem_busy_i
-   , output logic                       cmd_empty_n_o
-   , output logic                       cmd_empty_r_o
    , output logic                       cmd_full_n_o
    , output logic                       cmd_full_r_o
-   , input                              dispatch_v_i
 
    // FE-BE interface
    , output logic [fe_cmd_width_lp-1:0] fe_cmd_o
@@ -69,6 +66,8 @@ module bp_be_director
   bp_fe_cmd_s fe_cmd_li;
   bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
   logic fe_cmd_v_li;
+  logic cmd_empty_n_lo, cmd_empty_r_lo;
+  logic cmd_full_n_lo, cmd_full_r_lo;
 
   // Declare intermediate signals
   enum logic [3:0] {e_freeze, e_fencei, e_run, e_cmd_fence, e_wait} state_n, state_r;
@@ -96,8 +95,9 @@ module bp_be_director
      );
   assign expected_npc_o = npc_r;
 
-  wire npc_mismatch_v = dispatch_v_i & (expected_npc_o != issue_pkt_cast_i.pc);
-  wire npc_match_v    = dispatch_v_i & (expected_npc_o == issue_pkt_cast_i.pc);
+  wire instr_v = issue_pkt_cast_i.v & ~commit_pkt_cast_i.npc_w_v;
+  wire npc_mismatch_v = instr_v & (expected_npc_o != issue_pkt_cast_i.pc);
+  wire npc_match_v    = instr_v & (expected_npc_o == issue_pkt_cast_i.pc);
   assign poison_isd_o = npc_mismatch_v;
 
   logic btaken_pending, attaboy_pending;
@@ -108,7 +108,7 @@ module bp_be_director
      ,.reset_i(reset_i)
 
      ,.set_i({br_pkt_cast_i.btaken, br_pkt_cast_i.branch})
-     ,.clear_i({2{dispatch_v_i}})
+     ,.clear_i({instr_v, instr_v})
      ,.data_o({btaken_pending, attaboy_pending})
      );
   wire last_instr_was_branch = attaboy_pending | br_pkt_cast_i.branch;
@@ -137,7 +137,7 @@ module bp_be_director
                                     ? e_run
                                     : state_r;
         // e_cmd_fence:
-        default : state_n = cmd_empty_r_o ? e_run : state_r;
+        default : state_n = cmd_empty_r_lo ? e_run : state_r;
       endcase
     end
 
@@ -149,8 +149,10 @@ module bp_be_director
       state_r <= state_n;
 
   assign suppress_iss_o = !is_run;
-  assign clear_iss_o    = is_cmd_fence & cmd_empty_r_o;
-  assign resume_o       = (is_freeze & ~freeze_li) || (is_wait & irq_waiting_i) || (is_fencei & ~mem_busy_i);
+  assign clear_iss_o    = is_cmd_fence & cmd_empty_r_lo;
+  assign resume_o       = (is_freeze & ~freeze_li)
+                          || (is_wait & irq_waiting_i)
+                          || (is_fencei & ~mem_busy_i);
 
   always_comb
     begin
@@ -253,7 +255,7 @@ module bp_be_director
                                                              : e_not_a_branch;
           fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
-          fe_cmd_v_li = ~cmd_full_r_o & is_run;
+          fe_cmd_v_li = ~cmd_full_r_lo & is_run;
         end
       // Send an attaboy if there's a correct prediction
       else if (npc_match_v & last_instr_was_branch)
@@ -263,7 +265,7 @@ module bp_be_director
           fe_cmd_li.operands.attaboy.taken               = last_instr_was_btaken;
           fe_cmd_li.operands.attaboy.branch_metadata_fwd = issue_pkt_cast_i.branch_metadata_fwd;
 
-          fe_cmd_v_li = ~cmd_full_r_o & is_run;
+          fe_cmd_v_li = ~cmd_full_r_lo & is_run;
         end
     end
 
@@ -280,11 +282,13 @@ module bp_be_director
      ,.fe_cmd_v_o(fe_cmd_v_o)
      ,.fe_cmd_yumi_i(fe_cmd_yumi_i)
 
-     ,.empty_n_o(cmd_empty_n_o)
-     ,.empty_r_o(cmd_empty_r_o)
-     ,.full_n_o(cmd_full_n_o)
-     ,.full_r_o(cmd_full_r_o)
+     ,.empty_n_o(cmd_empty_n_lo)
+     ,.empty_r_o(cmd_empty_r_lo)
+     ,.full_n_o(cmd_full_n_lo)
+     ,.full_r_o(cmd_full_r_lo)
      );
+  assign cmd_full_n_o = cmd_full_n_lo;
+  assign cmd_full_r_o = cmd_full_r_lo;
 
 endmodule
 

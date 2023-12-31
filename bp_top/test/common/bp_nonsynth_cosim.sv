@@ -190,9 +190,6 @@ module bp_nonsynth_cosim
          ,.r_valid_o(frd_fifo_v_lo[i])
          );
 
-      // The control bits control tininess, which is fixed in RISC-V
-      wire [`floatControlWidth-1:0] control_li = `flControl_default;
-
       bp_be_reg_to_fp
        #(.bp_params_p(bp_params_p))
        unrecode
@@ -201,8 +198,6 @@ module bp_nonsynth_cosim
          );
     end
 
-  wire [dword_width_gp-1:0] commit_ird_li = ird_data_r[commit_instr_r.rd_addr];
-  wire [dword_width_gp-1:0] commit_frd_li = frd_raw_li[commit_instr_r.rd_addr];
   wire commit_ird_v_lo = ird_fifo_v_lo[commit_instr_r.rd_addr];
   wire commit_frd_v_lo = frd_fifo_v_lo[commit_instr_r.rd_addr];
 
@@ -260,6 +255,7 @@ module bp_nonsynth_cosim
   wire [instr_width_gp-1:0] cosim_instr_li  = commit_instr_r;
   wire [dword_width_gp-1:0] cosim_cause_li  = cause_r;
   wire [dword_width_gp-1:0] cosim_ird_li    = ird_data_r[commit_instr_r.rd_addr];
+  wire [dpath_width_gp-1:0] cosim_freg_li   = frd_data_r[commit_instr_r.rd_addr];
   wire [dword_width_gp-1:0] cosim_frd_li    = frd_raw_li[commit_instr_r.rd_addr];
   wire [dword_width_gp-1:0] cosim_rd_li     = commit_fwb_li ? cosim_frd_li : cosim_ird_li;
   wire [dword_width_gp-1:0] cosim_status_li = mstatus_r;
@@ -305,11 +301,11 @@ module bp_nonsynth_cosim
   always_ff @(posedge cosim_clk_i)
     if (trace_en_i & commit_fifo_yumi_li & commit_pc_r != '0)
       begin
-        $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, instr_cnt);
+        $fwrite(file, "%x %x %x %x ", mhartid_i, cosim_pc_li, cosim_instr_li, instr_cnt);
         if (instret_v_r & commit_ird_w_v_r)
-          $fwrite(file, "%x %x", commit_instr_r.rd_addr, commit_ird_li);
+          $fwrite(file, "%x %x", commit_instr_r.rd_addr, cosim_ird_li);
         if (instret_v_r & commit_frd_w_v_r)
-          $fwrite(file, "%x %x", commit_instr_r.rd_addr, commit_frd_li);
+          $fwrite(file, "%x %x", commit_instr_r.rd_addr, cosim_frd_li);
         if (trap_v_r)
           $fwrite(file, "   %x %x <- trap", cause_r, mstatus_r);
         $fwrite(file, "\n");

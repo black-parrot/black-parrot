@@ -199,6 +199,8 @@ module bp_be_pipe_mem
     endcase
 
   logic [ptag_width_p-1:0] dtlb_ptag_lo;
+  wire uncached_mode_li = cfg_bus.dcache_mode == e_lce_mode_uncached;
+  wire nonspec_mode_li = cfg_bus.dcache_mode == e_lce_mode_nonspec;
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(dtlb_els_4k_p)
@@ -215,8 +217,8 @@ module bp_be_pipe_mem
      ,.sum_i(trans_info.mstatus_sum)
      ,.mxr_i(trans_info.mstatus_mxr)
      ,.trans_en_i(trans_info.translation_en)
-     ,.uncached_mode_i((cfg_bus.dcache_mode == e_lce_mode_uncached))
-     ,.nonspec_mode_i((cfg_bus.dcache_mode == e_lce_mode_nonspec))
+     ,.uncached_mode_i(uncached_mode_li)
+     ,.nonspec_mode_i(nonspec_mode_li)
      ,.hio_mask_i(cfg_bus.hio_mask)
 
      ,.w_v_i(dtlb_w_v)

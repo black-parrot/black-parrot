@@ -18,6 +18,9 @@ module bp_be_expander
   localparam rv64_link_addr_gp = 5'd1;
   localparam rv64_sp_addr_gp = 5'd2;
 
+  rv64_cinstr_s cinstr;
+  assign cinstr = cinstr_i;
+
   always_comb
     begin
       instr_o = cinstr_i;
@@ -190,6 +193,14 @@ module bp_be_expander
         // C.SUBW     -> subw rd', rd', rs2'
         `RV64_CSUBW: instr_o =
           `rv64_r_type_exp(`RV64_OP_32_OP, rd, 3'b000, rd, rs2, 7'b010_0000);
+        default: begin end
+      endcase
+
+      // Check for reserved encodings
+      casez (cinstr_i)
+        `RV64_CLWSP, `RV64_CLDSP: instr_o = ~|cinstr_i[11:7] ? '0 : instr_o;
+        `RV64_CLUI, `RV64_CADDI16SP, `RV64_CADDI4SPN
+                                : instr_o = ~|imm ? '0 : instr_o;
         default: begin end
       endcase
     end
