@@ -67,16 +67,11 @@ module bp_be_pipe_sys
   bp_be_dispatch_pkt_s reservation;
   bp_be_decode_s decode;
   rv64_instr_s instr;
-  bp_be_commit_pkt_s commit_pkt;
-  bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
-  bp_be_decode_info_s decode_info;
-  bp_be_trans_info_s trans_info;
-
-  assign commit_pkt_o = commit_pkt;
-  assign iwb_pkt = iwb_pkt_i;
-  assign fwb_pkt = fwb_pkt_i;
-  assign decode_info_o = decode_info;
-  assign trans_info_o = trans_info;
+  `bp_cast_i(bp_be_wb_pkt_s, iwb_pkt);
+  `bp_cast_i(bp_be_wb_pkt_s, fwb_pkt);
+  `bp_cast_o(bp_be_commit_pkt_s, commit_pkt);
+  `bp_cast_o(bp_be_decode_info_s, decode_info);
+  `bp_cast_o(bp_be_trans_info_s, trans_info);
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
@@ -91,7 +86,7 @@ module bp_be_pipe_sys
 
   bp_be_retire_pkt_s retire_pkt;
   logic [dword_width_gp-1:0] csr_data_lo;
-  wire [4:0] fflags_acc_li = iwb_pkt.fflags | fwb_pkt.fflags;
+  wire [4:0] fflags_acc_li = iwb_pkt_cast_i.fflags | fwb_pkt_cast_i.fflags;
   bp_be_csr
    #(.bp_params_p(bp_params_p))
     csr
@@ -106,7 +101,7 @@ module bp_be_pipe_sys
      ,.csr_r_illegal_o(illegal_instr_o)
 
      ,.fflags_acc_i(fflags_acc_li)
-     ,.frf_w_v_i(fwb_pkt.frd_w_v)
+     ,.frf_w_v_i(fwb_pkt_cast_i.frd_w_v)
 
      ,.debug_irq_i(debug_irq_i)
      ,.timer_irq_i(timer_irq_i)
@@ -117,9 +112,9 @@ module bp_be_pipe_sys
      ,.irq_waiting_o(irq_waiting_o)
 
      ,.retire_pkt_i(retire_pkt)
-     ,.commit_pkt_o(commit_pkt)
-     ,.decode_info_o(decode_info)
-     ,.trans_info_o(trans_info)
+     ,.commit_pkt_o(commit_pkt_cast_o)
+     ,.decode_info_o(decode_info_cast_o)
+     ,.trans_info_o(trans_info_cast_o)
      ,.frm_dyn_o(frm_dyn_o)
      );
 

@@ -272,18 +272,19 @@ module bp_be_pipe_long
   assign fbusy_o = fdivsqrt_v_li | ~fdivsqrt_ready_and_lo | fdivsqrt_pending_r;
 
   assign iwb_v_o = ~imask_r & (imulh_v_lo | idiv_v_lo);
-  assign iwb_pkt_cast_o.ird_w_v    = iwb_v_o;
-  assign iwb_pkt_cast_o.frd_w_v    = 1'b0;
-  assign iwb_pkt_cast_o.rd_addr    = ird_addr_r;
-  assign iwb_pkt_cast_o.rd_data    = ird_data_lo;
-  assign iwb_pkt_cast_o.fflags     = '0;
+  assign iwb_pkt_cast_o = '{ird_w_v : iwb_v_o
+                            ,rd_addr: ird_addr_r
+                            ,rd_data: ird_data_lo
+                            ,default: '0
+                            };
 
   assign fwb_v_o = ~fmask_r & (fdivsqrt_v_lo | fdivsqrt_pending_r);
-  assign fwb_pkt_cast_o.ird_w_v    = 1'b0;
-  assign fwb_pkt_cast_o.frd_w_v    = fwb_v_o;
-  assign fwb_pkt_cast_o.rd_addr    = frd_addr_r;
-  assign fwb_pkt_cast_o.rd_data    = frd_data_lo;
-  assign fwb_pkt_cast_o.fflags     = fflags_lo & {5{fwb_v_o}};
+  assign fwb_pkt_cast_o = '{frd_w_v : fwb_v_o
+                            ,rd_addr: frd_addr_r
+                            ,rd_data: frd_data_lo
+                            ,fflags : fflags_lo & {5{fwb_v_o}}
+                            ,default: '0
+                            };
 
 endmodule
 

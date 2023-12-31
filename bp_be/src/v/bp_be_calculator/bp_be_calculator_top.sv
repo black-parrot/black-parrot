@@ -28,9 +28,9 @@ module bp_be_calculator_top
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
-   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam decode_info_width_lp    = `bp_be_decode_info_width
+   , localparam trans_info_width_lp     = `bp_be_trans_info_width(ptag_width_p)
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -44,8 +44,8 @@ module bp_be_calculator_top
    , output logic                                    fdiv_busy_o
    , output logic                                    mem_busy_o
    , output logic                                    mem_ordered_o
-   , output logic                                    ptw_busy_o
    , output logic [decode_info_width_lp-1:0]         decode_info_o
+   , output logic [trans_info_width_lp-1:0]          trans_info_o
    , input                                           cmd_full_n_i
 
    , output logic [commit_pkt_width_lp-1:0]          commit_pkt_o
@@ -53,7 +53,6 @@ module bp_be_calculator_top
    , output logic [wb_pkt_width_lp-1:0]              iwb_pkt_o
    , output logic [wb_pkt_width_lp-1:0]              fwb_pkt_o
 
-   , output logic [ptw_fill_pkt_width_lp-1:0]        ptw_fill_pkt_o
    , output logic [wb_pkt_width_lp-1:0]              late_wb_pkt_o
    , output logic                                    late_wb_v_o
    , output logic                                    late_wb_force_o
@@ -114,9 +113,7 @@ module bp_be_calculator_top
   bp_be_wb_pkt_s [pipe_stage_els_lp  :0] comp_stage_n;
   bp_be_wb_pkt_s [pipe_stage_els_lp-1:0] comp_stage_r;
 
-  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
-  bp_be_trans_info_s   trans_info_lo;
-  rv64_frm_e           frm_dyn_lo;
+  rv64_frm_e frm_dyn_lo;
 
   bp_be_wb_pkt_s pipe_long_iwb_pkt, pipe_long_fwb_pkt;
 
@@ -143,7 +140,6 @@ module bp_be_calculator_top
 
   bp_be_wb_pkt_s pipe_mem_late_wb_pkt;
   logic pipe_mem_late_wb_v, pipe_mem_late_wb_yumi;
-  logic ptw_fill_v, ptw_fill_yumi;
 
   // Generating match vector for bypass
   logic [2:0][pipe_stage_els_lp-1:0] match_rs;
@@ -234,7 +230,7 @@ module bp_be_calculator_top
      ,.v_o(pipe_sys_data_v_lo)
 
      ,.decode_info_o(decode_info_o)
-     ,.trans_info_o(trans_info_lo)
+     ,.trans_info_o(trans_info_o)
      ,.frm_dyn_o(frm_dyn_lo)
      );
 
@@ -342,7 +338,6 @@ module bp_be_calculator_top
      ,.flush_i(commit_pkt_cast_o.npc_w_v)
      ,.sfence_i(commit_pkt_cast_o.sfence)
 
-     ,.ptw_busy_o(ptw_busy_o)
      ,.busy_o(mem_busy_o)
      ,.ordered_o(mem_ordered_o)
 
@@ -397,10 +392,7 @@ module bp_be_calculator_top
      ,.late_wb_pkt_o(pipe_mem_late_wb_pkt)
      ,.late_wb_v_o(pipe_mem_late_wb_v)
 
-     ,.ptw_fill_pkt_o(ptw_fill_pkt_o)
-     ,.ptw_fill_v_o(ptw_fill_v)
-
-     ,.trans_info_i(trans_info_lo)
+     ,.trans_info_i(trans_info_o)
      );
 
   // Floating point pipe: 3/4 cycle latency
@@ -449,11 +441,11 @@ module bp_be_calculator_top
     late_wb_grants_lo & {num_late_wb_lp{late_wb_yumi_i}};
   assign late_wb_reqs_li = {pipe_long_fdata_v_lo, pipe_long_idata_v_lo, pipe_mem_late_wb_v};
   bsg_arb_fixed
-   #(.inputs_p(1+num_late_wb_lp), .lo_to_hi_p(1))
+   #(.inputs_p(num_late_wb_lp), .lo_to_hi_p(1))
    late_wb_arb
     (.ready_then_i(1'b1)
-     ,.reqs_i({late_wb_reqs_li, ptw_fill_v})
-     ,.grants_o({late_wb_grants_lo, ptw_fill_yumi})
+     ,.reqs_i(late_wb_reqs_li)
+     ,.grants_o(late_wb_grants_lo)
      );
 
   bp_be_wb_pkt_s late_wb_pkt_sel;
@@ -469,7 +461,7 @@ module bp_be_calculator_top
 
   assign late_wb_pkt_cast_o = late_wb_pkt_sel;
   assign late_wb_v_o = |late_wb_grants_lo;
-  assign late_wb_force_o = pipe_mem_late_wb_v | ptw_fill_v;
+  assign late_wb_force_o = pipe_mem_late_wb_v;
 
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
   // Else, mux in the previous stage of the completion pipe. Since we are single issue and have
@@ -560,7 +552,7 @@ module bp_be_calculator_top
 
           exc_stage_n[1].exc.illegal_instr        |= pipe_sys_illegal_instr_lo;
 
-          exc_stage_n[1].exc.instr_misaligned     |= pipe_int_early_instr_misaligned_lo & ~exc_stage_r[0].ispec_v;
+          exc_stage_n[1].exc.instr_misaligned     |= pipe_int_early_instr_misaligned_lo;
 
           exc_stage_n[1].exc.dtlb_store_miss      |= pipe_mem_dtlb_store_miss_lo;
           exc_stage_n[1].exc.dtlb_load_miss       |= pipe_mem_dtlb_load_miss_lo;

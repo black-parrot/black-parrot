@@ -11,6 +11,7 @@ module bp_mmu
    , parameter `BSG_INV_PARAM(tlb_els_4k_p)
    , parameter `BSG_INV_PARAM(tlb_els_2m_p)
    , parameter `BSG_INV_PARAM(tlb_els_1g_p)
+   , parameter latch_last_read_p = 0
 
    , localparam entry_width_lp = `bp_pte_leaf_width(paddr_width_p)
    )
@@ -38,6 +39,7 @@ module bp_mmu
    , input [dword_width_gp-1:0]                       r_eaddr_i
    , input [1:0]                                      r_size_i
    , input                                            r_cbo_i
+   , input                                            r_ptw_i
 
    , output logic                                     r_v_o
    , output logic [ptag_width_p-1:0]                  r_ptag_o
@@ -63,25 +65,26 @@ module bp_mmu
   // This logic only works for 8-byte words max.
   logic r_misaligned;
   always_comb
-    case ({r_cbo_i, r_size_i})
-      {1'b0, 2'b01}: r_misaligned = |r_eaddr_i[0+:1];
-      {1'b0, 2'b10}: r_misaligned = |r_eaddr_i[0+:2];
-      {1'b0, 2'b11}: r_misaligned = |r_eaddr_i[0+:3];
+    case ({r_ptw_i, r_cbo_i, r_size_i})
+      {2'b00, 2'b01}: r_misaligned = |r_eaddr_i[0+:1];
+      {2'b00, 2'b10}: r_misaligned = |r_eaddr_i[0+:2];
+      {2'b00, 2'b11}: r_misaligned = |r_eaddr_i[0+:3];
       default: r_misaligned = '0;
     endcase
 
-  logic r_instr_r, r_load_r, r_store_r, r_cbo_r, r_misaligned_r, trans_en_r;
+  logic r_instr_r, r_load_r, r_store_r, r_cbo_r, r_ptw_r, r_misaligned_r, trans_r;
   logic [etag_width_p-1:0] r_etag_r;
   wire [etag_width_p-1:0] r_etag_li = r_eaddr_i[dword_width_gp-1-:etag_width_p];
+  wire trans_li = trans_en_i & ~r_ptw_i;
   bsg_dff_reset_en
-   #(.width_p(6+etag_width_p))
+   #(.width_p(7+etag_width_p))
    read_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(r_v_i)
 
-     ,.data_i({trans_en_i, r_misaligned, r_instr_i, r_load_i, r_store_i, r_cbo_i, r_etag_li})
-     ,.data_o({trans_en_r, r_misaligned_r, r_instr_r, r_load_r, r_store_r, r_cbo_r, r_etag_r})
+     ,.data_i({trans_li, r_misaligned, r_instr_i, r_load_i, r_store_i, r_cbo_i, r_ptw_i, r_etag_li})
+     ,.data_o({trans_r, r_misaligned_r, r_instr_r, r_load_r, r_store_r, r_cbo_r, r_ptw_r, r_etag_r})
      );
 
   logic r_v_r;
@@ -91,13 +94,13 @@ module bp_mmu
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.set_i(r_v_i)
-     ,.clear_i(flush_i)
+     ,.clear_i(flush_i | !latch_last_read_p)
      ,.data_o(r_v_r)
      );
 
   logic bypass_v_r;
   wire r_etag_match = r_etag_li[0+:vtag_width_p] == r_etag_r[0+:vtag_width_p];
-  wire tlb_bypass = (~trans_en_i & ~flush_i) | (bypass_v_r & r_etag_match);
+  wire tlb_bypass = (~trans_li & ~flush_i) | (bypass_v_r & r_etag_match);
   bsg_dff_reset_set_clear
    #(.width_p(1), .clear_over_set_p(1))
    bypass_v_reg
@@ -144,8 +147,8 @@ module bp_mmu
 
   bp_pte_leaf_s passthrough_entry, tlb_entry_lo;
   assign passthrough_entry = '{ptag: r_etag_r, default: '0};
-  assign tlb_entry_lo      = trans_en_r ? tlb_r_entry_r : passthrough_entry;
-  wire tlb_v_lo            = trans_en_r ? tlb_r_v_r : 1'b1;
+  assign tlb_entry_lo      = trans_r ? tlb_r_entry_r : passthrough_entry;
+  wire tlb_v_lo            = trans_r ? tlb_r_v_r : 1'b1;
 
   wire ptag_v_lo                  = tlb_v_lo;
   wire [ptag_width_p-1:0] ptag_lo = tlb_entry_lo.ptag;
@@ -189,9 +192,9 @@ module bp_mmu
                                           );
   wire data_read_page_fault  = tlb_v_lo & ~(tlb_entry_lo.r | (tlb_entry_lo.x & mxr_i));
   wire data_write_page_fault = tlb_v_lo & ~(tlb_entry_lo.w & tlb_entry_lo.d);
-  wire instr_page_fault_v = trans_en_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v | eaddr_fault_v);
-  wire load_page_fault_v  = trans_en_r & r_load_r & (data_priv_page_fault | data_read_page_fault  | eaddr_fault_v);
-  wire store_page_fault_v = trans_en_r & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_fault_v);
+  wire instr_page_fault_v = trans_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v | eaddr_fault_v);
+  wire load_page_fault_v  = trans_r & r_load_r & (data_priv_page_fault | data_read_page_fault  | eaddr_fault_v);
+  wire store_page_fault_v = trans_r & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_fault_v);
   wire any_page_fault_v   = |{instr_page_fault_v, load_page_fault_v, store_page_fault_v};
 
   wire any_fault_v        = any_access_fault_v | any_page_fault_v;

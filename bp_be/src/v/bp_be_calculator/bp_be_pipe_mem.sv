@@ -22,7 +22,6 @@ module bp_be_pipe_mem
    // Generated parameters
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam dispatch_pkt_width_lp  = `bp_be_dispatch_pkt_width(vaddr_width_p)
-   , localparam ptw_fill_pkt_width_lp  = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
    , localparam commit_pkt_width_lp    = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp        = `bp_be_wb_pkt_width(vaddr_width_p)
@@ -34,7 +33,6 @@ module bp_be_pipe_mem
    , input                                flush_i
    , input                                sfence_i
 
-   , output logic                         ptw_busy_o
    , output logic                         busy_o
    , output logic                         ordered_o
 
@@ -61,10 +59,7 @@ module bp_be_pipe_mem
    , output logic [wb_pkt_width_lp-1:0]   late_wb_pkt_o
    , output logic                         late_wb_v_o
 
-   , output logic [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_o
-   , output logic                             ptw_fill_v_o
-
-   , input [trans_info_width_lp-1:0]      trans_info_i
+   , input [trans_info_width_lp-1:0]          trans_info_i
 
    // D$-LCE Interface
    // signals to LCE
@@ -104,6 +99,9 @@ module bp_be_pipe_mem
   `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   `bp_cast_o(bp_be_dcache_req_s, cache_req);
   `bp_cast_o(bp_be_wb_pkt_s, late_wb_pkt);
+  `bp_cast_i(bp_be_trans_info_s, trans_info);
+  `bp_cast_i(bp_cfg_bus_s, cfg_bus);
+  `bp_cast_i(bp_be_commit_pkt_s, commit_pkt);
 
   wire negedge_clk = ~clk_i;
   wire posedge_clk =  clk_i;
@@ -112,15 +110,6 @@ module bp_be_pipe_mem
   bp_be_dispatch_pkt_s   reservation;
   bp_be_decode_s         decode;
   rv64_instr_s           instr;
-  bp_cfg_bus_s           cfg_bus;
-  bp_be_commit_pkt_s     commit_pkt;
-  bp_be_ptw_fill_pkt_s   ptw_fill_pkt;
-  bp_be_trans_info_s     trans_info;
-
-  assign cfg_bus = cfg_bus_i;
-  assign ptw_fill_pkt_o = ptw_fill_pkt;
-  assign commit_pkt = commit_pkt_i;
-  assign trans_info = trans_info_i;
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
@@ -131,17 +120,9 @@ module bp_be_pipe_mem
   wire [dpath_width_gp-1:0] imm = reservation.imm[0+:dpath_width_gp];
 
   /* TLB ports */
-  logic                    dtlb_w_v, dtlb_r_v, dtlb_v_lo;
+  logic                    dtlb_w_v, dtlb_v_lo;
   logic                    tlb_store_miss_v, tlb_load_miss_v;
   logic                    tlb_ptag_uncached, tlb_ptag_dram;
-  logic [vtag_width_p-1:0] dtlb_w_vtag;
-  bp_pte_leaf_s            dtlb_w_entry;
-
-  /* PTW ports */
-  logic [ptag_width_p-1:0]  ptw_dcache_ptag;
-  logic                     ptw_dcache_ptag_v;
-  logic                     ptw_dcache_v;
-  bp_be_dcache_pkt_s        ptw_dcache_pkt;
 
   /* D-Cache ports */
   bp_be_dcache_pkt_s        dcache_pkt;
@@ -167,45 +148,47 @@ module bp_be_pipe_mem
   logic load_misaligned_v, store_misaligned_v;
 
   /* Control signals */
-  wire is_req    = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
-  wire is_store  = is_req & (decode.dcache_w_v | decode.dcache_cbo_v);
-  wire is_load   = is_req & decode.dcache_r_v;
-  wire is_cbo    = is_req & decode.dcache_cbo_v;
-
-  // Calculate cache access eaddr, align CBO addresses
-  localparam block_offset_width_lp = `BSG_SAFE_CLOG2(dcache_block_width_p/8);
+  wire is_req = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
 
   // D-TLB connections
-  assign dtlb_r_v        = is_store | is_load | is_cbo;
-  assign dtlb_w_v        = commit_pkt.dtlb_fill_v;
-  assign dtlb_w_vtag     = commit_pkt.vaddr[vaddr_width_p-1-:vtag_width_p];
-  assign dtlb_w_entry    = commit_pkt.pte_leaf;
+  wire dtlb_r_store  = is_req & (decode.dcache_w_v | decode.dcache_cbo_v);
+  wire dtlb_r_load   = is_req & decode.dcache_r_v;
+  wire dtlb_r_cbo    = is_req & decode.dcache_cbo_v;
+  wire dtlb_r_ptw    = is_req & decode.dcache_mmu_v;
+  wire dtlb_r_v      = dtlb_r_store | dtlb_r_load | dtlb_r_cbo | dtlb_r_ptw;
+
+  logic [vtag_width_p-1:0] dtlb_w_vtag;
+  bp_pte_leaf_s            dtlb_w_entry;
+  assign dtlb_w_v        = commit_pkt_cast_i.dtlb_fill_v;
+  assign dtlb_w_vtag     = commit_pkt_cast_i.vaddr[vaddr_width_p-1-:vtag_width_p];
+  assign dtlb_w_entry    = commit_pkt_cast_i.pte_leaf;
 
   // Some duplicated decode logic from dcache_decoder. Can send this information
   //   as part of dcache_pkt to reduce overhead
-  logic [1:0] size;
+  logic [1:0] dtlb_r_size;
   always_comb
     unique case (decode.fu_op)
-      e_dcache_op_lb, e_dcache_op_lbu, e_dcache_op_sb: size = 2'b00;
-      e_dcache_op_lh, e_dcache_op_lhu, e_dcache_op_sh: size = 2'b01;
+      e_dcache_op_lb, e_dcache_op_lbu, e_dcache_op_sb: dtlb_r_size = 2'b00;
+      e_dcache_op_lh, e_dcache_op_lhu, e_dcache_op_sh: dtlb_r_size = 2'b01;
       e_dcache_op_amoswapw, e_dcache_op_amoaddw, e_dcache_op_amoxorw
       ,e_dcache_op_amoandw, e_dcache_op_amoorw, e_dcache_op_amominw
       ,e_dcache_op_amomaxw, e_dcache_op_amominuw, e_dcache_op_amomaxuw
       ,e_dcache_op_lw, e_dcache_op_lwu, e_dcache_op_sw
       ,e_dcache_op_flw, e_dcache_op_fsw
-      ,e_dcache_op_lrw, e_dcache_op_scw:               size = 2'b10;
-      default: size = 2'b11;
+      ,e_dcache_op_lrw, e_dcache_op_scw:               dtlb_r_size = 2'b10;
+      default: dtlb_r_size = 2'b11;
     endcase
 
   logic [ptag_width_p-1:0] dtlb_ptag_lo;
-  wire uncached_mode_li = cfg_bus.dcache_mode == e_lce_mode_uncached;
-  wire nonspec_mode_li = cfg_bus.dcache_mode == e_lce_mode_nonspec;
+  wire uncached_mode_li = cfg_bus_cast_i.dcache_mode == e_lce_mode_uncached;
+  wire nonspec_mode_li = cfg_bus_cast_i.dcache_mode == e_lce_mode_nonspec;
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(dtlb_els_4k_p)
      ,.tlb_els_2m_p(dtlb_els_2m_p)
      ,.tlb_els_1g_p(dtlb_els_1g_p)
+     ,.latch_last_read_p(0)
      )
    dmmu
     (.clk_i(negedge_clk)
@@ -213,13 +196,13 @@ module bp_be_pipe_mem
 
      ,.flush_i(flush_i)
      ,.fence_i(sfence_i)
-     ,.priv_mode_i(trans_info.priv_mode)
-     ,.sum_i(trans_info.mstatus_sum)
-     ,.mxr_i(trans_info.mstatus_mxr)
-     ,.trans_en_i(trans_info.translation_en)
+     ,.priv_mode_i(trans_info_cast_i.priv_mode)
+     ,.sum_i(trans_info_cast_i.mstatus_sum)
+     ,.mxr_i(trans_info_cast_i.mstatus_mxr)
+     ,.trans_en_i(trans_info_cast_i.translation_en)
      ,.uncached_mode_i(uncached_mode_li)
      ,.nonspec_mode_i(nonspec_mode_li)
-     ,.hio_mask_i(cfg_bus.hio_mask)
+     ,.hio_mask_i(cfg_bus_cast_i.hio_mask)
 
      ,.w_v_i(dtlb_w_v)
      ,.w_vtag_i(dtlb_w_vtag)
@@ -227,61 +210,30 @@ module bp_be_pipe_mem
 
      ,.r_v_i(dtlb_r_v)
      ,.r_instr_i('0)
-     ,.r_load_i(is_load)
-     ,.r_store_i(is_store)
-     ,.r_cbo_i(is_cbo)
+     ,.r_load_i(dtlb_r_load)
+     ,.r_store_i(dtlb_r_store)
+     ,.r_cbo_i(dtlb_r_cbo)
+     ,.r_ptw_i(dtlb_r_ptw)
      ,.r_eaddr_i(eaddr)
-     ,.r_size_i(size)
+     ,.r_size_i(dtlb_r_size)
 
      ,.r_v_o(dtlb_v_lo)
      ,.r_ptag_o(dtlb_ptag_lo)
      ,.r_instr_miss_o()
-     ,.r_load_miss_o(tlb_load_miss_v)
-     ,.r_store_miss_o(tlb_store_miss_v)
+     ,.r_load_miss_o(tlb_load_miss_v_o)
+     ,.r_store_miss_o(tlb_store_miss_v_o)
      ,.r_uncached_o(tlb_ptag_uncached)
      ,.r_nonidem_o(/* All D$ misses are non-speculative */)
      ,.r_dram_o(tlb_ptag_dram)
      ,.r_instr_access_fault_o()
-     ,.r_load_access_fault_o(load_access_fault_v)
-     ,.r_store_access_fault_o(store_access_fault_v)
+     ,.r_load_access_fault_o(load_access_fault_v_o)
+     ,.r_store_access_fault_o(store_access_fault_v_o)
      ,.r_instr_misaligned_o()
-     ,.r_load_misaligned_o(load_misaligned_v)
-     ,.r_store_misaligned_o(store_misaligned_v)
+     ,.r_load_misaligned_o(load_misaligned_v_o)
+     ,.r_store_misaligned_o(store_misaligned_v_o)
      ,.r_instr_page_fault_o()
-     ,.r_load_page_fault_o(load_page_fault_v)
-     ,.r_store_page_fault_o(store_page_fault_v)
-     );
-
-  bp_be_ptw
-   #(.bp_params_p(bp_params_p)
-     ,.pte_width_p(sv39_pte_width_gp)
-     ,.page_table_depth_p(sv39_levels_gp)
-     ,.pte_size_in_bytes_p(sv39_pte_size_in_bytes_gp)
-     ,.page_idx_width_p(sv39_page_idx_width_gp)
-     )
-   ptw
-    (.clk_i(posedge_clk)
-     ,.reset_i(reset_i)
-
-     ,.busy_o(ptw_busy_o)
-     ,.commit_pkt_i(commit_pkt)
-     ,.trans_info_i(trans_info_i)
-     ,.ordered_i(dcache_ordered_lo)
-
-     ,.dcache_v_o(ptw_dcache_v)
-     ,.dcache_pkt_o(ptw_dcache_pkt)
-     ,.dcache_ptag_o(ptw_dcache_ptag)
-     ,.dcache_ptag_v_o(ptw_dcache_ptag_v)
-     ,.dcache_ready_and_i(dcache_ready_and_lo)
-
-     ,.dcache_early_v_i(dcache_early_v)
-     ,.dcache_early_req_i(dcache_early_req)
-     ,.dcache_final_v_i(dcache_final_v)
-     ,.dcache_final_ptw_i(dcache_final_ptw)
-     ,.dcache_final_data_i(dcache_final_data)
-
-     ,.ptw_fill_pkt_o(ptw_fill_pkt)
-     ,.ptw_fill_v_o(ptw_fill_v_o)
+     ,.r_load_page_fault_o(load_page_fault_v_o)
+     ,.r_store_page_fault_o(store_page_fault_v_o)
      );
 
   logic dtlb_r_v_r;
@@ -295,39 +247,20 @@ module bp_be_pipe_mem
      );
   assign dcache_st_data = rs2_r;
 
-  assign tlb_load_miss_v_o      = dtlb_r_v_r & tlb_load_miss_v;
-  assign tlb_store_miss_v_o     = dtlb_r_v_r & tlb_store_miss_v;
-
-  assign store_page_fault_v_o   = dtlb_r_v_r & store_page_fault_v;
-  assign load_page_fault_v_o    = dtlb_r_v_r & load_page_fault_v;
-  assign store_access_fault_v_o = dtlb_r_v_r & store_access_fault_v;
-  assign load_access_fault_v_o  = dtlb_r_v_r & load_access_fault_v;
-  assign store_misaligned_v_o   = dtlb_r_v_r & store_misaligned_v;
-  assign load_misaligned_v_o    = dtlb_r_v_r & load_misaligned_v;
-
   // We mux D-Cache accesses to a single port because PTW are fairly rare events
   always_comb
-    if (ptw_busy_o)
-      begin
-        dcache_pkt_v           = ptw_dcache_v;
-        dcache_pkt             = ptw_dcache_pkt;
-        dcache_ptag            = ptw_dcache_ptag;
-        dcache_ptag_v          = ptw_dcache_ptag_v;
-        dcache_ptag_uncached   = 1'b0;
-        dcache_ptag_dram       = 1'b1;
-      end
-    else
-      begin
-        dcache_pkt_v           = is_req;
-        dcache_pkt.rd_addr     = instr.t.rtype.rd_addr;
-        dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
-        dcache_pkt.vaddr       = eaddr[0+:vaddr_width_p];
-        dcache_ptag            = dtlb_ptag_lo;
-        // D$ can't handle misaligned accesses
-        dcache_ptag_v          = dtlb_v_lo & ~load_misaligned_v & ~store_misaligned_v;
-        dcache_ptag_uncached   = tlb_ptag_uncached;
-        dcache_ptag_dram       = tlb_ptag_dram;
-      end
+    begin
+      dcache_pkt_v           = is_req;
+      dcache_pkt.rd_addr     = instr.t.rtype.rd_addr;
+      dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
+      dcache_pkt.vaddr       = eaddr[0+:vaddr_width_p];
+      dcache_ptag            = dtlb_ptag_lo;
+
+      // D$ can't handle misaligned accesses
+      dcache_ptag_v          = dtlb_v_lo & ~load_misaligned_v_o & ~store_misaligned_v_o;
+      dcache_ptag_uncached   = tlb_ptag_uncached;
+      dcache_ptag_dram       = tlb_ptag_dram;
+    end
 
   bp_be_dcache
     #(.bp_params_p(bp_params_p))
@@ -403,6 +336,7 @@ module bp_be_pipe_mem
   assign late_wb_v_o = dcache_final_v & dcache_final_late;
   assign late_wb_pkt_cast_o = '{ird_w_v  : dcache_final_v & dcache_final_int
                                 ,frd_w_v : dcache_final_v & dcache_final_float
+                                ,ptw_w_v : dcache_final_v & dcache_final_ptw
                                 ,rd_addr : dcache_final_rd_addr
                                 ,rd_data : dcache_final_data
                                 ,default : '0

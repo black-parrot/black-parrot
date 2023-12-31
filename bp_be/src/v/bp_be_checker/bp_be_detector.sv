@@ -38,11 +38,10 @@ module bp_be_detector
    , input                             fdiv_busy_i
    , input                             mem_busy_i
    , input                             mem_ordered_i
-   , input                             ptw_busy_i
 
    // Pipeline control signals from the checker to the calculator
    , output logic                      hazard_v_o
-   , output logic                      interrupt_v_o
+   , output logic                      ordered_v_o
    , input [dispatch_pkt_width_lp-1:0] dispatch_pkt_i
    , input [commit_pkt_width_lp-1:0]   commit_pkt_i
 
@@ -252,8 +251,7 @@ module bp_be_detector
                    | (frs1_sb_raw_haz_v | frs2_sb_raw_haz_v | frs3_sb_raw_haz_v | frd_sb_waw_haz_v);
 
       // Combine all structural hazard information
-      struct_haz_v = ptw_busy_i
-                     | cmd_haz_v
+      struct_haz_v = cmd_haz_v
                      | fscore_haz_v | iscore_haz_v
                      | (mem_busy_i & decode.pipe_mem_early_v)
                      | (mem_busy_i & decode.pipe_mem_final_v)
@@ -261,8 +259,8 @@ module bp_be_detector
                      | (idiv_busy_i & decode.pipe_long_v);
     end
 
-  // Dispatch if we have a valid issue. Don't stall on data hazards for exceptions
   assign hazard_v_o = struct_haz_v | control_haz_v | data_haz_v;
+  assign ordered_v_o = ~(mem_busy_i | fdiv_busy_i | idiv_busy_i) & mem_ordered_i;
 
   bp_be_decode_s dep_decode;
   bp_be_dep_status_s dep_status_n;

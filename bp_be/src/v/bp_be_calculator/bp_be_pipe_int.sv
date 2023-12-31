@@ -43,7 +43,6 @@ module bp_be_pipe_int
   bp_be_dispatch_pkt_s reservation;
   bp_be_decode_s decode;
   rv64_instr_s instr;
-  bp_be_branch_pkt_s br_pkt;
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;

@@ -12,58 +12,49 @@ module bp_be_ptw
    , parameter `BSG_INV_PARAM(pte_size_in_bytes_p)
    , parameter `BSG_INV_PARAM(page_idx_width_p)
 
-   , localparam dcache_pkt_width_lp   = `bp_be_dcache_pkt_width(vaddr_width_p)
-   , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
    , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    )
-  (input                                    clk_i
-   , input                                  reset_i
+  (input                                      clk_i
+   , input                                    reset_i
 
    // Slow control signals
+   , output                                   busy_o
    , input [commit_pkt_width_lp-1:0]          commit_pkt_i
    , input [trans_info_width_lp-1:0]          trans_info_i
-   , output                                   busy_o
    , input                                    ordered_i
 
-   // D-Cache connections
-   , output logic                             dcache_v_o
-   , output logic [dcache_pkt_width_lp-1:0]   dcache_pkt_o
-   , output logic [ptag_width_p-1:0]          dcache_ptag_o
-   , output logic                             dcache_ptag_v_o
-   , input                                    dcache_ready_and_i
+   , output logic                             v_o
+   , output logic                             walk_o
+   , output logic                             itlb_fill_o
+   , output logic                             dtlb_fill_o
+   , output logic                             instr_page_fault_o
+   , output logic                             load_page_fault_o
+   , output logic                             store_page_fault_o
+   , output logic                             partial_o
+   , output logic [dword_width_gp-1:0]        addr_o
+   , output logic [dword_width_gp-1:0]        pte_o
 
-   , input                                    dcache_early_v_i
-   , input                                    dcache_early_req_i
-
-   , input                                    dcache_final_v_i
-   , input                                    dcache_final_ptw_i
-   , input [dpath_width_gp-1:0]               dcache_final_data_i
-
-   , output logic [ptw_fill_pkt_width_lp-1:0] ptw_fill_pkt_o
-   , output logic                             ptw_fill_v_o
+   , input                                    v_i
+   , input [dword_width_gp-1:0]               data_i
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
-  `bp_cast_o(bp_be_dcache_pkt_s, dcache_pkt);
   `bp_cast_i(bp_be_commit_pkt_s, commit_pkt);
   `bp_cast_i(bp_be_trans_info_s, trans_info);
-  `bp_cast_o(bp_be_ptw_fill_pkt_s, ptw_fill_pkt);
 
-  enum logic [2:0] {e_idle, e_wait, e_send_load, e_check_load, e_writeback} state_n, state_r;
-  wire is_idle    = (state_r == e_idle);
-  wire is_wait    = (state_r == e_wait);
-  wire is_send    = (state_r == e_send_load);
-  wire is_check   = (state_r == e_check_load);
-  wire is_write   = (state_r == e_writeback);
+  enum logic [1:0] {e_idle, e_wait, e_send_load, e_writeback} state_n, state_r;
+  wire is_idle  = (state_r == e_idle);
+  wire is_wait  = (state_r == e_wait);
+  wire is_send  = (state_r == e_send_load);
+  wire is_write = (state_r == e_writeback);
 
   localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_p);
   localparam lg_page_table_depth_lp = `BSG_SAFE_CLOG2(page_table_depth_p);
   localparam pte_ptag_offset_lp = (page_table_depth_p-1)*page_idx_width_p;
 
   sv39_pte_s dcache_pte;
-  assign dcache_pte = dcache_final_data_i[0+:dword_width_gp];
+  assign dcache_pte = data_i;
 
   logic [ptag_width_p-1:0]           ppn_r, ppn_n;
   logic [lg_page_table_depth_lp-1:0] level_n, level_r;
@@ -89,9 +80,6 @@ module bp_be_ptw
     | (((level_r > 1) ? partial_vpn[1] : partial_ppn[1]) << 1*page_idx_width_p)
     | (((level_r > 2) ? partial_vpn[2] : partial_ppn[2]) << 2*page_idx_width_p)
     | (dcache_pte.ppn[ptag_width_p-1:pte_ptag_offset_lp] << pte_ptag_offset_lp);
-
-  assign dcache_ptag_o          = ppn_r;
-  assign dcache_ptag_v_o        = is_check;
 
   // PMA attributes
   assign busy_o                 = ~is_idle;
@@ -122,39 +110,12 @@ module bp_be_ptw
   wire walk_start               = is_idle  & tlb_miss_v;
   wire walk_ready               = is_wait  & ordered_i;
   wire walk_send                = is_send;
-  wire walk_replay              = is_check & ~dcache_early_v_i & ~dcache_early_req_i;
-  wire walk_next                = is_write & dcache_final_v_i & ~(pte_is_leaf | page_fault_v);
-  wire walk_done                = is_write & dcache_final_v_i &  (pte_is_leaf | page_fault_v);
+  wire walk_replay              = commit_pkt_cast_i.dcache_replay;
+  wire walk_next                = v_i & ~(pte_is_leaf | page_fault_v);
+  wire walk_done                = v_i &  (pte_is_leaf | page_fault_v);
 
-  wire itlb_fill_v              =  instr_r & ~page_fault_v;
-  wire dtlb_fill_v              = ~instr_r & ~page_fault_v;
-
-  assign dcache_v_o                    = walk_send | walk_next;
-  assign dcache_pkt_cast_o.opcode      = e_dcache_op_ptw;
-  assign dcache_pkt_cast_o.vaddr       = partial_vpn[level_n] << lg_pte_size_in_bytes_lp;
-  assign dcache_pkt_cast_o.rd_addr     = '0;
-
-  bp_be_pte_leaf_s tlb_w_entry;
-  assign tlb_w_entry.ptag       = writeback_ppn;
-  assign tlb_w_entry.gigapage   = pte_is_gigapage;
-  assign tlb_w_entry.megapage   = pte_is_megapage;
-  assign tlb_w_entry.a          = dcache_pte.a;
-  assign tlb_w_entry.d          = dcache_pte.d;
-  assign tlb_w_entry.u          = dcache_pte.u;
-  assign tlb_w_entry.x          = dcache_pte.x;
-  assign tlb_w_entry.w          = dcache_pte.w;
-  assign tlb_w_entry.r          = dcache_pte.r;
-
-  assign ptw_fill_v_o                           = walk_done;
-  assign ptw_fill_pkt_cast_o.v                  = walk_done; 
-  assign ptw_fill_pkt_cast_o.itlb_fill_v        = walk_done & itlb_fill_v;
-  assign ptw_fill_pkt_cast_o.dtlb_fill_v        = walk_done & dtlb_fill_v;
-  assign ptw_fill_pkt_cast_o.instr_page_fault_v = walk_done & instr_page_fault;
-  assign ptw_fill_pkt_cast_o.load_page_fault_v  = walk_done & load_page_fault;
-  assign ptw_fill_pkt_cast_o.store_page_fault_v = walk_done & store_page_fault;
-  assign ptw_fill_pkt_cast_o.partial            = walk_done & partial_r;
-  assign ptw_fill_pkt_cast_o.vaddr              = vaddr_r;
-  assign ptw_fill_pkt_cast_o.entry              = tlb_w_entry;
+  wire [page_offset_width_gp-1:0] walk_offset = (partial_vpn[level_n] << lg_pte_size_in_bytes_lp);
+  wire [paddr_width_p-1:0] walk_addr = {ppn, walk_offset};
 
   assign instr_n = commit_pkt_cast_i.itlb_miss;
   assign load_n = commit_pkt_cast_i.dtlb_load_miss;
@@ -183,18 +144,39 @@ module bp_be_ptw
      );
   assign ppn = walk_en ? ppn_n : ppn_r;
 
+  bp_be_pte_leaf_s tlb_w_entry;
+  assign tlb_w_entry.ptag     = writeback_ppn;
+  assign tlb_w_entry.gigapage = pte_is_gigapage;
+  assign tlb_w_entry.megapage = pte_is_megapage;
+  assign tlb_w_entry.a        = dcache_pte.a;
+  assign tlb_w_entry.d        = dcache_pte.d;
+  assign tlb_w_entry.u        = dcache_pte.u;
+  assign tlb_w_entry.x        = dcache_pte.x;
+  assign tlb_w_entry.w        = dcache_pte.w;
+  assign tlb_w_entry.r        = dcache_pte.r;
+
+  assign v_o                = walk_send | walk_next | walk_done;
+  assign walk_o             = walk_send | walk_next;
+  assign itlb_fill_o        = walk_done &  instr_r & ~page_fault_v;
+  assign dtlb_fill_o        = walk_done & ~instr_r & ~page_fault_v;
+  assign instr_page_fault_o = walk_done & instr_page_fault;
+  assign load_page_fault_o  = walk_done & load_page_fault;
+  assign store_page_fault_o = walk_done & store_page_fault;
+  assign partial_o          = walk_done & partial_r;
+  assign addr_o             = walk_done ? vaddr_r : walk_addr;
+  assign pte_o              = tlb_w_entry;
+
   // Because internal dcache flushing is a possibility, we need to manually replay
   //   rather than relying on the late writeback
   always_comb
     case (state_r)
       e_idle      : state_n = walk_start         ? e_wait       : e_idle;
       e_wait      : state_n = walk_ready         ? e_send_load  : e_wait;
-      e_send_load : state_n = walk_send          ? e_check_load : e_send_load;
-      e_check_load: state_n = walk_replay        ? e_send_load  : e_writeback;
-      e_writeback : state_n = walk_done
-                              ? e_idle
-                              : walk_next
-                                ? e_check_load
+      e_send_load : state_n = walk_send          ? e_writeback  : e_send_load;
+      e_writeback : state_n = walk_replay
+                              ? e_wait
+                              : walk_done
+                                ? e_idle
                                 : e_writeback;
       default : state_n = e_idle;
     endcase

@@ -512,10 +512,10 @@ module testbench
           ,.struct_haz_i(be.detector.struct_haz_v | be.scheduler.late_wb_yumi_o)
           ,.idiv_haz_i(be.detector.idiv_busy_i & be.detector.issue_pkt_cast_i.decode.pipe_long_v)
           ,.fdiv_haz_i(be.detector.fdiv_busy_i & be.detector.issue_pkt_cast_i.decode.pipe_long_v)
-          ,.ptw_busy_i(be.detector.ptw_busy_i)
+          ,.ptw_busy_i(be.scheduler.ptw_busy_lo)
 
           ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
-          ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt)
+          ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt_cast_o)
           );
 
       bind bp_fe_top

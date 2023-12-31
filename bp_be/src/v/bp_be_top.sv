@@ -83,13 +83,13 @@ module bp_be_top
   bp_be_dispatch_pkt_s dispatch_pkt;
   bp_be_branch_pkt_s   br_pkt;
 
-  logic hazard_v, interrupt_v, ispec_v;
+  logic ordered_v, hazard_v, ispec_v;
   logic irq_pending_lo, irq_waiting_lo;
 
   bp_be_commit_pkt_s commit_pkt;
-  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_decode_info_s decode_info_lo;
+  bp_be_trans_info_s trans_info_lo;
 
   logic [wb_pkt_width_lp-1:0] late_wb_pkt;
   logic late_wb_v_lo, late_wb_force_lo, late_wb_yumi_li;
@@ -99,7 +99,7 @@ module bp_be_top
   logic npc_mismatch_lo, poison_isd_lo, clear_iss_lo, suppress_iss_lo, resume_lo;
 
   logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo;
-  logic mem_ordered_lo, mem_busy_lo, idiv_busy_lo, fdiv_busy_lo, ptw_busy_lo;
+  logic mem_ordered_lo, mem_busy_lo, idiv_busy_lo, fdiv_busy_lo;
 
   bp_be_director
    #(.bp_params_p(bp_params_p))
@@ -142,11 +142,9 @@ module bp_be_top
      ,.mem_ordered_i(mem_ordered_lo)
      ,.fdiv_busy_i(fdiv_busy_lo)
      ,.idiv_busy_i(idiv_busy_lo)
-     ,.ptw_busy_i(ptw_busy_lo)
-
      ,.ispec_v_o(ispec_v)
      ,.hazard_v_o(hazard_v)
-     ,.interrupt_v_o(interrupt_v)
+     ,.ordered_v_o(ordered_v)
      ,.dispatch_pkt_i(dispatch_pkt)
      ,.commit_pkt_i(commit_pkt)
 
@@ -163,6 +161,7 @@ module bp_be_top
      ,.poison_isd_i(poison_isd_lo)
      ,.resume_i(resume_lo)
      ,.decode_info_i(decode_info_lo)
+     ,.trans_info_i(trans_info_lo)
      ,.issue_pkt_o(issue_pkt)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.clear_iss_i(clear_iss_lo)
@@ -170,7 +169,7 @@ module bp_be_top
      ,.hazard_v_i(hazard_v)
      ,.ispec_v_i(ispec_v)
      ,.irq_pending_i(irq_pending_lo)
-     ,.ptw_busy_i(ptw_busy_lo)
+     ,.ordered_v_i(ordered_v)
 
      ,.fe_queue_i(fe_queue_i)
      ,.fe_queue_v_i(fe_queue_v_i)
@@ -181,7 +180,6 @@ module bp_be_top
      ,.iwb_pkt_i(iwb_pkt)
      ,.fwb_pkt_i(fwb_pkt)
 
-     ,.ptw_fill_pkt_i(ptw_fill_pkt)
      ,.late_wb_pkt_i(late_wb_pkt)
      ,.late_wb_v_i(late_wb_v_lo)
      ,.late_wb_force_i(late_wb_force_lo)
@@ -196,11 +194,11 @@ module bp_be_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.decode_info_o(decode_info_lo)
+     ,.trans_info_o(trans_info_lo)
      ,.mem_busy_o(mem_busy_lo)
      ,.mem_ordered_o(mem_ordered_lo)
      ,.idiv_busy_o(idiv_busy_lo)
      ,.fdiv_busy_o(fdiv_busy_lo)
-     ,.ptw_busy_o(ptw_busy_lo)
 
      ,.dispatch_pkt_i(dispatch_pkt)
      ,.br_pkt_o(br_pkt)
@@ -208,7 +206,6 @@ module bp_be_top
      ,.iwb_pkt_o(iwb_pkt)
      ,.fwb_pkt_o(fwb_pkt)
 
-     ,.ptw_fill_pkt_o(ptw_fill_pkt)
      ,.late_wb_pkt_o(late_wb_pkt)
      ,.late_wb_v_o(late_wb_v_lo)
      ,.late_wb_force_o(late_wb_force_lo)

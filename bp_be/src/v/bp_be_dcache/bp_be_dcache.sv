@@ -560,12 +560,13 @@ module bp_be_dcache
      ,.data_o(v_dm_r)
      );
 
+  wire snoop_dm_n = snoop_tv_r | decode_tv_r.ptw_op;
   wire [dpath_width_gp-1:0] data_dm_n = decode_tv_r.float_op ? float_data_tv : dword_data_tv;
   bsg_dff
    #(.width_p(1+$bits(bp_be_dcache_decode_s)+paddr_width_p+dpath_width_gp))
    dm_stage_reg
     (.clk_i(clk_i)
-     ,.data_i({snoop_tv_r, decode_tv_r, paddr_tv_r, data_dm_n})
+     ,.data_i({snoop_dm_n, decode_tv_r, paddr_tv_r, data_dm_n})
      ,.data_o({snoop_dm_r, decode_dm_r, paddr_dm_r, data_dm_r})
      );
 
