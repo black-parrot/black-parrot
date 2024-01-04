@@ -95,6 +95,11 @@ module bp_be_detector
     & (dep_status_r[0].aux_iwb_v | dep_status_r[0].emem_iwb_v | dep_status_r[0].fint_iwb_v)
     & integer_support_p[e_catchup];
 
+  wire irs2_store_v = decode.irs2_r_v & rs2_match_vector[0]
+    & decode.dcache_w_v
+    & (dep_status_r[0].aux_iwb_v | dep_status_r[0].emem_iwb_v | dep_status_r[0].fint_iwb_v)
+    & integer_support_p[e_catchup];
+
   assign ispec_v_o = irs1_ispec_v | irs2_ispec_v;
 
   logic [1:0] irs_match_lo;
@@ -183,7 +188,8 @@ module bp_be_detector
 
       irs2_data_haz_v[0] = (decode.irs2_r_v & rs2_match_vector[0])
                            & (dep_status_r[0].fint_iwb_v | dep_status_r[0].aux_iwb_v | dep_status_r[0].mul_iwb_v | dep_status_r[0].emem_iwb_v | dep_status_r[0].fmem_iwb_v | dep_status_r[0].long_iwb_v)
-                           & ~irs2_ispec_v;
+                           & ~irs2_ispec_v
+                           & ~irs2_store_v;
 
       frs1_data_haz_v[0] = (decode.frs1_r_v & rs1_match_vector[0])
                            & (dep_status_r[0].fint_fwb_v | dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v | dep_status_r[0].long_fwb_v);

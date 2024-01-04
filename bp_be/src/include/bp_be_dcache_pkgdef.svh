@@ -25,6 +25,7 @@
     logic                         store_op;
     logic                         signed_op;
     logic                         float_op;
+    logic                         int_op;
     logic                         ptw_op;
     logic                         cache_op;
     logic                         block_op;
@@ -50,6 +51,13 @@
     bp_be_dcache_decode_s decode;
     logic                 uncached;
   }  bp_be_dcache_req_payload_s;
+
+  typedef struct packed
+  {
+    logic [reg_addr_width_gp-1:0]    rd_addr;
+    bp_be_dcache_fu_op_e             opcode;
+    logic [page_offset_width_gp-1:0] offset;
+  }  bp_be_dcache_pkt_s;
 
 `endif
 

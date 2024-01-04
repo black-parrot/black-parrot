@@ -139,7 +139,7 @@
       bp_be_dcache_fu_op_e   dcache_op;
       bp_be_mul_fu_op_e      mul_fu_op;
       bp_be_fma_fu_op_e      fma_fu_op;
-    }  fu_op;
+    }  t;
   }  bp_be_fu_op_s;
 
   typedef enum logic

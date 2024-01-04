@@ -26,7 +26,7 @@ module wrapper
 
    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
 
-   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
+   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
 
    , localparam lg_num_lce_lp = `BSG_SAFE_CLOG2(num_lce_p)
    )
@@ -41,7 +41,7 @@ module wrapper
 
    , input [num_caches_p-1:0][ptag_width_p-1:0]        ptag_i
    , input [num_caches_p-1:0]                          uncached_i
-   , input [num_caches_p-1:0][dpath_width_gp-1:0]      st_data_i
+   , input [num_caches_p-1:0][dword_width_gp-1:0]      st_data_i
 
    , output logic [num_caches_p-1:0][dword_width_gp-1:0] data_o
    , output logic [num_caches_p-1:0]                     v_o
@@ -58,10 +58,9 @@ module wrapper
    );
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
-  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
 
   // Cache to Rolly FIFO signals
-  logic [num_caches_p-1:0] dcache_ready_and_lo;
+  logic [num_caches_p-1:0] dcache_busy_lo;
   logic [num_caches_p-1:0] rollback_li;
   logic [num_caches_p-1:0] rolly_uncached_lo;
   logic [num_caches_p-1:0] rolly_v_lo, rolly_yumi_li;
@@ -72,6 +71,7 @@ module wrapper
   // Miss, Management Interfaces
   logic [num_caches_p-1:0] cache_req_v_lo, cache_req_metadata_v_lo;
   logic [num_caches_p-1:0] cache_req_yumi_lo, cache_req_lock_lo;
+  logic [num_caches_p-1:0][dcache_req_id_width_p-1:0] cache_req_id_lo;
   logic [num_caches_p-1:0] cache_req_last_lo, cache_req_critical_lo;
   logic [num_caches_p-1:0][dcache_req_width_lp-1:0] cache_req_lo;
   logic [num_caches_p-1:0][dcache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
@@ -142,7 +142,7 @@ module wrapper
        ,.v_o(rolly_v_lo[i])
        ,.yumi_i(rolly_yumi_li[i])
        );
-      assign rolly_yumi_li[i] = rolly_v_lo[i] & dcache_ready_and_lo[i];
+      assign rolly_yumi_li[i] = rolly_v_lo[i] & ~dcache_busy_lo[i];
 
       bsg_dff_reset
        #(.width_p(1+ptag_width_p)
@@ -187,7 +187,7 @@ module wrapper
 
       ,.dcache_pkt_i(rolly_dcache_pkt_lo[i])
       ,.v_i(rolly_yumi_li[i])
-      ,.ready_and_o(dcache_ready_and_lo[i])
+      ,.busy_o(dcache_busy_lo[i])
 
       ,.ptag_v_i(1'b1)
       ,.ptag_i(rolly_ptag_r[i])
@@ -195,18 +195,14 @@ module wrapper
       ,.ptag_dram_i(1'b1)
       ,.st_data_i(st_data_i)
 
-      ,.early_v_o(v_o[i])
-      ,.early_data_o(data_o[i])
-      ,.early_req_o()
-
-      ,.final_v_o()
-      ,.final_data_o()
-      ,.final_addr_o()
-      ,.final_rd_addr_o()
-      ,.final_int_o()
-      ,.final_float_o()
-      ,.final_ptw_o()
-      ,.final_late_o()
+      ,.v_o(v_o[i])
+      ,.data_o(data_o[i])
+      ,.rd_addr_o()
+      ,.int_o()
+      ,.float_o()
+      ,.ptw_o()
+      ,.ret_o()
+      ,.late_o()
 
       ,.flush_i('0)
 
@@ -216,6 +212,7 @@ module wrapper
       ,.cache_req_metadata_v_o(cache_req_metadata_v_lo[i])
       ,.cache_req_yumi_i(cache_req_yumi_lo[i])
       ,.cache_req_lock_i(cache_req_lock_lo[i])
+      ,.cache_req_id_i(cache_req_id_lo[i])
       ,.cache_req_critical_i(cache_req_critical_lo[i])
       ,.cache_req_last_i(cache_req_last_lo[i])
       ,.cache_req_credits_full_i(cache_req_credits_full_lo[i])
@@ -266,6 +263,7 @@ module wrapper
              ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
              ,.cache_req_critical_o(cache_req_critical_lo[i])
              ,.cache_req_last_o(cache_req_last_lo[i])
+             ,.cache_req_id_o(cache_req_id_lo[i])
              ,.cache_req_credits_full_o(cache_req_credits_full_lo[i])
              ,.cache_req_credits_empty_o(cache_req_credits_empty_lo[i])
 

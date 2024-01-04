@@ -9,30 +9,22 @@ module bp_be_dcache_decoder
    `declare_bp_proc_params(bp_params_p)
    , parameter amo_support_p = 0
 
-   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
+   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
    , localparam dcache_decode_width_lp = $bits(bp_be_dcache_decode_s)
    )
   (input [dcache_pkt_width_lp-1:0]             pkt_i
    , output logic [dcache_decode_width_lp-1:0] decode_o
    );
 
-  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   `bp_cast_i(bp_be_dcache_pkt_s, pkt);
   `bp_cast_o(bp_be_dcache_decode_s, decode);
 
   always_comb begin
     decode_cast_o = '0;
 
-    // Float decoding
-    decode_cast_o.float_op = pkt_cast_i.opcode inside
-      {e_dcache_op_flw, e_dcache_op_fld, e_dcache_op_fsw, e_dcache_op_fsd};
-
-    decode_cast_o.ptw_op = pkt_cast_i.opcode inside {e_dcache_op_ptw};
-
     // Atomic op decoding
     decode_cast_o.lr_op = pkt_cast_i.opcode inside {e_dcache_op_lrw, e_dcache_op_lrd};
     decode_cast_o.sc_op = pkt_cast_i.opcode inside {e_dcache_op_scw, e_dcache_op_scd};
-    decode_cast_o.clean_op = pkt_cast_i.opcode inside {e_dcache_op_clean};
 
     // Atomic subop decoding
     unique casez (pkt_cast_i.opcode)
@@ -84,6 +76,23 @@ module bp_be_dcache_decoder
        ,e_dcache_op_bzero
        };
 
+    // Type decoding
+    decode_cast_o.int_op = pkt_cast_i.opcode inside
+      {e_dcache_op_lb, e_dcache_op_lh, e_dcache_op_lw, e_dcache_op_ld
+       ,e_dcache_op_lbu, e_dcache_op_lhu, e_dcache_op_lwu
+       ,e_dcache_op_sb, e_dcache_op_sh, e_dcache_op_sw, e_dcache_op_sd
+       ,e_dcache_op_lrw, e_dcache_op_scw, e_dcache_op_lrd, e_dcache_op_scd
+       ,e_dcache_op_amoswapw, e_dcache_op_amoaddw, e_dcache_op_amoxorw
+       ,e_dcache_op_amoandw, e_dcache_op_amoorw, e_dcache_op_amominw
+       ,e_dcache_op_amomaxw, e_dcache_op_amominuw, e_dcache_op_amomaxuw
+       ,e_dcache_op_amoswapd, e_dcache_op_amoaddd, e_dcache_op_amoxord
+       ,e_dcache_op_amoandd, e_dcache_op_amoord, e_dcache_op_amomind
+       ,e_dcache_op_amomaxd, e_dcache_op_amominud, e_dcache_op_amomaxud
+       };
+    decode_cast_o.float_op = pkt_cast_i.opcode inside
+      {e_dcache_op_flw, e_dcache_op_fld, e_dcache_op_fsw, e_dcache_op_fsd};
+    decode_cast_o.ptw_op = pkt_cast_i.opcode inside {e_dcache_op_ptw};
+
     // Size decoding
     unique case (pkt_cast_i.opcode)
       e_dcache_op_inval, e_dcache_op_clean, e_dcache_op_flush:
@@ -109,7 +118,11 @@ module bp_be_dcache_decoder
     decode_cast_o.rd_addr = pkt_cast_i.rd_addr;
 
     // Return
-    decode_cast_o.ret_op = decode_cast_o.load_op & ~decode_cast_o.ptw_op & (decode_cast_o.float_op | (decode_cast_o.rd_addr != '0));
+    decode_cast_o.ret_op = decode_cast_o.load_op
+      & (decode_cast_o.ptw_op
+         | decode_cast_o.float_op
+         | (decode_cast_o.int_op && (decode_cast_o.rd_addr != '0))
+         );
   end
 
 endmodule

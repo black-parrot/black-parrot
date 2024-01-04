@@ -259,6 +259,7 @@ module bp_be_calculator_top
   assign br_pkt_cast_o.bspec  = br_pkt_cast_o.v & exc_stage_r[0].ispec_v;
   assign br_pkt_cast_o.npc    = pipe_int_early_npc_lo;
 
+  logic [dpath_width_gp-1:0] rs2_r;
   if (integer_support_p[e_catchup])
     begin : catchup
       bp_be_dispatch_pkt_s catchup_reservation_n, catchup_reservation_r;
@@ -301,6 +302,8 @@ module bp_be_calculator_top
          ,.instr_misaligned_v_o(pipe_int_catchup_instr_misaligned_lo)
          );
       assign pipe_int_catchup_mispredict_lo = exc_stage_r[1].ispec_v & (pipe_int_catchup_npc_lo != reservation_r.pc);
+
+      assign rs2_r = catchup_reservation_r.rs2;
     end
   else
     begin : no_catchup
@@ -308,6 +311,14 @@ module bp_be_calculator_top
       assign pipe_int_catchup_data_v_lo = '0;
       assign pipe_int_catchup_mispredict_lo = '0;
       assign pipe_int_catchup_instr_misaligned_lo = '0;
+
+      bsg_dff
+       #(.width_p(dpath_width_gp))
+       rs2_reg
+        (.clk_i(clk_i)
+         ,.data_i(reservation_r.rs2)
+         ,.data_o(rs2_r)
+         );
     end
 
   // Aux pipe: 2 cycle latency
@@ -342,6 +353,7 @@ module bp_be_calculator_top
      ,.ordered_o(mem_ordered_o)
 
      ,.reservation_i(reservation_r)
+     ,.rs2_r_i(rs2_r)
 
      ,.commit_pkt_i(commit_pkt_cast_o)
 

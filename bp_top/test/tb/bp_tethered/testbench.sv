@@ -472,7 +472,7 @@ module testbench
           ,.fe_queue_empty_i(be.scheduler.issue_queue.empty)
 
           ,.mispredict_i(be.director.npc_mismatch_v)
-          ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_and_o)
+          ,.dcache_miss_i(be.calculator.pipe_mem.dcache.busy_o)
           ,.control_haz_i(be.detector.control_haz_v)
           ,.data_haz_i(be.detector.data_haz_v)
           ,.aux_dep_i((be.detector.dep_status_r[0].aux_iwb_v

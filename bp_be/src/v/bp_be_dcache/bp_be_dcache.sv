@@ -107,20 +107,20 @@ module bp_be_dcache
    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
 
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
-   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
+   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
    )
   (input                                             clk_i
    , input                                           reset_i
 
    // Unused except for tracers
    , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
+   , output logic                                    busy_o
+   , output logic                                    ordered_o
 
    // Cycle 0: "Request"
    // New D$ packet comes in
    , input [dcache_pkt_width_lp-1:0]                 dcache_pkt_i
    , input                                           v_i
-   , output logic                                    ready_and_o
-   , output logic                                    ordered_o
 
    // Cycle 1: "Tag Lookup"
    // TLB and PMA information comes in this cycle
@@ -128,25 +128,19 @@ module bp_be_dcache
    , input                                           ptag_v_i
    , input                                           ptag_uncached_i
    , input                                           ptag_dram_i
-   , input [dpath_width_gp-1:0]                      st_data_i
+   , input [dword_width_gp-1:0]                      st_data_i
    , input                                           flush_i
 
    // Cycle 2: "Tag Verify"
    // Data (or miss result) comes out of the cache
-   , output logic                                    early_v_o
-   , output logic [dword_width_gp-1:0]               early_data_o
-   , output logic                                    early_req_o
-
-   // Cycle 3: "Data Mux"
-   // Additional processing for floating point or wide data
-   , output logic                                    final_v_o
-   , output logic [dpath_width_gp-1:0]               final_data_o
-   , output logic [paddr_width_p-1:0]                final_addr_o
-   , output logic [reg_addr_width_gp-1:0]            final_rd_addr_o
-   , output logic                                    final_int_o
-   , output logic                                    final_float_o
-   , output logic                                    final_ptw_o
-   , output logic                                    final_late_o
+   , output logic                                    v_o
+   , output logic [dword_width_gp-1:0]               data_o
+   , output logic [reg_addr_width_gp-1:0]            rd_addr_o
+   , output logic                                    int_o
+   , output logic                                    float_o
+   , output logic                                    ptw_o
+   , output logic                                    ret_o
+   , output logic                                    late_o
 
    // Cache Engine Interface
    // This is considered the "slow path", handling uncached requests
@@ -204,9 +198,9 @@ module bp_be_dcache
   wire is_serial  = (state_r == e_serial);
 
   // Global signals
-  logic tl_we, tv_we, dm_we;
-  logic safe_tl_we, safe_tv_we, safe_dm_we;
-  logic v_tl_r, v_tv_r, v_dm_r;
+  logic tl_we, tv_we;
+  logic safe_tl_we, safe_tv_we;
+  logic v_tl_r, v_tv_r;
   logic tag_mem_write_hazard, data_mem_write_hazard, blocking_hazard, nonblocking_hazard, fill_hazard;
   logic blocking_req, blocking_sent;
   logic nonblocking_req, nonblocking_sent;
@@ -236,7 +230,6 @@ module bp_be_dcache
   /////////////////////////////////////////////////////////////////////////////
   // Decode Stage
   /////////////////////////////////////////////////////////////////////////////
-  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   `bp_cast_i(bp_be_dcache_pkt_s, dcache_pkt);
 
   bp_be_dcache_decode_s decode_lo;
@@ -247,10 +240,9 @@ module bp_be_dcache
      ,.decode_o(decode_lo)
      );
 
-  wire [vaddr_width_p-1:0]         vaddr       = dcache_pkt_cast_i.vaddr;
-  wire [sindex_width_lp-1:0]       vaddr_index = vaddr[block_offset_width_lp+:sindex_width_lp];
-  wire [bindex_width_lp-1:0]       vaddr_bank  = vaddr[byte_offset_width_lp+:bindex_width_lp];
-  wire [vtag_width_p-1:0]          vaddr_tag   = vaddr[vaddr_width_p-1-:vtag_width_p];
+  wire [page_offset_width_gp-1:0] offset = dcache_pkt_cast_i.offset;
+  wire [sindex_width_lp-1:0]       index = offset[block_offset_width_lp+:sindex_width_lp];
+  wire [bindex_width_lp-1:0]        bank = offset[byte_offset_width_lp+:bindex_width_lp];
 
   ///////////////////////////
   // Tag Mem Storage
@@ -314,9 +306,9 @@ module bp_be_dcache
   // TL Stage
   /////////////////////////////////////////////////////////////////////////////
   bp_be_dcache_decode_s decode_tl_r;
-  logic [vaddr_width_p-1:0] vaddr_tl_r;
+  logic [page_offset_width_gp-1:0] offset_tl_r;
 
-  assign safe_tl_we = ready_and_o & v_i;
+  assign safe_tl_we = v_i & ~busy_o;
   assign tl_we = safe_tl_we & ~flush_tl;
   bsg_dff_reset
    #(.width_p(1))
@@ -330,20 +322,20 @@ module bp_be_dcache
 
   // Save stage information
   bsg_dff
-   #(.width_p(vaddr_width_p+$bits(bp_be_dcache_decode_s)))
+   #(.width_p(page_offset_width_gp+$bits(bp_be_dcache_decode_s)))
    tl_stage_reg
     (.clk_i(clk_i)
-     ,.data_i({vaddr, decode_lo})
-     ,.data_o({vaddr_tl_r, decode_tl_r})
+     ,.data_i({offset, decode_lo})
+     ,.data_o({offset_tl_r, decode_tl_r})
      );
 
-  wire [paddr_width_p-1:0]         paddr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_gp]};
-  wire [sindex_width_lp-1:0] vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:sindex_width_lp];
-  wire [bindex_width_lp-1:0]  vaddr_bank_tl = vaddr_tl_r[byte_offset_width_lp+:bindex_width_lp];
+  wire [paddr_width_p-1:0]   paddr_tl = {ptag_i, offset_tl_r};
+  wire [sindex_width_lp-1:0] index_tl = paddr_tl[block_offset_width_lp+:sindex_width_lp];
+  wire [bindex_width_lp-1:0]  bank_tl = paddr_tl[byte_offset_width_lp+:bindex_width_lp];
 
-  // Concatenate unused bits from vaddr if any cache way size is not 4kb
+  // Concatenate unused bits from offset if any cache way size is not 4kb
   localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
-  wire [ctag_vbits_lp-1:0] ctag_vbits = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:`BSG_MAX(ctag_vbits_lp,1)];
+  wire [ctag_vbits_lp-1:0] ctag_vbits = offset_tl_r[page_offset_width_gp-1-:`BSG_MAX(ctag_vbits_lp,1)];
   // Causes segfault in Synopsys DC O-2018.06-SP4
   // wire [ctag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
   wire [ctag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
@@ -361,21 +353,13 @@ module bp_be_dcache
   bsg_decode
    #(.num_out_p(assoc_p))
    offset_decode
-    (.i(vaddr_bank_tl)
+    (.i(bank_tl)
      ,.o(bank_sel_one_hot_tl)
      );
 
   wire uncached_tl = ~decode_tl_r.cache_op & (decode_tl_r.uncached_op | ptag_uncached_i);
-  wire dram_tl     =  decode_tl_r.cache_op | ptag_dram_i;
-
-  logic [dword_width_gp-1:0] dcache_st_fdata;
-  bp_be_reg_to_fp
-   #(.bp_params_p(bp_params_p))
-   reg_to_fp
-    (.reg_i(st_data_i)
-     ,.raw_o(dcache_st_fdata)
-     );
-  wire [dword_width_gp-1:0] st_data_tl = decode_tl_r.float_op ? dcache_st_fdata : st_data_i;
+  wire dram_tl =  decode_tl_r.cache_op | ptag_dram_i;
+  wire [dword_width_gp-1:0] st_data_tl = st_data_i;
 
   /////////////////////////////////////////////////////////////////////////////
   // TV Stage
@@ -519,14 +503,6 @@ module bp_be_dcache
      ,.data_o(dword_data_tv)
      );
 
-  bp_be_fp_reg_s float_data_tv;
-  bp_be_fp_to_reg
-   #(.bp_params_p(bp_params_p))
-   fp_to_reg
-    (.raw_i(dword_data_tv)
-     ,.reg_o(float_data_tv)
-     );
-
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
   wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & ~nonblocking_req & writeback_p;
   wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv & ~nonblocking_req;
@@ -537,47 +513,14 @@ module bp_be_dcache
   wire any_miss_tv         = blocking_miss_tv | nonblocking_miss_tv | engine_miss_tv;
   wire cache_hit_tv        = v_tv_r & ~any_miss_tv;
 
-  assign early_v_o    = cache_hit_tv & ~snoop_tv_r;
-  assign early_data_o = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : dword_data_tv;
-  assign early_req_o  = cache_req_yumi_i;
-
-  /////////////////////////////////////////////////////////////////////////////
-  // DM Stage
-  /////////////////////////////////////////////////////////////////////////////
-  logic snoop_dm_r;
-  bp_be_dcache_decode_s decode_dm_r;
-  logic [dpath_width_gp-1:0] data_dm_r;
-  logic [paddr_width_p-1:0] paddr_dm_r;
-
-  assign safe_dm_we = cache_hit_tv & (decode_tv_r.ret_op | decode_tv_r.ptw_op);
-  assign dm_we = safe_dm_we;
-  bsg_dff_reset
-   #(.width_p(1))
-   v_dm_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.data_i(dm_we)
-     ,.data_o(v_dm_r)
-     );
-
-  wire snoop_dm_n = snoop_tv_r | decode_tv_r.ptw_op;
-  wire [dpath_width_gp-1:0] data_dm_n = decode_tv_r.float_op ? float_data_tv : dword_data_tv;
-  bsg_dff
-   #(.width_p(1+$bits(bp_be_dcache_decode_s)+paddr_width_p+dpath_width_gp))
-   dm_stage_reg
-    (.clk_i(clk_i)
-     ,.data_i({snoop_dm_n, decode_tv_r, paddr_tv_r, data_dm_n})
-     ,.data_o({snoop_dm_r, decode_dm_r, paddr_dm_r, data_dm_r})
-     );
-
-  assign final_v_o       = v_dm_r;
-  assign final_data_o    = data_dm_r;
-  assign final_addr_o    = paddr_dm_r;
-  assign final_rd_addr_o = decode_dm_r.rd_addr;
-  assign final_int_o     = decode_dm_r.ret_op & ~decode_dm_r.float_op;
-  assign final_float_o   = decode_dm_r.ret_op &  decode_dm_r.float_op;
-  assign final_ptw_o     = decode_dm_r.ptw_op;
-  assign final_late_o    = snoop_dm_r;
+  assign v_o       = cache_hit_tv;
+  assign data_o    = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : dword_data_tv;
+  assign rd_addr_o = decode_tv_r.rd_addr;
+  assign int_o     = decode_tv_r.int_op;
+  assign float_o   = decode_tv_r.float_op;
+  assign ptw_o     = decode_tv_r.ptw_op;
+  assign ret_o     = decode_tv_r.ret_op;
+  assign late_o    = snoop_tv_r;
 
   ///////////////////////////
   // Stat Mem Storage
@@ -721,7 +664,7 @@ module bp_be_dcache
   assign wbuf_entry_in.caddr = paddr_tv_r;
   assign wbuf_entry_in.snoop = snoop_tv_r;
 
-  wire [caddr_width_p-1:0] ld_addr_tl = {ptag_i, vaddr_tl_r[0+:page_offset_width_gp]};
+  wire [caddr_width_p-1:0] ld_addr_tl = paddr_tl;
   bp_be_dcache_wbuf
    #(.bp_params_p(bp_params_p)
      ,.sets_p(dcache_sets_p)
@@ -807,7 +750,7 @@ module bp_be_dcache
         end
       else
         begin
-          if (decode_tv_r.block_op | decode_tv_r.cache_op)
+          if (decode_tv_r.block_op)
             cache_req_cast_o.size = block_req_size;
           else if (decode_tv_r.double_op)
             cache_req_cast_o.size = e_size_8B;
@@ -898,7 +841,7 @@ module bp_be_dcache
   assign cache_req_metadata_cast_o.hit_or_repl_way = hit_or_repl_way;
   assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[hit_or_repl_way];
 
-  assign ready_and_o = ~cache_req_lock_i & (is_ready | is_primary);
+  assign busy_o = cache_req_lock_i | ~(is_ready | is_primary);
   assign ordered_o = ~v_tl_r & ~v_tv_r & cache_req_credits_empty_i;
 
   /////////////////////////////////////////////////////////////////////////////
@@ -920,7 +863,7 @@ module bp_be_dcache
   assign tag_mem_addr_li = tag_mem_fast_write
     ? paddr_index_tv
     : tag_mem_fast_read
-      ? vaddr_index
+      ? index
       : tag_mem_pkt_cast_i.index;
   assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i
     & ~lrsc_lock
@@ -1046,7 +989,7 @@ module bp_be_dcache
       assign data_mem_addr_li[i] = data_mem_fast_write[i]
           ? {wbuf_entry_out_index, {(assoc_p > 1){wbuf_entry_out_bank_offset}}}
           : data_mem_fast_read[i]
-            ? {vaddr_index, {(assoc_p > 1){vaddr_bank}}}
+            ? {index, {(assoc_p > 1){bank}}}
             : {data_mem_pkt_cast_i.index, {(assoc_p > 1){data_mem_pkt_offset}}};
 
       assign data_mem_data_li[i] = data_mem_fast_write[i]
@@ -1304,7 +1247,7 @@ module bp_be_dcache
 
       assign snoop_v = fill_restart_tv;
       assign fill_hazard = !is_ready & v_tl_r
-        & |(fill_index == vaddr_index_tl)
+        & |(fill_index == index_tl)
         & |(fill_hit_r & load_hit_tl)
         & |(fill_bank_mask_r & bank_sel_one_hot_tl);
     end

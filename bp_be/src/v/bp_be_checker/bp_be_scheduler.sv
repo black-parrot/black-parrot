@@ -206,14 +206,15 @@ module bp_be_scheduler
   assign fe_exc_instr_li = issue_pkt_cast_o.instr;
 
   bp_be_decode_s be_exc_decode_li, wb_decode_li, walk_decode_li;
-  rv64_instr_fmatype_s be_exc_instr_li;
-  wire [dpath_width_gp-1:0] be_exc_vaddr_li = ptw_v_lo ? ptw_addr_lo : '0;
+  rv64_instr_fmatype_s be_exc_instr_li, wb_instr_li;
+  wire [dpath_width_gp-1:0] be_exc_vaddr_li = ptw_v_lo ? ptw_addr_lo : writeback_v ? '0 : '0;
   wire [dpath_width_gp-1:0] be_exc_data_li = ptw_v_lo ? ptw_pte_lo : writeback_v ? late_wb_pkt_cast_i.rd_data : '0;
-  wire [dpath_width_gp-1:0] be_exc_imm_li = writeback_v ? late_wb_pkt_cast_i.fflags : '0;
+  wire [dpath_width_gp-1:0] be_exc_imm_li = ptw_v_lo ? '0 : writeback_v ? late_wb_pkt_cast_i.fflags : '0;
   assign be_exc_decode_li = ptw_v_lo ? walk_decode_li : writeback_v ? wb_decode_li : '0;
-  wire be_exc_partial_li = ptw_v_lo ? ptw_partial_lo : '0;
-  assign be_exc_instr_li = ptw_v_lo ? issue_pkt_cast_o.instr : writeback_v ? '{rd_addr: late_wb_pkt_cast_i.rd_addr, default: '0} : '0;
+  wire be_exc_partial_li = ptw_v_lo ? ptw_partial_lo : writeback_v ? '0 : '0;
+  assign be_exc_instr_li = ptw_v_lo ? issue_pkt_cast_o.instr : writeback_v ? wb_instr_li : '0;
 
+  assign wb_instr_li = '{rd_addr: late_wb_pkt_cast_i.rd_addr, default: '0};
   assign wb_decode_li = '{irf_w_v: late_wb_pkt_cast_i.ird_w_v, frf_w_v: late_wb_pkt_cast_i.frd_w_v, default: '0};
   assign walk_decode_li = '{pipe_mem_final_v: ptw_walk_lo, dcache_mmu_v: ptw_walk_lo, fu_op: e_dcache_op_ptw, default: '0};
 
