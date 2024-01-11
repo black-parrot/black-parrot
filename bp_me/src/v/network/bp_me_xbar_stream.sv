@@ -30,13 +30,13 @@ module bp_me_xbar_stream
    , input                                                            reset_i
 
    , input [num_source_p-1:0][xbar_header_width_lp-1:0]               msg_header_i
-   , input [num_source_p-1:0][bedrock_fill_width_p-1:0]                       msg_data_i
+   , input [num_source_p-1:0][bedrock_fill_width_p-1:0]               msg_data_i
    , input [num_source_p-1:0]                                         msg_v_i
    , output logic [num_source_p-1:0]                                  msg_ready_and_o
    , input [num_source_p-1:0][lg_num_sink_lp-1:0]                     msg_dst_i
 
    , output logic [num_sink_p-1:0][xbar_header_width_lp-1:0]          msg_header_o
-   , output logic [num_sink_p-1:0][bedrock_fill_width_p-1:0]                  msg_data_o
+   , output logic [num_sink_p-1:0][bedrock_fill_width_p-1:0]          msg_data_o
    , output logic [num_sink_p-1:0]                                    msg_v_o
    , input [num_sink_p-1:0]                                           msg_ready_and_i
    );
