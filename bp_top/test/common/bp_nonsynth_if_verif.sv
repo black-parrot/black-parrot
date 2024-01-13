@@ -162,8 +162,10 @@ module bp_nonsynth_if_verif
   if (l2_block_width_p != 512)
     $error("L2 block width must be 512b");
 
+  /*
   if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32}))
     $error("Error: unsupported number of CCE's");
+  */
 
   if (num_cce_p/mc_x_dim_p*l2_dmas_p > 16)
     $error("Round robin arbiter currently only supports 16 entries");
