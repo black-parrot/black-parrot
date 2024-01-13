@@ -61,6 +61,7 @@ module bp_nonsynth_host
   integer tmp;
   integer stdout[num_core_p];
   integer stdout_global;
+  integer signature;
 
   initial start();
   always_ff @(negedge reset_i)
@@ -71,6 +72,7 @@ module bp_nonsynth_host
           stdout[j] = tmp;
         end
       stdout_global = $fopen("stdout_global.txt", "w");
+      signature = $fopen("DUT-blackparrot.signature", "w");
     end
 
   logic do_scan;
@@ -87,9 +89,9 @@ module bp_nonsynth_host
     if (do_scan)
       ch = scan();
 
-  localparam bedrock_reg_els_lp = 6;
-  logic paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li;
-  logic paramrom_w_v_li, bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li;
+  localparam bedrock_reg_els_lp = 7;
+  logic signature_r_v_li, paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li;
+  logic signature_w_v_li, paramrom_w_v_li, bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li;
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [`BSG_WIDTH(`BSG_SAFE_CLOG2(dword_width_gp/8))-1:0] size_lo;
   logic [dword_width_gp-1:0] data_lo;
@@ -99,12 +101,12 @@ module bp_nonsynth_host
      ,.reg_data_width_p(dword_width_gp)
      ,.reg_addr_width_p(dev_addr_width_gp)
      ,.els_p(bedrock_reg_els_lp)
-     ,.base_addr_p({paramrom_match_addr_gp, bootrom_match_addr_gp, finish_match_addr_gp, getchar_match_addr_gp, putchar_match_addr_gp, putch_core_match_addr_gp})
+     ,.base_addr_p({signature_match_addr_gp, paramrom_match_addr_gp, bootrom_match_addr_gp, finish_match_addr_gp, getchar_match_addr_gp, putchar_match_addr_gp, putch_core_match_addr_gp})
      )
    register
     (.*
-     ,.r_v_o({paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li})
-     ,.w_v_o({paramrom_w_v_li, bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li})
+     ,.r_v_o({signature_r_v_li, paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li})
+     ,.w_v_o({signature_w_v_li, paramrom_w_v_li, bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li})
      ,.addr_o(addr_lo)
      ,.size_o(size_lo)
      ,.data_o(data_lo)
@@ -166,6 +168,9 @@ module bp_nonsynth_host
           if (finish_set[i] & (data_lo[0+:8] != 8'(0)))
             $display("[CORE%0x FSH] FAIL", i);
         end
+
+      if (signature_w_v_li)
+        $fwrite(signature, "%8x\n", data_lo[0+:32]);
 
       if (&finish_r)
         begin

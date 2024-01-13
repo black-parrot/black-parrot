@@ -17,7 +17,8 @@
   localparam putch_core_base_addr_gp   = (dev_addr_width_gp)'('h0_3000);
   localparam putch_core_match_addr_gp  = (dev_addr_width_gp)'('h0_3???);
 
-  localparam finish_all_addr_gp        = (dev_addr_width_gp)'('h0_4000);
+  localparam signature_base_addr_gp    = (dev_addr_width_gp)'('h0_4000);
+  localparam signature_match_addr_gp   = (dev_addr_width_gp)'('h0_4???);
 
   localparam bootrom_base_addr_gp      = (dev_addr_width_gp)'('h1_0000);
   localparam bootrom_match_addr_gp     = (dev_addr_width_gp)'('h1_????);
