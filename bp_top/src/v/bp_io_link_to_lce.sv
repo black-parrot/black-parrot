@@ -190,22 +190,14 @@ module bp_io_link_to_lce
      ,.cce_id_o(cce_id_lo)
      );
 
-  logic fwd_mem_cacheable_addr_lo;
-  bp_cce_pma
-   #(.bp_params_p(bp_params_p))
-   fwd_pma
-    (.paddr_i(fsm_fwd_addr_lo)
-     ,.paddr_v_i(fsm_fwd_v_lo)
-     ,.cacheable_addr_o(fwd_mem_cacheable_addr_lo)
-     );
-
-  logic rev_mem_cacheable_addr_li;
+  logic rev_pma_l2_cacheable_li;
   bp_cce_pma
    #(.bp_params_p(bp_params_p))
    rev_pma
     (.paddr_i(fsm_rev_addr_lo)
      ,.paddr_v_i(fsm_rev_v_li)
-     ,.cacheable_addr_o(rev_mem_cacheable_addr_li)
+     ,.l1_cacheable_o()
+     ,.l2_cacheable_o(rev_pma_l2_cacheable_li)
      );
 
   wire mem_fwd_wr_not_rd = (fsm_fwd_header_lo.msg_type inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr});
@@ -225,7 +217,13 @@ module bp_io_link_to_lce
 
       fsm_fwd_yumi_li = fsm_req_v_li & fsm_req_ready_and_lo;
 
-      fsm_rev_header_li.msg_type        = lce_cmd_wr_not_rd ? rev_mem_cacheable_addr_li ? e_bedrock_mem_wr : e_bedrock_mem_uc_wr : rev_mem_cacheable_addr_li ? e_bedrock_mem_rd : e_bedrock_mem_uc_rd;
+      fsm_rev_header_li.msg_type        = lce_cmd_wr_not_rd
+                                          ? rev_pma_l2_cacheable_li
+                                            ? e_bedrock_mem_wr
+                                            : e_bedrock_mem_uc_wr
+                                          : rev_pma_l2_cacheable_li
+                                            ? e_bedrock_mem_rd
+                                            : e_bedrock_mem_uc_rd;
       fsm_rev_header_li.subop           = e_bedrock_store; // TODO: support I/O AMOs
       fsm_rev_header_li.addr            = fsm_cmd_header_lo.addr;
       fsm_rev_header_li.size            = fsm_cmd_header_lo.size;

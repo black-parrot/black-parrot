@@ -5,16 +5,13 @@
  *
  * Description:
  *   This module defines the physical memory attributes (PMAs) obeyed by the CCE.
- *   The purpose is to define the cacheability properties of memory.
+ *   The purpose is to define the coherence and cacheability properties of memory.
  *
- *   Only cached, global memory is kept explicitly coherent (i.e., DRAM memory). All other memory
- *   is uncached. See the BlackParrot Platform Guide (docs/platform_guide.md)
- *   and the bp_common_pkg files in bp_common/src/include/ for more details on BlackParrot's
- *   platform memory maps.
+ *   Only L1 cached memory is kept explicitly coherent (i.e., coherent DRAM memory).
+ *   All other memory is uncached in the L1, but may be cached in the L2.
  *
- *   Uncacheable requests from an LCE are allowed to cacheable, global memory, and these requests
- *   will be kept coherent with all LCEs by invalidating (and writing back, if necessary) the block
- *   from all LCEs prior to performing the uncached operation.
+ *   Uncacheable requests from an LCE are allowed to cacheable/coherent global memory.
+ *   Coherence is maintained by the CCE for all accesses to L1 cached/coherent memory.
  *
  */
 
@@ -27,10 +24,12 @@ module bp_cce_pma
    )
   (input [paddr_width_p-1:0] paddr_i
    , input                   paddr_v_i
-   , output logic            cacheable_addr_o
+   , output logic            l1_cacheable_o
+   , output logic            l2_cacheable_o
    );
 
-  assign cacheable_addr_o = paddr_v_i & (paddr_i >= dram_base_addr_gp) & (paddr_i < dram_l2uc_base_addr_gp);
+  assign l1_cacheable_o = paddr_v_i & (paddr_i >= dram_base_addr_gp) & (paddr_i < dram_l1uc_base_addr_gp);
+  assign l2_cacheable_o = paddr_v_i & (paddr_i >= dram_base_addr_gp) & (paddr_i < dram_l2uc_base_addr_gp);
 
 endmodule
 

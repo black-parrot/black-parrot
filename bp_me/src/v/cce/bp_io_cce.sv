@@ -6,7 +6,7 @@
  * Description:
  *   This module acts as a CCE for uncacheable IO memory accesses.
  *
- *   It converts uncached load and store LCE fwduests to IO fwduests, and
+ *   It converts uncached load and store LCE requests to IO requests, and
  *   converts uncached IO responses to uncached LCE command messages.
  *
  */
@@ -179,29 +179,27 @@ module bp_io_cce
      ,.fsm_last_o(fsm_cmd_last_lo)
      );
 
-  logic fwd_mem_cacheable_addr_li;
+  logic fwd_pma_l2_cacheable_lo;
   bp_cce_pma
    #(.bp_params_p(bp_params_p))
    fwd_pma
     (.paddr_i(fsm_fwd_addr_lo)
      ,.paddr_v_i(fsm_fwd_v_li)
-     ,.cacheable_addr_o(fwd_mem_cacheable_addr_li)
-     );
-
-  logic rev_mem_cacheable_addr_lo;
-  bp_cce_pma
-   #(.bp_params_p(bp_params_p))
-   rev_pma
-    (.paddr_i(fsm_rev_addr_lo)
-     ,.paddr_v_i(fsm_rev_v_lo)
-     ,.cacheable_addr_o(rev_mem_cacheable_addr_lo)
+     ,.l1_cacheable_o()
+     ,.l2_cacheable_o(fwd_pma_l2_cacheable_lo)
      );
 
   wire lce_req_wr_not_rd = (fsm_req_header_lo.msg_type.req inside {e_bedrock_req_uc_wr});
   wire mem_rev_wr_not_rd = (fsm_rev_header_lo.msg_type.rev inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr});
   always_comb
     begin
-      fsm_fwd_header_li.msg_type         = lce_req_wr_not_rd ? fwd_mem_cacheable_addr_li ? e_bedrock_mem_wr : e_bedrock_mem_uc_wr : fwd_mem_cacheable_addr_li ? e_bedrock_mem_rd : e_bedrock_mem_uc_rd;
+      fsm_fwd_header_li.msg_type         = lce_req_wr_not_rd
+                                           ? fwd_pma_l2_cacheable_lo
+                                             ? e_bedrock_mem_wr
+                                             : e_bedrock_mem_uc_wr
+                                           : fwd_pma_l2_cacheable_lo
+                                             ? e_bedrock_mem_rd
+                                             : e_bedrock_mem_uc_rd;
       fsm_fwd_header_li.subop            = e_bedrock_store; // TODO: support I/O AMOs
       fsm_fwd_header_li.addr             = fsm_req_header_lo.addr;
       fsm_fwd_header_li.size             = fsm_req_header_lo.size;
@@ -213,7 +211,9 @@ module bp_io_cce
       fsm_fwd_v_li                       = fsm_req_v_lo;
       fsm_req_yumi_li                    = fsm_fwd_ready_and_lo & fsm_fwd_v_li;
 
-      fsm_cmd_header_li.msg_type         = mem_rev_wr_not_rd ? e_bedrock_cmd_uc_st_done : e_bedrock_cmd_uc_data;
+      fsm_cmd_header_li.msg_type         = mem_rev_wr_not_rd
+                                           ? e_bedrock_cmd_uc_st_done
+                                           : e_bedrock_cmd_uc_data;
       fsm_cmd_header_li.subop            = e_bedrock_store; // TODO: support I/O AMOs
       fsm_cmd_header_li.addr             = fsm_rev_header_lo.addr;
       fsm_cmd_header_li.size             = fsm_rev_header_lo.size;
