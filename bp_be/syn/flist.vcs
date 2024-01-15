@@ -191,8 +191,8 @@ $BP_BE_DIR/src/v/bp_be_top.sv
 # Calculator
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_csr.sv
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_fp_to_reg.sv
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_nan_unbox.sv
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_fp_box.sv
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_fp_unbox.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_aux.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_fma.sv
@@ -200,7 +200,6 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_sys.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_ptw.sv
-$BP_BE_DIR/src/v/bp_be_calculator/bp_be_reg_to_fp.sv
 # Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.sv
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.sv

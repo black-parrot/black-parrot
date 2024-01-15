@@ -303,7 +303,9 @@ module bp_lce_req
       endcase
 
       // Fire off a non-blocking request opportunistically if we have one
-      if (nonblocking_v_r & ~fsm_req_v_lo)
+      // Could eke out some performance by changing ~fsm_req_v_lo to blocking_req_v_lo
+      //if (nonblocking_v_r & ~fsm_req_v_lo)
+      if (is_ready & nonblocking_v_r)
         begin
           fsm_req_v_lo = fsm_req_ready_then_li & ~cache_req_credits_full_o;
 

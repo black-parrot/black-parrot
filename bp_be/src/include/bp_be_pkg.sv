@@ -26,9 +26,17 @@ package bp_be_pkg;
 
   typedef enum logic
   {
-    e_fp_sp    = 1'b0
-    ,e_fp_full = 1'b1
+    e_fp_dp  = 1'b0
+    ,e_fp_sp = 1'b1
   } bp_be_fp_tag_e;
+
+  typedef enum logic [1:0]
+  {
+    e_int_dword  = 2'b00
+    ,e_int_word  = 2'b01
+    ,e_int_hword = 2'b10
+    ,e_int_byte  = 2'b11
+  } bp_be_int_tag_e;
 
   typedef struct packed
   {
@@ -53,6 +61,7 @@ package bp_be_pkg;
     logic [dp_exp_width_gp+1:0] sexp;
     logic [dp_sig_width_gp+2:0] sig;
   }  bp_hardfloat_raw_dp_s;
+  localparam dp_raw_width_gp = $bits(bp_hardfloat_raw_dp_s);
 
   typedef struct packed
   {
@@ -63,14 +72,24 @@ package bp_be_pkg;
     logic [sp_exp_width_gp+1:0] sexp;
     logic [sp_sig_width_gp+2:0] sig;
   }  bp_hardfloat_raw_sp_s;
+  localparam sp_raw_width_gp = $bits(bp_hardfloat_raw_sp_s);
 
   typedef struct packed
   {
-    bp_be_fp_tag_e        tag;
-    bp_hardfloat_rec_dp_s rec;
+    logic [$bits(bp_be_fp_tag_e)-1:0] tag;
+    bp_hardfloat_rec_dp_s             rec;
   }  bp_be_fp_reg_s;
 
+  typedef struct packed
+  {
+    logic [$bits(bp_be_int_tag_e)-1:0] tag;
+    logic [dword_width_gp-1:0]         val;
+  }  bp_be_int_reg_s;
+
   localparam dpath_width_gp = $bits(bp_be_fp_reg_s);
+
+  localparam [dpath_width_gp-1:0] dp_canonical_reg = 66'h0_e0080000_00000000;
+  localparam [dpath_width_gp-1:0] sp_canonical_reg = 66'h2_e0080000_00000000;
 
   `include "bp_be_ctl_pkgdef.svh"
   `include "bp_be_dcache_pkgdef.svh"

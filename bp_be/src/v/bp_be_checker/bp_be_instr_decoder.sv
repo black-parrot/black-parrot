@@ -100,8 +100,16 @@ module bp_be_instr_decoder
               decode_cast_o.pipe_int_v = 1'b1;
 
             // The writeback for long latency ops comes out of band
-            decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-            decode_cast_o.opw_v      = (instr.opcode == `RV64_OP_32_OP);
+            decode_cast_o.irf_w_v   = (instr.rd_addr != '0);
+            if (instr.opcode == `RV64_OP_32_OP)
+              decode_cast_o.int_tag = e_int_word;
+
+            if (instr inside {`RV64_MULHU, `RV64_DIVU, `RV64_DIVUW, `RV64_REMU, `RV64_REMUW})
+              decode_cast_o.rs1_unsigned = 1'b1;
+
+            if (instr inside {`RV64_MULHSU, `RV64_MULHU, `RV64_DIVU, `RV64_DIVUW, `RV64_REMU, `RV64_REMUW})
+              decode_cast_o.rs2_unsigned = 1'b1;
+
             unique casez (instr)
               `RV64_ADD, `RV64_ADDW : decode_cast_o.fu_op = e_int_op_add;
               `RV64_SUB, `RV64_SUBW : decode_cast_o.fu_op = e_int_op_sub;
@@ -115,13 +123,13 @@ module bp_be_instr_decoder
               `RV64_AND             : decode_cast_o.fu_op = e_int_op_and;
 
               `RV64_MUL, `RV64_MULW   : decode_cast_o.fu_op = e_fma_op_imul;
-              `RV64_MULH              : decode_cast_o.fu_op = e_mul_op_mulh;
-              `RV64_MULHSU            : decode_cast_o.fu_op = e_mul_op_mulhsu;
-              `RV64_MULHU             : decode_cast_o.fu_op = e_mul_op_mulhu;
-              `RV64_DIV, `RV64_DIVW   : decode_cast_o.fu_op = e_mul_op_div;
-              `RV64_DIVU, `RV64_DIVUW : decode_cast_o.fu_op = e_mul_op_divu;
-              `RV64_REM, `RV64_REMW   : decode_cast_o.fu_op = e_mul_op_rem;
-              `RV64_REMU, `RV64_REMUW : decode_cast_o.fu_op = e_mul_op_remu;
+              `RV64_MULH              : decode_cast_o.fu_op = e_long_op_mulh;
+              `RV64_MULHSU            : decode_cast_o.fu_op = e_long_op_mulhsu;
+              `RV64_MULHU             : decode_cast_o.fu_op = e_long_op_mulhu;
+              `RV64_DIV, `RV64_DIVW   : decode_cast_o.fu_op = e_long_op_div;
+              `RV64_DIVU, `RV64_DIVUW : decode_cast_o.fu_op = e_long_op_divu;
+              `RV64_REM, `RV64_REMW   : decode_cast_o.fu_op = e_long_op_rem;
+              `RV64_REMU, `RV64_REMUW : decode_cast_o.fu_op = e_long_op_remu;
               default : illegal_instr_o = 1'b1;
             endcase
 
@@ -132,7 +140,8 @@ module bp_be_instr_decoder
           begin
             decode_cast_o.pipe_int_v = 1'b1;
             decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-            decode_cast_o.opw_v      = (instr.opcode == `RV64_OP_IMM_32_OP);
+            if (instr.opcode == `RV64_OP_IMM_32_OP)
+              decode_cast_o.int_tag = e_int_word;
             unique casez (instr)
               `RV64_ADDI, `RV64_ADDIW : decode_cast_o.fu_op = e_int_op_add;
               `RV64_SLLI, `RV64_SLLIW : decode_cast_o.fu_op = e_int_op_sll;
@@ -226,7 +235,8 @@ module bp_be_instr_decoder
             decode_cast_o.score_v          = 1'b1;
             decode_cast_o.dcache_r_v       = 1'b1;
             decode_cast_o.mem_v            = 1'b1;
-            decode_cast_o.ops_v            = instr inside {`RV64_FL_W};
+            if (instr inside {`RV64_FL_W})
+              decode_cast_o.fp_tag = e_fp_sp;
 
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
 
@@ -252,9 +262,11 @@ module bp_be_instr_decoder
         `RV64_FSTORE_OP:
           begin
             decode_cast_o.pipe_mem_early_v = 1'b1;
-            decode_cast_o.dcache_w_v = 1'b1;
-            decode_cast_o.mem_v      = 1'b1;
-            decode_cast_o.ops_v      = instr inside {`RV64_FS_W};
+            decode_cast_o.dcache_w_v       = 1'b1;
+            decode_cast_o.mem_v            = 1'b1;
+            decode_cast_o.fp_raw           = 1'b1;
+            //if (instr inside {`RV64_FS_W})
+            //  decode_cast_o.fp_tag = e_fp_sp;
 
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
 
@@ -416,172 +428,140 @@ module bp_be_instr_decoder
         `RV64_FP_OP:
           begin
             illegal_instr_o = ~decode_info_cast_i.fpu_en;
+
+            if (instr inside {`RV64_FCVT_DS, `RV64_FCVT_WS, `RV64_FCVT_LS, `RV64_FCVT_WUS, `RV64_FCVT_LUS
+                              ,`RV64_FCVT_SW, `RV64_FCVT_SL, `RV64_FCVT_SWU, `RV64_FCVT_SLU
+                              ,`RV64_FSGNJ_S, `RV64_FSGNJN_S, `RV64_FSGNJX_S
+                              ,`RV64_FMIN_S, `RV64_FMAX_S, `RV64_FEQ_S, `RV64_FLT_S, `RV64_FLE_S, `RV64_FCLASS_S
+                              ,`RV64_FADD_S, `RV64_FSUB_S, `RV64_FMUL_S, `RV64_FDIV_S, `RV64_FSQRT_S
+                              })
+              decode_cast_o.fp_tag = e_fp_sp;
+
+            if (instr inside {`RV64_FCVT_WS, `RV64_FCVT_WUS, `RV64_FCVT_SW, `RV64_FCVT_SWU
+                              ,`RV64_FCVT_WD, `RV64_FCVT_WUD, `RV64_FCVT_DW, `RV64_FCVT_DWU
+                              ,`RV64_FMV_XW, `RV64_FMV_WX
+                              })
+              decode_cast_o.int_tag = e_int_word;
+
             unique casez (instr)
               `RV64_FCVT_SD, `RV64_FCVT_DS:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FCVT_DS};
                   decode_cast_o.fu_op        = e_aux_op_f2f;
                 end
-              `RV64_FCVT_WS, `RV64_FCVT_LS:
+              `RV64_FCVT_WS, `RV64_FCVT_LS, `RV64_FCVT_WD, `RV64_FCVT_LD:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.opw_v        = instr inside {`RV64_FCVT_WS};
-                  decode_cast_o.ops_v        = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_f2i;
                 end
-              `RV64_FCVT_WUS, `RV64_FCVT_LUS:
+              `RV64_FCVT_WUS, `RV64_FCVT_LUS, `RV64_FCVT_WUD, `RV64_FCVT_LUD:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.opw_v        = instr inside {`RV64_FCVT_WUS};
-                  decode_cast_o.ops_v        = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_f2iu;
                 end
-              `RV64_FCVT_SW, `RV64_FCVT_SL:
+              `RV64_FCVT_SW, `RV64_FCVT_SL, `RV64_FCVT_DW, `RV64_FCVT_DL:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.opw_v        = instr inside {`RV64_FCVT_SW};
-                  decode_cast_o.ops_v        = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_i2f;
                 end
-              `RV64_FCVT_SWU, `RV64_FCVT_SLU:
+              `RV64_FCVT_SWU, `RV64_FCVT_SLU, `RV64_FCVT_DWU, `RV64_FCVT_DLU:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.opw_v        = instr inside {`RV64_FCVT_SWU};
-                  decode_cast_o.ops_v        = 1'b1;
-                  decode_cast_o.fu_op        = e_aux_op_iu2f;
-                end
-              `RV64_FCVT_WD, `RV64_FCVT_LD:
-                begin
-                  decode_cast_o.pipe_aux_v   = 1'b1;
-                  decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.opw_v        = instr inside {`RV64_FCVT_WD};
-                  decode_cast_o.fu_op        = e_aux_op_f2i;
-                end
-              `RV64_FCVT_WUD, `RV64_FCVT_LUD:
-                begin
-                  decode_cast_o.pipe_aux_v   = 1'b1;
-                  decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.opw_v        = instr inside {`RV64_FCVT_WUD};
-                  decode_cast_o.fu_op        = e_aux_op_f2iu;
-                end
-              `RV64_FCVT_DW, `RV64_FCVT_DL:
-                begin
-                  decode_cast_o.pipe_aux_v   = 1'b1;
-                  decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.opw_v        = instr inside {`RV64_FCVT_DW};
-                  decode_cast_o.fu_op        = e_aux_op_i2f;
-                end
-              `RV64_FCVT_DWU, `RV64_FCVT_DLU:
-                begin
-                  decode_cast_o.pipe_aux_v   = 1'b1;
-                  decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.opw_v        = instr inside {`RV64_FCVT_DWU};
+                  decode_cast_o.rs1_unsigned = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_iu2f;
                 end
               `RV64_FMV_XW, `RV64_FMV_XD:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
-                  decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.opw_v        = instr inside {`RV64_FMV_XW};
-                  decode_cast_o.ops_v        = instr inside {`RV64_FMV_XW};
+                  decode_cast_o.irf_w_v      = (instr.rd_addr != '0);
+                  decode_cast_o.fp_raw       = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_fmvi;
                 end
               `RV64_FMV_WX, `RV64_FMV_DX:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.opw_v        = instr inside {`RV64_FMV_WX};
-                  decode_cast_o.ops_v        = instr inside {`RV64_FMV_WX};
+                  decode_cast_o.fp_raw       = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_imvf;
                 end
               `RV64_FSGNJ_S, `RV64_FSGNJ_D:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FSGNJ_S};
+                  decode_cast_o.fp_raw       = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_fsgnj;
                 end
               `RV64_FSGNJN_S, `RV64_FSGNJN_D:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FSGNJN_S};
+                  decode_cast_o.fp_raw       = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_fsgnjn;
                 end
               `RV64_FSGNJX_S, `RV64_FSGNJX_D:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FSGNJX_S};
+                  decode_cast_o.fp_raw       = 1'b1;
                   decode_cast_o.fu_op        = e_aux_op_fsgnjx;
                 end
               `RV64_FMIN_S, `RV64_FMIN_D:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FMIN_S};
                   decode_cast_o.fu_op        = e_aux_op_fmin;
                 end
               `RV64_FMAX_S, `RV64_FMAX_D:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FMAX_S};
                   decode_cast_o.fu_op        = e_aux_op_fmax;
                 end
               `RV64_FEQ_S, `RV64_FEQ_D:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.ops_v        = instr inside {`RV64_FEQ_S};
                   decode_cast_o.fu_op        = e_aux_op_feq;
                 end
               `RV64_FLT_S, `RV64_FLT_D:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.ops_v        = instr inside {`RV64_FLT_S};
                   decode_cast_o.fu_op        = e_aux_op_flt;
                 end
               `RV64_FLE_S, `RV64_FLE_D:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.ops_v        = instr inside {`RV64_FLE_S};
                   decode_cast_o.fu_op        = e_aux_op_fle;
                 end
               `RV64_FCLASS_S, `RV64_FCLASS_D:
                 begin
                   decode_cast_o.pipe_aux_v   = 1'b1;
                   decode_cast_o.irf_w_v    = (instr.rd_addr != '0);
-                  decode_cast_o.ops_v        = instr inside {`RV64_FCLASS_S};
                   decode_cast_o.fu_op        = e_aux_op_fclass;
                 end
               `RV64_FADD_S, `RV64_FADD_D:
                 begin
                   decode_cast_o.pipe_fma_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FADD_S};
                   decode_cast_o.fu_op        = e_fma_op_fadd;
                 end
               `RV64_FSUB_S, `RV64_FSUB_D:
                 begin
                   decode_cast_o.pipe_fma_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FSUB_S};
                   decode_cast_o.fu_op        = e_fma_op_fsub;
                 end
               `RV64_FMUL_S, `RV64_FMUL_D:
                 begin
                   decode_cast_o.pipe_fma_v   = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FMUL_S};
                   decode_cast_o.fu_op        = e_fma_op_fmul;
                 end
               `RV64_FDIV_S, `RV64_FDIV_D:
@@ -589,16 +569,14 @@ module bp_be_instr_decoder
                   decode_cast_o.pipe_long_v   = 1'b1;
                   decode_cast_o.frf_w_v       = 1'b1;
                   decode_cast_o.score_v       = 1'b1;
-                  decode_cast_o.ops_v         = instr inside {`RV64_FDIV_S};
-                  decode_cast_o.fu_op         = e_fma_op_fdiv;
+                  decode_cast_o.fu_op         = e_long_op_fdiv;
                 end
               `RV64_FSQRT_S, `RV64_FSQRT_D:
                 begin
                   decode_cast_o.pipe_long_v  = 1'b1;
                   decode_cast_o.frf_w_v      = 1'b1;
                   decode_cast_o.score_v      = 1'b1;
-                  decode_cast_o.ops_v        = instr inside {`RV64_FSQRT_S};
-                  decode_cast_o.fu_op        = e_fma_op_fsqrt;
+                  decode_cast_o.fu_op        = e_long_op_fsqrt;
                 end
               default: illegal_instr_o = 1'b1;
             endcase
@@ -609,7 +587,8 @@ module bp_be_instr_decoder
           begin
             decode_cast_o.pipe_fma_v = 1'b1;
             decode_cast_o.frf_w_v    = 1'b1;
-            decode_cast_o.ops_v      = (instr.fmt == e_fmt_single);
+            if (instr.fmt == e_fmt_single)
+              decode_cast_o.fp_tag = e_fp_sp;
 
             casez (instr.opcode)
               `RV64_FMADD_OP : decode_cast_o.fu_op = e_fma_op_fmadd;

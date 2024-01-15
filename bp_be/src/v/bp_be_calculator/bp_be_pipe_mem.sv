@@ -20,11 +20,11 @@ module bp_be_pipe_mem
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, dcache_tag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p)
    // Generated parameters
-   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
-   , localparam dispatch_pkt_width_lp  = `bp_be_dispatch_pkt_width(vaddr_width_p)
-   , localparam trans_info_width_lp    = `bp_be_trans_info_width(ptag_width_p)
-   , localparam commit_pkt_width_lp    = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
-   , localparam wb_pkt_width_lp        = `bp_be_wb_pkt_width(vaddr_width_p)
+   , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
+   , localparam reservation_width_lp  = `bp_be_reservation_width(vaddr_width_p)
+   , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
+   , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
+   , localparam wb_pkt_width_lp       = `bp_be_wb_pkt_width(vaddr_width_p)
    )
   (input                                  clk_i
    , input                                reset_i
@@ -36,8 +36,8 @@ module bp_be_pipe_mem
    , output logic                         busy_o
    , output logic                         ordered_o
 
-   , input [dispatch_pkt_width_lp-1:0]    reservation_i
-   , input [dpath_width_gp-1:0]           rs2_r_i
+   , input [reservation_width_lp-1:0]     reservation_i
+   , input [dword_width_gp-1:0]           rs2_val_i
 
    , input [commit_pkt_width_lp-1:0]      commit_pkt_i
 
@@ -107,17 +107,17 @@ module bp_be_pipe_mem
   wire posedge_clk =  clk_i;
 
   // Cast input and output ports
-  bp_be_dispatch_pkt_s   reservation;
-  bp_be_decode_s         decode;
-  rv64_instr_s           instr;
+  bp_be_reservation_s reservation;
+  bp_be_decode_s      decode;
+  rv64_instr_s        instr;
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
   assign instr = reservation.instr;
-  wire [vaddr_width_p-1:0] pc  = reservation.pc[0+:vaddr_width_p];
-  wire [dpath_width_gp-1:0] rs1 = reservation.rs1[0+:dpath_width_gp];
-  wire [dpath_width_gp-1:0] rs2 = reservation.rs2[0+:dpath_width_gp];
-  wire [dpath_width_gp-1:0] imm = reservation.imm[0+:dpath_width_gp];
+  wire [vaddr_width_p-1:0] pc   = reservation.pc;
+  wire [dword_width_gp-1:0] rs1 = reservation.isrc1;
+  wire [dword_width_gp-1:0] rs2 = reservation.isrc2;
+  wire [dword_width_gp-1:0] imm = reservation.isrc3;
 
   wire is_req = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
@@ -221,94 +221,87 @@ module bp_be_pipe_mem
   bp_be_dcache_pkt_s dcache_pkt;
   wire dcache_pkt_v = is_req;
   assign dcache_pkt = '{rd_addr : instr.t.rtype.rd_addr
-                        ,opcode : decode.fu_op.t.dcache_op
+                        ,opcode : decode.fu_op.t.dcache_fu_op
                         ,offset : eaddr
                         };
-
   logic frs2_r_v_r;
   bsg_dff
    #(.width_p(1))
-   frs2_r_v_reg
+   freg
     (.clk_i(posedge_clk)
      ,.data_i(decode.frs2_r_v)
      ,.data_o(frs2_r_v_r)
      );
-
-  wire [dpath_width_gp-1:0] dcache_st_idata = rs2_r_i;
-  logic [dword_width_gp-1:0] dcache_st_fdata;
-  bp_be_reg_to_fp
-   #(.bp_params_p(bp_params_p))
-   reg_to_fp
-    (.reg_i(dcache_st_idata)
-     ,.raw_o(dcache_st_fdata)
-     );
-  wire [dword_width_gp-1:0] dcache_st_data = frs2_r_v_r ? dcache_st_fdata : dcache_st_idata;
 
   // D$ can't handle misaligned accesses
   wire dcache_ptag_v = dtlb_v_lo & ~load_misaligned_v_o & ~store_misaligned_v_o;
 
   logic dcache_v;
   logic [dword_width_gp-1:0] dcache_data;
+  logic [$bits(bp_be_int_tag_e)-1:0] dcache_tag;
   logic [reg_addr_width_gp-1:0] dcache_rd_addr;
-  logic dcache_int, dcache_float, dcache_ptw, dcache_ret, dcache_late;
+  logic dcache_unsigned, dcache_int, dcache_float, dcache_ptw, dcache_ret, dcache_late;
   logic dcache_busy_lo, dcache_ordered_lo;
+  wire [dword_width_gp-1:0] dcache_st_data = rs2_val_i;
   bp_be_dcache
-    #(.bp_params_p(bp_params_p))
-    dcache
-     (.clk_i(negedge_clk)
-      ,.reset_i(reset_i)
+   #(.bp_params_p(bp_params_p))
+   dcache
+    (.clk_i(negedge_clk)
+     ,.reset_i(reset_i)
 
-      ,.cfg_bus_i(cfg_bus_i)
+     ,.cfg_bus_i(cfg_bus_i)
 
-      ,.busy_o(dcache_busy_lo)
-      ,.ordered_o(dcache_ordered_lo)
+     ,.busy_o(dcache_busy_lo)
+     ,.ordered_o(dcache_ordered_lo)
 
-      ,.v_i(dcache_pkt_v)
-      ,.dcache_pkt_i(dcache_pkt)
+     ,.v_i(dcache_pkt_v)
+     ,.dcache_pkt_i(dcache_pkt)
 
-      ,.ptag_v_i(dcache_ptag_v)
-      ,.ptag_i(dtlb_ptag_lo)
-      ,.ptag_uncached_i(dtlb_ptag_uncached_lo)
-      ,.ptag_dram_i(dtlb_ptag_dram_lo)
+     ,.ptag_v_i(dcache_ptag_v)
+     ,.ptag_i(dtlb_ptag_lo)
+     ,.ptag_uncached_i(dtlb_ptag_uncached_lo)
+     ,.ptag_dram_i(dtlb_ptag_dram_lo)
 
-      ,.st_data_i(dcache_st_data)
-      ,.flush_i(flush_i)
+     ,.st_data_i(dcache_st_data)
+     ,.flush_i(flush_i)
 
-      ,.v_o(dcache_v)
-      ,.data_o(dcache_data)
-      ,.rd_addr_o(dcache_rd_addr)
-      ,.int_o(dcache_int)
-      ,.float_o(dcache_float)
-      ,.ptw_o(dcache_ptw)
-      ,.ret_o(dcache_ret)
-      ,.late_o(dcache_late)
+     ,.v_o(dcache_v)
+     ,.data_o(dcache_data)
+     ,.rd_addr_o(dcache_rd_addr)
+     ,.unsigned_o(dcache_unsigned)
+     ,.tag_o(dcache_tag)
+     ,.int_o(dcache_int)
+     ,.float_o(dcache_float)
+     ,.ptw_o(dcache_ptw)
+     ,.ret_o(dcache_ret)
+     ,.late_o(dcache_late)
 
-      // D$-LCE Interface
-      ,.cache_req_o(cache_req_cast_o)
-      ,.cache_req_v_o(cache_req_v_o)
-      ,.cache_req_yumi_i(cache_req_yumi_i)
-      ,.cache_req_lock_i(cache_req_lock_i)
-      ,.cache_req_metadata_o(cache_req_metadata_o)
-      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-      ,.cache_req_id_i(cache_req_id_i)
-      ,.cache_req_critical_i(cache_req_critical_i)
-      ,.cache_req_last_i(cache_req_last_i)
-      ,.cache_req_credits_full_i(cache_req_credits_full_i)
-      ,.cache_req_credits_empty_i(cache_req_credits_empty_i)
+     // D$-LCE Interface
+     ,.cache_req_o(cache_req_cast_o)
+     ,.cache_req_v_o(cache_req_v_o)
+     ,.cache_req_yumi_i(cache_req_yumi_i)
+     ,.cache_req_lock_i(cache_req_lock_i)
+     ,.cache_req_metadata_o(cache_req_metadata_o)
+     ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+     ,.cache_req_id_i(cache_req_id_i)
+     ,.cache_req_critical_i(cache_req_critical_i)
+     ,.cache_req_last_i(cache_req_last_i)
+     ,.cache_req_credits_full_i(cache_req_credits_full_i)
+     ,.cache_req_credits_empty_i(cache_req_credits_empty_i)
 
-      ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-      ,.data_mem_pkt_i(data_mem_pkt_i)
-      ,.data_mem_o(data_mem_o)
-      ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
-      ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-      ,.tag_mem_pkt_i(tag_mem_pkt_i)
-      ,.tag_mem_o(tag_mem_o)
-      ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
-      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
-      ,.stat_mem_pkt_i(stat_mem_pkt_i)
-      ,.stat_mem_o(stat_mem_o)
-      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
-      );
+     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+     ,.data_mem_pkt_i(data_mem_pkt_i)
+     ,.data_mem_o(data_mem_o)
+     ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+     ,.tag_mem_pkt_i(tag_mem_pkt_i)
+     ,.tag_mem_o(tag_mem_o)
+     ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+     ,.stat_mem_pkt_i(stat_mem_pkt_i)
+     ,.stat_mem_o(stat_mem_o)
+     ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+     );
 
   wire early_v_li = reservation.v & reservation.decode.pipe_mem_early_v;
   bsg_dff_chain
@@ -319,36 +312,48 @@ module bp_be_pipe_mem
      ,.data_i(early_v_li)
      ,.data_o(early_v_o)
      );
-  assign early_data_o = dcache_data;
 
   assign cache_miss_v_o   = early_v_r & ~(dcache_v |  dcache_late) &  cache_req_yumi_i;
   assign cache_replay_v_o = early_v_r & ~(dcache_v & ~dcache_late) & ~cache_req_yumi_i;
 
-  bp_be_fp_reg_s dcache_fdata;
-  bp_be_fp_to_reg
+  bp_be_int_reg_s dcache_idata;
+  bp_be_int_box
    #(.bp_params_p(bp_params_p))
-   fp_to_reg
+   int_box
     (.raw_i(dcache_data)
+     ,.tag_i(dcache_tag)
+     ,.unsigned_i(dcache_unsigned)
+     ,.reg_o(dcache_idata)
+     );
+  assign early_data_o = dcache_idata;
+
+  bp_be_fp_reg_s dcache_fdata;
+  bp_be_fp_box
+   #(.bp_params_p(bp_params_p))
+   fp_box
+    (.raw_i(dcache_data)
+     ,.tag_i(dcache_tag[0])
      ,.reg_o(dcache_fdata)
      );
 
-  logic dcache_v_r;
   logic [dpath_width_gp-1:0] dcache_data_r;
   logic [reg_addr_width_gp-1:0] dcache_rd_addr_r;
-  logic dcache_int_r, dcache_float_r, dcache_ptw_r, dcache_late_r, dcache_ret_r;
-  wire [dpath_width_gp-1:0] dcache_data_n = dcache_float ? dcache_fdata : dcache_data;
+  wire [dpath_width_gp-1:0] dcache_data_n = dcache_float ? dcache_fdata : dcache_idata;
   bsg_dff
-   #(.width_p(1+dpath_width_gp+reg_addr_width_gp+5))
+  #(.width_p(dpath_width_gp+reg_addr_width_gp))
+  data_reg
+   (.clk_i(negedge_clk)
+    ,.data_i({dcache_data_n, dcache_rd_addr})
+    ,.data_o({dcache_data_r, dcache_rd_addr_r})
+    );
+
+  logic dcache_v_r, dcache_int_r, dcache_float_r, dcache_ptw_r, dcache_late_r, dcache_ret_r;
+  bsg_dff
+   #(.width_p(6))
    final_reg
     (.clk_i(posedge_clk)
-     ,.data_i({dcache_v
-               ,dcache_data_n, dcache_rd_addr
-               ,dcache_int, dcache_float, dcache_ptw, dcache_late, dcache_ret
-               })
-     ,.data_o({dcache_v_r
-               ,dcache_data_r, dcache_rd_addr_r
-               ,dcache_int_r, dcache_float_r, dcache_ptw_r, dcache_late_r, dcache_ret_r
-               })
+     ,.data_i({dcache_v, dcache_int, dcache_float, dcache_ptw, dcache_late, dcache_ret})
+     ,.data_o({dcache_v_r, dcache_int_r, dcache_float_r, dcache_ptw_r, dcache_late_r, dcache_ret_r})
      );
 
   wire final_v_li = reservation.v & reservation.decode.pipe_mem_final_v;

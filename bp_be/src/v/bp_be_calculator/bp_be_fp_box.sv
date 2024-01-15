@@ -2,15 +2,16 @@
 `include "bp_common_defines.svh"
 `include "bp_be_defines.svh"
 
-module bp_be_fp_to_reg
+module bp_be_fp_box
  import bp_common_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    )
   (// RAW floating point input
-   input [dword_width_gp-1:0]     raw_i
-   , output [dpath_width_gp-1:0]  reg_o
+   input [dword_width_gp-1:0]          raw_i
+   , input [$bits(bp_be_fp_tag_e)-1:0] tag_i
+   , output [dpath_width_gp-1:0]       reg_o
    );
 
   `bp_cast_o(bp_be_fp_reg_s, reg);
@@ -61,9 +62,13 @@ module bp_be_fp_to_reg
                        };
 
   wire nanbox_v_li = &raw_i[word_width_gp+:word_width_gp];
-  wire encode_as_sp = nanbox_v_li;
+  wire encode_as_sp = nanbox_v_li | (tag_i == e_fp_sp);
 
-  assign reg_cast_o = '{tag: encode_as_sp ? e_fp_sp : e_fp_full, rec: encode_as_sp ? sp2dp_rec : in_dp_rec_li};
+  bp_be_fp_reg_s reg32, reg64;
+  assign reg32 = '{tag: e_fp_sp, rec: sp2dp_rec};
+  assign reg64 = '{tag: e_fp_dp, rec: in_dp_rec_li};
+
+  assign reg_cast_o = encode_as_sp ? reg32 : reg64;
 
 endmodule
 
