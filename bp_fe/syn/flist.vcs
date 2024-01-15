@@ -236,6 +236,7 @@ $BP_ME_DIR/src/v/network/bp_me_cce_id_to_cord.sv
 $BP_ME_DIR/src/v/network/bp_me_cord_to_id.sv
 $BP_ME_DIR/src/v/network/bp_me_lce_id_to_cord.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_gearbox.sv
+$BP_ME_DIR/src/v/network/bp_me_stream_pump.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_in.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_out.sv
 $BP_ME_DIR/src/v/network/bp_me_stream_pump_control.sv

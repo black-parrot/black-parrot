@@ -65,8 +65,7 @@ module bp_io_link_to_lce
   logic fsm_fwd_new_lo, fsm_fwd_critical_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(bedrock_fill_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp)
@@ -97,8 +96,7 @@ module bp_io_link_to_lce
   logic fsm_req_new_lo, fsm_req_critical_lo, fsm_req_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(bedrock_fill_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_req_payload_width_lp)
      ,.msg_stream_mask_p(lce_req_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_req_stream_mask_gp)
@@ -129,8 +127,7 @@ module bp_io_link_to_lce
   logic fsm_cmd_new_lo, fsm_cmd_critical_lo, fsm_cmd_last_lo;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(bedrock_fill_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.msg_stream_mask_p(lce_cmd_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_cmd_stream_mask_gp)
@@ -161,8 +158,7 @@ module bp_io_link_to_lce
   logic fsm_rev_new_lo, fsm_rev_critical_lo, fsm_rev_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(bedrock_fill_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
      ,.fsm_stream_mask_p(mem_rev_stream_mask_gp)
@@ -194,8 +190,18 @@ module bp_io_link_to_lce
      ,.cce_id_o(cce_id_lo)
      );
 
-  wire mem_fwd_wr_not_rd = (fsm_fwd_header_lo.msg_type == e_bedrock_mem_uc_wr);
-  wire lce_cmd_wr_not_rd = (fsm_cmd_header_lo.msg_type == e_bedrock_cmd_uc_st_done);
+  logic rev_pma_l2_cacheable_li;
+  bp_cce_pma
+   #(.bp_params_p(bp_params_p))
+   rev_pma
+    (.paddr_i(fsm_rev_addr_lo)
+     ,.paddr_v_i(fsm_rev_v_li)
+     ,.l1_cacheable_o()
+     ,.l2_cacheable_o(rev_pma_l2_cacheable_li)
+     );
+
+  wire mem_fwd_wr_not_rd = (fsm_fwd_header_lo.msg_type inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr});
+  wire lce_cmd_wr_not_rd = (fsm_cmd_header_lo.msg_type inside {e_bedrock_cmd_uc_st_done});
   always_comb
     begin
       fsm_req_header_li.msg_type        = mem_fwd_wr_not_rd ? e_bedrock_req_uc_wr : e_bedrock_req_uc_rd;
@@ -211,7 +217,13 @@ module bp_io_link_to_lce
 
       fsm_fwd_yumi_li = fsm_req_v_li & fsm_req_ready_and_lo;
 
-      fsm_rev_header_li.msg_type        = lce_cmd_wr_not_rd ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
+      fsm_rev_header_li.msg_type        = lce_cmd_wr_not_rd
+                                          ? rev_pma_l2_cacheable_li
+                                            ? e_bedrock_mem_wr
+                                            : e_bedrock_mem_uc_wr
+                                          : rev_pma_l2_cacheable_li
+                                            ? e_bedrock_mem_rd
+                                            : e_bedrock_mem_uc_rd;
       fsm_rev_header_li.subop           = e_bedrock_store; // TODO: support I/O AMOs
       fsm_rev_header_li.addr            = fsm_cmd_header_lo.addr;
       fsm_rev_header_li.size            = fsm_cmd_header_lo.size;

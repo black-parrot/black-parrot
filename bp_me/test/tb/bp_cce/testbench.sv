@@ -182,8 +182,6 @@ module testbench
   // Req Crossbar
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_req_payload_width_lp)
      ,.stream_mask_p(lce_req_stream_mask_gp)
      ,.num_source_p(num_lce_p)
@@ -208,8 +206,6 @@ module testbench
   // Resp Crossbar
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_resp_payload_width_lp)
      ,.stream_mask_p(lce_resp_stream_mask_gp)
      ,.num_source_p(num_lce_p)
@@ -235,8 +231,6 @@ module testbench
   // from LCE fill out to LCE fill in
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_fill_payload_width_lp)
      ,.stream_mask_p(lce_fill_stream_mask_gp)
      ,.num_source_p(num_lce_p)
@@ -263,8 +257,6 @@ module testbench
   // from CCE to LCE cmd in
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.stream_mask_p(lce_cmd_stream_mask_gp)
      ,.num_source_p(num_cce_p)

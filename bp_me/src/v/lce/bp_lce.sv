@@ -180,8 +180,6 @@ module bp_lce
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.stream_mask_p(lce_cmd_stream_mask_gp)
      ,.num_source_p(2)

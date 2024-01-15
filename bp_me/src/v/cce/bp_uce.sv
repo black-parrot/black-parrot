@@ -230,8 +230,7 @@ module bp_uce
   logic fsm_fwd_new_lo, fsm_fwd_critical_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(fill_width_p)
-     ,.block_width_p(block_width_p)
+     ,.data_width_p(fill_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp)
@@ -262,8 +261,7 @@ module bp_uce
   logic fsm_rev_new_li, fsm_rev_critical_li, fsm_rev_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(fill_width_p)
-     ,.block_width_p(block_width_p)
+     ,.data_width_p(fill_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
      ,.fsm_stream_mask_p(mem_rev_stream_mask_gp)
@@ -287,6 +285,16 @@ module bp_uce
      ,.fsm_last_o(fsm_rev_last_li)
      );
 
+  logic fwd_pma_l2_cacheable_lo;
+  bp_cce_pma
+   #(.bp_params_p(bp_params_p))
+   fwd_pma
+    (.paddr_i(fsm_fwd_addr_lo)
+     ,.paddr_v_i(fsm_fwd_v_lo)
+     ,.l1_cacheable_o()
+     ,.l2_cacheable_o(fwd_pma_l2_cacheable_lo)
+     );
+
   // We check for uncached stores ealier than other requests, because they get sent out in ready
   wire miss_load_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_load};
   wire miss_store_v_li  = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_store};
@@ -304,7 +312,7 @@ module bp_uce
   wire nonblocking_v_li = cache_req_v_i & (uc_store_v_li | wt_store_v_li) & ~uc_evict_v_li;
 
   wire store_resp_v_li  = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
-  wire load_resp_v_li   = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_amo};
+  wire load_resp_v_li   = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_amo, e_bedrock_mem_uc_amo};
 
   wire miss_load_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
@@ -677,7 +685,7 @@ module bp_uce
             end
           else if (uc_store_v_r)
             begin
-              fsm_fwd_header_lo.msg_type = e_bedrock_mem_uc_wr;
+              fsm_fwd_header_lo.msg_type = fwd_pma_l2_cacheable_lo ? e_bedrock_mem_wr : e_bedrock_mem_uc_wr;
               fsm_fwd_header_lo.addr     = cache_req_r.addr;
               fsm_fwd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);

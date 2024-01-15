@@ -197,11 +197,14 @@ module bp_core
       bp_me_dram_hash_encode
        #(.bp_params_p(bp_params_p))
        slice_select
-        (.daddr_i(local_addr[0+:daddr_width_p])
+        (.paddr_i(local_addr)
+         ,.data_i()
+
+         ,.dram_o()
          ,.daddr_o()
-         ,.cce_o()
          ,.slice_o(slice_id)
          ,.bank_o()
+         ,.data_o()
          );
 
       logic [l2_slices_p-1:0] is_l2s_slice_fwd;
@@ -230,8 +233,6 @@ module bp_core
 
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.stream_mask_p(mem_fwd_stream_mask_gp)
      ,.num_source_p(num_proc_lp)
@@ -257,8 +258,6 @@ module bp_core
   wire [num_dev_lp-1:0][lg_num_proc_lp-1:0] dev_rev_dst_lo = '0;
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.stream_mask_p(mem_rev_stream_mask_gp)
      ,.num_source_p(num_dev_lp)

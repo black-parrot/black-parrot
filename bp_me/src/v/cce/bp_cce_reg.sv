@@ -105,14 +105,15 @@ module bp_cce_reg
   assign auto_fwd_msg_o = auto_fwd_msg_r;
 
   // CCE PMA - LCE requests
-  logic req_pma_cacheable_addr_lo;
+  logic req_pma_l1_cacheable_lo;
   bp_cce_pma
     #(.bp_params_p(bp_params_p)
       )
     req_pma
       (.paddr_i(lce_req_hdr.addr)
        ,.paddr_v_i(lce_req_v_i)
-       ,.cacheable_addr_o(req_pma_cacheable_addr_lo)
+       ,.l1_cacheable_o(req_pma_l1_cacheable_lo)
+       ,.l2_cacheable_o()
        );
 
   // synopsys translate_off
@@ -120,7 +121,7 @@ module bp_cce_reg
     if (~reset_i) begin
       // Cacheable requests must target cacheable memory
       assert(reset_i !== '0 ||
-             !(lce_req_v_i && ~req_pma_cacheable_addr_lo
+             !(lce_req_v_i && ~req_pma_l1_cacheable_lo
                && ((lce_req_hdr.msg_type.req == e_bedrock_req_rd_miss)
                    || (lce_req_hdr.msg_type.req == e_bedrock_req_wr_miss))
               )
@@ -238,7 +239,7 @@ module bp_cce_reg
             mshr_n.flags.write_not_read = lce_req_rqf;
             mshr_n.flags.uncached = lce_req_ucf;
             mshr_n.flags.non_exclusive = lce_req_nerf;
-            mshr_n.flags.cacheable_address = req_pma_cacheable_addr_lo;
+            mshr_n.flags.cacheable_address = req_pma_l1_cacheable_lo;
           end
           e_src_q_sel_lce_resp: begin
             //mshr_n.lce_id = lce_resp_hdr.src_id;
