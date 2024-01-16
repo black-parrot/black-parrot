@@ -86,14 +86,10 @@ BlackParrot has a configurable physical address width as well as maximum DRAM si
   * Cached, global memory
   * Striped by cache line
   * Cached DRAM region
-* 0x01_0000_0000 - 0x01_7FFF_FFFF
+* 0x01_0000_0000 - 0x01_FFFF_FFFF
   * Uncached, global memory
   * Striped by cache line
-  * L1-Uncached/L2-Cached DRAM region
-* 0x01_8000_0000 - 0x01_FFFF_FFFF
-  * Uncached, global memory
-  * Striped by cache line
-  * L1-Uncached/L2-Uncached DRAM region
+  * Uncached DRAM region
 * 0x02_0000_0000 - 0x03_FFFF_FFFF
   * Uncached, global memory
   * Striped by tile

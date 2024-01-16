@@ -91,7 +91,7 @@ module bp_io_link_to_lce
 
   bp_bedrock_lce_req_header_s fsm_req_header_li;
   logic [bedrock_fill_width_p-1:0] fsm_req_data_li;
-  logic fsm_req_v_li, fsm_req_ready_and_lo;
+  logic fsm_req_v_li, fsm_req_ready_then_lo;
   logic [paddr_width_p-1:0] fsm_req_addr_lo;
   logic fsm_req_new_lo, fsm_req_critical_lo, fsm_req_last_lo;
   bp_me_stream_pump_out
@@ -113,7 +113,7 @@ module bp_io_link_to_lce
      ,.fsm_header_i(fsm_req_header_li)
      ,.fsm_data_i(fsm_req_data_li)
      ,.fsm_v_i(fsm_req_v_li)
-     ,.fsm_ready_and_o(fsm_req_ready_and_lo)
+     ,.fsm_ready_then_o(fsm_req_ready_then_lo)
      ,.fsm_addr_o(fsm_req_addr_lo)
      ,.fsm_new_o(fsm_req_new_lo)
      ,.fsm_critical_o(fsm_req_critical_lo)
@@ -153,7 +153,7 @@ module bp_io_link_to_lce
 
   bp_bedrock_mem_rev_header_s fsm_rev_header_li;
   logic [bedrock_fill_width_p-1:0] fsm_rev_data_li;
-  logic fsm_rev_v_li, fsm_rev_ready_and_lo;
+  logic fsm_rev_v_li, fsm_rev_ready_then_lo;
   logic [paddr_width_p-1:0] fsm_rev_addr_lo;
   logic fsm_rev_new_lo, fsm_rev_critical_lo, fsm_rev_last_lo;
   bp_me_stream_pump_out
@@ -175,7 +175,7 @@ module bp_io_link_to_lce
      ,.fsm_header_i(fsm_rev_header_li)
      ,.fsm_data_i(fsm_rev_data_li)
      ,.fsm_v_i(fsm_rev_v_li)
-     ,.fsm_ready_and_o(fsm_rev_ready_and_lo)
+     ,.fsm_ready_then_o(fsm_rev_ready_then_lo)
      ,.fsm_addr_o(fsm_rev_addr_lo)
      ,.fsm_new_o(fsm_rev_new_lo)
      ,.fsm_critical_o(fsm_rev_critical_lo)
@@ -190,18 +190,8 @@ module bp_io_link_to_lce
      ,.cce_id_o(cce_id_lo)
      );
 
-  logic rev_pma_l2_cacheable_li;
-  bp_cce_pma
-   #(.bp_params_p(bp_params_p))
-   rev_pma
-    (.paddr_i(fsm_rev_addr_lo)
-     ,.paddr_v_i(fsm_rev_v_li)
-     ,.l1_cacheable_o()
-     ,.l2_cacheable_o(rev_pma_l2_cacheable_li)
-     );
-
-  wire mem_fwd_wr_not_rd = (fsm_fwd_header_lo.msg_type inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr});
-  wire lce_cmd_wr_not_rd = (fsm_cmd_header_lo.msg_type inside {e_bedrock_cmd_uc_st_done});
+  wire mem_fwd_wr_not_rd = (fsm_fwd_header_lo.msg_type == e_bedrock_mem_uc_wr);
+  wire lce_cmd_wr_not_rd = (fsm_cmd_header_lo.msg_type == e_bedrock_cmd_uc_st_done);
   always_comb
     begin
       fsm_req_header_li.msg_type        = mem_fwd_wr_not_rd ? e_bedrock_req_uc_wr : e_bedrock_req_uc_rd;
@@ -213,28 +203,18 @@ module bp_io_link_to_lce
       fsm_req_header_li.payload.dst_id  = cce_id_lo;
       fsm_req_header_li.payload.src_did = fsm_fwd_header_lo.payload.src_did;
       fsm_req_data_li                   = fsm_fwd_data_lo;
-      fsm_req_v_li                      = fsm_fwd_v_lo;
+      fsm_req_v_li                      = fsm_req_ready_then_lo & fsm_fwd_v_lo;
+      fsm_fwd_yumi_li                   = fsm_req_v_li;
 
-      fsm_fwd_yumi_li = fsm_req_v_li & fsm_req_ready_and_lo;
-
-      fsm_rev_header_li.msg_type        = lce_cmd_wr_not_rd
-                                          ? rev_pma_l2_cacheable_li
-                                            ? e_bedrock_mem_wr
-                                            : e_bedrock_mem_uc_wr
-                                          : rev_pma_l2_cacheable_li
-                                            ? e_bedrock_mem_rd
-                                            : e_bedrock_mem_uc_rd;
+      fsm_rev_header_li.msg_type        = lce_cmd_wr_not_rd ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
       fsm_rev_header_li.subop           = e_bedrock_store; // TODO: support I/O AMOs
       fsm_rev_header_li.addr            = fsm_cmd_header_lo.addr;
       fsm_rev_header_li.size            = fsm_cmd_header_lo.size;
       fsm_rev_header_li.payload         = '0;
-      // TODO: Include
-      //fsm_rev_header_li.payload.lce_id  = fsm_cmd_header_lo.payload.lce_id;
       fsm_rev_header_li.payload.src_did = fsm_cmd_header_lo.payload.src_did;
       fsm_rev_data_li                   = fsm_cmd_data_lo;
-      fsm_rev_v_li                      = fsm_cmd_v_lo;
-
-      fsm_cmd_yumi_li = fsm_rev_v_li & fsm_rev_ready_and_lo;
+      fsm_rev_v_li                      = fsm_rev_ready_then_lo & fsm_cmd_v_lo;
+      fsm_cmd_yumi_li                   = fsm_rev_v_li;
     end
 
 endmodule

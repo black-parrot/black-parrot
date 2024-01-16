@@ -197,14 +197,11 @@ module bp_core
       bp_me_dram_hash_encode
        #(.bp_params_p(bp_params_p))
        slice_select
-        (.paddr_i(local_addr)
-         ,.data_i()
-
-         ,.dram_o()
+        (.daddr_i(local_addr[0+:daddr_width_p])
          ,.daddr_o()
+         ,.cce_o()
          ,.slice_o(slice_id)
          ,.bank_o()
-         ,.data_o()
          );
 
       logic [l2_slices_p-1:0] is_l2s_slice_fwd;

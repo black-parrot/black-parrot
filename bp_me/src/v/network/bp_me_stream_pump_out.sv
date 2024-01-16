@@ -53,9 +53,9 @@ module bp_me_stream_pump_out
    // FSM must hold fsm_header_i constant throughout the transaction
    // (i.e., through cycle fsm_last_o is raised)
    , input [xce_header_width_lp-1:0]                fsm_header_i
-   , input [data_width_p-1:0]                   fsm_data_i
+   , input [data_width_p-1:0]                       fsm_data_i
    , input                                          fsm_v_i
-   , output logic                                   fsm_ready_and_o
+   , output logic                                   fsm_ready_then_o
 
    // FSM control signals
    // fsm_addr is the effective address of the beat
@@ -140,18 +140,18 @@ module bp_me_stream_pump_out
     if (fsm_stream & ~msg_stream & nz_stream)
       begin
         // N:1
+        // ack all but first FSM beat silently
+        fsm_ready_then_o = msg_ready_and_li | ~fsm_new_o;
         // only send msg on first FSM beat
         msg_v_lo = fsm_v_i & fsm_new_o;
-        // ack all but first FSM beat silently
-        fsm_ready_and_o = msg_ready_and_li | ~fsm_new_o;
-        cnt_up = fsm_ready_and_o & fsm_v_i;
+        cnt_up = fsm_v_i;
       end
     else
       begin
         // 1:1
+        fsm_ready_then_o = msg_ready_and_li;
         msg_v_lo = fsm_v_i;
-        fsm_ready_and_o = msg_ready_and_li;
-        cnt_up  = fsm_ready_and_o & fsm_v_i;
+        cnt_up = msg_v_lo;
       end
 
   // parameter checks

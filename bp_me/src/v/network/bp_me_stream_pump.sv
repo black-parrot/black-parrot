@@ -90,7 +90,7 @@ module bp_me_stream_pump
      ,.fsm_last_o(in_fsm_last_o)
      );
 
-  logic out_fsm_v_li, out_fsm_ready_and_lo;
+  logic out_fsm_ready_then_lo, out_fsm_v_li;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(out_data_width_p)
@@ -110,14 +110,17 @@ module bp_me_stream_pump
      ,.fsm_header_i(out_fsm_header_i)
      ,.fsm_data_i(out_fsm_data_i)
      ,.fsm_v_i(out_fsm_v_li)
-     ,.fsm_ready_and_o(out_fsm_ready_and_lo)
+     ,.fsm_ready_then_o(out_fsm_ready_then_lo)
      ,.fsm_addr_o(out_fsm_addr_o)
      ,.fsm_new_o(out_fsm_new_o)
      ,.fsm_critical_o(out_fsm_critical_o)
      ,.fsm_last_o(out_fsm_last_o)
      );
 
-  logic stream_fifo_ready_lo, stream_fifo_v_lo, stream_fifo_yumi_li;
+  logic [metadata_fifo_width_p-1:0] stream_fifo_data_li;
+  logic stream_fifo_ready_then_lo, stream_fifo_v_li;
+  logic [metadata_fifo_width_p-1:0] stream_fifo_data_lo;
+  logic stream_fifo_v_lo, stream_fifo_yumi_li;
   bsg_fifo_1r1w_small
    #(.width_p(metadata_fifo_width_p)
      ,.els_p(metadata_fifo_els_p)
@@ -127,20 +130,27 @@ module bp_me_stream_pump
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(in_fsm_metadata_i)
-     ,.v_i(in_fsm_yumi_i)
-     ,.ready_param_o(stream_fifo_ready_lo)
+     ,.data_i(stream_fifo_data_li)
+     ,.v_i(stream_fifo_v_li)
+     ,.ready_param_o(stream_fifo_ready_then_lo)
 
-     ,.data_o(out_fsm_metadata_o)
+     ,.data_o(stream_fifo_data_lo)
      ,.v_o(stream_fifo_v_lo)
      ,.yumi_i(stream_fifo_yumi_li)
      );
-  assign stream_fifo_yumi_li = out_fsm_ready_then_o & out_fsm_v_i;
 
-  assign in_fsm_v_o           = stream_fifo_ready_lo & in_fsm_v_lo;
-  assign in_fsm_yumi_li       = stream_fifo_ready_lo & in_fsm_yumi_i;
-  assign out_fsm_v_li         = stream_fifo_v_lo     & out_fsm_v_i;
-  assign out_fsm_ready_then_o = stream_fifo_v_lo     & out_fsm_ready_and_lo;
+  // Handshakes
+  assign in_fsm_v_o = in_fsm_v_lo & stream_fifo_ready_then_lo;
+  assign in_fsm_yumi_li = in_fsm_yumi_i;
+
+  assign stream_fifo_data_li = in_fsm_metadata_i;
+  assign stream_fifo_v_li = in_fsm_yumi_i & in_fsm_new_o;
+
+  assign out_fsm_metadata_o = stream_fifo_data_lo;
+  assign out_fsm_ready_then_o = out_fsm_ready_then_lo & stream_fifo_v_lo;
+  assign out_fsm_v_li = out_fsm_v_i;
+
+  assign stream_fifo_yumi_li = out_fsm_v_i & out_fsm_last_o;
 
 endmodule
 

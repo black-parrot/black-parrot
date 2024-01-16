@@ -147,7 +147,7 @@ module bp_lce_req
   bp_bedrock_lce_req_header_s fsm_req_header_lo;
   logic [paddr_width_p-1:0] fsm_req_addr_lo;
   logic [fill_width_p-1:0] fsm_req_data_lo;
-  logic fsm_req_v_lo, fsm_req_ready_and_li;
+  logic fsm_req_v_lo, fsm_req_ready_then_li;
   logic fsm_req_new_lo, fsm_req_critical_lo, fsm_req_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
@@ -169,7 +169,7 @@ module bp_lce_req
      ,.fsm_addr_o(fsm_req_addr_lo)
      ,.fsm_data_i(fsm_req_data_lo)
      ,.fsm_v_i(fsm_req_v_lo)
-     ,.fsm_ready_and_o(fsm_req_ready_and_li)
+     ,.fsm_ready_then_o(fsm_req_ready_then_li)
      ,.fsm_new_o(fsm_req_new_lo)
      ,.fsm_critical_o(fsm_req_critical_lo)
      ,.fsm_last_o(fsm_req_last_lo)
@@ -190,15 +190,15 @@ module bp_lce_req
   // one credit used per LCE request sent
   logic [`BSG_WIDTH(credits_p)-1:0] credit_count_lo;
   wire credit_v_li = fsm_req_v_lo & fsm_req_new_lo;
-  wire credit_ready_li = fsm_req_ready_and_li;
+  wire credit_ready_then_li = fsm_req_ready_then_li;
   wire credit_returned_li = credit_return_i;
   bsg_flow_counter
-    #(.els_p(credits_p))
+    #(.els_p(credits_p), .ready_THEN_valid_p(1))
     req_counter
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
       ,.v_i(credit_v_li)
-      ,.ready_param_i(credit_ready_li)
+      ,.ready_param_i(credit_ready_then_li)
       ,.yumi_i(credit_returned_li)
       ,.count_o(credit_count_lo)
       );
@@ -284,9 +284,9 @@ module bp_lce_req
           end
         e_send:
           begin
-            fsm_req_v_lo = ~cache_req_credits_full_o;
+            fsm_req_v_lo = fsm_req_ready_then_li & ~cache_req_credits_full_o;
 
-            state_n = (fsm_req_ready_and_li & fsm_req_v_lo & fsm_req_last_lo) ? e_request : state_r;
+            state_n = (fsm_req_v_lo & fsm_req_last_lo) ? e_request : state_r;
           end
         e_request:
           begin
@@ -296,7 +296,7 @@ module bp_lce_req
           end
         e_backoff:
           begin
-            state_n = fsm_req_ready_and_li ? e_ready : state_r;
+            state_n = fsm_req_ready_then_li ? e_ready : state_r;
           end
         // e_reset:
         default : state_n = cache_init_done_i ? e_ready : state_r;
@@ -305,9 +305,9 @@ module bp_lce_req
       // Fire off a non-blocking request opportunistically if we have one
       if (nonblocking_v_r & ~fsm_req_v_lo)
         begin
-          fsm_req_v_lo = ~cache_req_credits_full_o;
+          fsm_req_v_lo = fsm_req_ready_then_li & ~cache_req_credits_full_o;
 
-          cache_req_done = fsm_req_ready_and_li & fsm_req_v_lo & fsm_req_last_lo;
+          cache_req_done = fsm_req_v_lo & fsm_req_last_lo;
         end
     end
 

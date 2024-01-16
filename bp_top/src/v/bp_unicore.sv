@@ -169,29 +169,26 @@ module bp_unicore
       wire is_host_fwd     = is_my_core & is_local & (device_fwd_li == host_dev_gp);
 
       wire is_io_fwd       = is_host_fwd | is_other_hio | is_other_core;
-      wire is_l2s_fwd      = ~is_local & ~is_io_fwd;
+      wire is_l2s_fwd       = ~is_local & ~is_io_fwd;
       wire is_loopback_fwd = ~is_cfg_fwd & ~is_clint_fwd & ~is_io_fwd & ~is_l2s_fwd;
 
       localparam lg_l2_slices_lp = `BSG_SAFE_CLOG2(l2_slices_p);
-      logic [lg_l2_slices_lp-1:0] slice;
+      logic [lg_l2_slices_lp-1:0] slice_id;
       bp_me_dram_hash_encode
        #(.bp_params_p(bp_params_p))
        slice_select
-        (.paddr_i(local_addr)
-         ,.data_i()
-
-         ,.dram_o()
+        (.daddr_i(local_addr[0+:daddr_width_p])
          ,.daddr_o()
-         ,.slice_o(slice)
+         ,.cce_o()
+         ,.slice_o(slice_id)
          ,.bank_o()
-         ,.data_o()
          );
 
       logic [l2_slices_p-1:0] is_l2s_slice_fwd;
       bsg_decode_with_v
        #(.num_out_p(l2_slices_p))
        slice_decode
-        (.i(slice)
+        (.i(slice_id)
          ,.v_i(is_l2s_fwd)
          ,.o(is_l2s_slice_fwd)
          );

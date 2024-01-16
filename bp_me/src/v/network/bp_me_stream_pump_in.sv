@@ -54,7 +54,7 @@ module bp_me_stream_pump_in
 
    // FSM consumer side
    , output logic [xce_header_width_lp-1:0]         fsm_header_o
-   , output logic [data_width_p-1:0]            fsm_data_o
+   , output logic [data_width_p-1:0]                fsm_data_o
    , output logic                                   fsm_v_o
    , input                                          fsm_yumi_i
    // FSM control signals
