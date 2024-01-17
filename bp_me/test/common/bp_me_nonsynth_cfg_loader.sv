@@ -181,7 +181,7 @@ module bp_me_nonsynth_cfg_loader
       mem_fwd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
 
       // uncached store
-      mem_fwd_cast_o.msg_type             = cfg_w_v_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
+      mem_fwd_cast_o.msg_type             = cfg_w_v_lo ? e_bedrock_mem_wr : e_bedrock_mem_rd;
       mem_fwd_cast_o.subop                = e_bedrock_store;
       mem_fwd_cast_o.addr                 = local_addr_lo;
       mem_fwd_payload                     = '0;

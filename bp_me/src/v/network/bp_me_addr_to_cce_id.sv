@@ -38,7 +38,7 @@ module bp_me_addr_to_cce_id
 
   wire external_io_v_li = (global_addr_li.hio > 2'd1);
   wire local_addr_v_li = (paddr_i < dram_base_addr_gp);
-  wire dram_addr_v_li = (paddr_i >= dram_base_addr_gp) && (paddr_i < coproc_base_addr_gp);
+  wire dram_addr_v_li = (paddr_i >= dram_base_addr_gp) && ~|paddr_i[paddr_width_p-1:daddr_width_p];
 
   localparam block_offset_lp = `BSG_SAFE_CLOG2(bedrock_block_width_p/8);
   localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);

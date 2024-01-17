@@ -394,7 +394,7 @@ module testbench
            ,.sets_p(sets_p)
            ,.block_width_p(block_width_p)
            ,.fill_width_p(fill_width_p)
-           ,.ctag_width_p(ctag_width_p)
+           ,.tag_width_p(tag_width_p)
            ,.id_width_p(id_width_p)
            )
          icache_tracer
@@ -411,7 +411,7 @@ module testbench
            ,.sets_p(sets_p)
            ,.block_width_p(block_width_p)
            ,.fill_width_p(fill_width_p)
-           ,.ctag_width_p(ctag_width_p)
+           ,.tag_width_p(tag_width_p)
            ,.id_width_p(id_width_p)
            )
          dcache_tracer

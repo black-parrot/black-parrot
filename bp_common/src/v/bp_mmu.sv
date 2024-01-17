@@ -159,7 +159,6 @@ module bp_mmu
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.ptag_v_i(ptag_v_lo)
      ,.ptag_i(ptag_lo)
      ,.uncached_mode_i(uncached_mode_i)
      ,.nonspec_mode_i(nonspec_mode_i)
@@ -186,7 +185,7 @@ module bp_mmu
   wire instr_exe_page_fault_v  = tlb_v_lo & ~tlb_entry_lo.x;
   wire instr_priv_page_fault_v = tlb_v_lo & (((priv_mode_i == `PRIV_MODE_S) & tlb_entry_lo.u)
                                              | ((priv_mode_i == `PRIV_MODE_U) & ~tlb_entry_lo.u)
-                                            );
+                                             );
   wire data_priv_page_fault = tlb_v_lo & (((priv_mode_i == `PRIV_MODE_S) & ~sum_i & tlb_entry_lo.u)
                                            | ((priv_mode_i == `PRIV_MODE_U) & ~tlb_entry_lo.u)
                                           );

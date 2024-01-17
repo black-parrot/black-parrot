@@ -100,11 +100,11 @@ module bp_be_dcache
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
    , parameter fill_width_p   = dcache_fill_width_p
-   , parameter ctag_width_p   = dcache_ctag_width_p
+   , parameter tag_width_p    = dcache_tag_width_p
    , parameter mshr_p         = dcache_mshr_p
    , parameter id_width_p     = dcache_req_id_width_p
 
-   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
+   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
 
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
@@ -175,7 +175,7 @@ module bp_be_dcache
    , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
    );
 
-  `declare_bp_be_dcache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
+  `declare_bp_be_dcache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
 
   localparam lg_assoc_lp              = `BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp            = block_width_p / assoc_p;
@@ -337,9 +337,9 @@ module bp_be_dcache
   localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
   wire [ctag_vbits_lp-1:0] ctag_vbits = offset_tl_r[page_offset_width_gp-1-:`BSG_MAX(ctag_vbits_lp,1)];
   // Causes segfault in Synopsys DC O-2018.06-SP4
-  // wire [ctag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
-  wire [ctag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
-  wire [ptag_width_p-1:ctag_width_p] ptag_high_li = ptag_i >> ctag_width_p;
+  // wire [tag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
+  wire [tag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
+  wire [ptag_width_p-1:tag_width_p] ptag_high_li = ptag_i >> tag_width_p;
 
   logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
@@ -375,7 +375,7 @@ module bp_be_dcache
 
   wire [bindex_width_lp-1:0] paddr_bank_tv  = paddr_tv_r[byte_offset_width_lp+:bindex_width_lp];
   wire [sindex_width_lp-1:0] paddr_index_tv = paddr_tv_r[block_offset_width_lp+:sindex_width_lp];
-  wire [ctag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:ctag_width_p];
+  wire [tag_width_p-1:0]    paddr_tag_tv   = paddr_tv_r[block_offset_width_lp+sindex_width_lp+:tag_width_p];
 
   // cache block ops do not require a ptag
   assign safe_tv_we = v_tl_r & (ptag_v_i | decode_tl_r.cache_op);
@@ -671,7 +671,7 @@ module bp_be_dcache
      ,.assoc_p(dcache_assoc_p)
      ,.block_width_p(dcache_block_width_p)
      ,.fill_width_p(dcache_fill_width_p)
-     ,.ctag_width_p(dcache_ctag_width_p)
+     ,.tag_width_p(dcache_tag_width_p)
      )
    wbuf
     (.clk_i(clk_i)
@@ -893,7 +893,7 @@ module bp_be_dcache
           begin
             tag_mem_data_li[i] = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
             tag_mem_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}
-                                   ,tag : {ctag_width_p{tag_mem_way_one_hot[i]}}
+                                   ,tag : {tag_width_p{tag_mem_way_one_hot[i]}}
                                    };
           end
         {1'b0, e_cache_tag_mem_set_state}:
@@ -1114,7 +1114,7 @@ module bp_be_dcache
   if (amo_support_p[e_dcache_subop_lr] && amo_support_p[e_dcache_subop_sc])
     begin : l1_lrsc
       logic [sindex_width_lp-1:0] load_reserved_index_r;
-      logic [ctag_width_p-1:0] load_reserved_tag_r;
+      logic [tag_width_p-1:0] load_reserved_tag_r;
       logic load_reserved_v_r;
 
       // Set reservation on successful LR, without a cache miss or upgrade request
@@ -1140,7 +1140,7 @@ module bp_be_dcache
          );
 
       bsg_dff_en
-       #(.width_p(ctag_width_p+sindex_width_lp))
+       #(.width_p(tag_width_p+sindex_width_lp))
        load_reserved_addr
         (.clk_i(clk_i)
          ,.en_i(set_reservation)

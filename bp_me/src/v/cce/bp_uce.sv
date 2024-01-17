@@ -22,10 +22,10 @@ module bp_uce
     , parameter `BSG_INV_PARAM(sets_p)
     , parameter `BSG_INV_PARAM(block_width_p)
     , parameter `BSG_INV_PARAM(fill_width_p)
-    , parameter `BSG_INV_PARAM(ctag_width_p)
+    , parameter `BSG_INV_PARAM(tag_width_p)
     , parameter `BSG_INV_PARAM(id_width_p)
 
-    `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
+    `declare_bp_cache_engine_generic_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
     )
    (input                                            clk_i
     , input                                          reset_i
@@ -96,7 +96,7 @@ module bp_uce
                                                              : e_bedrock_msg_size_64;
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
-  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_i(bp_cache_req_metadata_s, cache_req_metadata);
@@ -301,8 +301,8 @@ module bp_uce
   wire bclean_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_bclean};
   wire nonblocking_v_li = cache_req_v_i & (uc_store_v_li | wt_store_v_li) & ~uc_evict_v_li;
 
-  wire store_resp_v_li  = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
-  wire load_resp_v_li   = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd, e_bedrock_mem_amo};
+  wire store_resp_v_li  = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_wr};
+  wire load_resp_v_li   = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_amo};
 
   wire miss_load_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
@@ -661,7 +661,7 @@ module bp_uce
             end
           else if (uc_load_v_r | uc_amo_v_r)
             begin
-              fsm_fwd_header_lo.msg_type = uc_load_v_r ? e_bedrock_mem_uc_rd : e_bedrock_mem_amo;
+              fsm_fwd_header_lo.msg_type = uc_load_v_r ? e_bedrock_mem_rd : e_bedrock_mem_amo;
               fsm_fwd_header_lo.addr     = cache_req_r.addr;
               fsm_fwd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
@@ -675,7 +675,7 @@ module bp_uce
             end
           else if (uc_store_v_r)
             begin
-              fsm_fwd_header_lo.msg_type = e_bedrock_mem_uc_wr;
+              fsm_fwd_header_lo.msg_type = e_bedrock_mem_wr;
               fsm_fwd_header_lo.addr     = cache_req_r.addr;
               fsm_fwd_header_lo.size     = bp_bedrock_msg_size_e'(cache_req_r.size);
               fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);
@@ -719,7 +719,7 @@ module bp_uce
             // We fill in M because we don't want to trigger additional coherence traffic
             tag_mem_pkt_cast_o.way_id = fsm_rev_header_li.payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             tag_mem_pkt_cast_o.state  = e_COH_M;
-            tag_mem_pkt_cast_o.tag    = fsm_rev_addr_li[block_offset_width_lp+index_width_lp+:ctag_width_p];
+            tag_mem_pkt_cast_o.tag    = fsm_rev_addr_li[block_offset_width_lp+index_width_lp+:tag_width_p];
             tag_mem_pkt_v_o = load_resp_v_li & fsm_rev_new_li;
 
             data_mem_pkt_cast_o.opcode     = e_cache_data_mem_write;
@@ -761,7 +761,7 @@ module bp_uce
             // We fill in M because we don't want to trigger additional coherence traffic
             tag_mem_pkt_cast_o.way_id = fsm_rev_header_li.payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             tag_mem_pkt_cast_o.state  = e_COH_M;
-            tag_mem_pkt_cast_o.tag    = fsm_rev_addr_li[block_offset_width_lp+index_width_lp+:ctag_width_p];
+            tag_mem_pkt_cast_o.tag    = fsm_rev_addr_li[block_offset_width_lp+index_width_lp+:tag_width_p];
             tag_mem_pkt_v_o = load_resp_v_li & fsm_rev_new_li;
 
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
@@ -800,7 +800,7 @@ module bp_uce
       // Fire off a non-blocking request opportunistically if we have one
       if (nonblocking_v_r & ~fsm_fwd_v_lo)
         begin
-          fsm_fwd_header_lo.msg_type       = e_bedrock_mem_uc_wr;
+          fsm_fwd_header_lo.msg_type       = e_bedrock_mem_wr;
           fsm_fwd_header_lo.addr           = cache_req_r.addr;
           fsm_fwd_header_lo.size           = bp_bedrock_msg_size_e'(cache_req_r.size);
           fsm_fwd_header_lo.payload.way_id = lce_assoc_p'(cache_req_metadata.hit_or_repl_way);

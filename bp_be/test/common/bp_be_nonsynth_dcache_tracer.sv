@@ -6,15 +6,15 @@ module bp_be_nonsynth_dcache_tracer
  import bp_common_pkg::*;
  import bp_be_pkg::*;
  #( parameter bp_params_e bp_params_p = e_bp_default_cfg
+  `declare_bp_proc_params(bp_params_p)
   , parameter assoc_p = 8
   , parameter sets_p = 64
   , parameter block_width_p = 512
   , parameter fill_width_p = 512
   , parameter trace_file_p = "dcache"
-  , parameter ctag_width_p = 27
+  , parameter tag_width_p = dcache_tag_width_p
   , parameter id_width_p = 1
-   `declare_bp_proc_params(bp_params_p)
-   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
+   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
 
    // Calculated parameters
    , localparam mhartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
@@ -86,7 +86,7 @@ module bp_be_nonsynth_dcache_tracer
    , input                                                stat_mem_fast_write
    );
 
-  `declare_bp_be_dcache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
+  `declare_bp_be_dcache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
   bp_be_dcache_pkt_s dcache_pkt_cast_i;
   assign dcache_pkt_cast_i = dcache_pkt_i;
 

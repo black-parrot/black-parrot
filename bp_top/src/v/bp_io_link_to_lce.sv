@@ -190,7 +190,7 @@ module bp_io_link_to_lce
      ,.cce_id_o(cce_id_lo)
      );
 
-  wire mem_fwd_wr_not_rd = (fsm_fwd_header_lo.msg_type == e_bedrock_mem_uc_wr);
+  wire mem_fwd_wr_not_rd = (fsm_fwd_header_lo.msg_type == e_bedrock_mem_wr);
   wire lce_cmd_wr_not_rd = (fsm_cmd_header_lo.msg_type == e_bedrock_cmd_uc_st_done);
   always_comb
     begin
@@ -206,7 +206,7 @@ module bp_io_link_to_lce
       fsm_req_v_li                      = fsm_req_ready_then_lo & fsm_fwd_v_lo;
       fsm_fwd_yumi_li                   = fsm_req_v_li;
 
-      fsm_rev_header_li.msg_type        = lce_cmd_wr_not_rd ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
+      fsm_rev_header_li.msg_type        = lce_cmd_wr_not_rd ? e_bedrock_mem_wr : e_bedrock_mem_rd;
       fsm_rev_header_li.subop           = e_bedrock_store; // TODO: support I/O AMOs
       fsm_rev_header_li.addr            = fsm_cmd_header_lo.addr;
       fsm_rev_header_li.size            = fsm_cmd_header_lo.size;

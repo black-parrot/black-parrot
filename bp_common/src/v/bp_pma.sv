@@ -9,7 +9,6 @@ module bp_pma
   (input                          clk_i
    , input                        reset_i
 
-   , input                        ptag_v_i
    , input [ptag_width_p-1:0]     ptag_i
    , input                        uncached_mode_i
    , input                        nonspec_mode_i
@@ -23,11 +22,11 @@ module bp_pma
   wire is_io_addr    = (ptag_i[ptag_width_p-1:dtag_width_p] != '0);
   wire is_uc_addr    = (ptag_i[ptag_width_p-1:(caddr_width_p - page_offset_width_gp)] != '0);
 
-  assign uncached_o = ptag_v_i & (is_uc_addr | is_io_addr | is_local_addr | uncached_mode_i);
+  assign uncached_o = (is_uc_addr | is_io_addr | is_local_addr | uncached_mode_i);
   // For now, uncached mode also means non-idempotency. Will reevaluate if we need
   //   a high-performance, unsafe, uncached mode
-  assign nonidem_o  = ptag_v_i & (is_uc_addr | is_io_addr | is_local_addr | uncached_mode_i | nonspec_mode_i);
-  assign dram_o     = ptag_v_i & (~is_local_addr & ~is_io_addr & ~is_uc_addr);
+  assign nonidem_o  = (is_uc_addr | is_io_addr | is_local_addr | uncached_mode_i | nonspec_mode_i);
+  assign dram_o     = (~is_local_addr & ~is_io_addr & ~is_uc_addr);
 
 endmodule
 

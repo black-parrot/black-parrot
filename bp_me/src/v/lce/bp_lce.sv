@@ -29,10 +29,10 @@ module bp_lce
    , parameter credits_p = coh_noc_max_credits_p
    // issue non-exclusive read requests
    , parameter non_excl_reads_p = 0
-   , parameter `BSG_INV_PARAM(ctag_width_p)
+   , parameter `BSG_INV_PARAM(tag_width_p)
 
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
   )
   (
     input                                            clk_i
@@ -120,7 +120,7 @@ module bp_lce
   if (fill_width_p < dword_width_gp)
     $error("fill width must be greater or equal than cache request data width");
 
-  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   // LCE Request Module
@@ -135,7 +135,7 @@ module bp_lce
      ,.sets_p(sets_p)
      ,.block_width_p(block_width_p)
      ,.fill_width_p(fill_width_p)
-     ,.ctag_width_p(ctag_width_p)
+     ,.tag_width_p(tag_width_p)
      ,.credits_p(credits_p)
      ,.non_excl_reads_p(non_excl_reads_p)
      ,.id_width_p(id_width_p)
@@ -226,7 +226,7 @@ module bp_lce
      ,.sets_p(sets_p)
      ,.block_width_p(block_width_p)
      ,.fill_width_p(fill_width_p)
-     ,.ctag_width_p(ctag_width_p)
+     ,.tag_width_p(tag_width_p)
      ,.id_width_p(id_width_p)
      )
    command

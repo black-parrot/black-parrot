@@ -10,7 +10,7 @@ module bp_cacc_vdp
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache_req_id_width_p)
+    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, acache_tag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache_req_id_width_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
     )
@@ -104,7 +104,7 @@ module bp_cacc_vdp
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
   assign cfg_bus_cast_i.dcache_mode = e_lce_mode_normal;
 
-  `declare_bp_be_dcache_engine_if(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache_req_id_width_p);
+  `declare_bp_be_dcache_engine_if(paddr_width_p, acache_tag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache_req_id_width_p);
   bp_be_dcache_req_s acache_req_lo;
   logic acache_req_v_lo, acache_req_yumi_li, acache_req_lock_li;
   bp_be_dcache_req_metadata_s acache_req_metadata_lo;
@@ -195,7 +195,7 @@ module bp_cacc_vdp
      ,.sets_p(acache_sets_p)
      ,.block_width_p(acache_block_width_p)
      ,.fill_width_p(acache_fill_width_p)
-     ,.ctag_width_p(acache_ctag_width_p)
+     ,.tag_width_p(acache_tag_width_p)
      ,.id_width_p(acache_req_id_width_p)
      ,.timeout_max_limit_p(4)
      ,.credits_p(coh_noc_max_credits_p)

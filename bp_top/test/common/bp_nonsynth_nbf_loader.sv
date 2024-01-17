@@ -143,7 +143,7 @@ module bp_nonsynth_nbf_loader
       mem_fwd_header_cast_o.payload.lce_id = lce_id_i;
       mem_fwd_header_cast_o.payload.src_did = did_i;
       mem_fwd_header_cast_o.addr = curr_nbf.addr;
-      mem_fwd_header_cast_o.msg_type.fwd = curr_nbf.opcode[5] ? e_bedrock_mem_uc_rd : e_bedrock_mem_uc_wr;
+      mem_fwd_header_cast_o.msg_type.fwd = curr_nbf.opcode[5] ? e_bedrock_mem_rd : e_bedrock_mem_wr;
       mem_fwd_header_cast_o.subop = e_bedrock_store;
       case (curr_nbf.opcode[1:0])
         2'b00: mem_fwd_header_cast_o.size = e_bedrock_msg_size_1;
@@ -156,7 +156,7 @@ module bp_nonsynth_nbf_loader
 
   assign mem_fwd_v_o = ~credits_full_lo & is_send_nbf & ~is_fence_packet & ~is_finish_packet;
 
-  wire read_return = is_read & mem_rev_v_i & (mem_rev_header_cast_i.msg_type inside {e_bedrock_mem_uc_rd, e_bedrock_mem_rd});
+  wire read_return = is_read & mem_rev_v_i & (mem_rev_header_cast_i.msg_type == e_bedrock_mem_rd);
   always_comb
     unique casez (state_r)
       e_reset       : state_n = reset_i ? e_reset : e_send;

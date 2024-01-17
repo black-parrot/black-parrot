@@ -19,7 +19,7 @@ module wrapper
    , parameter fill_width_p = dcache_fill_width_p
    , parameter id_width_p = dcache_req_id_width_p
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, dcache_ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, dcache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, dcache_tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, dcache)
 
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
@@ -244,7 +244,7 @@ module wrapper
              ,.fill_width_p(fill_width_p)
              ,.timeout_max_limit_p(4)
              ,.credits_p(coh_noc_max_credits_p)
-             ,.ctag_width_p(dcache_ctag_width_p)
+             ,.tag_width_p(dcache_tag_width_p)
              ,.id_width_p(id_width_p)
              )
            dcache_lce
@@ -319,7 +319,7 @@ module wrapper
             ,.sets_p(sets_p)
             ,.block_width_p(block_width_p)
             ,.fill_width_p(fill_width_p)
-            ,.ctag_width_p(dcache_ctag_width_p)
+            ,.tag_width_p(dcache_tag_width_p)
             ,.id_width_p(id_width_p)
             ,.writeback_p(!wt_p)
             )

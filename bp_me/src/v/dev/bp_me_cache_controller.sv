@@ -313,8 +313,7 @@ module bp_me_cache_controller
         e_ready:
           begin
             case (fsm_fwd_header_li.msg_type)
-              e_bedrock_mem_rd
-              ,e_bedrock_mem_uc_rd:
+              e_bedrock_mem_rd:
                 case (fsm_fwd_header_li.size)
                   e_bedrock_msg_size_1: cache_pkt.opcode = LB;
                   e_bedrock_msg_size_2: cache_pkt.opcode = LH;
@@ -326,9 +325,7 @@ module bp_me_cache_controller
                   //,e_bedrock_msg_size_128
                   default: cache_pkt.opcode = LM;
                 endcase
-              e_bedrock_mem_uc_wr
-              ,e_bedrock_mem_wr
-              ,e_bedrock_mem_amo:
+              e_bedrock_mem_wr, e_bedrock_mem_amo:
                 case (fsm_fwd_header_li.size)
                   e_bedrock_msg_size_1: cache_pkt.opcode = SB;
                   e_bedrock_msg_size_2: cache_pkt.opcode = SH;
@@ -391,7 +388,7 @@ module bp_me_cache_controller
   always_ff @(negedge clk_i)
     begin
       assert(reset_i !== '0 || ~fsm_fwd_v_li
-             || ~(fsm_fwd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr})
+             || ~(fsm_fwd_header_li.msg_type == e_bedrock_mem_wr)
              || ~(fsm_fwd_header_li.subop inside {e_bedrock_amolr, e_bedrock_amosc})
              )
           else $error("LR/SC not supported in bsg_cache");

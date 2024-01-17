@@ -22,11 +22,11 @@ module bp_lce_cmd
    , parameter `BSG_INV_PARAM(sets_p)
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(fill_width_p)
-   , parameter `BSG_INV_PARAM(ctag_width_p)
+   , parameter `BSG_INV_PARAM(tag_width_p)
    , parameter `BSG_INV_PARAM(id_width_p)
 
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
   )
   (
     input                                            clk_i
@@ -90,7 +90,7 @@ module bp_lce_cmd
     );
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
-  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
   `bp_cast_i(bp_bedrock_lce_cmd_header_s, lce_cmd_header);
   `bp_cast_o(bp_bedrock_lce_fill_header_s, lce_fill_header);
   `bp_cast_o(bp_bedrock_lce_resp_header_s, lce_resp_header);
@@ -487,7 +487,7 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             tag_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
             tag_mem_pkt_cast_o.state = fsm_cmd_header_li.payload.state;
-            tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:ctag_width_p];
+            tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:tag_width_p];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
             tag_mem_pkt_v_o = fsm_cmd_v_li & fsm_cmd_new_li;
 
@@ -549,7 +549,7 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             tag_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
             tag_mem_pkt_cast_o.state = fsm_cmd_header_li.payload.state;
-            tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:ctag_width_p];
+            tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:tag_width_p];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_state;
             tag_mem_pkt_v_o = fsm_cmd_v_li
                               & (fsm_cmd_header_li.msg_type.cmd inside {e_bedrock_cmd_st_wb});
@@ -585,7 +585,7 @@ module bp_lce_cmd
             tag_mem_pkt_cast_o.index = fsm_cmd_header_li.addr[block_byte_offset_lp+:lg_sets_lp];
             tag_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
             tag_mem_pkt_cast_o.state = fsm_cmd_header_li.payload.state;
-            tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:ctag_width_p];
+            tag_mem_pkt_cast_o.tag = fsm_cmd_header_li.addr[tag_offset_lp+:tag_width_p];
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_state;
             tag_mem_pkt_v_o = fsm_cmd_v_li
                               & (fsm_cmd_header_li.msg_type.cmd inside {e_bedrock_cmd_st_tr, e_bedrock_cmd_st_tr_wb});
