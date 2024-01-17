@@ -128,6 +128,8 @@ if { ![elaborate ${DESIGN_NAME} -param ${param_str}] } {
   exit_failed
 }
 
+write_file -hierarchy -format verilog -output ${DESIGN_NAME}.elab.v
+
 #========================
 # LINK
 #========================
@@ -135,6 +137,8 @@ if { ![elaborate ${DESIGN_NAME} -param ${param_str}] } {
 if { ![link] } {
   exit_failed
 }
+
+write_file -hierarchy -format verilog -output ${DESIGN_NAME}.link.v
 
 if { ${STDCELL_DB} != "" } {
   redirect -tee ${DESIGN_NAME}.check_design.loop.rpt { report_timing -loop }

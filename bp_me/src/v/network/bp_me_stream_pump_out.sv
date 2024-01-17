@@ -141,8 +141,7 @@ module bp_me_stream_pump_out
       begin
         // N:1
         // ack all but first FSM beat silently
-        fsm_ready_then_o = msg_ready_and_li | ~fsm_new_o;
-        // only send msg on first FSM beat
+        fsm_ready_then_o = msg_ready_and_li;
         msg_v_lo = fsm_v_i & fsm_new_o;
         cnt_up = fsm_v_i;
       end

@@ -145,14 +145,6 @@ module bp_me_stream_pump_in
         msg_yumi_lo = fsm_last_o & fsm_yumi_i;
         cnt_up = fsm_yumi_i;
       end
-    else if (msg_stream & ~fsm_stream & nz_stream)
-      begin
-        // N:1
-        // consume all but first msg input beat silently
-        fsm_v_o = msg_v_li & fsm_new_o;
-        msg_yumi_lo = msg_v_li & (fsm_yumi_i | ~fsm_new_o);
-        cnt_up = msg_yumi_lo;
-      end
     else
       begin
         // 1:1
