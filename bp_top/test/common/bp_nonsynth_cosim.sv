@@ -20,6 +20,7 @@ module bp_nonsynth_cosim
     , input                                   cosim_en_i
     , input                                   trace_en_i
     , input                                   amo_en_i
+    , input                                   finish_i
 
     , input                                   checkpoint_i
     , input [31:0]                            num_core_i
@@ -54,16 +55,14 @@ module bp_nonsynth_cosim
     , input                                   cosim_reset_i
     );
 
-  import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
-  import "DPI-C" context function int dromajo_step(int hartid,
+  import "DPI-C" context function void cosim_init(int hartid, int ncpus, int memory_size, bit checkpoint);
+  import "DPI-C" context function int cosim_step(int hartid,
                                                    longint pc,
                                                    int insn,
                                                    longint wdata,
                                                    longint mstatus);
-  import "DPI-C" context function void dromajo_trap(int hartid, longint cause);
-
-  import "DPI-C" context function void set_finish(int hartid);
-  import "DPI-C" context function bit check_terminate();
+  import "DPI-C" context function void cosim_trap(int hartid, longint cause);
+  import "DPI-C" context function void cosim_finish();
 
 `ifndef XCELIUM
 
@@ -128,18 +127,18 @@ module bp_nonsynth_cosim
   wire [dword_width_gp-1:0] mstatus_li = mstatus_i;
   wire commit_fifo_v_li = instret_v_li | trap_v_li;
   bsg_async_fifo
-   #(.width_p(3+vaddr_width_p+instr_width_gp+3+2*dword_width_gp), .lg_size_p(10))
+   #(.width_p(4+vaddr_width_p+instr_width_gp+3+2*dword_width_gp), .lg_size_p(10))
    commit_fifo
     (.w_clk_i(posedge_clk)
      ,.w_reset_i(reset_i)
      ,.w_enq_i(commit_fifo_v_li & ~commit_fifo_full_lo)
-     ,.w_data_i({is_debug_mode_r, instret_v_li, trap_v_li, commit_pc_li, commit_instr_li, commit_ird_w_v_li, commit_frd_w_v_li, commit_req_v_li, cause_li, mstatus_li})
+     ,.w_data_i({freeze_i, is_debug_mode_r, instret_v_li, trap_v_li, commit_pc_li, commit_instr_li, commit_ird_w_v_li, commit_frd_w_v_li, commit_req_v_li, cause_li, mstatus_li})
      ,.w_full_o(commit_fifo_full_lo)
 
      ,.r_clk_i(cosim_clk_i)
      ,.r_reset_i(cosim_reset_i)
      ,.r_deq_i(commit_fifo_v_lo & commit_fifo_yumi_li)
-     ,.r_data_o({commit_debug_r, instret_v_r, trap_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, commit_req_v_r, cause_r, mstatus_r})
+     ,.r_data_o({commit_freeze_r, commit_debug_r, instret_v_r, trap_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, commit_req_v_r, cause_r, mstatus_r})
      ,.r_valid_o(commit_fifo_v_lo)
      );
 
@@ -235,21 +234,21 @@ module bp_nonsynth_cosim
      ,.count_o(instr_cnt)
      );
 
-  logic finish_r, terminate;
+  logic finish_r;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    finish_reg
     (.clk_i(cosim_clk_i)
      ,.reset_i(cosim_reset_i)
 
-     ,.set_i((instr_cap_i != 0 && instr_cnt == instr_cap_i))
+     ,.set_i((instr_cap_i != 0 && instr_cnt == instr_cap_i) | finish_i)
      ,.clear_i('0)
      ,.data_o(finish_r)
      );
 
   always_ff @(negedge reset_i)
     if (cosim_en_i)
-      dromajo_init(string'(config_file_i), mhartid_i, num_core_i, memsize_i, checkpoint_i);
+      cosim_init(mhartid_i, num_core_i, memsize_i, checkpoint_i);
 
   wire [dword_width_gp-1:0] cosim_pc_li     = `BSG_SIGN_EXTEND(commit_pc_r, dword_width_gp);
   wire [instr_width_gp-1:0] cosim_instr_li  = commit_instr_r;
@@ -263,12 +262,13 @@ module bp_nonsynth_cosim
   always_ff @(posedge cosim_clk_i)
     if (cosim_reset_i)
       ret_code <= 0;
-    else if (cosim_en_i & commit_fifo_yumi_li & !finish_r & trap_v_r)
-      dromajo_trap(mhartid_i, cosim_cause_li);
-    else if (~commit_debug_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
-      ret_code <= dromajo_step(mhartid_i, cosim_pc_li, cosim_instr_li, cosim_rd_li, cosim_status_li);
+    else if (~commit_debug_r & ~commit_freeze_r & cosim_en_i & commit_fifo_yumi_li & !finish_r & trap_v_r)
+      cosim_trap(mhartid_i, cosim_cause_li);
+    else if (~commit_debug_r & ~commit_freeze_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
+      ret_code <= cosim_step(mhartid_i, cosim_pc_li, cosim_instr_li, cosim_rd_li, cosim_status_li);
 
    // ret_code: {exit_code, terminate}
+   logic terminate;
    always_ff @(negedge cosim_clk_i)
      if (ret_code >> 1)
        begin
@@ -281,13 +281,10 @@ module bp_nonsynth_cosim
           $display("COSIM_PASS: %d", ret_code);
           $finish();
        end
-
-  always_ff @(posedge cosim_clk_i)
-    if (finish_r)
-      begin
-        set_finish(mhartid_i);
-        terminate <= check_terminate();
-      end
+     else if (finish_r)
+       begin
+         cosim_finish();
+       end
 
   integer file;
   string file_name;
