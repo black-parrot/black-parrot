@@ -50,7 +50,7 @@
     typedef struct packed {                                                 \
       logic [$bits(bp_coh_states_e)-1:0] state;                             \
       logic [tag_width_mp-1:0]           tag;                               \
-    }  bp_``cache_name_mp``_tag_info_s;
+    }  bp_``cache_name_mp``_tag_info_s
 
   `define bp_cache_tag_info_width(tag_width_mp) \
     ($bits(bp_coh_states_e)+tag_width_mp)
@@ -94,7 +94,7 @@
     `declare_bp_cache_tag_mem_pkt_s(sets_mp, ways_mp, tag_width_mp, cache_name_mp);                                  \
     `declare_bp_cache_tag_info_s(tag_width_mp, cache_name_mp);                                                       \
     `declare_bp_cache_stat_mem_pkt_s(sets_mp, ways_mp, cache_name_mp);                                               \
-    `declare_bp_cache_stat_info_s(ways_mp, cache_name_mp);
+    `declare_bp_cache_stat_info_s(ways_mp, cache_name_mp)
 
   `define declare_bp_cache_engine_generic_if_widths(addr_width_mp, tag_width_mp, sets_mp, ways_mp, data_width_mp, block_width_mp, fill_width_mp, id_width_mp, cache_name_mp) \
     , localparam ``cache_name_mp``_req_width_lp = `bp_cache_req_width(data_width_mp, addr_width_mp, id_width_mp, cache_name_mp)                       \

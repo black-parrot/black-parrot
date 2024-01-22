@@ -57,7 +57,6 @@ module testbench
    )
   (output bit reset_i);
 
-  import "DPI-C" context function bit get_finish(int hartid);
   export "DPI-C" function get_dram_period;
   export "DPI-C" function get_sim_period;
 
@@ -219,6 +218,7 @@ module testbench
      ,.dram_reset_i(dram_reset_i)
      );
 
+  logic nbf_done_lo;
   wire [lce_id_width_p-1:0] io_lce_id_li = num_core_p*2+num_cacc_p+num_l2e_p+num_sacc_p+num_io_p;
   bp_nonsynth_nbf_loader
    #(.bp_params_p(bp_params_p))
@@ -240,7 +240,7 @@ module testbench
      ,.mem_rev_v_i(proc_rev_v_lo)
      ,.mem_rev_ready_and_o(proc_rev_ready_and_li)
 
-     ,.done_o()
+     ,.done_o(nbf_done_lo)
      );
 
   logic [num_core_p-1:0] finish_lo;
@@ -360,6 +360,7 @@ module testbench
            ,.instr_cap_i(testbench.cosim_instr_p)
            ,.memsize_i(testbench.cosim_memsize_p)
            ,.amo_en_i(testbench.amo_en_p == 1)
+           ,.finish_i(&testbench.finish_lo)
 
            ,.decode_i(calculator.reservation_n.decode)
 

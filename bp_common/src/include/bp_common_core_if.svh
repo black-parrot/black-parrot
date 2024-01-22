@@ -156,7 +156,7 @@
         bp_fe_cmd_itlb_fence_s              itlb_fence;                                            \
         bp_fe_cmd_icache_fill_s             icache_fill_response;                                  \
       }  operands;                                                                                 \
-    }  bp_fe_cmd_s;                                                                                \
+    }  bp_fe_cmd_s
 
   /*
    * Declare all fe-be widths at once as localparams

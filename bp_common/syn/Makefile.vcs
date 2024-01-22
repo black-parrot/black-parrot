@@ -34,11 +34,17 @@ VCS_BUILD_OPTS += +noportcoerce
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 VCS_BUILD_OPTS += -diag timescale
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_DIR)/dromajo/include"
-VCS_BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_INSTALL_DIR)/include -std=c++14 -I $(BASEJUMP_STL_DIR)/bsg_test"
+VCS_BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_INSTALL_DIR)/include -std=c++17 -I $(BASEJUMP_STL_DIR)/bsg_test"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_RTL_INSTALL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib"
 VCS_BUILD_OPTS += +lint=TFIPC-L
 VCS_BUILD_OPTS += +plusarg_save
+ifeq ($(SPIKE),1)
+VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_INSTALL_DIR)/lib -lriscv -Wl,-rpath=$(BP_TOOLS_INSTALL_DIR)/lib"
+VCS_BUILD_OPTS += -CFLAGS "-DSPIKE_COSIM"
+else
 VCS_BUILD_OPTS += $(BP_TOOLS_INSTALL_DIR)/lib/libdromajo_cosim.a
+VCS_BUILD_OPTS += -CFLAGS "-DDROMAJO_COSIM"
+endif
 VCS_BUILD_OPTS += -top testbench
 VCS_BUILD_OPTS += -f flist.vcs
 
@@ -98,6 +104,8 @@ $(SIM_DIR)/run_simv: | $(SIM_COLLATERAL)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "finish called from file" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
+	-@# HACK: Recover terminal, needed after spike cosim
+	-@stty echo
 
 ## Need the next build option as mentioned in this link for vivado post synth netlist simulation using VCS
 ## https://forums.xilinx.com/t5/Simulation-and-Verification/VCS-error-regarding-the-glbl-cross-module-reference-resolution/td-p/735596

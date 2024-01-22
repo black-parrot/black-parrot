@@ -30,10 +30,16 @@ XRUN_BUILD_OPTS += -sv # Enable SystemVerilog
 XRUN_BUILD_OPTS += -assert # Enable elaboration system tasks
 XRUN_BUILD_OPTS += -timescale 1ps/1ps  # Set timescale
 XRUN_BUILD_OPTS += -elaborate -notimingchecks
-XRUN_BUILD_OPTS += "-I$(BP_TOOLS_DIR)/dromajo/include"
-XRUN_BUILD_OPTS += "-I$(BP_TOOLS_INSTALL_DIR)/include -I $(BASEJUMP_STL_DIR)/bsg_test"
-#XRUN_BUILD_OPTS += "-L$(BP_RTL_INSTALL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib"
-#XRUN_BUILD_OPTS += "-L$(BP_TOOLS_INSTALL_DIR)/lib -ldromajo_cosim -Wl,-rpath=$(BP_TOOLS_INSTALL_DIR)/lib"
+XRUN_BUILD_OPTS += "-Wcxx,-std=c++17"
+XRUN_BUILD_OPTS += "-I$(BP_TOOLS_DIR)/dromajo/include "
+XRUN_BUILD_OPTS += "-I$(BP_TOOLS_INSTALL_DIR)/include -I $(BASEJUMP_STL_DIR)/bsg_test "
+#XRUN_BUILD_OPTS += "-L$(BP_RTL_INSTALL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib,-Wl"
+ifeq ($(SPIKE),1)
+XRUN_BUILD_OPTS += "-DSPIKE_COSIM"
+else
+XRUN_BUILD_OPTS += -CFLAGS \"$(BP_TOOLS_INSTALL_DIR)/lib/libdromajo_cosim.a\"
+XRUN_BUILD_OPTS += "-DDROMAJO_COSIM"
+endif
 XRUN_BUILD_OPTS += -top testbench
 XRUN_BUILD_OPTS += -f flist.vcs
 
@@ -114,3 +120,5 @@ clean.x:
 	@-rm -rf DVEfiles
 	@-rm -rf stack.info*
 
+test:
+	xmsc_run -help

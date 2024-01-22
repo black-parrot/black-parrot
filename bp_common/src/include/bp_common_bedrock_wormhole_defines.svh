@@ -28,7 +28,7 @@
                                             pad;      \
       msg_hdr_name_mp                       msg_hdr;  \
       bsg_``struct_name_mp``_router_hdr_s   rtr_hdr;  \
-    }  bp_``struct_name_mp``_wormhole_header_s;
+    }  bp_``struct_name_mp``_wormhole_header_s
 
   `define declare_bp_bedrock_wormhole_packet_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, struct_name_mp, data_width_mp) \
     `declare_bp_bedrock_wormhole_header_s(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_name_mp, struct_name_mp); \
@@ -37,7 +37,7 @@
     {                                                 \
       logic [data_width_mp-1:0]               data;   \
       bp_``struct_name_mp``_wormhole_header_s header; \
-    }  bp_``struct_name_mp``_wormhole_packet_s;
+    }  bp_``struct_name_mp``_wormhole_packet_s
 
   `define bp_bedrock_wormhole_packet_pad_width(flit_width_mp, cord_width_mp, len_width_mp, cid_width_mp, msg_hdr_width_mp) \
     (flit_width_mp-((cord_width_mp+cid_width_mp+len_width_mp+msg_hdr_width_mp)%flit_width_mp))

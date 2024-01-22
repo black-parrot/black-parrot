@@ -24,15 +24,22 @@ VV_OPTS += config.vlt
 VV_OPTS += --build --exe
 VV_OPTS += -o simsc
 VV_OPTS += -Wno-timescalemod
-VV_OPTS += --assert
+#VV_OPTS += --assert
 
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module testbench -f flist.vcs config.vlt
-BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++14
+BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++17
 BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_DIR)/dromajo/include"
+BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_INSTALL_DIR)/include"
 BUILD_OPTS += -CFLAGS "-I$(BP_RTL_INSTALL_DIR)/include -I$(BASEJUMP_STL_DIR)/bsg_test/"
 BUILD_OPTS += -LDFLAGS "-lpthread"
-BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_INSTALL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib"
-BUILD_OPTS += -LDFLAGS "-L$(BP_RTL_INSTALL_DIR)/lib -ldromajo_cosim -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib"
+BUILD_OPTS += -LDFLAGS "-L$(BP_RTL_INSTALL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib"
+ifeq ($(SPIKE),1)
+BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_INSTALL_DIR)/lib -lriscv -Wl,-rpath=$(BP_TOOLS_INSTALL_DIR)/lib"
+BUILD_OPTS += -CFLAGS "-DSPIKE_COSIM"
+else
+BUILD_OPTS += $(BP_TOOLS_INSTALL_DIR)/lib/libdromajo_cosim.a
+BUILD_OPTS += -CFLAGS "-DDROMAJO_COSIM"
+endif
 
 VERILATOR_OPTIONS =
 

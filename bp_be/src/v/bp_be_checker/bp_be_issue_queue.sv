@@ -68,7 +68,7 @@ module bp_be_issue_queue
     end
   else
     begin : nc0
-      assign enq = ack ? 1'b1 : 1'b0;;
+      assign enq = ack ? 1'b1 : 1'b0;
       assign deq = deq_v_i ? 1'b1 : 1'b0;
       assign read = read_v_i ? 1'b1 : 1'b0;
     end
