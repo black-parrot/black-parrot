@@ -712,6 +712,8 @@ module bp_cce_msg
 
             unique case (decoded_inst_i.mem_fwd)
               e_bedrock_mem_rd: begin
+                // set uncached bit based on request property
+                mem_fwd_header_cast_o.payload.uncached = mshr.flags.uncached;
                 mem_fwd_v_o = mem_fwd_ready_then_i & ~mem_credits_empty;
                 // stall until the message send completes
                 mem_fwd_stall_o = ~(mem_fwd_v_o & mem_fwd_last_i);
