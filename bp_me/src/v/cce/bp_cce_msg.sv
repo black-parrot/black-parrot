@@ -359,8 +359,8 @@ module bp_cce_msg
       if (mem_rev_v_i) begin
 
         // Speculative access response
-        // Note: speculative access is only supported for cached requests
-        if (mem_rev_header_cast_i.payload.speculative) begin
+        // Note: speculative access is only supported for cached read requests
+        if (mem_rev_header_cast_i.payload.speculative && mem_rev_header_cast_i.msg_type == e_bedrock_mem_rd) begin
           // read from the speculative bits
           spec_r_v_o = 1'b1;
           spec_r_addr_o = mem_rev_header_cast_i.addr;
@@ -400,7 +400,7 @@ module bp_cce_msg
             mem_rev_yumi_o = lce_cmd_v_o;
 
             // command header
-            lce_cmd_header_cast_o.msg_type = mem_rev_header_cast_i.payload.uncached ? e_bedrock_cmd_uc_data : e_bedrock_cmd_data;
+            lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_data;
             lce_cmd_header_cast_o.addr = mem_rev_header_cast_i.addr;
             lce_cmd_header_cast_o.size = mem_rev_header_cast_i.size;
 
@@ -436,7 +436,7 @@ module bp_cce_msg
             mem_rev_yumi_o = lce_cmd_v_o;
 
             // command header
-            lce_cmd_header_cast_o.msg_type = mem_rev_header_cast_i.payload.uncached ? e_bedrock_cmd_uc_data : e_bedrock_cmd_data;
+            lce_cmd_header_cast_o.msg_type = e_bedrock_cmd_data;
             lce_cmd_header_cast_o.addr = mem_rev_header_cast_i.addr;
             lce_cmd_header_cast_o.size = mem_rev_header_cast_i.size;
 
@@ -497,9 +497,10 @@ module bp_cce_msg
 
         // non-speculative store response from memory
         else if (mem_rev_header_cast_i.msg_type == e_bedrock_mem_wr) begin
-          // TODO: This assumption holds iff block size is greater than 64b
-          //   and uncached requests are at most 64b
-          if (mem_rev_header_cast_i.payload.uncached && mem_rev_header_cast_i.size <= e_bedrock_msg_size_8) begin
+          // If the uncached bit is set, this response is to an uncached store
+          // and we need to forward an uc_st_done to the LCE.
+          // Otherwise, this response came from a writeback and is sunk at the CCE.
+          if (mem_rev_header_cast_i.payload.uncached) begin
             // forward the header this cycle
             // forward data next cycle(s)
 
@@ -650,7 +651,7 @@ module bp_cce_msg
         end
 
         // Inbound messages - popq
-        // TODO: popq assumes that inbound message data was drained
+        // Note: popq assumes that inbound message data was drained
 
         // LCE Request
         else if (decoded_inst_i.lce_req_yumi) begin
@@ -704,25 +705,24 @@ module bp_cce_msg
             mem_fwd_header_cast_o.payload.way_id = way_i;
             mem_fwd_header_cast_o.payload.src_did = mshr.src_did;
             mem_fwd_header_cast_o.payload.state = mshr.next_coh_state;
-            mem_fwd_header_cast_o.payload.uncached = mshr.flags.uncached;
 
             // set speculative bit if instruction indicates it will be written
             mem_fwd_header_cast_o.payload.speculative = decoded_inst_i.spec_w_v & decoded_inst_i.spec_v
                                                          & decoded_inst_i.spec_bits.spec;
 
             unique case (decoded_inst_i.mem_fwd)
-              // cached read - send single beat, no data
               e_bedrock_mem_rd: begin
                 mem_fwd_v_o = mem_fwd_ready_then_i & ~mem_credits_empty;
-                // stall if single beat doesn't send
+                // stall until the message send completes
                 mem_fwd_stall_o = ~(mem_fwd_v_o & mem_fwd_last_i);
               end
 
-              // cached store - send one or more beats with data from LCE response
               e_bedrock_mem_wr: begin
-                // TODO: This assumption holds iff block size is greater than 64b
-                //   and uncached requests are at most 64b
-                if (mshr.flags.uncached && mshr.msg_size <= e_bedrock_msg_size_8) begin
+                // connect data from LCE Req or Resp, as indicated by ucode instruction
+                if (decoded_inst_i.src_a.q == e_opd_lce_req_data) begin
+                  // set the uncached bit when issuing an uncached store to memory so
+                  // the response state machine knows to send an UC_ST_DONE to the LCE
+                  mem_fwd_header_cast_o.payload.uncached = 1'b1;
                   mem_fwd_data_o = lce_req_data_i;
                   mem_fwd_v_o = mem_fwd_ready_then_i & lce_req_v_i & ~mem_credits_empty;
                   lce_req_yumi_o = mem_fwd_v_o;
@@ -732,8 +732,6 @@ module bp_cce_msg
                   lce_resp_yumi_o = mem_fwd_v_o;
                 end
 
-                // set uncached bit based on uncached flag in MSHR
-                // this bit indicates if the LCE should receive the data as cached or uncached
                 // stall until the message send completes
                 mem_fwd_stall_o = ~(mem_fwd_v_o & mem_fwd_last_i);
               end
@@ -751,7 +749,7 @@ module bp_cce_msg
         end // Memory Fwd
 
         // LCE Command
-        // TODO: ucode may only send single-beat LCE command messages and may not write the
+        // Note: ucode may only send single-beat LCE command messages and may not write the
         // pending bits. An instruction that attempts to write the pending bits may see its write
         // get lost if the auto-fwd mechanism performs a write at the same time. This race is not
         // handled by the design currently. Multi-beat messages may result in an interleaving

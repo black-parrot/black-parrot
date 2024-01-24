@@ -724,8 +724,8 @@ module bp_cce_fsm
     if (fsm_rev_v_li) begin
 
       // Speculative access response
-      // Note: speculative access is only supported for cached requests
-      if (fsm_rev_header_li.payload.speculative) begin
+      // Note: speculative access is only supported for cached read requests
+      if (fsm_rev_header_li.payload.speculative && fsm_rev_header_li.msg_type == e_bedrock_mem_rd) begin
 
         if (spec_bits_lo.spec) begin // speculation not resolved yet
           // do nothing, wait for speculation to be resolved
@@ -756,7 +756,7 @@ module bp_cce_fsm
           fsm_rev_yumi_lo = fsm_cmd_v_lo;
 
           // command header
-          fsm_cmd_header_lo.msg_type.cmd = fsm_rev_header_li.payload.uncached ? e_bedrock_cmd_uc_data : e_bedrock_cmd_data;
+          fsm_cmd_header_lo.msg_type.cmd = e_bedrock_cmd_data;
           fsm_cmd_header_lo.addr = fsm_rev_header_li.addr;
           fsm_cmd_header_lo.size = fsm_rev_header_li.size;
 
@@ -791,7 +791,7 @@ module bp_cce_fsm
           fsm_rev_yumi_lo = fsm_cmd_v_lo;
 
           // command header
-          fsm_cmd_header_lo.msg_type.cmd = fsm_rev_header_li.payload.uncached ? e_bedrock_cmd_uc_data : e_bedrock_cmd_data;
+          fsm_cmd_header_lo.msg_type.cmd = e_bedrock_cmd_data;
           fsm_cmd_header_lo.addr = fsm_rev_header_li.addr;
           fsm_cmd_header_lo.size = fsm_rev_header_li.size;
 
@@ -849,9 +849,10 @@ module bp_cce_fsm
 
       // non-speculative store response from memory
       else if (fsm_rev_header_li.msg_type == e_bedrock_mem_wr) begin
-        // TODO: This assumption holds iff block size is greater than 64b
-        //   and uncached requests are at most 64b
-        if (fsm_rev_header_li.payload.uncached && fsm_rev_header_li.size <= e_bedrock_msg_size_8) begin
+        // If the uncached bit is set, this response is to an uncached store
+        // and we need to forward an uc_st_done to the LCE.
+        // Otherwise, this response came from a writeback and is sunk at the CCE.
+        if (fsm_rev_header_li.payload.uncached) begin
           // block LCE command network
           lce_cmd_busy = 1'b1;
 
