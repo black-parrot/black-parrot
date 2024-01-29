@@ -716,7 +716,7 @@
        */
       logic [$bits(bp_cce_inst_mux_sel_way_e)-1:0] msg_size;
     }                                      way_or_size;
-    bp_cce_inst_opd_gpr_e                  src_a;
+    bp_cce_inst_opd_queue_e                src_a;
     bp_cce_inst_mux_sel_lce_e              lce_sel;
     bp_cce_inst_mux_sel_addr_e             addr_sel;
     union packed

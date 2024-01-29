@@ -606,8 +606,8 @@ module bp_cce_inst_decode
 
               decoded_inst_o.addr_sel = op_type_u.pushq.addr_sel;
               decoded_inst_o.lce_sel = op_type_u.pushq.lce_sel;
-              decoded_inst_o.src_a_sel = e_src_sel_gpr;
-              decoded_inst_o.src_a.gpr = op_type_u.pushq.src_a;
+              decoded_inst_o.src_a_sel = e_src_sel_queue;
+              decoded_inst_o.src_a.q = op_type_u.pushq.src_a;
 
               // set spec bit to 1, clear rest of bits
               // Note: spec bit should only be set for mem_fwd
