@@ -143,22 +143,23 @@ module bp_nonsynth_cosim
      );
 
   localparam rf_els_lp = 2**reg_addr_width_gp;
-  logic [rf_els_lp-1:0][dword_width_gp-1:0] ird_data_r;
   bp_be_fp_reg_s [rf_els_lp-1:0] frd_data_r;
+  bp_be_int_reg_s [rf_els_lp-1:0] ird_data_r;
   logic [rf_els_lp-1:0] ird_fifo_v_lo, frd_fifo_v_lo;
-  logic [rf_els_lp-1:0][dword_width_gp-1:0] frd_raw_li;
+  logic [rf_els_lp-1:0][dword_width_gp-1:0] ird_raw_li;
+  logic [rf_els_lp-1:0][dp_rec_width_gp-1:0] frd_raw_li;
 
   for (genvar i = 0; i < rf_els_lp; i++)
     begin : iwb
       wire fill       = ird_w_v_i & (ird_addr_i == i);
       wire deallocate = commit_ird_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
       bsg_async_fifo
-       #(.width_p(dword_width_gp), .lg_size_p(10))
+       #(.width_p(dpath_width_gp), .lg_size_p(10))
        ird_fifo
         (.w_clk_i(posedge_clk)
          ,.w_reset_i(reset_i)
          ,.w_enq_i(fill)
-         ,.w_data_i(ird_data_i[0+:dword_width_gp])
+         ,.w_data_i(ird_data_i)
          ,.w_full_o()
 
          ,.r_clk_i(cosim_clk_i)
@@ -166,6 +167,16 @@ module bp_nonsynth_cosim
          ,.r_deq_i(deallocate)
          ,.r_data_o(ird_data_r[i])
          ,.r_valid_o(ird_fifo_v_lo[i])
+         );
+
+      logic [dpath_width_gp-1:0] ird_data_lo;
+      bp_be_int_unbox
+       #(.bp_params_p(bp_params_p))
+       int_unbox
+        (.reg_i(ird_data_r[i])
+         ,.tag_i(ird_data_r[i].tag)
+         ,.unsigned_i(1'b0)
+         ,.val_o(ird_raw_li[i])
          );
     end
 
@@ -189,11 +200,13 @@ module bp_nonsynth_cosim
          ,.r_valid_o(frd_fifo_v_lo[i])
          );
 
-      bp_be_reg_to_fp
+      bp_be_fp_unbox
        #(.bp_params_p(bp_params_p))
-       unrecode
+       fp_unbox
         (.reg_i(frd_data_r[i])
-         ,.raw_o(frd_raw_li[i])
+         ,.tag_i(frd_data_r[i].tag)
+         ,.raw_i(1'b1)
+         ,.val_o(frd_raw_li[i])
          );
     end
 
@@ -253,7 +266,8 @@ module bp_nonsynth_cosim
   wire [dword_width_gp-1:0] cosim_pc_li     = `BSG_SIGN_EXTEND(commit_pc_r, dword_width_gp);
   wire [instr_width_gp-1:0] cosim_instr_li  = commit_instr_r;
   wire [dword_width_gp-1:0] cosim_cause_li  = cause_r;
-  wire [dword_width_gp-1:0] cosim_ird_li    = ird_data_r[commit_instr_r.rd_addr];
+  wire [dpath_width_gp-1:0] cosim_ireg_li   = ird_data_r[commit_instr_r.rd_addr];
+  wire [dword_width_gp-1:0] cosim_ird_li    = ird_raw_li[commit_instr_r.rd_addr];
   wire [dpath_width_gp-1:0] cosim_freg_li   = frd_data_r[commit_instr_r.rd_addr];
   wire [dword_width_gp-1:0] cosim_frd_li    = frd_raw_li[commit_instr_r.rd_addr];
   wire [dword_width_gp-1:0] cosim_rd_li     = commit_fwb_li ? cosim_frd_li : cosim_ird_li;

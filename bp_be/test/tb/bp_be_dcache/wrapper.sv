@@ -203,6 +203,8 @@ module wrapper
       ,.ptw_o()
       ,.ret_o()
       ,.late_o()
+      ,.tag_o()
+      ,.unsigned_o()
 
       ,.flush_i('0)
 

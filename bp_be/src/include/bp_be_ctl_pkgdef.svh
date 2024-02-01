@@ -114,21 +114,20 @@
     ,e_fma_op_fnmsub = 6'b000101
     ,e_fma_op_fnmadd = 6'b000110
     ,e_fma_op_imul   = 6'b000111
-    ,e_fma_op_fdiv   = 6'b001000
-    ,e_fma_op_fsqrt  = 6'b001001
   } bp_be_fma_fu_op_e;
 
   typedef enum logic [5:0]
   {
-    e_mul_op_mul        = 6'b000000
-    ,e_mul_op_div       = 6'b000001
-    ,e_mul_op_divu      = 6'b000010
-    ,e_mul_op_rem       = 6'b000011
-    ,e_mul_op_remu      = 6'b000100
-    ,e_mul_op_mulh      = 6'b000101
-    ,e_mul_op_mulhsu    = 6'b000110
-    ,e_mul_op_mulhu     = 6'b000111
-  } bp_be_mul_fu_op_e;
+    e_long_op_div     = 6'b000001
+    ,e_long_op_divu   = 6'b000010
+    ,e_long_op_rem    = 6'b000011
+    ,e_long_op_remu   = 6'b000100
+    ,e_long_op_mulh   = 6'b000101
+    ,e_long_op_mulhsu = 6'b000110
+    ,e_long_op_mulhu  = 6'b000111
+    ,e_long_op_fdiv   = 6'b001000
+    ,e_long_op_fsqrt  = 6'b001001
+  } bp_be_long_fu_op_e;
 
   typedef struct packed
   {
@@ -136,9 +135,9 @@
     {
       bp_be_int_fu_op_e      int_fu_op;
       bp_be_aux_fu_op_e      aux_fu_op;
-      bp_be_dcache_fu_op_e   dcache_op;
-      bp_be_mul_fu_op_e      mul_fu_op;
+      bp_be_dcache_fu_op_e   dcache_fu_op;
       bp_be_fma_fu_op_e      fma_fu_op;
+      bp_be_long_fu_op_e     long_fu_op;
     }  t;
   }  bp_be_fu_op_s;
 
@@ -162,44 +161,48 @@
 
   typedef struct packed
   {
-    logic                             compressed;
+    logic                              compressed;
 
-    logic                             pipe_int_v;
-    logic                             pipe_mem_early_v;
-    logic                             pipe_aux_v;
-    logic                             pipe_mem_final_v;
-    logic                             pipe_sys_v;
-    logic                             pipe_mul_v;
-    logic                             pipe_fma_v;
-    logic                             pipe_long_v;
+    logic                              pipe_int_v;
+    logic                              pipe_mem_early_v;
+    logic                              pipe_aux_v;
+    logic                              pipe_mem_final_v;
+    logic                              pipe_sys_v;
+    logic                              pipe_mul_v;
+    logic                              pipe_fma_v;
+    logic                              pipe_long_v;
 
-    logic                             irs1_r_v;
-    logic                             irs2_r_v;
-    logic                             frs1_r_v;
-    logic                             frs2_r_v;
-    logic                             frs3_r_v;
-    logic                             irf_w_v;
-    logic                             frf_w_v;
-    logic                             branch_v;
-    logic                             jump_v;
-    logic                             fence_v;
-    logic                             dcache_r_v;
-    logic                             dcache_w_v;
-    logic                             dcache_cbo_v;
-    logic                             dcache_mmu_v;
-    logic                             csr_w_v;
-    logic                             csr_r_v;
-    logic                             mem_v;
-    logic                             opw_v;
-    logic                             ops_v;
-    logic                             score_v;
-    logic                             spec_w_v;
+    logic                              irs1_r_v;
+    logic                              irs2_r_v;
+    logic                              frs1_r_v;
+    logic                              frs2_r_v;
+    logic                              frs3_r_v;
+    logic                              irf_w_v;
+    logic                              frf_w_v;
+    logic                              branch_v;
+    logic                              jump_v;
+    logic                              fence_v;
+    logic                              dcache_r_v;
+    logic                              dcache_w_v;
+    logic                              dcache_cbo_v;
+    logic                              dcache_mmu_v;
+    logic                              csr_w_v;
+    logic                              csr_r_v;
+    logic                              mem_v;
+    logic                              score_v;
+    logic                              spec_w_v;
 
-    bp_be_fu_op_s                     fu_op;
+    logic                              fp_raw;
+    logic                              rs1_unsigned;
+    logic                              rs2_unsigned;
 
-    logic [$bits(bp_be_src1_e)-1:0]   src1_sel;
-    logic [$bits(bp_be_src2_e)-1:0]   src2_sel;
-    logic [$bits(bp_be_baddr_e)-1:0]  baddr_sel;
+    bp_be_fu_op_s                      fu_op;
+    logic [$bits(bp_be_fp_tag_e)-1:0]  fp_tag;
+    logic [$bits(bp_be_int_tag_e)-1:0] int_tag;
+
+    logic [$bits(bp_be_src1_e)-1:0]    src1_sel;
+    logic [$bits(bp_be_src2_e)-1:0]    src2_sel;
+    logic [$bits(bp_be_baddr_e)-1:0]   baddr_sel;
   }  bp_be_decode_s;
 
   typedef struct packed
@@ -251,6 +254,7 @@
   {
     logic v;
     logic queue_v;
+    logic partial_v;
     logic ispec_v;
     logic nspec_v;
 

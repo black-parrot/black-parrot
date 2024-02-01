@@ -136,6 +136,8 @@ module bp_be_dcache
    , output logic                                    v_o
    , output logic [dword_width_gp-1:0]               data_o
    , output logic [reg_addr_width_gp-1:0]            rd_addr_o
+   , output logic [$bits(bp_be_int_tag_e)-1:0]       tag_o
+   , output logic                                    unsigned_o
    , output logic                                    int_o
    , output logic                                    float_o
    , output logic                                    ptw_o
@@ -472,36 +474,9 @@ module bp_be_dcache
      );
 
   logic [dword_width_gp-1:0] ld_data_dword_merged;
+  wire [`BSG_SAFE_CLOG2(dword_width_gp)-1:0] ld_data_shift_tv = paddr_tv_r << 3;
 
-  logic [3:0][dword_width_gp-1:0] sigext_word;
-  for (genvar i = 0; i < 4; i++)
-    begin : word_alignment
-      localparam slice_width_lp = 8*(2**i);
-
-      logic [slice_width_lp-1:0] slice_data;
-      bsg_mux
-       #(.width_p(slice_width_lp), .els_p(dword_width_gp/slice_width_lp))
-       align_mux
-        (.data_i(ld_data_dword_merged)
-         ,.sel_i(paddr_tv_r[i+:`BSG_MAX(1, 3-i)])
-         ,.data_o(slice_data)
-         );
-
-      wire sigext = // Integer sigext
-                    (decode_tv_r.signed_op & slice_data[slice_width_lp-1])
-                    // FP nanbox
-                    || ((i==2) & decode_tv_r.float_op & decode_tv_r.word_op);
-      assign sigext_word[i] = {{(dword_width_gp-slice_width_lp){sigext}}, slice_data};
-    end
-
-  logic [dword_width_gp-1:0] dword_data_tv;
-  bsg_mux_one_hot
-   #(.width_p(dword_width_gp), .els_p(4))
-   word_mux
-    (.data_i(sigext_word)
-     ,.sel_one_hot_i({decode_tv_r.double_op, decode_tv_r.word_op, decode_tv_r.half_op, decode_tv_r.byte_op})
-     ,.data_o(dword_data_tv)
-     );
+  wire [dword_width_gp-1:0] dword_data_tv = ld_data_dword_merged >> ld_data_shift_tv;
 
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
   wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & ~nonblocking_req & writeback_p;
@@ -513,14 +488,16 @@ module bp_be_dcache
   wire any_miss_tv         = blocking_miss_tv | nonblocking_miss_tv | engine_miss_tv;
   wire cache_hit_tv        = v_tv_r & ~any_miss_tv;
 
-  assign v_o       = cache_hit_tv;
-  assign data_o    = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : dword_data_tv;
-  assign rd_addr_o = decode_tv_r.rd_addr;
-  assign int_o     = decode_tv_r.int_op;
-  assign float_o   = decode_tv_r.float_op;
-  assign ptw_o     = decode_tv_r.ptw_op;
-  assign ret_o     = decode_tv_r.ret_op;
-  assign late_o    = snoop_tv_r;
+  assign v_o        = cache_hit_tv;
+  assign data_o     = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : dword_data_tv;
+  assign rd_addr_o  = decode_tv_r.rd_addr;
+  assign unsigned_o = !decode_tv_r.signed_op;
+  assign tag_o      = decode_tv_r.tag;
+  assign int_o      = decode_tv_r.int_op;
+  assign float_o    = decode_tv_r.float_op;
+  assign ptw_o      = decode_tv_r.ptw_op;
+  assign ret_o      = decode_tv_r.ret_op;
+  assign late_o     = snoop_tv_r;
 
   ///////////////////////////
   // Stat Mem Storage
@@ -579,8 +556,8 @@ module bp_be_dcache
   wire [dword_width_gp-1:0] amo64_reg_in = st_data_tv_r[0+:dword_width_gp];
   assign atomic_reg_data = decode_tv_r.double_op ? amo64_reg_in : amo32_reg_in;
 
-  wire [dword_width_gp-1:0] amo32_mem_in = sigext_word[2][0+:word_width_gp] << word_width_gp;
-  wire [dword_width_gp-1:0] amo64_mem_in = sigext_word[3][0+:dword_width_gp];
+  wire [dword_width_gp-1:0] amo32_mem_in = dword_data_tv << word_width_gp;
+  wire [dword_width_gp-1:0] amo64_mem_in = dword_data_tv;
   assign atomic_mem_data = decode_tv_r.double_op ? amo64_mem_in : amo32_mem_in;
 
   // Atomic ALU

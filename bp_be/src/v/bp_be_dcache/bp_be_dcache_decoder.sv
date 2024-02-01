@@ -117,6 +117,15 @@ module bp_be_dcache_decoder
     // The destination register of the cache request
     decode_cast_o.rd_addr = pkt_cast_i.rd_addr;
 
+    if (decode_cast_o.int_op & decode_cast_o.byte_op)
+      decode_cast_o.tag = e_int_byte;
+    else if (decode_cast_o.int_op & decode_cast_o.half_op)
+      decode_cast_o.tag = e_int_hword;
+    else if (decode_cast_o.int_op & decode_cast_o.word_op)
+      decode_cast_o.tag = e_int_word;
+    else if (decode_cast_o.float_op & decode_cast_o.word_op)
+      decode_cast_o.tag = e_fp_sp;
+
     // Return
     decode_cast_o.ret_op = decode_cast_o.load_op
       & (decode_cast_o.ptw_op

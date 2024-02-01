@@ -362,7 +362,7 @@ module testbench
            ,.amo_en_i(testbench.amo_en_p == 1)
            ,.finish_i(&testbench.finish_lo)
 
-           ,.decode_i(calculator.reservation_n.decode)
+           ,.decode_i(calculator.dispatch_pkt_cast_i.decode)
 
            ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
            ,.commit_pkt_i(calculator.commit_pkt_cast_o)

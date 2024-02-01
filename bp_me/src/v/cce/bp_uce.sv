@@ -412,6 +412,7 @@ module bp_uce
   logic load_resp_yumi_lo;
   assign fsm_rev_yumi_lo = load_resp_yumi_lo | store_resp_v_li;
   assign cache_req_lock_o = is_reset | is_init | inval_v_r | clean_v_r | flush_v_r;
+  logic blocking_req_v_lo;
   always_comb
     begin
       cache_req_yumi_o = '0;
@@ -798,7 +799,9 @@ module bp_uce
       endcase
 
       // Fire off a non-blocking request opportunistically if we have one
-      if (nonblocking_v_r & ~fsm_fwd_v_lo)
+      // Could eke out some performance by changing ~fsm_fwd_v_lo to blocking_req_v_lo
+      //if (nonblocking_v_r & ~fsm_fwd_v_lo)
+      if (is_ready & nonblocking_v_r)
         begin
           fsm_fwd_header_lo.msg_type       = e_bedrock_mem_wr;
           fsm_fwd_header_lo.addr           = cache_req_r.addr;
