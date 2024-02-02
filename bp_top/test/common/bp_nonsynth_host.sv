@@ -70,9 +70,9 @@ module bp_nonsynth_host
       signature = $fopen("DUT-blackparrot.signature", "w");
     end
 
-  localparam bedrock_reg_els_lp = 7;
-  logic signature_r_v_li, paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li;
-  logic signature_w_v_li, paramrom_w_v_li, bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li;
+  localparam bedrock_reg_els_lp = 8;
+  logic putint_r_v_li, signature_r_v_li, paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li;
+  logic putint_w_v_li, signature_w_v_li, paramrom_w_v_li, bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li;
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [`BSG_WIDTH(`BSG_SAFE_CLOG2(dword_width_gp/8))-1:0] size_lo;
   logic [dword_width_gp-1:0] data_lo;
@@ -82,12 +82,12 @@ module bp_nonsynth_host
      ,.reg_data_width_p(dword_width_gp)
      ,.reg_addr_width_p(dev_addr_width_gp)
      ,.els_p(bedrock_reg_els_lp)
-     ,.base_addr_p({signature_match_addr_gp, paramrom_match_addr_gp, bootrom_match_addr_gp, finish_match_addr_gp, getchar_match_addr_gp, putchar_match_addr_gp, putch_core_match_addr_gp})
+     ,.base_addr_p({putint_match_addr_gp, signature_match_addr_gp, paramrom_match_addr_gp, bootrom_match_addr_gp, finish_match_addr_gp, getchar_match_addr_gp, putchar_match_addr_gp, putch_core_match_addr_gp})
      )
    register
     (.*
-     ,.r_v_o({signature_r_v_li, paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li})
-     ,.w_v_o({signature_w_v_li, paramrom_w_v_li, bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li})
+     ,.r_v_o({putint_r_v_li, signature_r_v_li, paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li})
+     ,.w_v_o({putint_w_v_li, signature_w_v_li, paramrom_w_v_li, bootrom_w_v_li, finish_w_v_li, getchar_w_v_li, putchar_w_v_li, putch_core_w_v_li})
      ,.addr_o(addr_lo)
      ,.size_o(size_lo)
      ,.data_o(data_lo)
@@ -133,6 +133,10 @@ module bp_nonsynth_host
         $fwrite(stdout[addr_core_enc], "%c", data_lo[0+:8]);
       end
 
+      if (putint_w_v_li) begin
+        $write("%x", data_lo[0+:dword_width_gp]);
+      end
+
       if (getchar_r_v_li)
         ret = $fscanf(32'h8000_0001, "%c", ch);
 
@@ -150,6 +154,10 @@ module bp_nonsynth_host
 
       if (signature_w_v_li)
         $fwrite(signature, "%8x\n", data_lo[0+:32]);
+
+      if (putint_w_v_li) begin
+        $write("%x", data_lo);
+      end
 
       if (&finish_r)
         begin

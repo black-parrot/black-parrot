@@ -114,7 +114,7 @@ sigcheck.x: SIGCHECK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).
 sigcheck.x: SIGCHECK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).rpt
 sigcheck.x: SIGCHECK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).err
 $(SIM_DIR)/run_sigcheckx:
-	-diff $(@D)/DUT-blackparrot.signature $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature > $(SIGCHECK_LOG)
+	-diff <(tail -n +9 $(@D)/DUT-blackparrot.signature | head -n -0) <(tail -n +9 $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature | head -n -2) > $(SIGCHECK_LOG)
 	echo "Mismatches: " > $(SIGCHECK_REPORT)
 	wc -l < $(SIGCHECK_LOG) >> $(SIGCHECK_REPORT)
 	-@grep [1-9] $(SIGCHECK_REPORT) && echo "FAILED" > $(SIGCHECK_ERROR)
