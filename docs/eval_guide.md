@@ -1,13 +1,10 @@
 # Evaluation Guide (Full)
-## Build the simulation tools
-    # Clone the latest repo
+## Build the simulation libraries
+    # Clone the latest repo (if necessary)
     git clone https://github.com/black-parrot/black-parrot.git
     cd black-parrot
-    # make tools is a target which will build Verilator, Dromajo and our DRAMSim simulation library
-    # For faster builds, make tools -j is parallelizable!
-    # BSG users should instead use 'make tools_bsg', which sets up the bsg CAD environment
-    # Other users should set up Synopsys VCS or DC and put the binaries on their PATH
-    make tools
+    # make libs is a target which will build DRAMSim simulation library
+    make libs
 
 The *master* branch contains most recent stable version. This is the recommended branch for someone wishing to try out BlackParrot.
 
