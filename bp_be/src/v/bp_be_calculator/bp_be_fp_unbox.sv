@@ -54,7 +54,7 @@ module bp_be_fp_unbox
      ,.out(dp_raw_lo)
      );
 
-  wire invbox = ((tag_i == e_fp_sp) & (reg_cast_i.tag == e_fp_dp));
+  wire invbox = tag_i > reg_cast_i.tag;
 
   bp_hardfloat_rec_dp_s rec;
   assign rec = invbox ? sp_canonical_reg : dp_rec;

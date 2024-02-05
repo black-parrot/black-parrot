@@ -20,18 +20,23 @@ module bp_be_int_unbox
   logic [dword_width_gp-1:0] raw;
   always_comb
     case (reg_cast_i.tag)
-      e_int_byte : raw = {{56{reg_cast_i.val[63]}}, val[0+:8]};
-      e_int_hword: raw = {{48{reg_cast_i.val[63]}}, val[0+:16]};
-      e_int_word : raw = {{32{reg_cast_i.val[63]}}, val[0+:32]};
+      e_int_byte : raw = {{56{val[63]}}, val[0+: 8]};
+      e_int_hword: raw = {{48{val[63]}}, val[0+:16]};
+      e_int_word : raw = {{32{val[63]}}, val[0+:32]};
       // e_int_dword
       default: raw = val;
     endcase
 
-  wire sig = ~unsigned_i & raw[63];
+  wire invbox = tag_i > reg_cast_i.tag;
   always_comb
-    case (tag_i)
-      e_int_word: val_o = {{32{sig}}, raw[0+:32]};
-      // e_int_dword
+    unique casez ({unsigned_i, invbox, tag_i})
+      {2'b1?, e_int_byte }: val_o = {{56{1'b0   }}, raw[0+: 8]};
+      {2'b01, e_int_byte }: val_o = {{56{raw[ 7]}}, raw[0+: 8]};
+      {2'b1?, e_int_hword}: val_o = {{48{1'b0   }}, raw[0+:16]};
+      {2'b01, e_int_hword}: val_o = {{48{raw[15]}}, raw[0+:16]};
+      {2'b1?, e_int_word }: val_o = {{32{1'b0   }}, raw[0+:32]};
+      {2'b01, e_int_word }: val_o = {{32{raw[31]}}, raw[0+:32]};
+      // {2'b??, e_int_dword}
       default: val_o = raw;
     endcase
 
