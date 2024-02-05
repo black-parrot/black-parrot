@@ -64,7 +64,7 @@ module bp_me_nonsynth_dev_tracer
                  , mem_fwd_header_cast_i.msg_type.fwd
                  , mem_fwd_header_cast_i.size
                  );
-        if (mem_fwd_header_cast_i.msg_type.fwd inside {e_bedrock_mem_uc_wr, e_bedrock_mem_wr}) begin
+        if (mem_fwd_header_cast_i.msg_type.fwd == e_bedrock_mem_wr) begin
           $fdisplay(file, "%12t |: MEM FWD DATA %H"
                    , $time
                    , mem_fwd_data_i
@@ -78,7 +78,7 @@ module bp_me_nonsynth_dev_tracer
                  , mem_rev_header_cast_i.msg_type.rev
                  , mem_rev_header_cast_i.size
                  );
-        if (mem_rev_header_cast_i.msg_type.rev inside {e_bedrock_mem_uc_rd, e_bedrock_mem_rd}) begin
+        if (mem_rev_header_cast_i.msg_type.rev == e_bedrock_mem_rd) begin
           $fdisplay(file, "%12t |: MEM REV DATA %H"
                    , $time
                    , mem_rev_data_i

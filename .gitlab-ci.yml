@@ -72,7 +72,6 @@ synth-vivado:
   <<: *job_definition
   when: manual
   stage: check
-  allow_failure: true
   tags:
     - vivado
   script:
@@ -93,14 +92,6 @@ lint-vcs:
     - vcs
   script:
     - $CI_PROJECT_DIR/ci/lint.sh vcs $CI_CORES
-
-tire_kick:
-  <<: *job_definition
-  stage: check
-  tags:
-    - verilator
-  script:
-    - $CI_PROJECT_DIR/ci/tire_kick.sh $CI_CORES
 
 bloodgraph-vcs:
   <<: *job_definition
@@ -172,8 +163,8 @@ me-regress-vcs:
 # Sometimes spuriously fails
 top-riscv-tests-verilator:
   <<: *job_definition
+  when: manual
   stage: test-short
-  allow_failure: true
   tags:
     - verilator
   script:
@@ -360,7 +351,6 @@ top-linux-vcs:
 top-accelerator-vcs:
   <<: *job_definition
   stage: test-medium
-  allow_failure: true
   tags:
     - vcs
   script:

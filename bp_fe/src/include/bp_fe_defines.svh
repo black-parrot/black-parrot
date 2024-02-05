@@ -30,7 +30,7 @@
       logic [2*bht_row_els_mp-1:0]                bht_row;                                        \
       logic [`BSG_SAFE_CLOG2(bht_row_els_mp)-1:0] bht_offset;                                     \
       logic [ghist_width_mp-1:0]                  ghist;                                          \
-    }  bp_fe_branch_metadata_fwd_s;
+    }  bp_fe_branch_metadata_fwd_s
 
 `endif
 

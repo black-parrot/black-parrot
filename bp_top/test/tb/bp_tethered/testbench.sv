@@ -57,7 +57,6 @@ module testbench
    )
   (output bit reset_i);
 
-  import "DPI-C" context function bit get_finish(int hartid);
   export "DPI-C" function get_dram_period;
   export "DPI-C" function get_sim_period;
 
@@ -219,6 +218,7 @@ module testbench
      ,.dram_reset_i(dram_reset_i)
      );
 
+  logic nbf_done_lo;
   wire [lce_id_width_p-1:0] io_lce_id_li = num_core_p*2+num_cacc_p+num_l2e_p+num_sacc_p+num_io_p;
   bp_nonsynth_nbf_loader
    #(.bp_params_p(bp_params_p))
@@ -240,7 +240,7 @@ module testbench
      ,.mem_rev_v_i(proc_rev_v_lo)
      ,.mem_rev_ready_and_o(proc_rev_ready_and_li)
 
-     ,.done_o()
+     ,.done_o(nbf_done_lo)
      );
 
   logic [num_core_p-1:0] finish_lo;
@@ -338,7 +338,6 @@ module testbench
 
            ,.npc_i(calculator.pipe_sys.csr.apc_r)
            ,.instret_i(calculator.commit_pkt_cast_o.instret)
-           ,.finish_i(testbench.finish_lo)
            );
 
 
@@ -361,8 +360,9 @@ module testbench
            ,.instr_cap_i(testbench.cosim_instr_p)
            ,.memsize_i(testbench.cosim_memsize_p)
            ,.amo_en_i(testbench.amo_en_p == 1)
+           ,.finish_i(&testbench.finish_lo)
 
-           ,.decode_i(calculator.reservation_n.decode)
+           ,.decode_i(calculator.dispatch_pkt_cast_i.decode)
 
            ,.is_debug_mode_i(calculator.pipe_sys.csr.is_debug_mode)
            ,.commit_pkt_i(calculator.commit_pkt_cast_o)
@@ -395,7 +395,7 @@ module testbench
            ,.sets_p(sets_p)
            ,.block_width_p(block_width_p)
            ,.fill_width_p(fill_width_p)
-           ,.ctag_width_p(ctag_width_p)
+           ,.tag_width_p(tag_width_p)
            ,.id_width_p(id_width_p)
            )
          icache_tracer
@@ -412,7 +412,7 @@ module testbench
            ,.sets_p(sets_p)
            ,.block_width_p(block_width_p)
            ,.fill_width_p(fill_width_p)
-           ,.ctag_width_p(ctag_width_p)
+           ,.tag_width_p(tag_width_p)
            ,.id_width_p(id_width_p)
            )
          dcache_tracer
@@ -473,7 +473,7 @@ module testbench
           ,.fe_queue_empty_i(be.scheduler.issue_queue.empty)
 
           ,.mispredict_i(be.director.npc_mismatch_v)
-          ,.dcache_miss_i(~be.calculator.pipe_mem.dcache.ready_and_o)
+          ,.dcache_miss_i(be.calculator.pipe_mem.dcache.busy_o)
           ,.control_haz_i(be.detector.control_haz_v)
           ,.data_haz_i(be.detector.data_haz_v)
           ,.aux_dep_i((be.detector.dep_status_r[0].aux_iwb_v
@@ -510,13 +510,13 @@ module testbench
                         )
           ,.sb_iwaw_dep_i(be.detector.ird_sb_waw_haz_v & be.detector.data_haz_v)
           ,.sb_fwaw_dep_i(be.detector.frd_sb_waw_haz_v & be.detector.data_haz_v)
-          ,.struct_haz_i(be.detector.struct_haz_v)
+          ,.struct_haz_i(be.detector.struct_haz_v | be.scheduler.late_wb_yumi_o)
           ,.idiv_haz_i(be.detector.idiv_busy_i & be.detector.issue_pkt_cast_i.decode.pipe_long_v)
           ,.fdiv_haz_i(be.detector.fdiv_busy_i & be.detector.issue_pkt_cast_i.decode.pipe_long_v)
-          ,.ptw_busy_i(be.detector.ptw_busy_i)
+          ,.ptw_busy_i(be.scheduler.ptw_busy_lo)
 
           ,.retire_pkt_i(be.calculator.pipe_sys.retire_pkt)
-          ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt)
+          ,.commit_pkt_i(be.calculator.pipe_sys.commit_pkt_cast_o)
           );
 
       bind bp_fe_top
@@ -732,14 +732,14 @@ module testbench
                  ,.req_start_i(req_start)
                  ,.req_end_i(req_end)
                  ,.lce_req_header_i(fsm_req_header_li)
-                 ,.cmd_send_i(fsm_cmd_ready_and_li & fsm_cmd_v_lo)
+                 ,.cmd_send_i(fsm_cmd_v_lo)
                  ,.lce_cmd_header_i(fsm_cmd_header_lo)
                  ,.resp_receive_i(fsm_resp_yumi_lo)
                  ,.lce_resp_header_i(fsm_resp_header_li)
                  ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
                  ,.mem_rev_squash_i(fsm_rev_yumi_lo & fsm_rev_last_li & spec_bits_lo.squash)
                  ,.mem_rev_header_i(fsm_rev_header_li)
-                 ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
+                 ,.mem_fwd_send_i(fsm_fwd_v_lo & fsm_fwd_new_lo)
                  ,.mem_fwd_header_i(fsm_fwd_header_lo)
                  );
           end else if (cce_type_p == e_cce_fsm) begin
@@ -753,14 +753,14 @@ module testbench
                  ,.req_start_i(lce_req_v_i & (state_r == e_ready))
                  ,.req_end_i(state_r == e_ready)
                  ,.lce_req_header_i(fsm_req_header_li)
-                 ,.cmd_send_i(fsm_cmd_ready_and_li & fsm_cmd_v_lo)
+                 ,.cmd_send_i(fsm_cmd_v_lo)
                  ,.lce_cmd_header_i(fsm_cmd_header_lo)
                  ,.resp_receive_i(fsm_resp_yumi_lo)
                  ,.lce_resp_header_i(fsm_resp_header_li)
                  ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
                  ,.mem_rev_squash_i(fsm_rev_yumi_lo & spec_bits_lo.squash & fsm_rev_last_li)
                  ,.mem_rev_header_i(fsm_rev_header_li)
-                 ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
+                 ,.mem_fwd_send_i(fsm_fwd_v_lo & fsm_fwd_new_lo)
                  ,.mem_fwd_header_i(fsm_fwd_header_lo)
                  );
           end

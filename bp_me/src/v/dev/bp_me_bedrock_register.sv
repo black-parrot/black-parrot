@@ -93,8 +93,8 @@ module bp_me_bedrock_register
      );
 
   logic v_r;
-  wire wr_not_rd  = (mem_fwd_header_li.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr});
-  wire rd_not_wr  = (mem_fwd_header_li.msg_type inside {e_bedrock_mem_rd, e_bedrock_mem_uc_rd});
+  wire wr_not_rd = mem_fwd_header_li.msg_type == e_bedrock_mem_wr;
+  wire rd_not_wr = mem_fwd_header_li.msg_type == e_bedrock_mem_rd;
   wire v_n = mem_fwd_v_li & ~v_r;
   logic [els_p-1:0] r_v_r;
   bsg_dff_reset_set_clear

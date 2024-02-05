@@ -80,7 +80,23 @@
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
+      logic                                    v;                                                  \
+      logic [vaddr_width_mp-1:0]               pc;                                                 \
+      rv64_instr_s                             instr;                                              \
+      bp_be_decode_s                           decode;                                             \
+                                                                                                   \
+      logic [dword_width_gp-1:0]               isrc1;                                              \
+      logic [dword_width_gp-1:0]               isrc2;                                              \
+      logic [dword_width_gp-1:0]               isrc3;                                              \
+      logic [dp_rec_width_gp-1:0]              fsrc1;                                              \
+      logic [dp_rec_width_gp-1:0]              fsrc2;                                              \
+      logic [dp_rec_width_gp-1:0]              fsrc3;                                              \
+    }  bp_be_reservation_s;                                                                        \
+                                                                                                   \
+    typedef struct packed                                                                          \
+    {                                                                                              \
       logic                              v;                                                        \
+      logic                              fflags_v;                                                 \
       logic                              aux_iwb_v;                                                \
       logic                              aux_fwb_v;                                                \
       logic                              eint_iwb_v;                                               \
@@ -97,7 +113,6 @@
       logic                              fma_fwb_v;                                                \
       logic                              long_iwb_v;                                               \
       logic                              long_fwb_v;                                               \
-      logic                              fflags_w_v;                                               \
                                                                                                    \
       logic [rv64_reg_addr_width_gp-1:0] rd_addr;                                                  \
     }  bp_be_dep_status_s;                                                                         \
@@ -179,24 +194,11 @@
     {                                                                                              \
       logic                         ird_w_v;                                                       \
       logic                         frd_w_v;                                                       \
+      logic                         ptw_w_v;                                                       \
       logic [reg_addr_width_gp-1:0] rd_addr;                                                       \
       logic [dpath_width_gp-1:0]    rd_data;                                                       \
-      logic                         fflags_w_v;                                                    \
       rv64_fflags_s                 fflags;                                                        \
     }  bp_be_wb_pkt_s;                                                                             \
-                                                                                                   \
-    typedef struct packed                                                                          \
-    {                                                                                              \
-      logic v;                                                                                     \
-      logic itlb_fill_v;                                                                           \
-      logic dtlb_fill_v;                                                                           \
-      logic instr_page_fault_v;                                                                    \
-      logic load_page_fault_v;                                                                     \
-      logic store_page_fault_v;                                                                    \
-      logic partial;                                                                               \
-      logic [vaddr_width_mp-1:0] vaddr;                                                            \
-      bp_be_pte_leaf_s entry;                                                                      \
-    }  bp_be_ptw_fill_pkt_s;                                                                       \
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
@@ -247,8 +249,8 @@
      + $bits(bp_be_special_s)                                                                      \
      )
 
-  `define bp_be_dep_status_width \
-    (17 + rv64_reg_addr_width_gp)
+  `define bp_be_reservation_width(vaddr_width_mp) \
+    (1+vaddr_width_mp+rv64_instr_width_gp+$bits(bp_be_decode_s)+3*dword_width_gp+3*dp_rec_width_gp)
 
   `define bp_be_branch_pkt_width(vaddr_width_mp) \
     (4 + vaddr_width_mp)
@@ -267,12 +269,6 @@
      + reg_addr_width_gp                                                                           \
      + dpath_width_gp                                                                              \
      + $bits(rv64_fflags_s)                                                                        \
-     )
-
-  `define bp_be_ptw_fill_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (7                                                                                             \
-     + vaddr_width_mp                                                                              \
-     + `bp_be_pte_leaf_width(paddr_width_mp)                                                       \
      )
 
   `define bp_be_trans_info_width(ptag_width_mp) \

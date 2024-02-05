@@ -7,13 +7,13 @@ import numpy as np
 class TraceGen:
 
   # constructor
-  def __init__(self, ptag_width_p, vaddr_width_p, opcode_width_p, data_width_p, rd_addr_width_p):
+  def __init__(self, ptag_width_p, offset_width_p, opcode_width_p, data_width_p, rd_addr_width_p):
     self.ptag_width_p = ptag_width_p
-    self.vaddr_width_p = vaddr_width_p
+    self.offset_width_p = offset_width_p
     self.opcode_width_p = opcode_width_p
     # TODO: Update formatting operators to use data width
     self.data_width_p = data_width_p
-    self.packet_len = ptag_width_p + vaddr_width_p + opcode_width_p + rd_addr_width_p + data_width_p + 1 # A bit is added to denote cached/uncached accesses
+    self.packet_len = ptag_width_p + offset_width_p + opcode_width_p + rd_addr_width_p + data_width_p + 1 # A bit is added to denote cached/uncached accesses
 
   # print header
   def print_header(self):
@@ -57,7 +57,7 @@ class TraceGen:
         else:
           raise ValueError("unexpected size for unsigned load.")
 
-    packet += format(vaddr, "0"+str(self.vaddr_width_p)+"b") + "_"
+    packet += format(vaddr, "0"+str(self.offset_width_p)+"b") + "_"
     packet += format(0, "066b") + "\n" 
     return packet
 
@@ -86,7 +86,7 @@ class TraceGen:
     else:
       raise ValueError("unexpected size for store.")
     
-    packet += format(vaddr, "0" + str(self.vaddr_width_p) + "b") + "_"
+    packet += format(vaddr, "0" + str(self.offset_width_p) + "b") + "_"
     packet += format(data, "066b") + "\n"
     return packet
 
@@ -95,7 +95,7 @@ class TraceGen:
   def recv_data(self, data):
     packet = "0010_"
     bin_data = np.binary_repr(data, 64)
-    packet += "0" + "0"*(self.ptag_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.vaddr_width_p) + "_" + "00" + bin_data + "\n"
+    packet += "0" + "0"*(self.ptag_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.offset_width_p) + "_" + "00" + bin_data + "\n"
     return packet
 
   # wait for a number of cycles

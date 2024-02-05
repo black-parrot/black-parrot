@@ -44,8 +44,7 @@ module bp_me_loopback
   logic fsm_fwd_new_lo, fsm_fwd_critical_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(bedrock_fill_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_fwd_payload_width_lp)
      ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp | mem_rev_stream_mask_gp)
@@ -71,13 +70,12 @@ module bp_me_loopback
 
   bp_bedrock_mem_rev_header_s fsm_rev_header_li;
   logic [bedrock_fill_width_p-1:0] fsm_rev_data_li;
-  logic fsm_rev_v_li, fsm_rev_ready_and_lo;
+  logic fsm_rev_v_li, fsm_rev_ready_then_lo;
   logic [paddr_width_p-1:0] fsm_rev_addr_lo;
   logic fsm_rev_new_lo, fsm_rev_critical_lo, fsm_rev_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(bedrock_fill_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(mem_rev_payload_width_lp)
      ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp | mem_rev_stream_mask_gp)
@@ -94,7 +92,7 @@ module bp_me_loopback
      ,.fsm_header_i(fsm_rev_header_li)
      ,.fsm_data_i(fsm_rev_data_li)
      ,.fsm_v_i(fsm_rev_v_li)
-     ,.fsm_ready_and_o(fsm_rev_ready_and_lo)
+     ,.fsm_ready_then_o(fsm_rev_ready_then_lo)
      ,.fsm_addr_o(fsm_rev_addr_lo)
      ,.fsm_new_o(fsm_rev_new_lo)
      ,.fsm_critical_o(fsm_rev_critical_lo)
@@ -103,8 +101,8 @@ module bp_me_loopback
 
   assign fsm_rev_header_li = fsm_fwd_header_lo;
   assign fsm_rev_data_li = fsm_fwd_data_lo;
-  assign fsm_rev_v_li = fsm_fwd_v_lo;
-  assign fsm_fwd_yumi_li = fsm_rev_ready_and_lo & fsm_rev_v_li;
+  assign fsm_rev_v_li = fsm_rev_ready_then_lo & fsm_fwd_v_lo;
+  assign fsm_fwd_yumi_li = fsm_rev_v_li;
 
 endmodule
 

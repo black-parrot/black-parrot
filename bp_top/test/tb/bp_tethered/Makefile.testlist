@@ -13,7 +13,6 @@
 #  epc
 MISC_TESTS := \
   hello_world           \
-  instr_coherence       \
   cache_hammer          \
   jalr_illegal          \
   satp_nofence          \
@@ -208,7 +207,7 @@ RV64_V_ISA_TESTS := \
   rv64ui-v-subw    \
   rv64ui-v-xor     \
   rv64ui-v-xori    \
-  #rv64ua-v-amoadd_d  \
+  rv64ua-v-amoadd_d  \
   rv64ua-v-amoadd_w  \
   rv64ua-v-amoand_d  \
   rv64ua-v-amoand_w  \
@@ -230,152 +229,6 @@ RV64_V_ISA_TESTS := \
 
 RV64_V_ISA_TESTLIST := $(addprefix riscv-tests@, $(RV64_V_ISA_TESTS))
 
-RV64_PT_ISA_TESTS := \
-  rv64ui-pt-add     \
-  rv64ui-pt-addi    \
-  rv64ui-pt-addiw   \
-  rv64ui-pt-addw    \
-  rv64ui-pt-and     \
-  rv64ui-pt-andi    \
-  rv64ui-pt-auipc   \
-  rv64ui-pt-beq     \
-  rv64ui-pt-bge     \
-  rv64ui-pt-bgeu    \
-  rv64ui-pt-blt     \
-  rv64ui-pt-bltu    \
-  rv64ui-pt-bne     \
-  rv64ui-pt-jal     \
-  rv64ui-pt-jalr    \
-  rv64ui-pt-lb      \
-  rv64ui-pt-lbu     \
-  rv64ui-pt-lh      \
-  rv64ui-pt-lhu     \
-  rv64ui-pt-lw      \
-  rv64ui-pt-lwu     \
-  rv64ui-pt-ld      \
-  rv64ui-pt-lui     \
-  rv64ui-pt-or      \
-  rv64ui-pt-ori     \
-  rv64ui-pt-sb      \
-  rv64ui-pt-sh      \
-  rv64ui-pt-sw      \
-  rv64ui-pt-sd      \
-  rv64ui-pt-sll     \
-  rv64ui-pt-slli    \
-  rv64ui-pt-slliw   \
-  rv64ui-pt-sllw    \
-  rv64ui-pt-slt     \
-  rv64ui-pt-slti    \
-  rv64ui-pt-sltiu   \
-  rv64ui-pt-sltu    \
-  rv64ui-pt-sra     \
-  rv64ui-pt-srai    \
-  rv64ui-pt-sraiw   \
-  rv64ui-pt-sraw    \
-  rv64ui-pt-srl     \
-  rv64ui-pt-srli    \
-  rv64ui-pt-srliw   \
-  rv64ui-pt-srlw    \
-  rv64ui-pt-sub     \
-  rv64ui-pt-subw    \
-  rv64ui-pt-xor     \
-  rv64ui-pt-xori    \
-  #rv64ua-pt-amoadd_d  \
-  rv64ua-pt-amoadd_w  \
-  rv64ua-pt-amoand_d  \
-  rv64ua-pt-amoand_w  \
-  rv64ua-pt-amomax_d  \
-  rv64ua-pt-amomax_w  \
-  rv64ua-pt-amomaxu_w \
-  rv64ua-pt-amomaxu_d \
-  rv64ua-pt-amomin_d  \
-  rv64ua-pt-amomin_w  \
-  rv64ua-pt-amominu_w \
-  rv64ua-pt-amominu_d \
-  rv64ua-pt-amoor_d   \
-  rv64ua-pt-amoor_w   \
-  rv64ua-pt-amoswap_d \
-  rv64ua-pt-amoswap_w \
-  rv64ua-pt-amoxor_d  \
-  rv64ua-pt-amoxor_w  \
-  rv64ua-pt-lrsc
-
-RV64_PT_ISA_TESTLIST := $(addprefix riscv-tests@, $(RV64_PT_ISA_TESTS))
-
-  # TODO: Fails in spike
-  #rv64ui-vt-slti
-  # TODO: Renable once software fix
-RV64_VT_ISA_TESTS := \
-  #rv64ui-vt-add     \
-  rv64ui-vt-addi    \
-  rv64ui-vt-addiw   \
-  rv64ui-vt-addw    \
-  rv64ui-vt-and     \
-  rv64ui-vt-andi    \
-  rv64ui-vt-auipc   \
-  rv64ui-vt-beq     \
-  rv64ui-vt-bge     \
-  rv64ui-vt-bgeu    \
-  rv64ui-vt-blt     \
-  rv64ui-vt-bltu    \
-  rv64ui-vt-bne     \
-  rv64ui-vt-jal     \
-  rv64ui-vt-jalr    \
-  rv64ui-vt-lb      \
-  rv64ui-vt-lbu     \
-  rv64ui-vt-lh      \
-  rv64ui-vt-lhu     \
-  rv64ui-vt-lw      \
-  rv64ui-vt-lwu     \
-  rv64ui-vt-ld      \
-  rv64ui-vt-lui     \
-  rv64ui-vt-or      \
-  rv64ui-vt-ori     \
-  rv64ui-vt-sb      \
-  rv64ui-vt-sh      \
-  rv64ui-vt-sw      \
-  rv64ui-vt-sd      \
-  rv64ui-vt-sll     \
-  rv64ui-vt-slli    \
-  rv64ui-vt-slliw   \
-  rv64ui-vt-sllw    \
-  rv64ui-vt-slt     \
-  rv64ui-vt-sltiu   \
-  rv64ui-vt-sltu    \
-  rv64ui-vt-sra     \
-  rv64ui-vt-srai    \
-  rv64ui-vt-sraiw   \
-  rv64ui-vt-sraw    \
-  rv64ui-vt-srl     \
-  rv64ui-vt-srli    \
-  rv64ui-vt-srliw   \
-  rv64ui-vt-srlw    \
-  rv64ui-vt-sub     \
-  rv64ui-vt-subw    \
-  rv64ui-vt-xor     \
-  rv64ui-vt-xori    \
-  #rv64ua-vt-amoadd_d  \
-  rv64ua-vt-amoadd_w  \
-  rv64ua-vt-amoand_d  \
-  rv64ua-vt-amoand_w  \
-  rv64ua-vt-amomax_d  \
-  rv64ua-vt-amomax_w  \
-  rv64ua-vt-amomaxu_w \
-  rv64ua-vt-amomaxu_d \
-  rv64ua-vt-amomin_d  \
-  rv64ua-vt-amomin_w  \
-  rv64ua-vt-amominu_w \
-  rv64ua-vt-amominu_d \
-  rv64ua-vt-amoor_d   \
-  rv64ua-vt-amoor_w   \
-  rv64ua-vt-amoswap_d \
-  rv64ua-vt-amoswap_w \
-  rv64ua-vt-amoxor_d  \
-  rv64ua-vt-amoxor_w  \
-  rv64ua-vt-lrsc
-
-RV64_VT_ISA_TESTLIST := $(addprefix riscv-tests@, $(RV64_VT_ISA_TESTS))
-
 RV64_BENCHMARK_TESTS := \
   median   \
   multiply \
@@ -390,8 +243,6 @@ RV64_BENCHMARK_TESTLIST := $(addprefix riscv-tests@, $(RV64_BENCHMARK_TESTS))
 RISCV_TESTLIST := \
     $(RV64_P_ISA_TESTLIST) \
     $(RV64_V_ISA_TESTLIST) \
-    $(RV64_PT_ISA_TESTLIST)\
-    $(RV64_VT_ISA_TESTLIST)\
     $(RV64_BENCHMARK_TESTLIST)
 
 COREMARK_TESTS := coremark
@@ -500,15 +351,26 @@ MC_TESTS := \
 MC_TESTLIST := $(addprefix bp-tests@, $(MC_TESTS))
 
 RISCVDV_TESTS := \
-  riscv_arithmetic_basic_test     \
-  riscv_full_interrupt_test       \
-  riscv_loop_test                 \
-  riscv_mmu_stress_test           \
-  riscv_no_fence_test             \
-  riscv_privileged_mode_rand_test \
-  riscv_rand_instr_test           \
-  riscv_rand_jump_test            \
-  riscv_sfence_exception_test
+  riscv_amo_test    \
+  riscv_arithmetic_basic_test    \
+  riscv_floating_point_arithmetic_test    \
+  riscv_floating_point_mmu_stress_test    \
+  riscv_floating_point_rand_test    \
+  riscv_full_interrupt_test    \
+  riscv_hint_instr_test    \
+  riscv_illegal_instr_test    \
+  riscv_invalid_csr_test    \
+  riscv_jump_stress_test    \
+  riscv_loop_test    \
+  riscv_machine_mode_rand_test    \
+  riscv_mmu_stress_test    \
+  riscv_no_fence_test    \
+  riscv_non_compressed_instr_test    \
+  riscv_privileged_mode_rand_test    \
+  riscv_rand_instr_test    \
+  riscv_rand_jump_test    \
+  riscv_sfence_exception_test    \
+  riscv_unaligned_load_store_test
 
 # TODO: Clean this up with a better generator
 RISCVDV_TESTLIST  = $(addprefix riscv-dv@, $(addsuffix  _0, $(RISCVDV_TESTS)))
@@ -532,175 +394,6 @@ RISCVDV_TESTLIST += $(addprefix riscv-dv@, $(addsuffix _17, $(RISCVDV_TESTS)))
 RISCVDV_TESTLIST += $(addprefix riscv-dv@, $(addsuffix _18, $(RISCVDV_TESTS)))
 RISCVDV_TESTLIST += $(addprefix riscv-dv@, $(addsuffix _19, $(RISCVDV_TESTS)))
 
-COMPLIANCE_TESTS := \
-  add-01.S         \
-  addi-01.S         \
-  addiw-01.S         \
-  addw-01.S         \
-  amoadd.d-01.S         \
-  amoadd.w-01.S         \
-  amoand.d-01.S         \
-  amoand.w-01.S         \
-  amomax.d-01.S         \
-  amomaxu.d-01.S         \
-  amomaxu.w-01.S         \
-  amomax.w-01.S         \
-  amomin.d-01.S         \
-  amominu.d-01.S         \
-  amominu.w-01.S         \
-  amomin.w-01.S         \
-  amoor.d-01.S         \
-  amoor.w-01.S         \
-  amoswap.d-01.S         \
-  amoswap.w-01.S         \
-  amoxor.d-01.S         \
-  amoxor.w-01.S         \
-  and-01.S         \
-  andi-01.S         \
-  auipc-01.S         \
-  beq-01.S         \
-  bge-01.S         \
-  bgeu-01.S         \
-  blt-01.S         \
-  bltu-01.S         \
-  bne-01.S         \
-  cadd-01.S         \
-  caddi-01.S         \
-  caddi16sp-01.S         \
-  caddi4spn-01.S         \
-  caddiw-01.S         \
-  caddw-01.S         \
-  cand-01.S         \
-  candi-01.S         \
-  cbeqz-01.S         \
-  cbnez-01.S         \
-  cebreak-01.S         \
-  cj-01.S         \
-  cjalr-01.S         \
-  cjr-01.S         \
-  cld-01.S         \
-  cldsp-01.S         \
-  cli-01.S         \
-  clui-01.S         \
-  clw-01.S         \
-  clwsp-01.S         \
-  cmv-01.S         \
-  cnop-01.S         \
-  cor-01.S         \
-  csd-01.S         \
-  csdsp-01.S         \
-  cslli-01.S         \
-  csrai-01.S         \
-  csrli-01.S         \
-  csub-01.S         \
-  csubw-01.S         \
-  csw-01.S         \
-  cswsp-01.S         \
-  cxor-01.S         \
-  div-01.S         \
-  divu-01.S         \
-  divuw-01.S         \
-  divw-01.S         \
-  ebreak.S         \
-  ecall.S         \
-  fcvt.d.l_b25-01.S         \
-  fcvt.d.l_b26-01.S         \
-  fcvt.d.lu_b25-01.S         \
-  fcvt.d.lu_b26-01.S         \
-  fcvt.l.d_b1-01.S         \
-  fcvt.l.d_b22-01.S         \
-  fcvt.lu.d_b23-01.S         \
-  fcvt.lu.d_b24-01.S         \
-  fcvt.lu.d_b27-01.S         \
-  fcvt.lu.d_b28-01.S         \
-  fcvt.lu.d_b29-01.S         \
-  fcvt.lu.s_b1-01.S         \
-  fcvt.lu.s_b22-01.S         \
-  fcvt.lu.s_b23-01.S         \
-  fcvt.lu.s_b24-01.S         \
-  fcvt.lu.s_b27-01.S         \
-  fcvt.lu.s_b28-01.S         \
-  fcvt.lu.s_b29-01.S         \
-  fcvt.s.l_b25-01.S         \
-  fcvt.s.l_b26-01.S         \
-  fcvt.s.lu_b25-01.S         \
-  fcvt.s.lu_b26-01.S         \
-  fence-01.S         \
-  Fencei.S         \
-  fmv.d.x_b25-01.S         \
-  fmv.d.x_b26-01.S         \
-  fmv.x.d_b1-01.S         \
-  fmv.x.d_b22-01.S         \
-  fmv.x.d_b23-01.S         \
-  fmv.x.d_b24-01.S         \
-  fmv.x.d_b27-01.S         \
-  fmv.x.d_b28-01.S         \
-  fmv.x.d_b29-01.S         \
-  jal-01.S         \
-  jalr-01.S         \
-  lb-align-01.S         \
-  lbu-align-01.S         \
-  ld-align-01.S         \
-  lh-align-01.S         \
-  lhu-align-01.S         \
-  lui-01.S         \
-  lw-align-01.S         \
-  lwu-align-01.S         \
-  misalign1-jalr-01.S         \
-  misalign2-jalr-01.S         \
-  misalign-beq-01.S         \
-  misalign-bge-01.S         \
-  misalign-bgeu-01.S         \
-  misalign-blt-01.S         \
-  misalign-bltu-01.S         \
-  misalign-bne-01.S         \
-  misalign-jal-01.S         \
-  misalign-ld-01.S         \
-  misalign-lh-01.S         \
-  misalign-lhu-01.S         \
-  misalign-lw-01.S         \
-  misalign-lwu-01.S         \
-  misalign-sd-01.S         \
-  misalign-sh-01.S         \
-  misalign-sw-01.S         \
-  mul-01.S         \
-  mulh-01.S         \
-  mulhsu-01.S         \
-  mulhu-01.S         \
-  mulw-01.S         \
-  or-01.S         \
-  ori-01.S         \
-  rem-01.S         \
-  remu-01.S         \
-  remuw-01.S         \
-  remw-01.S         \
-  sb-align-01.S         \
-  sd-align-01.S         \
-  sh-align-01.S         \
-  sll-01.S         \
-  slli-01.S         \
-  slliw-01.S         \
-  sllw-01.S         \
-  slt-01.S         \
-  slti-01.S         \
-  sltiu-01.S         \
-  sltu-01.S         \
-  sra-01.S         \
-  srai-01.S         \
-  sraiw-01.S         \
-  sraw-01.S         \
-  srl-01.S         \
-  srli-01.S         \
-  srliw-01.S         \
-  srlw-01.S         \
-  sub-01.S         \
-  subw-01.S         \
-  sw-align-01.S         \
-  xor-01.S         \
-  xori-01.S
-
-COMPLIANCE_TESTLIST := $(addprefix compliance@, $(COMPLIANCE_TESTS))
-
 SPEC_TESTS := \
   177.mesa \
   188.ammp \
@@ -713,6 +406,187 @@ SPEC_TESTS := \
   197.parser
 
 SPEC_TESTLIST := $(addprefix spec@, $(SPEC_TESTS))
+
+RVARCH_TESTLIST := \
+  add-01 \
+  addi-01 \
+  addiw-01 \
+  addw-01 \
+  amoadd.d-01 \
+  amoadd.w-01 \
+  amoand.d-01 \
+  amoand.w-01 \
+  amomax.d-01 \
+  amomaxu.d-01 \
+  amomaxu.w-01 \
+  amomax.w-01 \
+  amomin.d-01 \
+  amominu.d-01 \
+  amominu.w-01 \
+  amomin.w-01 \
+  amoor.d-01 \
+  amoor.w-01 \
+  amoswap.d-01 \
+  amoswap.w-01 \
+  amoxor.d-01 \
+  amoxor.w-01 \
+  and-01 \
+  andi-01 \
+  auipc-01 \
+  beq-01 \
+  bge-01 \
+  bgeu-01 \
+  blt-01 \
+  bltu-01 \
+  bne-01 \
+  cadd-01 \
+  caddi-01 \
+  caddi16sp-01 \
+  caddi4spn-01 \
+  caddiw-01 \
+  caddw-01 \
+  cand-01 \
+  candi-01 \
+  cbeqz-01 \
+  cbnez-01 \
+  cebreak-01 \
+  cj-01 \
+  cjalr-01 \
+  cjr-01 \
+  cld-01 \
+  cldsp-01 \
+  cli-01 \
+  clui-01 \
+  clw-01 \
+  clwsp-01 \
+  cmv-01 \
+  cnop-01 \
+  cor-01 \
+  csd-01 \
+  csdsp-01 \
+  cslli-01 \
+  csrai-01 \
+  csrli-01 \
+  csub-01 \
+  csubw-01 \
+  csw-01 \
+  cswsp-01 \
+  cxor-01 \
+  div-01 \
+  divu-01 \
+  divuw-01 \
+  divw-01 \
+  ebreak \
+  ecall \
+  fcvt.d.l_b25-01 \
+  fcvt.d.l_b26-01 \
+  fcvt.d.lu_b25-01 \
+  fcvt.d.lu_b26-01 \
+  fcvt.l.d_b1-01 \
+  fcvt.l.d_b22-01 \
+  fcvt.l.d_b23-01 \
+  fcvt.l.d_b24-01 \
+  fcvt.l.d_b27-01 \
+  fcvt.l.d_b28-01 \
+  fcvt.l.d_b29-01 \
+  fcvt.l.s_b1-01 \
+  fcvt.l.s_b22-01 \
+  fcvt.l.s_b23-01 \
+  fcvt.l.s_b24-01 \
+  fcvt.l.s_b27-01 \
+  fcvt.l.s_b28-01 \
+  fcvt.l.s_b29-01 \
+  fcvt.lu.d_b1-01 \
+  fcvt.lu.d_b22-01 \
+  fcvt.lu.d_b23-01 \
+  fcvt.lu.d_b24-01 \
+  fcvt.lu.d_b27-01 \
+  fcvt.lu.d_b28-01 \
+  fcvt.lu.d_b29-01 \
+  fcvt.lu.s_b1-01 \
+  fcvt.lu.s_b22-01 \
+  fcvt.lu.s_b23-01 \
+  fcvt.lu.s_b24-01 \
+  fcvt.lu.s_b27-01 \
+  fcvt.lu.s_b28-01 \
+  fcvt.lu.s_b29-01 \
+  fcvt.s.l_b25-01 \
+  fcvt.s.l_b26-01 \
+  fcvt.s.lu_b25-01 \
+  fcvt.s.lu_b26-01 \
+  fence-01 \
+  Fencei \
+  fmv.d.x_b25-01 \
+  fmv.d.x_b26-01 \
+  fmv.x.d_b1-01 \
+  fmv.x.d_b22-01 \
+  fmv.x.d_b23-01 \
+  fmv.x.d_b24-01 \
+  fmv.x.d_b27-01 \
+  fmv.x.d_b28-01 \
+  fmv.x.d_b29-01 \
+  jal-01 \
+  jalr-01 \
+  lb-align-01 \
+  lbu-align-01 \
+  ld-align-01 \
+  lh-align-01 \
+  lhu-align-01 \
+  lui-01 \
+  lw-align-01 \
+  lwu-align-01 \
+  misalign1-jalr-01 \
+  misalign2-jalr-01 \
+  misalign-beq-01 \
+  misalign-bge-01 \
+  misalign-bgeu-01 \
+  misalign-blt-01 \
+  misalign-bltu-01 \
+  misalign-bne-01 \
+  misalign-jal-01 \
+  misalign-ld-01 \
+  misalign-lh-01 \
+  misalign-lhu-01 \
+  misalign-lw-01 \
+  misalign-lwu-01 \
+  misalign-sd-01 \
+  misalign-sh-01 \
+  misalign-sw-01 \
+  mul-01 \
+  mulh-01 \
+  mulhsu-01 \
+  mulhu-01 \
+  mulw-01 \
+  or-01 \
+  ori-01 \
+  rem-01 \
+  remu-01 \
+  remuw-01 \
+  remw-01 \
+  sb-align-01 \
+  sd-align-01 \
+  sh-align-01 \
+  sll-01 \
+  slli-01 \
+  slliw-01 \
+  sllw-01 \
+  slt-01 \
+  slti-01 \
+  sltiu-01 \
+  sltu-01 \
+  sra-01 \
+  srai-01 \
+  sraiw-01 \
+  sraw-01 \
+  srl-01 \
+  srli-01 \
+  srliw-01 \
+  srlw-01 \
+  sub-01 \
+  subw-01 \
+  sw-align-01 \
+  xor-01 \
+  xori-01
 
 BASELINE_TESTLIST := \
   bp-tests@hello_world \

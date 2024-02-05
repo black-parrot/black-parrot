@@ -45,10 +45,8 @@
   {
     e_bedrock_mem_rd       = 4'b0000  // Cache block fetch / load / Get (cached in L2/LLC)
     ,e_bedrock_mem_wr      = 4'b0001  // Cache block write / writeback / store / Put (cached in L2/LLC)
-    ,e_bedrock_mem_uc_rd   = 4'b0010  // Uncached load (uncached in L2/LLC)
-    ,e_bedrock_mem_uc_wr   = 4'b0011  // Uncached store (uncached in L2/LLC)
-    ,e_bedrock_mem_pre     = 4'b0100  // Pre-fetch block request from CCE, fill into L2/LLC if able
-    ,e_bedrock_mem_amo     = 4'b0101  // Atomic operation in L2/LLC
+    ,e_bedrock_mem_amo     = 4'b0010  // Atomic operation in L2/LLC
+    ,e_bedrock_mem_pre     = 4'b1000  // Pre-fetch block request from CCE, fill into L2/LLC if able
   } bp_bedrock_fwd_type_e;
 
   // rev messages are identical to fwd messages and can be safely casted between
@@ -184,8 +182,8 @@
    * These masks define the BedRock message types that carry data.
    *
    */
-  localparam mem_fwd_stream_mask_gp  = (1 << e_bedrock_mem_uc_wr) | (1 << e_bedrock_mem_wr) | (1 << e_bedrock_mem_amo);
-  localparam mem_rev_stream_mask_gp  = (1 << e_bedrock_mem_uc_rd) | (1 << e_bedrock_mem_rd) | (1 << e_bedrock_mem_amo);
+  localparam mem_fwd_stream_mask_gp  = (1 << e_bedrock_mem_wr) | (1 << e_bedrock_mem_amo);
+  localparam mem_rev_stream_mask_gp  = (1 << e_bedrock_mem_rd) | (1 << e_bedrock_mem_amo);
   localparam lce_req_stream_mask_gp  = (1 << e_bedrock_req_uc_wr) | (1 << e_bedrock_req_uc_amo);
   localparam lce_cmd_stream_mask_gp  = (1 << e_bedrock_cmd_data) | (1 << e_bedrock_cmd_uc_data);
   localparam lce_fill_stream_mask_gp = (1 << e_bedrock_fill_data);

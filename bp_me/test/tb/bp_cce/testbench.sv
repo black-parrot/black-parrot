@@ -42,7 +42,7 @@ module testbench
    , localparam trace_rom_addr_width_lp = 20
 
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_tag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache)
    )
   (output bit reset_i);
 
@@ -182,8 +182,6 @@ module testbench
   // Req Crossbar
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_req_payload_width_lp)
      ,.stream_mask_p(lce_req_stream_mask_gp)
      ,.num_source_p(num_lce_p)
@@ -208,8 +206,6 @@ module testbench
   // Resp Crossbar
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_resp_payload_width_lp)
      ,.stream_mask_p(lce_resp_stream_mask_gp)
      ,.num_source_p(num_lce_p)
@@ -235,8 +231,6 @@ module testbench
   // from LCE fill out to LCE fill in
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_fill_payload_width_lp)
      ,.stream_mask_p(lce_fill_stream_mask_gp)
      ,.num_source_p(num_lce_p)
@@ -263,8 +257,6 @@ module testbench
   // from CCE to LCE cmd in
   bp_me_xbar_stream
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(bedrock_block_width_p)
-     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.stream_mask_p(lce_cmd_stream_mask_gp)
      ,.num_source_p(num_cce_p)
@@ -286,7 +278,7 @@ module testbench
      ,.msg_ready_and_i(lce_cmd_ready_and_lo)
      );
 
-  `declare_bp_cache_engine_generic_if(paddr_width_p, icache_ctag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, icache_tag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache);
 
   bp_cache_req_s [num_lce_p-1:0] cache_req_lo;
   logic [num_lce_p-1:0] cache_req_v_lo, cache_req_yumi_li, cache_req_lock_li;
@@ -419,7 +411,7 @@ module testbench
        ,.id_width_p(icache_req_id_width_p)
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
-       ,.ctag_width_p(icache_ctag_width_p)
+       ,.tag_width_p(icache_tag_width_p)
        )
      lce
       (.clk_i(clk_i)
@@ -806,14 +798,14 @@ module testbench
          ,.req_start_i(req_start)
          ,.req_end_i(req_end)
          ,.lce_req_header_i(fsm_req_header_li)
-         ,.cmd_send_i(fsm_cmd_ready_and_li & fsm_cmd_v_lo)
+         ,.cmd_send_i(fsm_cmd_v_lo)
          ,.lce_cmd_header_i(fsm_cmd_header_lo)
          ,.resp_receive_i(fsm_resp_yumi_lo)
          ,.lce_resp_header_i(fsm_resp_header_li)
          ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
          ,.mem_rev_squash_i(fsm_rev_yumi_lo & fsm_rev_last_li & spec_bits_lo.squash)
          ,.mem_rev_header_i(fsm_rev_header_li)
-         ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
+         ,.mem_fwd_send_i(fsm_fwd_v_lo & fsm_fwd_new_lo)
          ,.mem_fwd_header_i(fsm_fwd_header_lo)
          );
   end
@@ -828,14 +820,14 @@ module testbench
          ,.req_start_i(lce_req_v_i & (state_r == e_ready))
          ,.req_end_i(state_r == e_ready)
          ,.lce_req_header_i(fsm_req_header_li)
-         ,.cmd_send_i(fsm_cmd_ready_and_li & fsm_cmd_v_lo)
+         ,.cmd_send_i(fsm_cmd_v_lo)
          ,.lce_cmd_header_i(fsm_cmd_header_lo)
          ,.resp_receive_i(fsm_resp_yumi_lo)
          ,.lce_resp_header_i(fsm_resp_header_li)
          ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
          ,.mem_rev_squash_i(fsm_rev_yumi_lo & spec_bits_lo.squash & fsm_rev_last_li)
          ,.mem_rev_header_i(fsm_rev_header_li)
-         ,.mem_fwd_send_i(fsm_fwd_ready_and_li & fsm_fwd_v_lo & fsm_fwd_new_lo)
+         ,.mem_fwd_send_i(fsm_fwd_v_lo & fsm_fwd_new_lo)
          ,.mem_fwd_header_i(fsm_fwd_header_lo)
          );
   end

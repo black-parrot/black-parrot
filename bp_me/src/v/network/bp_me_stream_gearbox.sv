@@ -96,7 +96,7 @@ module bp_me_stream_gearbox
          ,.ready_and_i(msg_ready_param_i)
          );
     end
-  else
+  else if (in_data_width_p > out_data_width_p)
     begin : narrow
       localparam out_max_len_lp = `BSG_CDIV(8*(1 << e_bedrock_msg_size_128), out_data_width_p);
       logic [out_max_len_lp-1:0] out_len_lo;
@@ -125,6 +125,12 @@ module bp_me_stream_gearbox
          ,.v_o(msg_v_o)
          ,.ready_and_i(msg_ready_param_i)
          );
+    end
+  else
+    begin
+      assign msg_data_o = msg_data_li;
+      assign msg_v_o = msg_v_li;
+      assign msg_ready_and_lo = msg_ready_param_i;
     end
 
 endmodule

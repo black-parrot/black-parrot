@@ -129,3 +129,16 @@ $(SIM_DIR)/run_samplev: $(SIM_COLLATERAL)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
+sigcheck.v: $(SIM_DIR)/run_sigcheckv
+sigcheck.v: SIGCHECK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).log
+sigcheck.v: SIGCHECK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).rpt
+sigcheck.v: SIGCHECK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).err
+$(SIM_DIR)/run_sigcheckv:
+	-diff $(@D)/DUT-blackparrot.signature $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature > $(SIGCHECK_LOG)
+	echo "Mismatches: " > $(SIGCHECK_REPORT)
+	wc -l < $(SIGCHECK_LOG) >> $(SIGCHECK_REPORT)
+	-@grep [1-9] $(SIGCHECK_REPORT) && echo "FAILED" > $(SIGCHECK_ERROR)
+	wc -l < $(@D)/DUT-blackparrot.signature >> $(SIGCHECK_REPORT)
+	echo "------" >> $(SIGCHECK_REPORT)
+	wc -l < $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature >> $(SIGCHECK_REPORT)
+

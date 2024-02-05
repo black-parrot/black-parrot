@@ -20,7 +20,6 @@ module bp_be_issue_queue
    , input                                     deq_v_i
    , input                                     deq_skip_i
    , input                                     roll_v_i
-   , input                                     inject_v_i
    , input                                     suppress_v_i
    , input                                     read_v_i
    , input                                     read_skip_i
@@ -57,7 +56,6 @@ module bp_be_issue_queue
 
   // Operations
   wire suppress = suppress_v_i;
-  wire inject   = inject_v_i;
   wire clr      = clr_v_i;
   wire roll     = roll_v_i;
   wire ack      = fe_queue_ready_and_o & fe_queue_v_i;
@@ -70,7 +68,7 @@ module bp_be_issue_queue
     end
   else
     begin : nc0
-      assign enq = ack ? 1'b1 : 1'b0;;
+      assign enq = ack ? 1'b1 : 1'b0;
       assign deq = deq_v_i ? 1'b1 : 1'b0;
       assign read = read_v_i ? 1'b1 : 1'b0;
     end
@@ -293,13 +291,11 @@ module bp_be_issue_queue
      ,.csrw_o(csrw_lo)
      );
 
-  wire issue_pkt_v = ~empty & ~inject & ~suppress;
-  wire issue_instr_v = issue_pkt_cast_o.instr_v;
   always_comb
     begin
       issue_pkt_cast_o = '0;
 
-      issue_pkt_cast_o.v                    = issue_pkt_v;
+      issue_pkt_cast_o.v                    = ~empty & ~suppress;
       issue_pkt_cast_o.instr_v              = (fe_queue_lo.msg_type == e_instr_fetch) & ~illegal_instr_lo;
       issue_pkt_cast_o.itlb_miss            = (fe_queue_lo.msg_type == e_itlb_miss);
       issue_pkt_cast_o.instr_access_fault   = (fe_queue_lo.msg_type == e_instr_access_fault);

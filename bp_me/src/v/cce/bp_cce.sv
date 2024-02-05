@@ -259,8 +259,7 @@ module bp_cce
   logic fsm_req_new_li, fsm_req_critical_li, fsm_req_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(bedrock_fill_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_req_payload_width_lp)
      ,.msg_stream_mask_p(lce_req_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_req_stream_mask_gp)
@@ -288,13 +287,12 @@ module bp_cce
   localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
   bp_bedrock_lce_cmd_header_s fsm_cmd_header_lo;
   logic [bedrock_fill_width_p-1:0] fsm_cmd_data_lo;
-  logic fsm_cmd_v_lo, fsm_cmd_ready_and_li;
+  logic fsm_cmd_v_lo, fsm_cmd_ready_then_li;
   logic [paddr_width_p-1:0] fsm_cmd_addr_lo;
   logic fsm_cmd_new_lo, fsm_cmd_critical_lo, fsm_cmd_last_lo;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(bedrock_fill_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_cmd_payload_width_lp)
      ,.msg_stream_mask_p(lce_cmd_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_cmd_stream_mask_gp)
@@ -311,7 +309,7 @@ module bp_cce
      ,.fsm_header_i(fsm_cmd_header_lo)
      ,.fsm_data_i(fsm_cmd_data_lo)
      ,.fsm_v_i(fsm_cmd_v_lo)
-     ,.fsm_ready_and_o(fsm_cmd_ready_and_li)
+     ,.fsm_ready_then_o(fsm_cmd_ready_then_li)
      ,.fsm_addr_o(fsm_cmd_addr_lo)
      ,.fsm_new_o(fsm_cmd_new_lo)
      ,.fsm_critical_o(fsm_cmd_critical_lo)
@@ -325,8 +323,7 @@ module bp_cce
   logic fsm_resp_new_li, fsm_resp_critical_li, fsm_resp_last_li;
   bp_me_stream_pump_in
    #(.bp_params_p(bp_params_p)
-     ,.fsm_data_width_p(bedrock_fill_width_p)
-     ,.block_width_p(bedrock_block_width_p)
+     ,.data_width_p(bedrock_fill_width_p)
      ,.payload_width_p(lce_resp_payload_width_lp)
      ,.msg_stream_mask_p(lce_resp_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_resp_stream_mask_gp)
@@ -359,8 +356,7 @@ module bp_cce
   logic fsm_rev_new_li, fsm_rev_critical_li, fsm_rev_last_li;
   bp_me_stream_pump_in
     #(.bp_params_p(bp_params_p)
-      ,.fsm_data_width_p(bedrock_fill_width_p)
-      ,.block_width_p(bedrock_block_width_p)
+      ,.data_width_p(bedrock_fill_width_p)
       ,.payload_width_p(mem_rev_payload_width_lp)
       ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
       ,.fsm_stream_mask_p(mem_rev_stream_mask_gp)
@@ -388,13 +384,12 @@ module bp_cce
   // From CCE to memory command stream pump
   bp_bedrock_mem_fwd_header_s fsm_fwd_header_lo;
   logic [bedrock_fill_width_p-1:0] fsm_fwd_data_lo;
-  logic fsm_fwd_v_lo, fsm_fwd_ready_and_li;
+  logic fsm_fwd_v_lo, fsm_fwd_ready_then_li;
   logic [paddr_width_p-1:0] fsm_fwd_addr_lo;
   logic fsm_fwd_new_lo, fsm_fwd_critical_lo, fsm_fwd_last_lo;
   bp_me_stream_pump_out
     #(.bp_params_p(bp_params_p)
-      ,.fsm_data_width_p(bedrock_fill_width_p)
-      ,.block_width_p(bedrock_block_width_p)
+      ,.data_width_p(bedrock_fill_width_p)
       ,.payload_width_p(mem_fwd_payload_width_lp)
       ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
       ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp)
@@ -412,7 +407,7 @@ module bp_cce
       ,.fsm_header_i(fsm_fwd_header_lo)
       ,.fsm_data_i(fsm_fwd_data_lo)
       ,.fsm_v_i(fsm_fwd_v_lo)
-      ,.fsm_ready_and_o(fsm_fwd_ready_and_li)
+      ,.fsm_ready_then_o(fsm_fwd_ready_then_li)
       ,.fsm_addr_o(fsm_fwd_addr_lo)
       ,.fsm_new_o(fsm_fwd_new_lo)
       ,.fsm_critical_o(fsm_fwd_critical_lo)
@@ -724,7 +719,7 @@ module bp_cce
       ,.lce_cmd_header_o(fsm_cmd_header_lo)
       ,.lce_cmd_data_o(fsm_cmd_data_lo)
       ,.lce_cmd_v_o(fsm_cmd_v_lo)
-      ,.lce_cmd_ready_and_i(fsm_cmd_ready_and_li)
+      ,.lce_cmd_ready_then_i(fsm_cmd_ready_then_li)
       ,.lce_cmd_new_i(fsm_cmd_new_lo)
       ,.lce_cmd_last_i(fsm_cmd_last_lo)
 
@@ -748,7 +743,7 @@ module bp_cce
       ,.mem_fwd_header_o(fsm_fwd_header_lo)
       ,.mem_fwd_data_o(fsm_fwd_data_lo)
       ,.mem_fwd_v_o(fsm_fwd_v_lo)
-      ,.mem_fwd_ready_and_i(fsm_fwd_ready_and_li)
+      ,.mem_fwd_ready_then_i(fsm_fwd_ready_then_li)
       ,.mem_fwd_new_i(fsm_fwd_new_lo)
       ,.mem_fwd_last_i(fsm_fwd_last_lo)
 
@@ -842,7 +837,7 @@ module bp_cce
       ,.mem_rev_v_i(fsm_rev_v_li)
       ,.pending_v_i('0)
 
-      ,.lce_cmd_yumi_i(fsm_cmd_v_lo & fsm_cmd_ready_and_li)
+      ,.lce_cmd_yumi_i(fsm_cmd_v_lo)
       ,.mem_credits_empty_i(msg_mem_credits_empty_lo)
 
       // From Messague Unit

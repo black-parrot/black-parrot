@@ -18,8 +18,7 @@ module bp_me_stream_pump_in
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter `BSG_INV_PARAM(fsm_data_width_p)
-   , parameter `BSG_INV_PARAM(block_width_p)
+   , parameter `BSG_INV_PARAM(data_width_p)
    // width of BedRock message payload
    , parameter `BSG_INV_PARAM(payload_width_p)
 
@@ -43,11 +42,6 @@ module bp_me_stream_pump_in
    , parameter `BSG_INV_PARAM(fsm_stream_mask_p)
 
    `declare_bp_bedrock_generic_if_width(paddr_width_p, payload_width_p, xce)
-
-   , localparam fsm_bytes_lp = fsm_data_width_p >> 3
-   , localparam fsm_cnt_offset_width_lp = `BSG_SAFE_CLOG2(fsm_bytes_lp)
-   , localparam fsm_words_lp = block_width_p / fsm_data_width_p
-   , localparam fsm_cnt_width_lp = `BSG_SAFE_CLOG2(fsm_words_lp)
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -60,7 +54,7 @@ module bp_me_stream_pump_in
 
    // FSM consumer side
    , output logic [xce_header_width_lp-1:0]         fsm_header_o
-   , output logic [fsm_data_width_p-1:0]            fsm_data_o
+   , output logic [data_width_p-1:0]                fsm_data_o
    , output logic                                   fsm_v_o
    , input                                          fsm_yumi_i
    // FSM control signals
@@ -78,14 +72,18 @@ module bp_me_stream_pump_in
   `bp_cast_i(bp_bedrock_xce_header_s, msg_header);
   `bp_cast_o(bp_bedrock_xce_header_s, fsm_header);
 
+  localparam fsm_bytes_lp = data_width_p >> 3;
+  localparam fsm_words_lp = bedrock_block_width_p / data_width_p;
+  localparam fsm_cnt_width_lp = `BSG_SAFE_CLOG2(fsm_words_lp);
+
   bp_bedrock_xce_header_s msg_header_li;
-  logic [fsm_data_width_p-1:0] msg_data_li;
+  logic [data_width_p-1:0] msg_data_li;
   logic msg_v_li, msg_yumi_lo;
   bp_me_stream_gearbox
    #(.bp_params_p(bp_params_p)
      ,.buffered_p(1)
      ,.in_data_width_p(bedrock_fill_width_p)
-     ,.out_data_width_p(fsm_data_width_p)
+     ,.out_data_width_p(data_width_p)
      ,.payload_width_p(payload_width_p)
      ,.stream_mask_p(msg_stream_mask_p)
      )
@@ -117,9 +115,8 @@ module bp_me_stream_pump_in
   logic cnt_up;
   bp_me_stream_pump_control
    #(.bp_params_p(bp_params_p)
-     ,.block_width_p(block_width_p)
      ,.stream_mask_p(fsm_stream_mask_p)
-     ,.data_width_p(fsm_data_width_p)
+     ,.data_width_p(data_width_p)
      ,.payload_width_p(payload_width_p)
      ,.widest_beat_size_p(widest_beat_size_lp)
      )
@@ -148,14 +145,6 @@ module bp_me_stream_pump_in
         msg_yumi_lo = fsm_last_o & fsm_yumi_i;
         cnt_up = fsm_yumi_i;
       end
-    else if (msg_stream & ~fsm_stream & nz_stream)
-      begin
-        // N:1
-        // consume all but first msg input beat silently
-        fsm_v_o = msg_v_li & fsm_new_o;
-        msg_yumi_lo = msg_v_li & (fsm_yumi_i | ~fsm_new_o);
-        cnt_up = msg_yumi_lo;
-      end
     else
       begin
         // 1:1
@@ -165,10 +154,10 @@ module bp_me_stream_pump_in
       end
 
   // parameter checks
-  if (block_width_p % fsm_data_width_p != 0)
-    $error("block_width_p must be evenly divisible by fsm_data_width_p");
-  if (block_width_p < fsm_data_width_p)
-    $error("block_width_p must be at least as large as fsm_data_width_p");
+  if (bedrock_block_width_p % data_width_p != 0)
+    $error("bedrock_block_width_p must be evenly divisible by data_width_p");
+  if (bedrock_block_width_p < data_width_p)
+    $error("bedrock_block_width_p must be at least as large as data_width_p");
 
 endmodule
 

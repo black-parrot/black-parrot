@@ -14,7 +14,7 @@ module bp_be_top
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p)
+   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, dcache_tag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p)
 
    // Default parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
@@ -83,13 +83,13 @@ module bp_be_top
   bp_be_dispatch_pkt_s dispatch_pkt;
   bp_be_branch_pkt_s   br_pkt;
 
-  logic dispatch_v, interrupt_v, ispec_v;
+  logic ordered_v, hazard_v, ispec_v;
   logic irq_pending_lo, irq_waiting_lo;
 
   bp_be_commit_pkt_s commit_pkt;
-  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
   bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
   bp_be_decode_info_s decode_info_lo;
+  bp_be_trans_info_s trans_info_lo;
 
   logic [wb_pkt_width_lp-1:0] late_wb_pkt;
   logic late_wb_v_lo, late_wb_force_lo, late_wb_yumi_li;
@@ -99,7 +99,7 @@ module bp_be_top
   logic npc_mismatch_lo, poison_isd_lo, clear_iss_lo, suppress_iss_lo, resume_lo;
 
   logic cmd_full_n_lo, cmd_full_r_lo, cmd_empty_n_lo, cmd_empty_r_lo;
-  logic mem_ordered_lo, mem_busy_lo, idiv_busy_lo, fdiv_busy_lo, ptw_busy_lo;
+  logic mem_ordered_lo, mem_busy_lo, idiv_busy_lo, fdiv_busy_lo;
 
   bp_be_director
    #(.bp_params_p(bp_params_p))
@@ -121,11 +121,8 @@ module bp_be_top
      ,.suppress_iss_o(suppress_iss_lo)
      ,.irq_waiting_i(irq_waiting_lo)
      ,.mem_busy_i(mem_busy_lo)
-     ,.cmd_empty_n_o()
-     ,.cmd_empty_r_o()
      ,.cmd_full_n_o(cmd_full_n_lo)
      ,.cmd_full_r_o(cmd_full_r_lo)
-     ,.dispatch_v_i(dispatch_v)
 
      ,.br_pkt_i(br_pkt)
      ,.commit_pkt_i(commit_pkt)
@@ -145,12 +142,9 @@ module bp_be_top
      ,.mem_ordered_i(mem_ordered_lo)
      ,.fdiv_busy_i(fdiv_busy_lo)
      ,.idiv_busy_i(idiv_busy_lo)
-     ,.ptw_busy_i(ptw_busy_lo)
-     ,.irq_pending_i(irq_pending_lo)
-
      ,.ispec_v_o(ispec_v)
-     ,.dispatch_v_o(dispatch_v)
-     ,.interrupt_v_o(interrupt_v)
+     ,.hazard_v_o(hazard_v)
+     ,.ordered_v_o(ordered_v)
      ,.dispatch_pkt_i(dispatch_pkt)
      ,.commit_pkt_i(commit_pkt)
 
@@ -167,13 +161,15 @@ module bp_be_top
      ,.poison_isd_i(poison_isd_lo)
      ,.resume_i(resume_lo)
      ,.decode_info_i(decode_info_lo)
+     ,.trans_info_i(trans_info_lo)
      ,.issue_pkt_o(issue_pkt)
      ,.suppress_iss_i(suppress_iss_lo)
      ,.clear_iss_i(clear_iss_lo)
      ,.expected_npc_i(expected_npc_lo)
-     ,.dispatch_v_i(dispatch_v)
-     ,.interrupt_v_i(interrupt_v)
+     ,.hazard_v_i(hazard_v)
      ,.ispec_v_i(ispec_v)
+     ,.irq_pending_i(irq_pending_lo)
+     ,.ordered_v_i(ordered_v)
 
      ,.fe_queue_i(fe_queue_i)
      ,.fe_queue_v_i(fe_queue_v_i)
@@ -184,7 +180,6 @@ module bp_be_top
      ,.iwb_pkt_i(iwb_pkt)
      ,.fwb_pkt_i(fwb_pkt)
 
-     ,.ptw_fill_pkt_i(ptw_fill_pkt)
      ,.late_wb_pkt_i(late_wb_pkt)
      ,.late_wb_v_i(late_wb_v_lo)
      ,.late_wb_force_i(late_wb_force_lo)
@@ -199,11 +194,11 @@ module bp_be_top
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.decode_info_o(decode_info_lo)
+     ,.trans_info_o(trans_info_lo)
      ,.mem_busy_o(mem_busy_lo)
      ,.mem_ordered_o(mem_ordered_lo)
      ,.idiv_busy_o(idiv_busy_lo)
      ,.fdiv_busy_o(fdiv_busy_lo)
-     ,.ptw_busy_o(ptw_busy_lo)
 
      ,.dispatch_pkt_i(dispatch_pkt)
      ,.br_pkt_o(br_pkt)
@@ -211,7 +206,6 @@ module bp_be_top
      ,.iwb_pkt_o(iwb_pkt)
      ,.fwb_pkt_o(fwb_pkt)
 
-     ,.ptw_fill_pkt_o(ptw_fill_pkt)
      ,.late_wb_pkt_o(late_wb_pkt)
      ,.late_wb_v_o(late_wb_v_lo)
      ,.late_wb_force_o(late_wb_force_lo)

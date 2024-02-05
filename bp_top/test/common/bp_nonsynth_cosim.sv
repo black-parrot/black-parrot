@@ -20,6 +20,7 @@ module bp_nonsynth_cosim
     , input                                   cosim_en_i
     , input                                   trace_en_i
     , input                                   amo_en_i
+    , input                                   finish_i
 
     , input                                   checkpoint_i
     , input [31:0]                            num_core_i
@@ -54,16 +55,14 @@ module bp_nonsynth_cosim
     , input                                   cosim_reset_i
     );
 
-  import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus, int memory_size, bit checkpoint);
-  import "DPI-C" context function int dromajo_step(int hartid,
+  import "DPI-C" context function void cosim_init(int hartid, int ncpus, int memory_size, bit checkpoint);
+  import "DPI-C" context function int cosim_step(int hartid,
                                                    longint pc,
                                                    int insn,
                                                    longint wdata,
                                                    longint mstatus);
-  import "DPI-C" context function void dromajo_trap(int hartid, longint cause);
-
-  import "DPI-C" context function void set_finish(int hartid);
-  import "DPI-C" context function bit check_terminate();
+  import "DPI-C" context function void cosim_trap(int hartid, longint cause);
+  import "DPI-C" context function void cosim_finish();
 
 `ifndef XCELIUM
 
@@ -128,38 +127,39 @@ module bp_nonsynth_cosim
   wire [dword_width_gp-1:0] mstatus_li = mstatus_i;
   wire commit_fifo_v_li = instret_v_li | trap_v_li;
   bsg_async_fifo
-   #(.width_p(3+vaddr_width_p+instr_width_gp+3+2*dword_width_gp), .lg_size_p(10))
+   #(.width_p(4+vaddr_width_p+instr_width_gp+3+2*dword_width_gp), .lg_size_p(10))
    commit_fifo
     (.w_clk_i(posedge_clk)
      ,.w_reset_i(reset_i)
      ,.w_enq_i(commit_fifo_v_li & ~commit_fifo_full_lo)
-     ,.w_data_i({is_debug_mode_r, instret_v_li, trap_v_li, commit_pc_li, commit_instr_li, commit_ird_w_v_li, commit_frd_w_v_li, commit_req_v_li, cause_li, mstatus_li})
+     ,.w_data_i({freeze_i, is_debug_mode_r, instret_v_li, trap_v_li, commit_pc_li, commit_instr_li, commit_ird_w_v_li, commit_frd_w_v_li, commit_req_v_li, cause_li, mstatus_li})
      ,.w_full_o(commit_fifo_full_lo)
 
      ,.r_clk_i(cosim_clk_i)
      ,.r_reset_i(cosim_reset_i)
      ,.r_deq_i(commit_fifo_v_lo & commit_fifo_yumi_li)
-     ,.r_data_o({commit_debug_r, instret_v_r, trap_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, commit_req_v_r, cause_r, mstatus_r})
+     ,.r_data_o({commit_freeze_r, commit_debug_r, instret_v_r, trap_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, commit_req_v_r, cause_r, mstatus_r})
      ,.r_valid_o(commit_fifo_v_lo)
      );
 
   localparam rf_els_lp = 2**reg_addr_width_gp;
-  logic [rf_els_lp-1:0][dword_width_gp-1:0] ird_data_r;
   bp_be_fp_reg_s [rf_els_lp-1:0] frd_data_r;
+  bp_be_int_reg_s [rf_els_lp-1:0] ird_data_r;
   logic [rf_els_lp-1:0] ird_fifo_v_lo, frd_fifo_v_lo;
-  logic [rf_els_lp-1:0][dword_width_gp-1:0] frd_raw_li;
+  logic [rf_els_lp-1:0][dword_width_gp-1:0] ird_raw_li;
+  logic [rf_els_lp-1:0][dp_rec_width_gp-1:0] frd_raw_li;
 
   for (genvar i = 0; i < rf_els_lp; i++)
     begin : iwb
       wire fill       = ird_w_v_i & (ird_addr_i == i);
       wire deallocate = commit_ird_w_v_r & (commit_instr_r.rd_addr == i) & commit_fifo_yumi_li;
       bsg_async_fifo
-       #(.width_p(dword_width_gp), .lg_size_p(10))
+       #(.width_p(dpath_width_gp), .lg_size_p(10))
        ird_fifo
         (.w_clk_i(posedge_clk)
          ,.w_reset_i(reset_i)
          ,.w_enq_i(fill)
-         ,.w_data_i(ird_data_i[0+:dword_width_gp])
+         ,.w_data_i(ird_data_i)
          ,.w_full_o()
 
          ,.r_clk_i(cosim_clk_i)
@@ -167,6 +167,16 @@ module bp_nonsynth_cosim
          ,.r_deq_i(deallocate)
          ,.r_data_o(ird_data_r[i])
          ,.r_valid_o(ird_fifo_v_lo[i])
+         );
+
+      logic [dpath_width_gp-1:0] ird_data_lo;
+      bp_be_int_unbox
+       #(.bp_params_p(bp_params_p))
+       int_unbox
+        (.reg_i(ird_data_r[i])
+         ,.tag_i(ird_data_r[i].tag)
+         ,.unsigned_i(1'b0)
+         ,.val_o(ird_raw_li[i])
          );
     end
 
@@ -190,19 +200,16 @@ module bp_nonsynth_cosim
          ,.r_valid_o(frd_fifo_v_lo[i])
          );
 
-      // The control bits control tininess, which is fixed in RISC-V
-      wire [`floatControlWidth-1:0] control_li = `flControl_default;
-
-      bp_be_reg_to_fp
+      bp_be_fp_unbox
        #(.bp_params_p(bp_params_p))
-       unrecode
+       fp_unbox
         (.reg_i(frd_data_r[i])
-         ,.raw_o(frd_raw_li[i])
+         ,.tag_i(frd_data_r[i].tag)
+         ,.raw_i(1'b1)
+         ,.val_o(frd_raw_li[i])
          );
     end
 
-  wire [dword_width_gp-1:0] commit_ird_li = ird_data_r[commit_instr_r.rd_addr];
-  wire [dword_width_gp-1:0] commit_frd_li = frd_raw_li[commit_instr_r.rd_addr];
   wire commit_ird_v_lo = ird_fifo_v_lo[commit_instr_r.rd_addr];
   wire commit_frd_v_lo = frd_fifo_v_lo[commit_instr_r.rd_addr];
 
@@ -240,26 +247,28 @@ module bp_nonsynth_cosim
      ,.count_o(instr_cnt)
      );
 
-  logic finish_r, terminate;
+  logic finish_r;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    finish_reg
     (.clk_i(cosim_clk_i)
      ,.reset_i(cosim_reset_i)
 
-     ,.set_i((instr_cap_i != 0 && instr_cnt == instr_cap_i))
+     ,.set_i((instr_cap_i != 0 && instr_cnt == instr_cap_i) | finish_i)
      ,.clear_i('0)
      ,.data_o(finish_r)
      );
 
   always_ff @(negedge reset_i)
     if (cosim_en_i)
-      dromajo_init(string'(config_file_i), mhartid_i, num_core_i, memsize_i, checkpoint_i);
+      cosim_init(mhartid_i, num_core_i, memsize_i, checkpoint_i);
 
   wire [dword_width_gp-1:0] cosim_pc_li     = `BSG_SIGN_EXTEND(commit_pc_r, dword_width_gp);
   wire [instr_width_gp-1:0] cosim_instr_li  = commit_instr_r;
   wire [dword_width_gp-1:0] cosim_cause_li  = cause_r;
-  wire [dword_width_gp-1:0] cosim_ird_li    = ird_data_r[commit_instr_r.rd_addr];
+  wire [dpath_width_gp-1:0] cosim_ireg_li   = ird_data_r[commit_instr_r.rd_addr];
+  wire [dword_width_gp-1:0] cosim_ird_li    = ird_raw_li[commit_instr_r.rd_addr];
+  wire [dpath_width_gp-1:0] cosim_freg_li   = frd_data_r[commit_instr_r.rd_addr];
   wire [dword_width_gp-1:0] cosim_frd_li    = frd_raw_li[commit_instr_r.rd_addr];
   wire [dword_width_gp-1:0] cosim_rd_li     = commit_fwb_li ? cosim_frd_li : cosim_ird_li;
   wire [dword_width_gp-1:0] cosim_status_li = mstatus_r;
@@ -267,12 +276,13 @@ module bp_nonsynth_cosim
   always_ff @(posedge cosim_clk_i)
     if (cosim_reset_i)
       ret_code <= 0;
-    else if (cosim_en_i & commit_fifo_yumi_li & !finish_r & trap_v_r)
-      dromajo_trap(mhartid_i, cosim_cause_li);
-    else if (~commit_debug_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
-      ret_code <= dromajo_step(mhartid_i, cosim_pc_li, cosim_instr_li, cosim_rd_li, cosim_status_li);
+    else if (~commit_debug_r & ~commit_freeze_r & cosim_en_i & commit_fifo_yumi_li & !finish_r & trap_v_r)
+      cosim_trap(mhartid_i, cosim_cause_li);
+    else if (~commit_debug_r & ~commit_freeze_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
+      ret_code <= cosim_step(mhartid_i, cosim_pc_li, cosim_instr_li, cosim_rd_li, cosim_status_li);
 
    // ret_code: {exit_code, terminate}
+   logic terminate;
    always_ff @(negedge cosim_clk_i)
      if (ret_code >> 1)
        begin
@@ -285,13 +295,10 @@ module bp_nonsynth_cosim
           $display("COSIM_PASS: %d", ret_code);
           $finish();
        end
-
-  always_ff @(posedge cosim_clk_i)
-    if (finish_r)
-      begin
-        set_finish(mhartid_i);
-        terminate <= check_terminate();
-      end
+     else if (finish_r)
+       begin
+         cosim_finish();
+       end
 
   integer file;
   string file_name;
@@ -305,11 +312,11 @@ module bp_nonsynth_cosim
   always_ff @(posedge cosim_clk_i)
     if (trace_en_i & commit_fifo_yumi_li & commit_pc_r != '0)
       begin
-        $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, instr_cnt);
+        $fwrite(file, "%x %x %x %x ", mhartid_i, cosim_pc_li, cosim_instr_li, instr_cnt);
         if (instret_v_r & commit_ird_w_v_r)
-          $fwrite(file, "%x %x", commit_instr_r.rd_addr, commit_ird_li);
+          $fwrite(file, "%x %x", commit_instr_r.rd_addr, cosim_ird_li);
         if (instret_v_r & commit_frd_w_v_r)
-          $fwrite(file, "%x %x", commit_instr_r.rd_addr, commit_frd_li);
+          $fwrite(file, "%x %x", commit_instr_r.rd_addr, cosim_frd_li);
         if (trap_v_r)
           $fwrite(file, "   %x %x <- trap", cause_r, mstatus_r);
         $fwrite(file, "\n");

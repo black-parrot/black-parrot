@@ -21,16 +21,16 @@ module bp_be_calculator_top
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, dcache_ctag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p)
+    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, dcache_tag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p)
 
    // Generated parameters
    , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
-   , localparam ptw_fill_pkt_width_lp   = `bp_be_ptw_fill_pkt_width(vaddr_width_p, paddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam decode_info_width_lp    = `bp_be_decode_info_width
+   , localparam trans_info_width_lp     = `bp_be_trans_info_width(ptag_width_p)
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -44,8 +44,8 @@ module bp_be_calculator_top
    , output logic                                    fdiv_busy_o
    , output logic                                    mem_busy_o
    , output logic                                    mem_ordered_o
-   , output logic                                    ptw_busy_o
    , output logic [decode_info_width_lp-1:0]         decode_info_o
+   , output logic [trans_info_width_lp-1:0]          trans_info_o
    , input                                           cmd_full_n_i
 
    , output logic [commit_pkt_width_lp-1:0]          commit_pkt_o
@@ -53,7 +53,6 @@ module bp_be_calculator_top
    , output logic [wb_pkt_width_lp-1:0]              iwb_pkt_o
    , output logic [wb_pkt_width_lp-1:0]              fwb_pkt_o
 
-   , output logic [ptw_fill_pkt_width_lp-1:0]        ptw_fill_pkt_o
    , output logic [wb_pkt_width_lp-1:0]              late_wb_pkt_o
    , output logic                                    late_wb_v_o
    , output logic                                    late_wb_force_o
@@ -114,9 +113,7 @@ module bp_be_calculator_top
   bp_be_wb_pkt_s [pipe_stage_els_lp  :0] comp_stage_n;
   bp_be_wb_pkt_s [pipe_stage_els_lp-1:0] comp_stage_r;
 
-  bp_be_ptw_fill_pkt_s ptw_fill_pkt;
-  bp_be_trans_info_s   trans_info_lo;
-  rv64_frm_e           frm_dyn_lo;
+  rv64_frm_e frm_dyn_lo;
 
   bp_be_wb_pkt_s pipe_long_iwb_pkt, pipe_long_fwb_pkt;
 
@@ -143,7 +140,6 @@ module bp_be_calculator_top
 
   bp_be_wb_pkt_s pipe_mem_late_wb_pkt;
   logic pipe_mem_late_wb_v, pipe_mem_late_wb_yumi;
-  logic ptw_fill_v, ptw_fill_yumi;
 
   // Generating match vector for bypass
   logic [2:0][pipe_stage_els_lp-1:0] match_rs;
@@ -181,23 +177,16 @@ module bp_be_calculator_top
          );
     end
 
-  // Override operands with bypass data
-  bp_be_dispatch_pkt_s reservation_n, reservation_r;
-  always_comb
-    begin
-      reservation_n          = dispatch_pkt_cast_i;
-      reservation_n.rs1      = bypass_rs[0];
-      reservation_n.rs2      = bypass_rs[1];
-      reservation_n.imm      = bypass_rs[2];
-    end
-  wire injection = dispatch_pkt_cast_i.v & ~dispatch_pkt_cast_i.queue_v;
-
-  bsg_dff
-   #(.width_p(dispatch_pkt_width_lp))
+  bp_be_reservation_s reservation_r;
+  bp_be_reservation
+   #(.bp_params_p(bp_params_p))
    reservation_reg
     (.clk_i(clk_i)
-     ,.data_i(reservation_n)
-     ,.data_o(reservation_r)
+     ,.reset_i(reset_i)
+
+     ,.dispatch_pkt_i(dispatch_pkt_cast_i)
+     ,.bypass_rs_i(bypass_rs)
+     ,.reservation_o(reservation_r)
      );
 
   // Computation pipelines
@@ -214,6 +203,7 @@ module bp_be_calculator_top
 
      ,.retire_v_i(exc_stage_r[2].v)
      ,.retire_queue_v_i(exc_stage_r[2].queue_v)
+     ,.retire_partial_v_i(exc_stage_r[2].partial_v)
      ,.retire_data_i(comp_stage_r[2].rd_data)
      ,.retire_exception_i(exc_stage_r[2].exc)
      ,.retire_special_i(exc_stage_r[2].spec)
@@ -234,7 +224,7 @@ module bp_be_calculator_top
      ,.v_o(pipe_sys_data_v_lo)
 
      ,.decode_info_o(decode_info_o)
-     ,.trans_info_o(trans_info_lo)
+     ,.trans_info_o(trans_info_o)
      ,.frm_dyn_o(frm_dyn_lo)
      );
 
@@ -257,36 +247,54 @@ module bp_be_calculator_top
      ,.instr_misaligned_v_o(pipe_int_early_instr_misaligned_lo)
      );
 
-  assign br_pkt_cast_o.v      = reservation_r.v & reservation_r.queue_v & ~commit_pkt_cast_o.npc_w_v;
+  assign br_pkt_cast_o.v      = exc_stage_r[0].v & exc_stage_r[0].queue_v & ~commit_pkt_cast_o.npc_w_v;
   assign br_pkt_cast_o.branch = br_pkt_cast_o.v & pipe_int_early_branch_lo;
   assign br_pkt_cast_o.btaken = br_pkt_cast_o.v & pipe_int_early_btaken_lo;
   assign br_pkt_cast_o.bspec  = br_pkt_cast_o.v & exc_stage_r[0].ispec_v;
   assign br_pkt_cast_o.npc    = pipe_int_early_npc_lo;
 
+  logic [dword_width_gp-1:0] rs2_val_r;
   if (integer_support_p[e_catchup])
     begin : catchup
-      bp_be_dispatch_pkt_s catchup_reservation_n, catchup_reservation_r;
+      logic [dword_width_gp-1:0] catchup_bypass_src1;
+      bp_be_int_unbox
+       #(.bp_params_p(bp_params_p))
+       irs1_unbox
+        (.reg_i(comp_stage_n[2].rd_data)
+         ,.tag_i(reservation_r.decode.int_tag)
+         ,.unsigned_i(reservation_r.decode.rs1_unsigned)
+         ,.val_o(catchup_bypass_src1)
+         );
+
+      logic [dword_width_gp-1:0] catchup_bypass_src2;
+      bp_be_int_unbox
+       #(.bp_params_p(bp_params_p))
+       irs2_unbox
+        (.reg_i(comp_stage_n[2].rd_data)
+         ,.tag_i(reservation_r.decode.int_tag)
+         ,.unsigned_i(reservation_r.decode.rs2_unsigned)
+         ,.val_o(catchup_bypass_src2)
+         );
+
+      bp_be_reservation_s catchup_reservation_n, catchup_reservation_r;
+      always_comb
+        begin
+          catchup_reservation_n = reservation_r;
+          if (reservation_r.decode.irs1_r_v && comp_stage_r[1].ird_w_v && (comp_stage_r[1].rd_addr == reservation_r.instr.t.rtype.rs1_addr))
+            catchup_reservation_n.isrc1 = catchup_bypass_src1;
+          if (reservation_r.decode.irs2_r_v && comp_stage_r[1].ird_w_v && (comp_stage_r[1].rd_addr == reservation_r.instr.t.rtype.rs2_addr))
+            catchup_reservation_n.isrc2 = catchup_bypass_src2;
+        end
+
       bsg_dff
-       #(.width_p(dispatch_pkt_width_lp))
+       #(.width_p($bits(bp_be_reservation_s)))
        catchup_reservation_reg
         (.clk_i(clk_i)
          ,.data_i(catchup_reservation_n)
          ,.data_o(catchup_reservation_r)
          );
 
-      always_comb
-        begin
-          catchup_reservation_n = reservation_r;
-
-          catchup_reservation_n.rs1 = (reservation_r.decode.irs1_r_v && comp_stage_r[1].ird_w_v && (comp_stage_r[1].rd_addr == reservation_r.instr.t.rtype.rs1_addr))
-            ? comp_stage_n[2].rd_data
-            : catchup_reservation_n.rs1;
-          catchup_reservation_n.rs2 = (reservation_r.decode.irs2_r_v && comp_stage_r[1].ird_w_v && (comp_stage_r[1].rd_addr == reservation_r.instr.t.rtype.rs2_addr))
-            ? comp_stage_n[2].rd_data
-            : catchup_reservation_n.rs2;
-        end
-
-      // Late integer pipe: 1 cycle latency, starts at EX2
+      // Catchup integer pipe: 1 cycle latency, starts at EX2
       bp_be_pipe_int
        #(.bp_params_p(bp_params_p))
        pipe_int_catchup
@@ -305,6 +313,9 @@ module bp_be_calculator_top
          ,.instr_misaligned_v_o(pipe_int_catchup_instr_misaligned_lo)
          );
       assign pipe_int_catchup_mispredict_lo = exc_stage_r[1].ispec_v & (pipe_int_catchup_npc_lo != reservation_r.pc);
+
+      assign rs2_val_r =
+        catchup_reservation_r.decode.irs2_r_v ? catchup_reservation_r.isrc2 : catchup_reservation_r.fsrc2;;
     end
   else
     begin : no_catchup
@@ -312,6 +323,16 @@ module bp_be_calculator_top
       assign pipe_int_catchup_data_v_lo = '0;
       assign pipe_int_catchup_mispredict_lo = '0;
       assign pipe_int_catchup_instr_misaligned_lo = '0;
+
+      wire [dword_width_gp-1:0] rs2_val_n =
+        reservation_r.decode.irs2_r_v ? reservation_r.isrc2 : reservation_r.fsrc2;
+      bsg_dff
+       #(.width_p(dword_width_gp))
+       rs2_reg
+        (.clk_i(clk_i)
+         ,.data_i(rs2_val_n)
+         ,.data_o(rs2_val_r)
+         );
     end
 
   // Aux pipe: 2 cycle latency
@@ -342,11 +363,11 @@ module bp_be_calculator_top
      ,.flush_i(commit_pkt_cast_o.npc_w_v)
      ,.sfence_i(commit_pkt_cast_o.sfence)
 
-     ,.ptw_busy_o(ptw_busy_o)
      ,.busy_o(mem_busy_o)
      ,.ordered_o(mem_ordered_o)
 
      ,.reservation_i(reservation_r)
+     ,.rs2_val_i(rs2_val_r)
 
      ,.commit_pkt_i(commit_pkt_cast_o)
 
@@ -397,10 +418,7 @@ module bp_be_calculator_top
      ,.late_wb_pkt_o(pipe_mem_late_wb_pkt)
      ,.late_wb_v_o(pipe_mem_late_wb_v)
 
-     ,.ptw_fill_pkt_o(ptw_fill_pkt_o)
-     ,.ptw_fill_v_o(ptw_fill_v)
-
-     ,.trans_info_i(trans_info_lo)
+     ,.trans_info_i(trans_info_o)
      );
 
   // Floating point pipe: 3/4 cycle latency
@@ -449,11 +467,11 @@ module bp_be_calculator_top
     late_wb_grants_lo & {num_late_wb_lp{late_wb_yumi_i}};
   assign late_wb_reqs_li = {pipe_long_fdata_v_lo, pipe_long_idata_v_lo, pipe_mem_late_wb_v};
   bsg_arb_fixed
-   #(.inputs_p(1+num_late_wb_lp), .lo_to_hi_p(1))
+   #(.inputs_p(num_late_wb_lp), .lo_to_hi_p(1))
    late_wb_arb
     (.ready_then_i(1'b1)
-     ,.reqs_i({late_wb_reqs_li, ptw_fill_v})
-     ,.grants_o({late_wb_grants_lo, ptw_fill_yumi})
+     ,.reqs_i(late_wb_reqs_li)
+     ,.grants_o(late_wb_grants_lo)
      );
 
   bp_be_wb_pkt_s late_wb_pkt_sel;
@@ -469,21 +487,21 @@ module bp_be_calculator_top
 
   assign late_wb_pkt_cast_o = late_wb_pkt_sel;
   assign late_wb_v_o = |late_wb_grants_lo;
-  assign late_wb_force_o = pipe_mem_late_wb_v | ptw_fill_v;
+  assign late_wb_force_o = pipe_mem_late_wb_v;
 
   // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
   // Else, mux in the previous stage of the completion pipe. Since we are single issue and have
   //   static latencies, we cannot have two pipelines complete at the same time.
+  wire injection = dispatch_pkt_cast_i.v & ~dispatch_pkt_cast_i.queue_v;
   always_comb
     begin
       for (integer i = 0; i <= pipe_stage_els_lp; i++)
         begin : comp_stage
           // Normally, shift down in the pipe
           comp_stage_n[i] = (i == 0)
-            ? '{ird_w_v    : late_wb_yumi_i ? late_wb_pkt_cast_o.ird_w_v    : reservation_n.decode.irf_w_v
-                ,frd_w_v   : late_wb_yumi_i ? late_wb_pkt_cast_o.frd_w_v    : reservation_n.decode.frf_w_v
-                ,fflags_w_v: late_wb_yumi_i ? late_wb_pkt_cast_o.fflags_w_v : reservation_n.decode.fflags_w_v
-                ,rd_addr   : late_wb_yumi_i ? late_wb_pkt_cast_o.rd_addr    : reservation_n.instr.t.rtype.rd_addr
+            ? '{ird_w_v    : dispatch_pkt_cast_i.decode.irf_w_v
+                ,frd_w_v   : dispatch_pkt_cast_i.decode.frf_w_v
+                ,rd_addr   : dispatch_pkt_cast_i.instr.t.rtype.rd_addr
                 ,default: '0
                 }
             : comp_stage_r[i-1];
@@ -499,7 +517,8 @@ module bp_be_calculator_top
       comp_stage_n[3].rd_data    |= pipe_mul_data_v_lo         ? pipe_mul_data_lo         : '0;
       comp_stage_n[4].rd_data    |= pipe_fma_data_v_lo         ? pipe_fma_data_lo         : '0;
 
-      comp_stage_n[0].fflags     |= injection                  ? dispatch_pkt_cast_i.rs1  : '0;
+      // Injected instructions can carry a payload in imm
+      comp_stage_n[0].fflags     |= injection                  ? dispatch_pkt_cast_i.imm  : '0;
       comp_stage_n[2].fflags     |= pipe_aux_data_v_lo         ? pipe_aux_fflags_lo       : '0;
       comp_stage_n[4].fflags     |= pipe_fma_data_v_lo         ? pipe_fma_fflags_lo       : '0;
 
@@ -507,16 +526,19 @@ module bp_be_calculator_top
       comp_stage_n[1].ird_w_v    &= exc_stage_n[1].v;
       comp_stage_n[2].ird_w_v    &= exc_stage_n[2].v;
       comp_stage_n[3].ird_w_v    &= exc_stage_n[3].v;
+      comp_stage_n[4].ird_w_v    &= exc_stage_n[4].v;
 
       comp_stage_n[0].frd_w_v    &= exc_stage_n[0].v;
       comp_stage_n[1].frd_w_v    &= exc_stage_n[1].v;
       comp_stage_n[2].frd_w_v    &= exc_stage_n[2].v;
       comp_stage_n[3].frd_w_v    &= exc_stage_n[3].v;
+      comp_stage_n[4].frd_w_v    &= exc_stage_n[4].v;
 
-      comp_stage_n[0].fflags_w_v &= exc_stage_n[0].v;
-      comp_stage_n[1].fflags_w_v &= exc_stage_n[1].v;
-      comp_stage_n[2].fflags_w_v &= exc_stage_n[2].v;
-      comp_stage_n[3].fflags_w_v &= exc_stage_n[3].v;
+      comp_stage_n[0].fflags     &= {5{exc_stage_n[0].v}};
+      comp_stage_n[1].fflags     &= {5{exc_stage_n[1].v}};
+      comp_stage_n[2].fflags     &= {5{exc_stage_n[2].v}};
+      comp_stage_n[3].fflags     &= {5{exc_stage_n[3].v}};
+      comp_stage_n[4].fflags     &= {5{exc_stage_n[4].v}};
 
       comp_stage_n[3].ird_w_v    &= ~commit_pkt_cast_o.iscore_v;
       comp_stage_n[3].frd_w_v    &= ~commit_pkt_cast_o.fscore_v;
@@ -540,14 +562,15 @@ module bp_be_calculator_top
           // Normally, shift down in the pipe
           exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
         end
-          exc_stage_n[0].v                        |= reservation_n.v;
-          exc_stage_n[0].queue_v                  |= reservation_n.queue_v;
-          exc_stage_n[0].ispec_v                  |= reservation_n.ispec_v;
-          exc_stage_n[0].nspec_v                  |= reservation_n.nspec_v;
-          exc_stage_n[0].spec                     |= reservation_n.special;
-          exc_stage_n[0].exc                      |= reservation_n.exception;
+          exc_stage_n[0].v                        |= dispatch_pkt_cast_i.v;
+          exc_stage_n[0].queue_v                  |= dispatch_pkt_cast_i.queue_v;
+          exc_stage_n[0].ispec_v                  |= dispatch_pkt_cast_i.ispec_v;
+          exc_stage_n[0].nspec_v                  |= dispatch_pkt_cast_i.nspec_v;
+          exc_stage_n[0].partial_v                |= dispatch_pkt_cast_i.partial;
+          exc_stage_n[0].spec                     |= dispatch_pkt_cast_i.special;
+          exc_stage_n[0].exc                      |= dispatch_pkt_cast_i.exception;
 
-          exc_stage_n[0].v                        &= ~commit_pkt_cast_o.npc_w_v | reservation_n.nspec_v;
+          exc_stage_n[0].v                        &= ~commit_pkt_cast_o.npc_w_v | dispatch_pkt_cast_i.nspec_v;
           exc_stage_n[1].v                        &= ~commit_pkt_cast_o.npc_w_v | exc_stage_r[0].nspec_v;
           exc_stage_n[2].v                        &= ~commit_pkt_cast_o.npc_w_v | exc_stage_r[1].nspec_v;
           exc_stage_n[3].v                        &=  commit_pkt_cast_o.instret | exc_stage_r[2].nspec_v;
@@ -558,7 +581,7 @@ module bp_be_calculator_top
 
           exc_stage_n[1].exc.illegal_instr        |= pipe_sys_illegal_instr_lo;
 
-          exc_stage_n[1].exc.instr_misaligned     |= pipe_int_early_instr_misaligned_lo & ~exc_stage_r[0].ispec_v;
+          exc_stage_n[1].exc.instr_misaligned     |= pipe_int_early_instr_misaligned_lo;
 
           exc_stage_n[1].exc.dtlb_store_miss      |= pipe_mem_dtlb_store_miss_lo;
           exc_stage_n[1].exc.dtlb_load_miss       |= pipe_mem_dtlb_load_miss_lo;

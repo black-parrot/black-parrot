@@ -66,7 +66,7 @@
       logic [addr_width_mp-1:0]                    addr;                                    \
       bp_bedrock_wr_subop_e                        subop;                                   \
       bp_bedrock_msg_u                             msg_type;                                \
-    } bp_bedrock_``name_mp``_header_s;                                                      \
+    } bp_bedrock_``name_mp``_header_s
 
   /*
    * bp_bedrock_***_payload_s defines the payload for the various BedRock protocol channels

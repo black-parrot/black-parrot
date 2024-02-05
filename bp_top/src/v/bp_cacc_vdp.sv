@@ -10,7 +10,7 @@ module bp_cacc_vdp
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache_req_id_width_p)
+    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, acache_tag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache_req_id_width_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
     )
@@ -94,9 +94,8 @@ module bp_cacc_vdp
   assign global_addr_lo = addr_lo;
   assign local_addr_lo = addr_lo;
 
-  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   bp_be_dcache_pkt_s acache_pkt_li;
-  logic acache_ready_and_lo, acache_v_li;
+  logic acache_busy_lo, acache_v_li;
   logic [dword_width_gp-1:0] acache_data_lo;
   logic acache_v_lo;
 
@@ -105,7 +104,7 @@ module bp_cacc_vdp
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
   assign cfg_bus_cast_i.dcache_mode = e_lce_mode_normal;
 
-  `declare_bp_be_dcache_engine_if(paddr_width_p, acache_ctag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache_req_id_width_p);
+  `declare_bp_be_dcache_engine_if(paddr_width_p, acache_tag_width_p, acache_sets_p, acache_assoc_p, dword_width_gp, acache_block_width_p, acache_fill_width_p, acache_req_id_width_p);
   bp_be_dcache_req_s acache_req_lo;
   logic acache_req_v_lo, acache_req_yumi_li, acache_req_lock_li;
   bp_be_dcache_req_metadata_s acache_req_metadata_lo;
@@ -141,7 +140,7 @@ module bp_cacc_vdp
 
      ,.dcache_pkt_i(acache_pkt_li)
      ,.v_i(acache_v_li)
-     ,.ready_and_o(acache_ready_and_lo)
+     ,.busy_o(acache_busy_lo)
      ,.flush_i(1'b0)
      ,.ordered_o()
 
@@ -151,18 +150,14 @@ module bp_cacc_vdp
      ,.ptag_dram_i(1'b1)
      ,.st_data_i(acache_st_data_r)
 
-     ,.early_data_o(acache_data_lo)
-     ,.early_v_o(acache_v_lo)
-     ,.early_req_o()
-
-     ,.final_v_o()
-     ,.final_addr_o()
-     ,.final_data_o()
-     ,.final_rd_addr_o()
-     ,.final_float_o()
-     ,.final_int_o()
-     ,.final_ptw_o()
-     ,.final_late_o()
+     ,.v_o(acache_v_lo)
+     ,.data_o(acache_data_lo)
+     ,.rd_addr_o()
+     ,.int_o()
+     ,.float_o()
+     ,.ptw_o()
+     ,.ret_o()
+     ,.late_o()
 
      // D$-LCE Interface
      ,.cache_req_o(acache_req_lo)
@@ -200,7 +195,7 @@ module bp_cacc_vdp
      ,.sets_p(acache_sets_p)
      ,.block_width_p(acache_block_width_p)
      ,.fill_width_p(acache_fill_width_p)
-     ,.ctag_width_p(acache_ctag_width_p)
+     ,.tag_width_p(acache_tag_width_p)
      ,.id_width_p(acache_req_id_width_p)
      ,.timeout_max_limit_p(4)
      ,.credits_p(coh_noc_max_credits_p)
@@ -350,16 +345,17 @@ module bp_cacc_vdp
 
   assign data_li = csr_data_lo;
 
+  wire [vaddr_width_p-1:0] vaddr = load ? second_operand
+                                           ? (input_b_ptr+len_b_cnt*8)
+                                           : (input_a_ptr+len_a_cnt*8)
+                                         : res_ptr;
   assign acache_pkt_li = '{opcode: load ? e_dcache_op_ld : e_dcache_op_sd
-                           ,vaddr: load ? second_operand
-                                          ? (input_b_ptr+len_b_cnt*8)
-                                          : (input_a_ptr+len_a_cnt*8)
-                                        : res_ptr
+                           ,offset: vaddr[0+:page_offset_width_gp]
                            ,default: '0
                            };
 
   always_ff @(posedge clk_i) begin
-    acache_ptag_li <= acache_pkt_li.vaddr[vaddr_width_p-1:page_offset_width_gp];
+    acache_ptag_li <= vaddr[page_offset_width_gp+:ptag_width_p];
     acache_st_data_r <= dot_product_res;
   end
 
@@ -380,7 +376,7 @@ module bp_cacc_vdp
           state_n = start_cmd ? e_wait_fetch : e_wait_start;
         end
         e_wait_fetch: begin
-          state_n = acache_ready_and_lo ? e_fetch_vec1 : e_wait_fetch;
+          state_n = !acache_busy_lo ? e_fetch_vec1 : e_wait_fetch;
         end
         e_fetch_vec1: begin
           acache_v_li = '1;

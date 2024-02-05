@@ -18,10 +18,10 @@ module bp_be_dcache_wbuf
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
    , parameter fill_width_p   = dcache_fill_width_p
-   , parameter ctag_width_p   = dcache_ctag_width_p
+   , parameter tag_width_p    = dcache_tag_width_p
    , parameter id_width_p     = dcache_req_id_width_p
 
-   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
+   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
 
    , localparam wbuf_entry_width_lp=`bp_be_dcache_wbuf_entry_width(caddr_width_p, dcache_assoc_p)
    )
@@ -51,7 +51,7 @@ module bp_be_dcache_wbuf
    );
 
   `declare_bp_be_dcache_wbuf_entry_s(caddr_width_p, dcache_assoc_p);
-  `declare_bp_be_dcache_engine_if(paddr_width_p, ctag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
+  `declare_bp_be_dcache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
   `bp_cast_i(bp_be_dcache_wbuf_entry_s, wbuf_entry);
   `bp_cast_i(bp_be_dcache_data_mem_pkt_s, data_mem_pkt);
   `bp_cast_i(bp_be_dcache_tag_mem_pkt_s, tag_mem_pkt);

@@ -19,7 +19,7 @@ module bp_be_pipe_sys
 
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    // Generated parameters
-   , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
+   , localparam reservation_width_lp = `bp_be_reservation_width(vaddr_width_p)
    , localparam exception_width_lp    = $bits(bp_be_exception_s)
    , localparam special_width_lp      = $bits(bp_be_special_s)
    , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
@@ -32,11 +32,12 @@ module bp_be_pipe_sys
 
    , input [cfg_bus_width_lp-1:0]            cfg_bus_i
 
-   , input [dispatch_pkt_width_lp-1:0]       reservation_i
+   , input [reservation_width_lp-1:0]        reservation_i
    , input                                   flush_i
 
    , input                                   retire_v_i
    , input                                   retire_queue_v_i
+   , input                                   retire_partial_v_i
    , input [dpath_width_gp-1:0]              retire_data_i
    , input [exception_width_lp-1:0]          retire_exception_i
    , input [special_width_lp-1:0]            retire_special_i
@@ -64,35 +65,29 @@ module bp_be_pipe_sys
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  bp_be_dispatch_pkt_s reservation;
+  bp_be_reservation_s reservation;
   bp_be_decode_s decode;
   rv64_instr_s instr;
-  bp_be_commit_pkt_s commit_pkt;
-  bp_be_wb_pkt_s iwb_pkt, fwb_pkt;
-  bp_be_decode_info_s decode_info;
-  bp_be_trans_info_s trans_info;
-
-  assign commit_pkt_o = commit_pkt;
-  assign iwb_pkt = iwb_pkt_i;
-  assign fwb_pkt = fwb_pkt_i;
-  assign decode_info_o = decode_info;
-  assign trans_info_o = trans_info;
+  `bp_cast_i(bp_be_wb_pkt_s, iwb_pkt);
+  `bp_cast_i(bp_be_wb_pkt_s, fwb_pkt);
+  `bp_cast_o(bp_be_commit_pkt_s, commit_pkt);
+  `bp_cast_o(bp_be_decode_info_s, decode_info);
+  `bp_cast_o(bp_be_trans_info_s, trans_info);
 
   assign reservation = reservation_i;
   assign decode = reservation.decode;
   assign instr  = reservation.instr;
-  wire [vaddr_width_p-1:0] pc  = reservation.pc[0+:vaddr_width_p];
-  wire [dword_width_gp-1:0] rs1 = reservation.rs1[0+:dword_width_gp];
-  wire [dword_width_gp-1:0] rs2 = reservation.rs2[0+:dword_width_gp];
-  wire [dword_width_gp-1:0] imm = reservation.imm[0+:dword_width_gp];
+  wire [vaddr_width_p-1:0] pc  = reservation.pc;
+  wire [dword_width_gp-1:0] rs1 = reservation.isrc1;
+  wire [dword_width_gp-1:0] rs2 = reservation.isrc2;
+  wire [dword_width_gp-1:0] imm = reservation.isrc3;
 
   wire csr_v_li = reservation.decode.csr_r_v | reservation.decode.csr_w_v;
   wire [rv64_csr_addr_width_gp-1:0] csr_addr_li = instr.t.itype.imm12;
 
   bp_be_retire_pkt_s retire_pkt;
   logic [dword_width_gp-1:0] csr_data_lo;
-  wire [4:0] fflags_acc_li =
-    ({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags);
+  wire [4:0] fflags_acc_li = iwb_pkt_cast_i.fflags | fwb_pkt_cast_i.fflags;
   bp_be_csr
    #(.bp_params_p(bp_params_p))
     csr
@@ -107,7 +102,7 @@ module bp_be_pipe_sys
      ,.csr_r_illegal_o(illegal_instr_o)
 
      ,.fflags_acc_i(fflags_acc_li)
-     ,.frf_w_v_i(fwb_pkt.frd_w_v)
+     ,.frf_w_v_i(fwb_pkt_cast_i.frd_w_v)
 
      ,.debug_irq_i(debug_irq_i)
      ,.timer_irq_i(timer_irq_i)
@@ -118,9 +113,9 @@ module bp_be_pipe_sys
      ,.irq_waiting_o(irq_waiting_o)
 
      ,.retire_pkt_i(retire_pkt)
-     ,.commit_pkt_o(commit_pkt)
-     ,.decode_info_o(decode_info)
-     ,.trans_info_o(trans_info)
+     ,.commit_pkt_o(commit_pkt_cast_o)
+     ,.decode_info_o(decode_info_cast_o)
+     ,.trans_info_o(trans_info_cast_o)
      ,.frm_dyn_o(frm_dyn_o)
      );
 
@@ -128,7 +123,6 @@ module bp_be_pipe_sys
   logic [dword_width_gp-1:0] retire_nvaddr_r, retire_vaddr_r;
   logic [dword_width_gp-1:0] retire_ndata_r, retire_data_r;
   rv64_instr_s retire_ninstr_r, retire_instr_r;
-  logic retire_npartial_r, retire_partial_r;
   logic retire_ncompressed_r, retire_compressed_r;
   logic retire_niscore_r, retire_iscore_r;
   logic retire_nfscore_r, retire_fscore_r;
@@ -146,9 +140,6 @@ module bp_be_pipe_sys
 
       retire_ninstr_r <= reservation.instr;
       retire_instr_r  <= retire_ninstr_r;
-
-      retire_npartial_r <= reservation.partial;
-      retire_partial_r  <= retire_npartial_r;
 
       retire_ncompressed_r <= reservation.decode.compressed;
       retire_compressed_r  <= retire_ncompressed_r;
@@ -186,12 +177,12 @@ module bp_be_pipe_sys
   assign retire_pkt =
     '{v           : retire_v_i
       ,queue_v    : retire_queue_v_i
+      ,partial    : retire_partial_v_i
       ,instret    : instret_li
       ,npc        : retire_npc_r
       ,vaddr      : retire_vaddr_r
       ,data       : retire_data_li
       ,instr      : retire_instr_r
-      ,partial    : retire_partial_r
       ,compressed : retire_compressed_r
       ,exception  : retire_v_i ? retire_exception_i : '0
       ,special    : instret_li ? retire_special_i   : '0

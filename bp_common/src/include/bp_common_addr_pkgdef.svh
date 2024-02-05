@@ -25,9 +25,6 @@
   //   for a different address space
   localparam boot_base_addr_gp         = 40'h00_0011_0000;
   localparam dram_base_addr_gp         = 40'h00_8000_0000;
-  localparam dram_uc_base_addr_gp      = 40'h01_0000_0000;
-  localparam coproc_base_addr_gp       = 40'h02_0000_0000;
-  localparam global_base_addr_gp       = 40'h03_0000_0000;
 
 `endif
 

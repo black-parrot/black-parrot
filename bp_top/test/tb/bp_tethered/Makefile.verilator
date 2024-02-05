@@ -118,3 +118,16 @@ $(SIM_DIR)/tire_kick: $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
+sigcheck.sc: $(SIM_DIR)/run_sigchecksc
+sigcheck.sc: SIGCHECK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).log
+sigcheck.sc: SIGCHECK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).rpt
+sigcheck.sc: SIGCHECK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).err
+$(SIM_DIR)/run_sigchecksc:
+	-diff $(@D)/DUT-blackparrot.signature $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature > $(SIGCHECK_LOG)
+	echo "Mismatches: " > $(SIGCHECK_REPORT)
+	wc -l < $(SIGCHECK_LOG) >> $(SIGCHECK_REPORT)
+	-@grep [1-9] $(SIGCHECK_REPORT) && echo "FAILED" > $(SIGCHECK_ERROR)
+	wc -l < $(@D)/DUT-blackparrot.signature >> $(SIGCHECK_REPORT)
+	echo "------" >> $(SIGCHECK_REPORT)
+	wc -l < $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature >> $(SIGCHECK_REPORT)
+
