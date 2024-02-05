@@ -90,6 +90,7 @@ bp_top/test/tb/bp_tethered/Makefile.testlist. `make prog` builds the bp-tests, r
 
 ### Example Commands
     make build_dump.v sim_dump.v SUITE=bp-tests PROG=hello_world  # Run hello_world in VCS with dumping
+    make build_dump.sc sim_dump.sc SUITE=bp-tests PROG=hello_world  # Run hello_world in Verilator with dumping
     make wave.v SUITE=bp-tests PROG=hello_world              # Open hello_world waveform in dve
     make build_cov.sc sim.sc SUITE=riscv-tests PROG=rsort    # Run hello_world in Verilator with coverage
 
