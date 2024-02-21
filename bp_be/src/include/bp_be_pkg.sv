@@ -24,6 +24,8 @@ package bp_be_pkg;
 
   localparam [dp_rec_width_gp-1:0] dp_canonical_rec = 65'h0_e0080000_00000000;
 
+  localparam int_rec_width_gp = 65;
+
   typedef enum logic
   {
     e_fp_dp  = 1'b0
@@ -57,6 +59,8 @@ package bp_be_pkg;
     logic                       is_nan;
     logic                       is_inf;
     logic                       is_zero;
+    logic                       is_snan;
+    logic                       is_sub;
     logic                       sign;
     logic [dp_exp_width_gp+1:0] sexp;
     logic [dp_sig_width_gp+2:0] sig;
@@ -68,6 +72,8 @@ package bp_be_pkg;
     logic                       is_nan;
     logic                       is_inf;
     logic                       is_zero;
+    logic                       is_snan;
+    logic                       is_sub;
     logic                       sign;
     logic [sp_exp_width_gp+1:0] sexp;
     logic [sp_sig_width_gp+2:0] sig;

@@ -134,24 +134,24 @@ module bp_be_pipe_fma
   localparam fma_retime_latency_lp  = fma_latency_lp - fma_pipeline_stages_lp[1] - fma_pipeline_stages_lp[0];
 
   rv64_frm_e frm_r;
-  bp_be_fp_tag_e fp_tag_r;
+  bp_be_fp_tag_e frd_tag_r;
   bsg_dff_chain
    #(.width_p($bits(rv64_frm_e)+1)
      ,.num_stages_p(fma_pipeline_stages_lp[0]+fma_pipeline_stages_lp[1])
      )
    fma_info_chain
     (.clk_i(clk_i)
-     ,.data_i({frm_li, decode.fp_tag})
-     ,.data_o({frm_r, fp_tag_r})
+     ,.data_i({frm_li, decode.frd_tag})
+     ,.data_o({frm_r, frd_tag_r})
      );
 
-  logic [$bits(bp_be_int_tag_e)-1:0] int_tag_r;
+  logic [$bits(bp_be_int_tag_e)-1:0] ird_tag_r;
   bsg_dff_chain
    #(.width_p($bits(bp_be_int_tag_e)), .num_stages_p(fma_pipeline_stages_lp[0]))
    mul_info_chain
     (.clk_i(clk_i)
-     ,.data_i(decode.int_tag)
-     ,.data_o(int_tag_r)
+     ,.data_i(decode.ird_tag)
+     ,.data_o(ird_tag_r)
      );
 
   logic invalid_exc, is_nan, is_inf, is_zero, fma_out_sign;
@@ -187,7 +187,7 @@ module bp_be_pipe_fma
    #(.bp_params_p(bp_params_p))
    imul_box
     (.raw_i(imul_out)
-     ,.tag_i(int_tag_r)
+     ,.tag_i(ird_tag_r)
      ,.unsigned_i(1'b0)
      ,.reg_o(ird_data_lo)
      );
@@ -208,7 +208,7 @@ module bp_be_pipe_fma
    #(.bp_params_p(bp_params_p))
    rebox
     (.raw_i(fma_raw_r)
-     ,.tag_i(fp_tag_r)
+     ,.tag_i(frd_tag_r)
      ,.frm_i(frm_r)
      ,.invalid_exc_i(invalid_exc_r)
      ,.infinite_exc_i(1'b0)

@@ -191,14 +191,19 @@
     logic                              mem_v;
     logic                              score_v;
     logic                              spec_w_v;
+    logic                              fmove_v;
 
-    logic                              fp_raw;
-    logic                              rs1_unsigned;
-    logic                              rs2_unsigned;
+    logic                              irs1_unsigned;
+    logic [$bits(bp_be_int_tag_e)-1:0] irs1_tag;
+    logic                              irs2_unsigned;
+    logic [$bits(bp_be_int_tag_e)-1:0] irs2_tag;
+    logic [$bits(bp_be_fp_tag_e)-1:0]  frs1_tag;
+    logic [$bits(bp_be_fp_tag_e)-1:0]  frs2_tag;
+    logic [$bits(bp_be_fp_tag_e)-1:0]  frs3_tag;
 
     bp_be_fu_op_s                      fu_op;
-    logic [$bits(bp_be_fp_tag_e)-1:0]  fp_tag;
-    logic [$bits(bp_be_int_tag_e)-1:0] int_tag;
+    logic [$bits(bp_be_fp_tag_e)-1:0]  frd_tag;
+    logic [$bits(bp_be_int_tag_e)-1:0] ird_tag;
 
     logic [$bits(bp_be_src1_e)-1:0]    src1_sel;
     logic [$bits(bp_be_src2_e)-1:0]    src2_sel;

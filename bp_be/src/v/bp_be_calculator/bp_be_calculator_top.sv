@@ -256,23 +256,23 @@ module bp_be_calculator_top
   logic [dword_width_gp-1:0] rs2_val_r;
   if (integer_support_p[e_catchup])
     begin : catchup
-      logic [dword_width_gp-1:0] catchup_bypass_src1;
+      logic [int_rec_width_gp-1:0] catchup_bypass_src1;
       bp_be_int_unbox
        #(.bp_params_p(bp_params_p))
        irs1_unbox
         (.reg_i(comp_stage_n[2].rd_data)
-         ,.tag_i(reservation_r.decode.int_tag)
-         ,.unsigned_i(reservation_r.decode.rs1_unsigned)
+         ,.tag_i(reservation_r.decode.irs1_tag)
+         ,.unsigned_i(reservation_r.decode.irs1_unsigned)
          ,.val_o(catchup_bypass_src1)
          );
 
-      logic [dword_width_gp-1:0] catchup_bypass_src2;
+      logic [int_rec_width_gp-1:0] catchup_bypass_src2;
       bp_be_int_unbox
        #(.bp_params_p(bp_params_p))
        irs2_unbox
         (.reg_i(comp_stage_n[2].rd_data)
-         ,.tag_i(reservation_r.decode.int_tag)
-         ,.unsigned_i(reservation_r.decode.rs2_unsigned)
+         ,.tag_i(reservation_r.decode.irs2_tag)
+         ,.unsigned_i(reservation_r.decode.irs2_unsigned)
          ,.val_o(catchup_bypass_src2)
          );
 

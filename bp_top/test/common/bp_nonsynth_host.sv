@@ -176,15 +176,6 @@ module bp_nonsynth_host
   initial $readmemh("bootrom.mem", bootrom_mem);
   assign bootrom_addr_li = addr_lo[3+:lg_bootrom_els_lp];
 
-  wire [7:0] test0 = bootrom_mem[bootrom_addr_li+0];
-  wire [7:0] test1 = bootrom_mem[bootrom_addr_li+1];
-  wire [7:0] test2 = bootrom_mem[bootrom_addr_li+2];
-  wire [7:0] test3 = bootrom_mem[bootrom_addr_li+3];
-  wire [7:0] test4 = bootrom_mem[bootrom_addr_li+4];
-  wire [7:0] test5 = bootrom_mem[bootrom_addr_li+5];
-  wire [7:0] test6 = bootrom_mem[bootrom_addr_li+6];
-  wire [7:0] test7 = bootrom_mem[bootrom_addr_li+7];
-
   assign bootrom_data_lo = {
     bootrom_mem[8*bootrom_addr_li+7]
     ,bootrom_mem[8*bootrom_addr_li+6]

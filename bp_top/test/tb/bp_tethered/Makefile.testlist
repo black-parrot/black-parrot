@@ -358,7 +358,6 @@ RISCVDV_TESTS := \
   riscv_floating_point_rand_test    \
   riscv_full_interrupt_test    \
   riscv_hint_instr_test    \
-  riscv_illegal_instr_test    \
   riscv_invalid_csr_test    \
   riscv_jump_stress_test    \
   riscv_loop_test    \

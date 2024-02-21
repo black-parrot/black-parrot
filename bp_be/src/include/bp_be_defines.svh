@@ -85,9 +85,9 @@
       rv64_instr_s                             instr;                                              \
       bp_be_decode_s                           decode;                                             \
                                                                                                    \
-      logic [dword_width_gp-1:0]               isrc1;                                              \
-      logic [dword_width_gp-1:0]               isrc2;                                              \
-      logic [dword_width_gp-1:0]               isrc3;                                              \
+      logic [int_rec_width_gp-1:0]             isrc1;                                              \
+      logic [int_rec_width_gp-1:0]             isrc2;                                              \
+      logic [int_rec_width_gp-1:0]             isrc3;                                              \
       logic [dp_rec_width_gp-1:0]              fsrc1;                                              \
       logic [dp_rec_width_gp-1:0]              fsrc2;                                              \
       logic [dp_rec_width_gp-1:0]              fsrc3;                                              \
@@ -250,7 +250,7 @@
      )
 
   `define bp_be_reservation_width(vaddr_width_mp) \
-    (1+vaddr_width_mp+rv64_instr_width_gp+$bits(bp_be_decode_s)+3*dword_width_gp+3*dp_rec_width_gp)
+    (1+vaddr_width_mp+rv64_instr_width_gp+$bits(bp_be_decode_s)+3*int_rec_width_gp+3*dp_rec_width_gp)
 
   `define bp_be_branch_pkt_width(vaddr_width_mp) \
     (4 + vaddr_width_mp)

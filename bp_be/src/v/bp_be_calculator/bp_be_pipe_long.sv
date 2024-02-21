@@ -115,15 +115,15 @@ module bp_be_pipe_long
 
   logic [reg_addr_width_gp-1:0] ird_addr_r;
   bp_be_fu_op_s fu_op_r;
-  logic [$bits(bp_be_int_tag_e)-1:0] int_tag_r;
+  logic [$bits(bp_be_int_tag_e)-1:0] ird_tag_r;
   bsg_dff_en
-   #(.width_p(reg_addr_width_gp+$bits(bp_be_fu_op_s)+$bits(int_tag_r)))
+   #(.width_p(reg_addr_width_gp+$bits(bp_be_fu_op_s)+$bits(ird_tag_r)))
    iwb_reg
     (.clk_i(clk_i)
      ,.en_i(imulh_v_li | idiv_v_li | irem_v_li)
 
-     ,.data_i({instr.t.fmatype.rd_addr, decode.fu_op, decode.int_tag})
-     ,.data_o({ird_addr_r, fu_op_r, int_tag_r})
+     ,.data_i({instr.t.fmatype.rd_addr, decode.fu_op, decode.ird_tag})
+     ,.data_o({ird_addr_r, fu_op_r, ird_tag_r})
      );
 
   logic [dword_width_gp-1:0] iresult;
@@ -140,12 +140,12 @@ module bp_be_pipe_long
    #(.bp_params_p(bp_params_p))
    ird_box
     (.raw_i(iresult)
-     ,.tag_i(int_tag_r)
+     ,.tag_i(ird_tag_r)
      ,.unsigned_i(1'b0)
      ,.reg_o(ird_data_lo)
      );
 
-  assign ibusy_o = int_v_li | ~imulh_ready_lo | ~idiv_ready_and_lo;
+  assign ibusy_o = int_v_li | ~imulh_ready_lo | ~idiv_ready_and_lo | imask_r;
   assign iwb_v_o = ~imask_r & (imulh_v_lo | idiv_v_lo);
   assign iwb_pkt_cast_o = '{ird_w_v : iwb_v_o
                             ,rd_addr: ird_addr_r
@@ -212,8 +212,9 @@ module bp_be_pipe_long
      ,.data_i(fdivsqrt_v_lo & ~fwb_yumi_i)
      ,.data_o(fdivsqrt_pending_r)
      );
+  wire fdivsqrt_pending = fdivsqrt_v_lo | fdivsqrt_pending_r;
 
-  bp_be_fp_tag_e fp_tag_r;
+  bp_be_fp_tag_e frd_tag_r;
   logic [reg_addr_width_gp-1:0] frd_addr_r;
   rv64_frm_e frm_r;
   bsg_dff_en
@@ -222,8 +223,8 @@ module bp_be_pipe_long
     (.clk_i(clk_i)
      ,.en_i(fdivsqrt_v_li)
 
-     ,.data_i({frm_li, instr.t.fmatype.rd_addr, decode.fp_tag})
-     ,.data_o({frm_r, frd_addr_r, fp_tag_r})
+     ,.data_i({frm_li, instr.t.fmatype.rd_addr, decode.frd_tag})
+     ,.data_o({frm_r, frd_addr_r, frd_tag_r})
      );
 
   bp_be_fp_reg_s frd_data_lo;
@@ -232,7 +233,7 @@ module bp_be_pipe_long
    #(.bp_params_p(bp_params_p))
    rebox
     (.raw_i(fdivsqrt_raw_lo)
-     ,.tag_i(fp_tag_r)
+     ,.tag_i(frd_tag_r)
      ,.frm_i(frm_r)
      ,.invalid_exc_i(invalid_exc)
      ,.infinite_exc_i(infinite_exc)
@@ -241,8 +242,8 @@ module bp_be_pipe_long
      ,.fflags_o(fflags_lo)
      );
 
-  assign fbusy_o = fdivsqrt_v_li | ~fdivsqrt_ready_and_lo | fdivsqrt_pending_r;
-  assign fwb_v_o = ~fmask_r & (fdivsqrt_v_lo | fdivsqrt_pending_r);
+  assign fbusy_o = fdivsqrt_v_li | ~fdivsqrt_ready_and_lo | fmask_r | fdivsqrt_pending;
+  assign fwb_v_o = ~fmask_r & (fdivsqrt_v_lo | fdivsqrt_pending);
   assign fwb_pkt_cast_o = '{frd_w_v : fwb_v_o
                             ,rd_addr: frd_addr_r
                             ,rd_data: frd_data_lo

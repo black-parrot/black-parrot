@@ -210,6 +210,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_fp_rebox.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_fp_unbox.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_int_unbox.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_int_box.sv
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_rec_to_raw.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_aux.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_fma.sv

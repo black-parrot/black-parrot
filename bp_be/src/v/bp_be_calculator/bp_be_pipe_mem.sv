@@ -331,7 +331,7 @@ module bp_be_pipe_mem
   bp_be_fp_box
    #(.bp_params_p(bp_params_p))
    fp_box
-    (.raw_i(dcache_data)
+    (.ieee_i(dcache_data)
      ,.tag_i(dcache_tag[0])
      ,.reg_o(dcache_fdata)
      );

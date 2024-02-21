@@ -146,7 +146,7 @@ module bp_nonsynth_cosim
   bp_be_fp_reg_s [rf_els_lp-1:0] frd_data_r;
   bp_be_int_reg_s [rf_els_lp-1:0] ird_data_r;
   logic [rf_els_lp-1:0] ird_fifo_v_lo, frd_fifo_v_lo;
-  logic [rf_els_lp-1:0][dword_width_gp-1:0] ird_raw_li;
+  logic [rf_els_lp-1:0][int_rec_width_gp-1:0] ird_raw_li;
   logic [rf_els_lp-1:0][dp_rec_width_gp-1:0] frd_raw_li;
 
   for (genvar i = 0; i < rf_els_lp; i++)
@@ -174,7 +174,7 @@ module bp_nonsynth_cosim
        #(.bp_params_p(bp_params_p))
        int_unbox
         (.reg_i(ird_data_r[i])
-         ,.tag_i(ird_data_r[i].tag)
+         ,.tag_i(e_int_dword)
          ,.unsigned_i(1'b0)
          ,.val_o(ird_raw_li[i])
          );

@@ -9,7 +9,7 @@ module bp_be_fp_box
    `declare_bp_proc_params(bp_params_p)
    )
   (// RAW floating point input
-   input [dword_width_gp-1:0]          raw_i
+   input [dword_width_gp-1:0]          ieee_i
    , input [$bits(bp_be_fp_tag_e)-1:0] tag_i
    , output [dpath_width_gp-1:0]       reg_o
    );
@@ -23,7 +23,7 @@ module bp_be_fp_box
   //   "Innocuous Double Rounding of Basic Arithmetic Operations" by Pierre Roux
 
   bp_hardfloat_rec_sp_s in_sp_rec_li;
-  wire [sp_float_width_gp-1:0] in_sp_li = raw_i[0+:sp_float_width_gp];
+  wire [sp_float_width_gp-1:0] in_sp_li = ieee_i[0+:sp_float_width_gp];
   fNToRecFN
    #(.expWidth(sp_exp_width_gp)
      ,.sigWidth(sp_sig_width_gp)
@@ -34,7 +34,7 @@ module bp_be_fp_box
      );
 
   bp_hardfloat_rec_dp_s in_dp_rec_li;
-  wire [dp_float_width_gp-1:0] in_dp_li = raw_i[0+:dp_float_width_gp];
+  wire [dp_float_width_gp-1:0] in_dp_li = ieee_i[0+:dp_float_width_gp];
   fNToRecFN
    #(.expWidth(dp_exp_width_gp)
      ,.sigWidth(dp_sig_width_gp)
@@ -61,8 +61,8 @@ module bp_be_fp_box
                        ,fract: {sp_rec.fract, (dp_sig_width_gp-sp_sig_width_gp)'(0)}
                        };
 
-  wire nanbox_v_li = &raw_i[word_width_gp+:word_width_gp];
-  wire encode_as_sp = nanbox_v_li | (tag_i == e_fp_sp);
+  wire nanbox_v_li = &ieee_i[word_width_gp+:word_width_gp];
+  wire encode_as_sp = nanbox_v_li || (tag_i == e_fp_sp);
 
   bp_be_fp_reg_s reg32, reg64;
   assign reg32 = '{tag: e_fp_sp, rec: sp2dp_rec};

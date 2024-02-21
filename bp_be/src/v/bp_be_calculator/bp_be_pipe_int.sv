@@ -51,7 +51,7 @@ module bp_be_pipe_int
   wire [dword_width_gp-1:0] rs1 = reservation.isrc1;
   wire [dword_width_gp-1:0] rs2 = reservation.isrc2;
   wire [dword_width_gp-1:0] imm = reservation.isrc3;
-  wire word_op = (decode.int_tag == e_int_word);
+  wire word_op = (decode.ird_tag == e_int_word);
 
   // Sign-extend PC for calculation
   wire [dword_width_gp-1:0] pc_sext_li = `BSG_SIGN_EXTEND(pc, dword_width_gp);
@@ -101,7 +101,7 @@ module bp_be_pipe_int
    #(.bp_params_p(bp_params_p))
    box
     (.raw_i(int_result)
-     ,.tag_i(decode.int_tag)
+     ,.tag_i(decode.ird_tag)
      ,.unsigned_i(1'b0)
      ,.reg_o(ird_data_lo)
      );
