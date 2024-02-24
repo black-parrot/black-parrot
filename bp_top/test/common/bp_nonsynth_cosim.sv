@@ -107,6 +107,7 @@ module bp_nonsynth_cosim
 
   logic                     commit_fifo_full_lo;
   logic                     commit_debug_r;
+  logic                     commit_freeze_r;
   logic                     instret_v_r;
   logic                     trap_v_r;
   logic [vaddr_width_p-1:0] commit_pc_r;
