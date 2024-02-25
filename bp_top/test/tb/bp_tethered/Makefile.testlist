@@ -406,7 +406,11 @@ SPEC_TESTS := \
 
 SPEC_TESTLIST := $(addprefix spec@, $(SPEC_TESTS))
 
-RVARCH_TESTLIST := \
+# These are bugged in spike, but pass in dromajo
+#  cebreak-01
+#  ebreak
+
+RVARCH_TESTS := \
   add-01 \
   addi-01 \
   addiw-01 \
@@ -448,7 +452,6 @@ RVARCH_TESTLIST := \
   candi-01 \
   cbeqz-01 \
   cbnez-01 \
-  cebreak-01 \
   cj-01 \
   cjalr-01 \
   cjr-01 \
@@ -475,7 +478,6 @@ RVARCH_TESTLIST := \
   divu-01 \
   divuw-01 \
   divw-01 \
-  ebreak \
   ecall \
   fcvt.d.l_b25-01 \
   fcvt.d.l_b26-01 \
@@ -585,7 +587,49 @@ RVARCH_TESTLIST := \
   subw-01 \
   sw-align-01 \
   xor-01 \
-  xori-01
+  xori-01 \
+  add.uw-01 \
+  andn-01 \
+  bclr-01 \
+  bclri-01 \
+  bext-01 \
+  bexti-01 \
+  binv-01 \
+  binvi-01 \
+  bset-01 \
+  bseti-01 \
+  clz-01 \
+  clzw-01 \
+  cpop-01 \
+  cpopw-01 \
+  ctz-01 \
+  ctzw-01 \
+  max-01 \
+  maxu-01 \
+  min-01 \
+  minu-01 \
+  orcb_64-01 \
+  orn-01 \
+  rev8-01 \
+  rol-01 \
+  rolw-01 \
+  ror-01 \
+  rori-01 \
+  roriw-01 \
+  rorw-01 \
+  sext.b-01 \
+  sext.h-01 \
+  sh1add-01 \
+  sh1add.uw-01 \
+  sh2add-01 \
+  sh2add.uw-01 \
+  sh3add-01 \
+  sh3add.uw-01 \
+  slli.uw-01 \
+  xnor-01 \
+  zext.h_64-01
+
+RVARCH_TESTLIST := $(addprefix riscv-arch@, $(RVARCH_TESTS))
 
 BASELINE_TESTLIST := \
   bp-tests@hello_world \

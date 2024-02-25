@@ -42,6 +42,14 @@
     ,e_fdivsqrt2b = 2'b10
   } bp_fpu_support_e;
 
+  typedef enum logic [1:0]
+  {
+    e_zba         = 2'b00
+    ,e_zbb        = 2'b01
+    ,e_zbc        = 2'b10
+    ,e_zbs        = 2'b11
+  } bp_bitmanip_support_e;
+
   typedef enum logic [15:0]
   {
     e_sacc_none = 0
@@ -201,13 +209,15 @@
     //   bit 2: iterative mulh
     //   bit 3: 2b iterative div
     integer unsigned muldiv_support;
-    // Whether to emulate FPU
+    // Whether to support FPU
     //   bit 0: fma
     //   bit 1: iterative fdivsqrt
     //   bit 2: 2b iterative fdivsqrt
     integer unsigned fpu_support;
     // Whether to enable the "c" extension.
     integer unsigned compressed_support;
+    // Whether to enable bitmanip extensions
+    integer unsigned bitmanip_support;
 
     // Whether the coherence network is on the core clock or on its own clock
     integer unsigned async_coh_clk;
@@ -340,6 +350,7 @@
                            | (1 << e_imulh)
                            | (1 << e_idiv2b)
       ,fpu_support       : (1 << e_fma) | (1 << e_fdivsqrt) | (1 << e_fdivsqrt2b)
+      ,bitmanip_support  : (1 << e_zba) | (1 << e_zbb) | (1 << e_zbs)
       ,compressed_support: 1
 
       ,async_coh_clk       : 0
@@ -396,6 +407,7 @@
       ,`bp_aviary_define_override(integer_support, BP_INTEGER_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(muldiv_support, BP_MULDIV_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(fpu_support, BP_FPU_SUPPORT, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(bitmanip_support, BP_BITMANIP_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(compressed_support, BP_COMPRESSED_SUPPORT, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(branch_metadata_fwd_width, BRANCH_METADATA_FWD_WIDTH, `BP_CUSTOM_BASE_CFG)

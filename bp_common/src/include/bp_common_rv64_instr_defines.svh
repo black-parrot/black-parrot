@@ -313,5 +313,60 @@
   `define RV64_CFSWSP     `rv64_cl_type(`RV64_C2_OP,3'b111)
   `define RV64_CFSDSP     `rv64_cl_type(`RV64_C2_OP,3'b101)
 
+  // Bitmanip
+  // expansions
+  `define rv64_fi_type(op, funct3, funct12) {``funct12``,{5{1'b?}},``funct3``,{5{1'b?}},``op``}
+
+  // Zba
+  `define RV64_ADDUW      `rv64_r_type(`RV64_OP_32_OP,3'b000,7'b0000100)
+  `define RV64_SH1ADD     `rv64_r_type(`RV64_OP_OP,3'b010,7'b0010000)
+  `define RV64_SH1ADDUW   `rv64_r_type(`RV64_OP_32_OP,3'b010,7'b0010000)
+  `define RV64_SH2ADD     `rv64_r_type(`RV64_OP_OP,3'b100,7'b0010000)
+  `define RV64_SH2ADDUW   `rv64_r_type(`RV64_OP_32_OP,3'b100,7'b0010000)
+  `define RV64_SH3ADD     `rv64_r_type(`RV64_OP_OP,3'b110,7'b0010000)
+  `define RV64_SH3ADDUW   `rv64_r_type(`RV64_OP_32_OP,3'b110,7'b0010000)
+  `define RV64_SLLIUW     `rv64_fi_type(`RV64_OP_IMM_32_OP,3'b001,12'b000010??????)
+
+  // Zbb
+  `define RV64_ANDN       `rv64_r_type(`RV64_OP_OP,3'b111,7'b0100000)
+  `define RV64_CLZ        `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b0110000_00000)
+  `define RV64_CLZW       `rv64_fi_type(`RV64_OP_IMM_32_OP,3'b001,12'b0110000_00000)
+  `define RV64_CPOP       `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b0110000_00010)
+  `define RV64_CPOPW      `rv64_fi_type(`RV64_OP_IMM_32_OP,3'b001,12'b0110000_00010)
+  `define RV64_CTZ        `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b0110000_00001)
+  `define RV64_CTZW       `rv64_fi_type(`RV64_OP_IMM_32_OP,3'b001,12'b0110000_00001)
+  `define RV64_MAX        `rv64_r_type(`RV64_OP_OP,3'b110,7'b0000101)
+  `define RV64_MAXU       `rv64_r_type(`RV64_OP_OP,3'b111,7'b0000101)
+  `define RV64_MIN        `rv64_r_type(`RV64_OP_OP,3'b100,7'b0000101)
+  `define RV64_MINU       `rv64_r_type(`RV64_OP_OP,3'b101,7'b0000101)
+  `define RV64_ORCB       `rv64_fi_type(`RV64_OP_IMM_OP,3'b101,12'b0010100_00111)
+  `define RV64_ORN        `rv64_r_type(`RV64_OP_OP,3'b110,7'b0100000)
+  `define RV64_REV8       `rv64_fi_type(`RV64_OP_IMM_OP,3'b101,12'b011010111000)
+  `define RV64_ROL        `rv64_r_type(`RV64_OP_OP,3'b001,7'b0110000)
+  `define RV64_ROLW       `rv64_r_type(`RV64_OP_32_OP,3'b001,7'b0110000)
+  `define RV64_ROR        `rv64_r_type(`RV64_OP_OP,3'b101,7'b0110000)
+  `define RV64_RORI       `rv64_fi_type(`RV64_OP_IMM_OP,3'b101,12'b011000_??????)
+  `define RV64_RORIW      `rv64_fi_type(`RV64_OP_IMM_32_OP,3'b101,12'b0110000_?????)
+  `define RV64_RORW       `rv64_r_type(`RV64_OP_32_OP,3'b101,7'b0110000)
+  `define RV64_SEXTB      `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b0110000_00100)
+  `define RV64_SEXTH      `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b0110000_00101)
+  `define RV64_XNOR       `rv64_r_type(`RV64_OP_OP,3'b100,7'b0100000)
+  `define RV64_ZEXTH      `rv64_r_type(`RV64_OP_32_OP,3'b100,7'b0000100)
+
+  // Zbc
+  `define RV64_CLMUL      `rv64_r_type(`RV64_OP_OP,3'b001,7'b0000101)
+  `define RV64_CLMULH     `rv64_r_type(`RV64_OP_OP,3'b011,7'b0000101)
+  `define RV64_CLMULR     `rv64_r_type(`RV64_OP_OP,3'b010,7'b0000101)
+
+  // Zbs
+  `define RV64_BCLR       `rv64_r_type(`RV64_OP_OP,3'b001,7'b0100100)
+  `define RV64_BCLRI      `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b010010_??????)
+  `define RV64_BEXT       `rv64_r_type(`RV64_OP_OP,3'b101,7'b0100100)
+  `define RV64_BEXTI      `rv64_fi_type(`RV64_OP_IMM_OP,3'b101,12'b010010_??????)
+  `define RV64_BINV       `rv64_r_type(`RV64_OP_OP,3'b001,7'b0110100)
+  `define RV64_BINVI      `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b011010_??????)
+  `define RV64_BSET       `rv64_r_type(`RV64_OP_OP,3'b001,7'b0010100)
+  `define RV64_BSETI      `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b001010_??????)
+
 `endif
 

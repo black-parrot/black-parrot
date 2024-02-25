@@ -1,5 +1,6 @@
 ## Set common environment variables
 TOP ?= $(shell git rev-parse --show-toplevel)
+SHELL=/bin/bash
 
 ## Export the variables for environment substitutions in makefile
 export BP_COMMON_DIR    := $(TOP)/bp_common
