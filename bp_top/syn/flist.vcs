@@ -178,7 +178,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.sv
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.sv
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.sv
 # HardFloat files
-$HARDFLOAT_DIR/source/addRecFN.v
 $HARDFLOAT_DIR/source/compareRecFN.v
 $HARDFLOAT_DIR/source/divSqrtRecFN.v
 $HARDFLOAT_DIR/source/divSqrtRecFN_medium.v
@@ -217,6 +216,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_sys.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_ptw.sv
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_rec_to_raw.sv
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_reservation.sv
 # Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_cmd_queue.sv

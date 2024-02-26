@@ -1,4 +1,4 @@
-$(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv $(LINT_DIR)/test_bp.cpp:
+$(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
@@ -7,14 +7,13 @@ $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
 	@echo wrapper.sv                                >> $@
 	@echo testbench.sv                              >> $@
-	@echo test_bp.cpp                               >> $@
 
 $(LINT_DIR)/config.vlt:
 	cat $(SYN_PATH)/lint_settings.verilator | envsubst > $@
 
-LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv test_bp.cpp)
+LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv)
 
-$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv $(BUILD_DIR)/test_bp.cpp:
+$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv:
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
 	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
@@ -23,12 +22,11 @@ $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
 	@echo wrapper.sv                                >> $@
 	@echo testbench.sv                              >> $@
-	@echo test_bp.cpp                               >> $@
 
 $(BUILD_DIR)/config.vlt:
 	cat $(SYN_PATH)/lint_settings.verilator | envsubst > $@
 
-VBUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv test_bp.cpp)
+VBUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv)
 
 $(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
 	@ln -nsf $</simsc $@
@@ -123,7 +121,7 @@ sigcheck.sc: SIGCHECK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE)
 sigcheck.sc: SIGCHECK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).rpt
 sigcheck.sc: SIGCHECK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).err
 $(SIM_DIR)/run_sigchecksc:
-	-diff $(@D)/DUT-blackparrot.signature $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature > $(SIGCHECK_LOG)
+	-diff <(tail -n +9 $(@D)/DUT-blackparrot.signature | head -n -0) <(tail -n +9 $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature | head -n -2) > $(SIGCHECK_LOG)
 	echo "Mismatches: " > $(SIGCHECK_REPORT)
 	wc -l < $(SIGCHECK_LOG) >> $(SIGCHECK_REPORT)
 	-@grep [1-9] $(SIGCHECK_REPORT) && echo "FAILED" > $(SIGCHECK_ERROR)

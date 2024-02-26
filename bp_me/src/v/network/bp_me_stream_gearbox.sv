@@ -8,7 +8,6 @@ module bp_me_stream_gearbox
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , parameter `BSG_INV_PARAM(buffered_p)
    , parameter `BSG_INV_PARAM(in_data_width_p)
    , parameter `BSG_INV_PARAM(out_data_width_p)
    , parameter `BSG_INV_PARAM(payload_width_p)
@@ -26,7 +25,6 @@ module bp_me_stream_gearbox
    , output logic [xce_header_width_lp-1:0]         msg_header_o
    , output logic [out_data_width_p-1:0]            msg_data_o
    , output logic                                   msg_v_o
-   // Helpful when buffered_p is set
    , input                                          msg_ready_param_i
    );
 
@@ -38,30 +36,20 @@ module bp_me_stream_gearbox
   logic [in_data_width_p-1:0] msg_data_li;
   logic msg_v_li, msg_ready_and_lo;
 
-  if (buffered_p)
-    begin : buffer
-      bsg_two_fifo
-       #(.width_p($bits(bp_bedrock_xce_header_s)+in_data_width_p))
-       fifo
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+  bsg_two_fifo
+   #(.width_p($bits(bp_bedrock_xce_header_s)+in_data_width_p))
+   fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-         ,.data_i({msg_header_cast_i, msg_data_i})
-         ,.v_i(msg_v_i)
-         ,.ready_param_o(msg_ready_and_o)
+     ,.data_i({msg_header_cast_i, msg_data_i})
+     ,.v_i(msg_v_i)
+     ,.ready_param_o(msg_ready_and_o)
 
-         ,.data_o({msg_header_li, msg_data_li})
-         ,.v_o(msg_v_li)
-         ,.yumi_i(msg_ready_and_lo & msg_v_li)
-         );
-    end
-  else
-    begin : no_buffer
-      assign msg_header_li = msg_header_cast_i;
-      assign msg_data_li = msg_data_i;
-      assign msg_v_li = msg_v_i;
-      assign msg_ready_and_o = msg_ready_and_lo;
-    end
+     ,.data_o({msg_header_li, msg_data_li})
+     ,.v_o(msg_v_li)
+     ,.yumi_i(msg_ready_and_lo & msg_v_li)
+     );
 
   // Header passes right through
   assign msg_header_cast_o = msg_header_li;

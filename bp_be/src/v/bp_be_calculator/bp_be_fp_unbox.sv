@@ -50,24 +50,17 @@ module bp_be_fp_unbox
      ,.sigWidth(dp_sig_width_gp)
      )
    out_dp_rec
-    (.in(reg_cast_i.rec)
+    (.in(dp_rec)
      ,.out(dp_raw_lo)
      );
 
-  wire invbox = tag_i > reg_cast_i.tag;
-
-  bp_hardfloat_rec_dp_s rec;
-  assign rec = invbox ? sp_canonical_reg : dp_rec;
-
-  logic [dword_width_gp-1:0] raw32, raw64;
-  assign raw32 = invbox ? sp_canonical_nan : sp_raw_lo;
-  assign raw64 =                             dp_raw_lo;
-
   assign val_o = raw_i
-                 ? (reg_cast_i.tag == e_fp_dp) && (tag_i == e_fp_dp)
-                   ? raw64
-                   : raw32
-                 : rec;
+                 ? (reg_cast_i.tag == e_fp_dp)
+                   ? dp_raw_lo
+                   : sp_raw_lo
+                 : (reg_cast_i.tag != tag_i)
+                   ? dp_canonical_rec
+                   : dp_rec;
 
 endmodule
 

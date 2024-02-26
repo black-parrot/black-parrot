@@ -52,8 +52,8 @@ module bp_be_reservation
    #(.bp_params_p(bp_params_p))
    frs1_unbox
     (.reg_i(dispatch_pkt_r.rs1)
-     ,.tag_i(decode.fp_tag)
-     ,.raw_i(decode.fp_raw)
+     ,.tag_i(decode.frs1_tag)
+     ,.raw_i(decode.fmove_v)
      ,.val_o(frs1)
      );
 
@@ -62,8 +62,8 @@ module bp_be_reservation
    #(.bp_params_p(bp_params_p))
    frs2_unbox
     (.reg_i(dispatch_pkt_r.rs2)
-     ,.tag_i(decode.fp_tag)
-     ,.raw_i(decode.fp_raw)
+     ,.tag_i(decode.frs2_tag)
+     ,.raw_i(decode.fmove_v)
      ,.val_o(frs2)
      );
 
@@ -72,32 +72,32 @@ module bp_be_reservation
    #(.bp_params_p(bp_params_p))
    frs3_unbox
     (.reg_i(dispatch_pkt_r.imm)
-     ,.tag_i(decode.fp_tag)
-     ,.raw_i(1'b0) // No current ops require raw FRS3, so save a mux
+     ,.tag_i(decode.frs3_tag)
+     ,.raw_i(decode.fmove_v)
      ,.val_o(frs3)
      );
 
-  logic [dword_width_gp-1:0] rs1;
+  logic [int_rec_width_gp-1:0] rs1;
   bp_be_int_unbox
    #(.bp_params_p(bp_params_p))
    irs1_unbox
     (.reg_i(dispatch_pkt_r.rs1)
-     ,.tag_i(decode.int_tag)
-     ,.unsigned_i(decode.rs1_unsigned)
+     ,.tag_i(decode.irs1_tag)
+     ,.unsigned_i(decode.irs1_unsigned)
      ,.val_o(rs1)
      );
 
-  logic [dword_width_gp-1:0] rs2;
+  logic [int_rec_width_gp-1:0] rs2;
   bp_be_int_unbox
    #(.bp_params_p(bp_params_p))
    irs2_unbox
     (.reg_i(dispatch_pkt_r.rs2)
-     ,.tag_i(decode.int_tag)
-     ,.unsigned_i(decode.rs2_unsigned)
+     ,.tag_i(decode.irs2_tag)
+     ,.unsigned_i(decode.irs2_unsigned)
      ,.val_o(rs2)
      );
 
-  wire [dword_width_gp-1:0] imm = dispatch_pkt_r.imm;
+  wire [int_rec_width_gp-1:0] imm = dispatch_pkt_r.imm;
 
   bp_be_reservation_s reservation;
   always_comb

@@ -5,22 +5,31 @@
   typedef enum logic [5:0]
   {
     e_int_op_add        = 6'b000000
-    ,e_int_op_sub       = 6'b001000
-    ,e_int_op_sll       = 6'b000001
     ,e_int_op_slt       = 6'b000010
     ,e_int_op_sge       = 6'b001010
     ,e_int_op_sltu      = 6'b000011
     ,e_int_op_sgeu      = 6'b001011
     ,e_int_op_xor       = 6'b000100
     ,e_int_op_eq        = 6'b001100
+    ,e_int_op_sll       = 6'b001111
     ,e_int_op_srl       = 6'b000101
     ,e_int_op_sra       = 6'b001101
     ,e_int_op_or        = 6'b000110
     ,e_int_op_ne        = 6'b001110
     ,e_int_op_and       = 6'b000111
-    ,e_int_op_pass_src2 = 6'b001111
-    ,e_int_op_pass_one  = 6'b111110
-    ,e_int_op_pass_zero = 6'b111111
+    ,e_int_op_cpop      = 6'b010000
+    ,e_int_op_clz       = 6'b010001
+    ,e_int_op_min       = 6'b010010
+    ,e_int_op_minu      = 6'b010011
+    ,e_int_op_max       = 6'b010100
+    ,e_int_op_maxu      = 6'b010101
+    ,e_int_op_orcb      = 6'b010110
+    ,e_int_op_rev8      = 6'b010111
+    ,e_int_op_bclr      = 6'b100000
+    ,e_int_op_bext      = 6'b100001
+    ,e_int_op_binv      = 6'b100010
+    ,e_int_op_binvi     = 6'b100011
+    ,e_int_op_bset      = 6'b100100
   } bp_be_int_fu_op_e;
 
   typedef enum logic [5:0]
@@ -141,16 +150,22 @@
     }  t;
   }  bp_be_fu_op_s;
 
-  typedef enum logic
+  typedef enum logic [2:0]
   {
-    e_src1_is_rs1 = 1'b0
-    ,e_src1_is_pc = 1'b1
+    e_src1_is_rs1        = 3'b000
+    ,e_src1_is_rs1_lsh   = 3'b011
+    ,e_src1_is_rs1_lshn  = 3'b100
+    ,e_src1_is_rs1_rev   = 3'b101
+    ,e_src1_is_zero      = 3'b010
   } bp_be_src1_e;
 
-  typedef enum logic
+  typedef enum logic [2:0]
   {
-    e_src2_is_rs2  = 1'b0
-    ,e_src2_is_imm = 1'b1
+    e_src2_is_rs2        = 3'b000
+    ,e_src2_is_rs1_rsh   = 3'b100
+    ,e_src2_is_rs1_rshn  = 3'b110
+    ,e_src2_is_rs2n      = 3'b011
+    ,e_src2_is_zero      = 3'b010
   } bp_be_src2_e;
 
   typedef enum logic
@@ -179,8 +194,9 @@
     logic                              frs3_r_v;
     logic                              irf_w_v;
     logic                              frf_w_v;
-    logic                              branch_v;
-    logic                              jump_v;
+    logic                              br_v;
+    logic                              j_v;
+    logic                              jr_v;
     logic                              fence_v;
     logic                              dcache_r_v;
     logic                              dcache_w_v;
@@ -191,18 +207,23 @@
     logic                              mem_v;
     logic                              score_v;
     logic                              spec_w_v;
+    logic                              fmove_v;
+    logic                              carryin;
 
-    logic                              fp_raw;
-    logic                              rs1_unsigned;
-    logic                              rs2_unsigned;
+    logic                              irs1_unsigned;
+    logic [$bits(bp_be_int_tag_e)-1:0] irs1_tag;
+    logic                              irs2_unsigned;
+    logic [$bits(bp_be_int_tag_e)-1:0] irs2_tag;
+    logic [$bits(bp_be_fp_tag_e)-1:0]  frs1_tag;
+    logic [$bits(bp_be_fp_tag_e)-1:0]  frs2_tag;
+    logic [$bits(bp_be_fp_tag_e)-1:0]  frs3_tag;
 
     bp_be_fu_op_s                      fu_op;
-    logic [$bits(bp_be_fp_tag_e)-1:0]  fp_tag;
-    logic [$bits(bp_be_int_tag_e)-1:0] int_tag;
+    logic [$bits(bp_be_fp_tag_e)-1:0]  frd_tag;
+    logic [$bits(bp_be_int_tag_e)-1:0] ird_tag;
 
     logic [$bits(bp_be_src1_e)-1:0]    src1_sel;
     logic [$bits(bp_be_src2_e)-1:0]    src2_sel;
-    logic [$bits(bp_be_baddr_e)-1:0]   baddr_sel;
   }  bp_be_decode_s;
 
   typedef struct packed

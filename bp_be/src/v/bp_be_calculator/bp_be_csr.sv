@@ -97,8 +97,8 @@ module bp_be_csr
 
   `declare_csr(mstatus);
   // MISA is optionally read-write, but all fields are read-only in BlackParrot
-  //   64 bit MXLEN, IMACFDSU extensions
-  wire [dword_width_gp-1:0] misa_lo = {2'b10, 36'b0, 26'h14112d};
+  //   64 bit MXLEN, IMACFDSUB extensions
+  wire [dword_width_gp-1:0] misa_lo = {2'b10, 36'b0, 26'h14112f};
   `declare_csr(medeleg);
   `declare_csr(mideleg);
   `declare_csr(mie);
