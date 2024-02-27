@@ -325,7 +325,7 @@ module bp_nonsynth_dram
          ,.axi_data_width_p(axi_data_width_p)
          ,.axi_len_width_p(8)
          ,.mem_els_p(mem_els_lp)
-         ,.init_data_p('0)
+         ,.init_data_p(32'hdeadbeef)
          )
        axi_mem
         (.clk_i(clk_i)
