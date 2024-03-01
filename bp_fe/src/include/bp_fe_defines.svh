@@ -22,8 +22,8 @@
       logic                                       site_return;                                    \
       logic                                       src_ras;                                        \
       logic                                       src_btb;                                        \
-      logic [ras_idx_width_mp-1:0]                ras_base;                                       \
-      logic [ras_idx_width_mp-1:0]                ras_cnt;                                        \
+      logic [ras_idx_width_mp-1:0]                ras_next;                                       \
+      logic [ras_idx_width_mp-1:0]                ras_tos;                                        \
       logic [btb_tag_width_mp-1:0]                btb_tag;                                        \
       logic [btb_idx_width_mp-1:0]                btb_idx;                                        \
       logic [bht_idx_width_mp-1:0]                bht_idx;                                        \
