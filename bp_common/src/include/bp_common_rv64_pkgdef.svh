@@ -4,7 +4,10 @@
   // TODO: Bring into aviary
   localparam fetch_width_gp          = 32;
   localparam fetch_cinstr_gp         = fetch_width_gp>>4;
+  localparam fetch_sel_gp            = `BSG_SAFE_CLOG2(fetch_cinstr_gp);
+  localparam fetch_ptr_gp            = `BSG_WIDTH(fetch_cinstr_gp);
   localparam fetch_bytes_gp          = fetch_width_gp>>3;
+  localparam fetch_offset_gp         = `BSG_SAFE_CLOG2(fetch_bytes_gp);
 
   localparam dword_width_gp          = 64;
   localparam word_width_gp           = 32;

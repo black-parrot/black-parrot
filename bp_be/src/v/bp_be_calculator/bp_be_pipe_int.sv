@@ -66,7 +66,7 @@ module bp_be_pipe_int
   wire [vaddr_width_p-1:0] baddr = decode.jr_v ? rs1 : pc;
   wire [vaddr_width_p-1:0] taken_raw = baddr + imm;
   wire [vaddr_width_p-1:0] taken_tgt = taken_raw & {{vaddr_width_p-1{1'b1}}, 1'b0};
-  wire [vaddr_width_p-1:0] ntaken_tgt = pc + (decode.compressed ? 4'd2 : 4'd4);
+  wire [vaddr_width_p-1:0] ntaken_tgt = pc + (reservation.size << 1'b1);
   wire [dword_width_gp-1:0] ntaken_data = `BSG_SIGN_EXTEND(ntaken_tgt, dword_width_gp);
   wire [dword_width_gp-1:0] pc_data = `BSG_SIGN_EXTEND(pc, dword_width_gp);
 

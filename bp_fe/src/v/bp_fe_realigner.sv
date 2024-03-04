@@ -13,33 +13,38 @@ module bp_fe_realigner
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    )
-  (input                               clk_i
-   , input                             reset_i
+  (input                                                     clk_i
+   , input                                                   reset_i
 
    // Fetch PC and I$ data
-   , input                             if2_v_i
-   , input [vaddr_width_p-1:0]         if2_pc_i
-   , input [instr_width_gp-1:0]        if2_data_i
-   , input                             if2_taken_branch_site_i
-   , output logic                      if2_yumi_o
+   , input                                                   if2_v_i
+   , input [vaddr_width_p-1:0]                               if2_pc_i
+   , input [instr_width_gp-1:0]                              if2_data_i
+   , input [branch_metadata_fwd_width_p-1:0]                 if2_br_metadata_fwd_i
+   , output logic                                            if2_yumi_o
 
    // Redirection from backend
    //   and whether to restore the instruction data
    //   and PC to resume a fetch
-   , input                             redirect_v_i
-   , input                             redirect_resume_i
-   , input [cinstr_width_gp-1:0]       redirect_instr_i
-   , input [vaddr_width_p-1:0]         redirect_pc_i
+   , input                                                   redirect_v_i
+   , input                                                   redirect_resume_i
+   , input [cinstr_width_gp-1:0]                             redirect_instr_i
+   , input [vaddr_width_p-1:0]                               redirect_pc_i
+   , input [branch_metadata_fwd_width_p-1:0]                 redirect_br_metadata_fwd_i
 
-   , output logic                      fetch_v_o
-   , output logic [vaddr_width_p-1:0]  fetch_pc_o
-   , output logic [instr_width_gp-1:0] fetch_instr_o
-   , output logic                      fetch_partial_o
-   , output logic                      fetch_eager_o
-   , output logic                      fetch_linear_o
-   , output logic                      fetch_catchup_o
-   , output logic                      fetch_rebase_o
-   , input                             fetch_yumi_i
+   // Assembled instruction, PC and count
+   , output logic                                            assembled_v_o
+   , output logic [vaddr_width_p-1:0]                        assembled_pc_o
+   , output logic [fetch_cinstr_gp  :0][cinstr_width_gp-1:0] assembled_instr_o
+   , output logic [branch_metadata_fwd_width_p-1:0]          assembled_br_metadata_fwd_o
+   , output logic [fetch_ptr_gp-1:0]                         assembled_count_o
+   , input [fetch_ptr_gp-1:0]                                assembled_count_i
+   , output logic                                            assembled_partial_o
+   , input                                                   assembled_yumi_i
+
+   , output logic                                            fetch_linear_o
+   , output logic                                            fetch_catchup_o
+   , input                                                   fetch_taken_i
    );
 
   logic partial_v_n, partial_v_r;
@@ -48,6 +53,10 @@ module bp_fe_realigner
   logic [vaddr_width_p-1:0] partial_pc_n, partial_pc_r;
 
   wire if2_pc_aligned = `bp_addr_is_aligned(if2_pc_i, (instr_width_gp>>3));
+  wire [fetch_sel_gp-1:0] if2_pc_sel = if2_pc_i[1+:fetch_sel_gp];
+  wire [fetch_width_gp-1:0] if2_shift = if2_pc_sel << 3'd4;
+  wire [fetch_width_gp-1:0] if2_instr = if2_data_i >> if2_shift;
+  wire [fetch_ptr_gp-1:0] if2_count = fetch_cinstr_gp - if2_pc_sel;
 
   wire [cinstr_width_gp-1:0] if2_data_upper = if2_data_i[cinstr_width_gp+:cinstr_width_gp];
   wire [cinstr_width_gp-1:0] if2_data_lower = if2_data_i[0+:cinstr_width_gp];
@@ -70,7 +79,7 @@ module bp_fe_realigner
      );
 
   wire if2_store_v = if2_yumi_o & fetch_linear_o;
-  wire partial_w_v = if2_store_v | redirect_v_i | fetch_yumi_i;
+  wire partial_w_v = if2_store_v | redirect_v_i | assembled_yumi_i;
   assign partial_v_n = (if2_store_v & ~redirect_v_i) | (redirect_v_i & redirect_resume_i);
   assign partial_br_site_n = if2_high_branch;
   bsg_dff_reset_en
@@ -84,20 +93,12 @@ module bp_fe_realigner
      ,.data_o({partial_v_r, partial_br_site_r, partial_instr_r, partial_pc_r})
      );
 
-  // Scan data for assembled instructions depends on the second half
-  rv64_instr_rtype_s instr_assembled, instr_aligned;
-  assign instr_aligned   = if2_pc_aligned ? {if2_data_upper, if2_data_lower} : {'0, if2_data_upper};
-  assign instr_assembled = {if2_data_lower, partial_instr_r};
-  bsg_mux
-   #(.width_p(instr_width_gp+vaddr_width_p), .els_p(2))
-   instr_mux
-    (.data_i({{instr_assembled, partial_pc_r}, {instr_aligned, if2_pc_i}})
-     ,.sel_i(partial_v_r)
-     ,.data_o({fetch_instr_o, fetch_pc_o})
-     );
+  wire [vaddr_width_p-1:0] realigned_pc = partial_pc_r;
+  wire [fetch_width_gp-1:0] realigned_instr = {if2_data_i, partial_instr_r};
+  wire [fetch_ptr_gp-1:0] realigned_count = fetch_cinstr_gp + 1'b1;
 
   // Here is a table of the possible cases:
-  // partial_v  if2_aligned if2_comp[1] if2_comp[0] | fetch_linear fetch_eager fetch_scan fetch_rebase |
+  // partial_v  if2_aligned if2_comp[1] if2_comp[0] | fetch_linear fetch_eager fetch_catchup fetch_rebase |
   //     0           0          0           x       |      1            0           0          0       |
   //     0           0          1           x       |      0            1           0          0       |
   //     0           1          0           0       |      0            0           0          0       |
@@ -113,35 +114,34 @@ module bp_fe_realigner
   //     1           1          1           1       |      -            -           -          -       |
 
   // Fetching at least one valid instruction
-  assign fetch_v_o = if2_v_i & (if2_pc_aligned | partial_v_r | if2_compressed[1]);
-  assign fetch_partial_o = partial_v_r;
+  assign assembled_v_o = if2_v_i & (if2_pc_aligned | partial_v_r | if2_compressed[1]);
+  assign assembled_pc_o = partial_v_r ? realigned_pc : if2_pc_i;
+  assign assembled_instr_o = partial_v_r ? realigned_instr : if2_instr;
+  assign assembled_partial_o = partial_v_r ? 1'b1 : 1'b0;
   // Force a linear fetch if we're storing in the realigner (need to complete instruction)
   assign fetch_linear_o = if2_v_i &&
     // starting misaligned high
     ((~partial_v_r & ~if2_pc_aligned & ~if2_compressed[1])
      // starting misaligned after compressed
-     || (~partial_v_r &  if2_pc_aligned & if2_compressed[0] & ~if2_compressed[1] & ~if2_taken_branch_site_i)
+     || (~partial_v_r &  if2_pc_aligned & if2_compressed[0] & ~if2_compressed[1] & ~fetch_taken_i)
      // continuing misaligned high
-     || ( partial_v_r & ~if2_compressed[1] & ~if2_taken_branch_site_i));
+     || ( partial_v_r & ~if2_compressed[1] & ~fetch_taken_i));
   // Eagerly fetch a low or high compressed instruction
-  assign fetch_eager_o = if2_v_i &
+  //assign assembled_count_o = partial_v_r ? realigned_count : if2_count;
+  assign assembled_count_o = (if2_v_i &
     ((~partial_v_r & ~if2_pc_aligned & if2_compressed[1])
       || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & ~if2_compressed[1])
       || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & if2_low_branch)
-      );
-  // Refetch a high branch because its site has been aliased
-  assign fetch_rebase_o = fetch_yumi_i &
-    ((partial_v_r & if2_compressed[1] & if2_high_branch & partial_br_site_r)
-     || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & if2_low_branch & if2_high_branch)
-     );
+      )) ? 2'b01 : 2'b10;
   // Adjust the IF2 PC up to catchup after completing a misaligned instruction or low compressed branch
-  assign fetch_catchup_o = fetch_yumi_i &
-    ((partial_v_r & if2_compressed[1] & ~if2_taken_branch_site_i)
-     || (partial_v_r & if2_compressed[1] & ~partial_br_site_r & if2_high_branch & if2_taken_branch_site_i)
-     || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & if2_low_branch & ~if2_taken_branch_site_i)
+  assign fetch_catchup_o = assembled_yumi_i &
+    ((partial_v_r & if2_compressed[1] & ~fetch_taken_i)
+     || (partial_v_r & if2_compressed[1] & ~partial_br_site_r & if2_high_branch & fetch_taken_i)
+     || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & if2_low_branch & ~fetch_taken_i)
      );
 
-  assign if2_yumi_o = if2_v_i & ~fetch_catchup_o & (~fetch_v_o | fetch_yumi_i);
+  assign if2_yumi_o = if2_v_i & ~fetch_catchup_o & (~assembled_v_o | assembled_yumi_i);
+  assign assembled_br_metadata_fwd_o = if2_br_metadata_fwd_i;
 
 endmodule
 

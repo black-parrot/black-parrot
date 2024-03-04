@@ -31,7 +31,7 @@
     /*                                                                                             \
      *                                                                                             \
      * bp_fe_queue_s contains the pc/instruction pair, along branch metadata for the branch        \
-     * predictor to update its internal data based on feedbacks from the BE as to                  \
+     * predictor to update its internal data based on feedback from the BE as to                   \
      * whether this particular PC/instruction pair was correct.  The BE does not look              \
      * at the branch metadata, since this would mean that the BE implementation is                 \
      * tightly coupled to the FE implementation.                                                   \
@@ -42,9 +42,9 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [vaddr_width_mp-1:0]                pc;                                                \
-      rv64_instr_s                              instr;                                             \
+      logic [fetch_width_gp-1:0]                instr;                                             \
       logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                               \
-      logic                                     partial;                                           \
+      logic [fetch_ptr_gp-1:0]                  count;                                             \
       bp_fe_queue_type_e                        msg_type;                                          \
     }  bp_fe_queue_s;                                                                              \
                                                                                                    \
@@ -99,18 +99,19 @@
     }  bp_pte_leaf_s;                                                                              \
                                                                                                    \
     /*                                                                                             \
-     * bp_fe_cmd_itlb_map_s provides the virtual, physical translation plus the                    \
+     * bp_fe_cmd_itlb_fill_s provides the virtual, physical translation plus the                   \
      * additional permission bits to the itlb in the case of page walk. Once the                   \
      * frontend sends the page fill request to the backend, the backend performs the               \
-     * page walk, and responds to the frontend with bp_fe_cmd_itlb_map_s.                          \
+     * page walk, and responds to the frontend with bp_fe_cmd_itlb_fill_s.                         \
      */                                                                                            \
     typedef struct packed                                                                          \
     {                                                                                              \
       bp_pte_leaf_s              pte_leaf;                                                         \
       logic [instr_width_gp-1:0] instr;                                                            \
-      logic [`bp_fe_cmd_itlb_map_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+      logic [fetch_ptr_gp-1:0]   count;                                                            \
+      logic [`bp_fe_cmd_itlb_fill_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
-    }  bp_fe_cmd_itlb_map_s;                                                                       \
+    }  bp_fe_cmd_itlb_fill_s;                                                                      \
                                                                                                    \
     /*                                                                                             \
      * bp_fe_cmd_icache_fill_s indicates the alignment offset of the original                      \
@@ -120,6 +121,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [instr_width_gp-1:0] instr;                                                            \
+      logic [fetch_ptr_gp-1:0]   count;                                                            \
       logic [`bp_fe_cmd_icache_fill_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_icache_fill_s;                                                                    \
@@ -152,7 +154,7 @@
       {                                                                                            \
         bp_fe_cmd_pc_redirect_operands_s    pc_redirect_operands;                                  \
         bp_fe_cmd_attaboy_s                 attaboy;                                               \
-        bp_fe_cmd_itlb_map_s                itlb_fill_response;                                    \
+        bp_fe_cmd_itlb_fill_s               itlb_fill_response;                                    \
         bp_fe_cmd_itlb_fence_s              itlb_fence;                                            \
         bp_fe_cmd_icache_fill_s             icache_fill_response;                                  \
       }  operands;                                                                                 \
@@ -167,7 +169,7 @@
 
   /* Declare width macros so that clients can use structs in ports before struct declaration */
   `define bp_fe_queue_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                          \
-    ($bits(bp_fe_queue_type_e)+branch_metadata_fwd_width_mp+rv64_instr_width_gp+1+vaddr_width_mp)
+    ($bits(bp_fe_queue_type_e)+branch_metadata_fwd_width_mp+fetch_width_gp+fetch_ptr_gp+vaddr_width_mp)
 
   `define bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (vaddr_width_mp                                                                                \
@@ -181,7 +183,7 @@
   `define bp_fe_cmd_attaboy_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
 
-  `define bp_fe_cmd_itlb_map_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+  `define bp_fe_cmd_itlb_fill_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
 
   `define bp_fe_cmd_icache_fill_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
@@ -209,11 +211,11 @@
   `define bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp) \
     (        1+branch_metadata_fwd_width_mp)
 
-  `define bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp, paddr_width_mp) \
-    (`bp_pte_leaf_width(paddr_width_mp)+instr_width_gp)
+  `define bp_fe_cmd_itlb_fill_width_no_padding(vaddr_width_mp, paddr_width_mp) \
+    (`bp_pte_leaf_width(paddr_width_mp)+instr_width_gp+fetch_ptr_gp)
 
   `define bp_fe_cmd_icache_fill_width_no_padding \
-    (instr_width_gp)
+    (instr_width_gp+fetch_ptr_gp)
 
   `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
     (asid_width_mp + 2)
@@ -221,7 +223,7 @@
   `define bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)     \
                 ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)        \
-                          ,`BSG_MAX(`bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp, paddr_width_mp) \
+                          ,`BSG_MAX(`bp_fe_cmd_itlb_fill_width_no_padding(vaddr_width_mp, paddr_width_mp) \
                                     ,`BSG_MAX(`bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp)\
                                              ,`bp_fe_cmd_icache_fill_width_no_padding              \
                                              )                                                     \
@@ -240,9 +242,9 @@
      - `bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)                                      \
      )
 
-  `define bp_fe_cmd_itlb_map_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+  `define bp_fe_cmd_itlb_fill_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-     - `bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp, paddr_width_mp)                                   \
+     - `bp_fe_cmd_itlb_fill_width_no_padding(vaddr_width_mp, paddr_width_mp)                                   \
      )
 
   `define bp_fe_cmd_icache_fill_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \

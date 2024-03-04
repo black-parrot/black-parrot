@@ -176,8 +176,6 @@
 
   typedef struct packed
   {
-    logic                              compressed;
-
     logic                              pipe_int_v;
     logic                              pipe_mem_early_v;
     logic                              pipe_aux_v;
@@ -275,7 +273,6 @@
   {
     logic v;
     logic queue_v;
-    logic partial_v;
     logic ispec_v;
     logic nspec_v;
 

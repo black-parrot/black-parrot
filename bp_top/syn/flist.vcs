@@ -238,7 +238,7 @@ $BP_FE_DIR/src/v/bp_fe_bht.sv
 $BP_FE_DIR/src/v/bp_fe_btb.sv
 $BP_FE_DIR/src/v/bp_fe_controller.sv
 $BP_FE_DIR/src/v/bp_fe_icache.sv
-$BP_FE_DIR/src/v/bp_fe_instr_scan.sv
+$BP_FE_DIR/src/v/bp_fe_scan.sv
 $BP_FE_DIR/src/v/bp_fe_pc_gen.sv
 $BP_FE_DIR/src/v/bp_fe_realigner.sv
 $BP_FE_DIR/src/v/bp_fe_top.sv

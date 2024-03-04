@@ -211,14 +211,6 @@ $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.sv
 $BP_BE_DIR/src/v/bp_be_dcache/bp_be_dcache.sv
 $BP_BE_DIR/src/v/bp_be_dcache/bp_be_dcache_decoder.sv
 $BP_BE_DIR/src/v/bp_be_dcache/bp_be_dcache_wbuf.sv
-## FE files
-$BP_FE_DIR/src/v/bp_fe_bht.sv
-$BP_FE_DIR/src/v/bp_fe_btb.sv
-$BP_FE_DIR/src/v/bp_fe_icache.sv
-$BP_FE_DIR/src/v/bp_fe_instr_scan.sv
-$BP_FE_DIR/src/v/bp_fe_pc_gen.sv
-$BP_FE_DIR/src/v/bp_fe_top.sv
-## ME files
 # LCE
 $BP_ME_DIR/src/v/lce/bp_lce.sv
 $BP_ME_DIR/src/v/lce/bp_lce_req.sv
