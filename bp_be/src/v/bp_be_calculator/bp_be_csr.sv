@@ -623,7 +623,7 @@ module bp_be_csr
       if (~(csr_w_v_li & csr_addr_li inside {`CSR_ADDR_CYCLE, `CSR_ADDR_MCYCLE}) & ~mcountinhibit_lo.cy)
         mcycle_li = mcycle_lo + 1'b1;
       if (~(csr_w_v_li & csr_addr_li inside {`CSR_ADDR_INSTRET, `CSR_ADDR_MINSTRET}) & ~mcountinhibit_lo.ir)
-        minstret_li = minstret_lo + 1'b1;
+        minstret_li = minstret_lo + retire_pkt_cast_i.instret;
 
       // Set FS to dirty if: fflags set, frf written, fcsr written
       mstatus_li.fs |= {2{csr_w_v_li & csr_fany_li}};
