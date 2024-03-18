@@ -21,26 +21,28 @@ module bp_fe_btb
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    )
-  (input                              clk_i
-   , input                            reset_i
+  (input                                clk_i
+   , input                              reset_i
 
-   , output logic                     init_done_o
+   , output logic                       init_done_o
 
    // Synchronous read
-   , input [vaddr_width_p-1:0]        r_addr_i
-   , input                            r_v_i
-   , output logic [vaddr_width_p-1:0] br_tgt_o
-   , output logic                     br_tgt_v_o
-   , output logic                     br_tgt_jmp_o
+   , input [vaddr_width_p-1:0]          r_addr_i
+   , input                              r_v_i
+   , output logic [btb_tag_width_p-1:0] r_tag_o
+   , output logic [btb_idx_width_p-1:0] r_idx_o
+   , output logic [vaddr_width_p-1:0]   r_tgt_o
+   , output logic                       r_tgt_v_o
+   , output logic                       r_tgt_jmp_o
 
    // Synchronous write
-   , input                            w_v_i
-   , input                            w_clr_i
-   , input                            w_jmp_i
-   , input [btb_tag_width_p-1:0]      w_tag_i
-   , input [btb_idx_width_p-1:0]      w_idx_i
-   , input [vaddr_width_p-1:0]        br_tgt_i
-   , output logic                     w_yumi_o
+   , input                              w_v_i
+   , input                              w_clr_i
+   , input                              w_jmp_i
+   , input [btb_tag_width_p-1:0]        w_tag_i
+   , input [btb_idx_width_p-1:0]        w_idx_i
+   , input [vaddr_width_p-1:0]          w_tgt_i
+   , output logic                       w_yumi_o
    );
 
   ///////////////////////
@@ -98,7 +100,7 @@ module bp_fe_btb
   wire [btb_idx_width_p-1:0] tag_mem_w_addr_li = is_clear ? init_cnt : w_idx_i;
   // Bug in XSIM 2019.2 causes SEGV when assigning to structs with a mux
   bp_btb_entry_s new_btb;
-  assign new_btb = '{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: br_tgt_i};
+  assign new_btb = '{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: w_tgt_i};
   assign tag_mem_data_li = (is_clear | (w_v_i & w_clr_i)) ? '0 : new_btb;
 
   bp_btb_entry_s tag_mem_data_lo;
@@ -120,21 +122,20 @@ module bp_fe_btb
      );
   assign w_yumi_o = is_run & w_v_i & ~rw_same_addr;
 
-  logic [btb_tag_width_p-1:0] r_tag_r;
   bsg_dff_reset_en
-   #(.width_p(btb_tag_width_p))
+   #(.width_p(btb_idx_width_p+btb_tag_width_p))
    tag_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(tag_mem_r_v_li)
 
-     ,.data_i(r_tag_li)
-     ,.data_o(r_tag_r)
+     ,.data_i({r_idx_li, r_tag_li})
+     ,.data_o({r_idx_o, r_tag_o})
      );
 
-  assign br_tgt_v_o   = tag_mem_data_lo.v & (tag_mem_data_lo.tag == r_tag_r);
-  assign br_tgt_jmp_o = tag_mem_data_lo.v & tag_mem_data_lo.jmp;
-  assign br_tgt_o     = tag_mem_data_lo.tgt;
+  assign r_tgt_v_o   = tag_mem_data_lo.v & (tag_mem_data_lo.tag == r_tag_o);
+  assign r_tgt_jmp_o = tag_mem_data_lo.v & tag_mem_data_lo.jmp;
+  assign r_tgt_o     = tag_mem_data_lo.tgt;
 
 
 endmodule

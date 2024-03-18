@@ -150,16 +150,18 @@ module bp_fe_pc_gen
 
      ,.r_addr_i(btb_r_addr_li)
      ,.r_v_i(btb_r_v_li)
-     ,.br_tgt_o(btb_br_tgt_lo)
-     ,.br_tgt_v_o(btb_br_tgt_v_lo)
-     ,.br_tgt_jmp_o(btb_br_tgt_jmp_lo)
+     ,.r_idx_o(btb_idx)
+     ,.r_tag_o(btb_tag)
+     ,.r_tgt_o(btb_br_tgt_lo)
+     ,.r_tgt_v_o(btb_br_tgt_v_lo)
+     ,.r_tgt_jmp_o(btb_br_tgt_jmp_lo)
 
      ,.w_v_i(btb_w_v_li)
      ,.w_clr_i(btb_clr_li)
      ,.w_jmp_i(btb_jmp_li)
      ,.w_tag_i(btb_tag_li)
      ,.w_idx_i(btb_idx_li)
-     ,.br_tgt_i(btb_tgt_li)
+     ,.w_tgt_i(btb_tgt_li)
      ,.w_yumi_o(btb_w_yumi_lo)
 
      ,.init_done_o(btb_init_done_lo)
@@ -191,15 +193,17 @@ module bp_fe_pc_gen
      ,.r_v_i(bht_r_v_li)
      ,.r_addr_i(bht_r_addr_li)
      ,.r_ghist_i(bht_r_ghist_li)
-     ,.val_o(bht_row_lo)
-     ,.pred_o(bht_pred_lo)
+     ,.r_val_o(bht_row_lo)
+     ,.r_pred_o(bht_pred_lo)
+     ,.r_idx_o(bht_idx)
+     ,.r_offset_o(bht_offset)
 
      ,.w_v_i(bht_w_v_li)
      ,.w_idx_i(bht_w_idx_li)
      ,.w_offset_i(bht_w_offset_li)
      ,.w_ghist_i(bht_w_ghist_li)
-     ,.correct_i(attaboy_yumi_o)
-     ,.val_i(bht_row_li)
+     ,.w_correct_i(attaboy_yumi_o)
+     ,.w_val_i(bht_row_li)
      ,.w_yumi_o(bht_w_yumi_lo)
 
      ,.init_done_o(bht_init_done_lo)
@@ -243,11 +247,6 @@ module bp_fe_pc_gen
 
   assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
   assign pc_plus4  = pc_if1_r + vaddr_width_p'(4);
-
-  assign btb_tag = pc_if1_r[2+btb_idx_width_p+:btb_tag_width_p];
-  assign btb_idx = pc_if1_r[2+:btb_idx_width_p] ^ pc_if1_r[1];
-  assign bht_idx = pc_if1_r[2+:bht_idx_width_p] ^ pc_if1_r[1];
-  assign bht_offset = pc_if1_r[2+bht_idx_width_p+:bht_offset_width_p];
 
   /////////////////////////////////////////////////////////////////////////////////////
   // IF2

@@ -20,24 +20,26 @@ module bp_fe_bht
 
    , localparam entry_width_lp = 2*bht_row_els_p
    )
-  (input                                  clk_i
-   , input                                reset_i
+  (input                                   clk_i
+   , input                                 reset_i
 
-   , output logic                         init_done_o
+   , output logic                          init_done_o
 
-   , input                                w_v_i
-   , input [bht_idx_width_p-1:0]          w_idx_i
-   , input [bht_offset_width_p-1:0]       w_offset_i
-   , input [ghist_width_p-1:0]            w_ghist_i
-   , input [bht_row_width_p-1:0]          val_i
-   , input                                correct_i
-   , output logic                         w_yumi_o
+   , input                                 w_v_i
+   , input [bht_idx_width_p-1:0]           w_idx_i
+   , input [bht_offset_width_p-1:0]        w_offset_i
+   , input [ghist_width_p-1:0]             w_ghist_i
+   , input [bht_row_width_p-1:0]           w_val_i
+   , input                                 w_correct_i
+   , output logic                          w_yumi_o
 
-   , input                                r_v_i
-   , input [vaddr_width_p-1:0]            r_addr_i
-   , input [ghist_width_p-1:0]            r_ghist_i
-   , output logic [bht_row_width_p-1:0]   val_o
-   , output logic                         pred_o
+   , input                                 r_v_i
+   , input [vaddr_width_p-1:0]             r_addr_i
+   , input [ghist_width_p-1:0]             r_ghist_i
+   , output logic [bht_row_width_p-1:0]    r_val_o
+   , output logic                          r_pred_o
+   , output logic [bht_idx_width_p-1:0]    r_idx_o
+   , output logic [bht_offset_width_p-1:0] r_offset_o
    );
 
   // Initialization state machine
@@ -48,8 +50,9 @@ module bp_fe_bht
 
   assign init_done_o = is_run;
 
-  localparam idx_width_lp = bht_idx_width_p+ghist_width_p;
-  localparam bht_els_lp = 2**idx_width_lp;
+  localparam hash_width_lp = 1;
+  localparam addr_width_lp = bht_idx_width_p+ghist_width_p;
+  localparam bht_els_lp = 2**addr_width_lp;
   localparam bht_init_lp = 2'b01;
   logic [`BSG_WIDTH(bht_els_lp)-1:0] init_cnt;
   bsg_counter_clear_up
@@ -82,24 +85,27 @@ module bp_fe_bht
   logic rw_same_addr;
 
   wire                             w_v_li = is_clear | (w_v_i & ~rw_same_addr);
-  wire [idx_width_lp-1:0]        w_idx_li = is_clear ? init_cnt : {w_ghist_i, w_idx_i};
+  wire [addr_width_lp-1:0]      w_addr_li = is_clear ? init_cnt : {w_ghist_i, w_idx_i};
   wire [bht_row_els_p-1:0]      w_mask_li = is_clear ? '1 : (1'b1 << w_offset_i);
   logic [bht_row_width_p-1:0] w_data_li;
   for (genvar i = 0; i < bht_row_els_p; i++)
     begin : wval
       assign w_data_li[2*i]   =
-        is_clear ? bht_init_lp[0] : w_mask_li[i] ? ~correct_i : val_i[2*i];
+        is_clear ? bht_init_lp[0] : w_mask_li[i] ? ~w_correct_i : w_val_i[2*i];
       assign w_data_li[2*i+1] =
-        is_clear ? bht_init_lp[1] : w_mask_li[i] ? val_i[2*i+1] ^ (~correct_i & val_i[2*i]) : val_i[2*i+1];
+        is_clear ? bht_init_lp[1] : w_mask_li[i] ? w_val_i[2*i+1] ^ (~w_correct_i & w_val_i[2*i]) : w_val_i[2*i+1];
     end
 
   // GSELECT
-  wire                            r_v_li = r_v_i;
-  wire [idx_width_lp-1:0]       r_idx_li = {r_ghist_i, r_addr_i[2+:bht_idx_width_p]} ^ r_addr_i[1];
+  wire                               r_v_li = r_v_i;
+  wire [hash_width_lp-1:0]        r_hash_li = r_addr_i[1];
+  wire [bht_idx_width_p-1:0]       r_idx_li = r_addr_i[2+:bht_idx_width_p] ^ r_hash_li;
+  wire [addr_width_lp-1:0]        r_addr_li = {r_ghist_i, r_idx_li};
+  wire [bht_offset_width_p-1:0] r_offset_li = r_addr_i[2+bht_idx_width_p+:bht_offset_width_p];
+
+  assign rw_same_addr = r_v_i & w_v_i & (r_addr_li == w_addr_li);
+
   logic [bht_row_width_p-1:0] r_data_lo;
-
-  assign rw_same_addr = r_v_i & w_v_i & (r_idx_li == w_idx_li);
-
   bsg_mem_1r1w_sync
    #(.width_p(bht_row_width_p), .els_p(bht_els_lp), .latch_last_read_p(1))
    bht_mem
@@ -107,36 +113,28 @@ module bp_fe_bht
      ,.reset_i(reset_i)
 
      ,.w_v_i(w_v_li)
-     ,.w_addr_i(w_idx_li)
+     ,.w_addr_i(w_addr_li)
      ,.w_data_i(w_data_li)
 
      ,.r_v_i(r_v_li)
-     ,.r_addr_i(r_idx_li)
+     ,.r_addr_i(r_addr_li)
      ,.r_data_o(r_data_lo)
      );
   assign w_yumi_o = is_run & w_v_i & ~rw_same_addr;
 
-  logic [`BSG_SAFE_CLOG2(bht_row_width_p)-1:0] pred_idx_lo;
-  if (bht_row_els_p > 1)
-    begin : fold
-      logic [bht_offset_width_p-1:0] pred_offset_n, pred_offset_r;
-      assign pred_offset_n = r_addr_i[2+bht_idx_width_p+:bht_offset_width_p];
-      bsg_dff
-       #(.width_p(bht_offset_width_p))
-       pred_idx_reg
-        (.clk_i(clk_i)
-         ,.data_i(pred_offset_n)
-         ,.data_o(pred_offset_r)
-         );
-    assign pred_idx_lo = (pred_offset_r << 1'b1) + 1'b1;
-   end
- else
-   begin : no_fold
-     assign pred_idx_lo = 1'b1;
-   end
+  bsg_dff_en
+   #(.width_p(bht_offset_width_p+bht_idx_width_p))
+   pred_idx_reg
+    (.clk_i(clk_i)
+     ,.en_i(r_v_li)
+     ,.data_i({r_offset_li, r_idx_li})
+     ,.data_o({r_offset_o, r_idx_o})
+     );
+  wire [`BSG_SAFE_CLOG2(bht_row_width_p)-1:0] pred_bit_lo =
+    (bht_row_els_p > 1) ? ((r_offset_o << 1'b1) + 1'b1) : 1'b1;
 
-  assign val_o = r_data_lo;
-  assign pred_o = val_o[pred_idx_lo];
+  assign r_val_o = r_data_lo;
+  assign r_pred_o = r_val_o[pred_bit_lo];
 
 endmodule
 
