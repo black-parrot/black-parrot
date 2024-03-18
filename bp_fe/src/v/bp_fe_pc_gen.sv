@@ -31,6 +31,7 @@ module bp_fe_pc_gen
 
    , input                                           redirect_v_i
    , input [vaddr_width_p-1:0]                       redirect_pc_i
+   , input [vaddr_width_p-1:0]                       redirect_npc_i
    , input                                           redirect_resume_i
    , input                                           redirect_br_v_i
    , input [branch_metadata_fwd_width_p-1:0]         redirect_br_metadata_fwd_i
@@ -93,7 +94,7 @@ module bp_fe_pc_gen
       begin
         next_pred  = 1'b0;
         next_taken = redirect_br_taken_i;
-        next_pc    = redirect_pc_i;
+        next_pc    = redirect_npc_i;
 
         next_metadata = redirect_br_metadata_fwd_cast_i;
       end
@@ -138,7 +139,7 @@ module bp_fe_pc_gen
   wire btb_jmp_li = redirect_br_v_i ? (redirect_br_metadata_fwd_cast_i.site_jal | redirect_br_metadata_fwd_cast_i.site_jalr) : (attaboy_br_metadata_fwd_cast_i.site_jal | attaboy_br_metadata_fwd_cast_i.site_jalr);
   wire [btb_tag_width_p-1:0]  btb_tag_li = redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.btb_tag : attaboy_br_metadata_fwd_cast_i.btb_tag;
   wire [btb_idx_width_p-1:0]  btb_idx_li = redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.btb_idx : attaboy_br_metadata_fwd_cast_i.btb_idx;
-  wire [vaddr_width_p-1:0]    btb_tgt_li = redirect_br_v_i ? (redirect_pc_i - (redirect_resume_i ? 2'b10 : 2'b00)) : attaboy_pc_i;
+  wire [vaddr_width_p-1:0]    btb_tgt_li = redirect_br_v_i ? redirect_pc_i : attaboy_pc_i;
   wire [vaddr_width_p-1:0] btb_r_addr_li = next_pc;
 
   bp_fe_btb

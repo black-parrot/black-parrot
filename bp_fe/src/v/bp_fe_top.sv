@@ -91,7 +91,7 @@ module bp_fe_top
   logic [vaddr_width_p-1:0] attaboy_pc_li;
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
   logic redirect_v_li, redirect_resume_li;
-  logic [vaddr_width_p-1:0] redirect_pc_li;
+  logic [vaddr_width_p-1:0] redirect_pc_li, redirect_npc_li;
   logic redirect_br_v_li, redirect_br_taken_li, redirect_br_ntaken_li, redirect_br_nonbr_li;
   logic [cinstr_width_gp-1:0] redirect_instr_li;
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd_li;
@@ -124,6 +124,7 @@ module bp_fe_top
      ,.redirect_v_i(redirect_v_li)
      ,.redirect_resume_i(redirect_resume_li)
      ,.redirect_pc_i(redirect_pc_li)
+     ,.redirect_npc_i(redirect_npc_li)
      ,.redirect_br_v_i(redirect_br_v_li)
      ,.redirect_br_metadata_fwd_i(redirect_br_metadata_fwd_li)
      ,.redirect_br_taken_i(redirect_br_taken_li)
@@ -372,6 +373,7 @@ module bp_fe_top
 
      ,.redirect_v_o(redirect_v_li)
      ,.redirect_pc_o(redirect_pc_li)
+     ,.redirect_npc_o(redirect_npc_li)
      ,.redirect_instr_o(redirect_instr_li)
      ,.redirect_resume_o(redirect_resume_li)
      ,.redirect_br_v_o(redirect_br_v_li)

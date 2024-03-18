@@ -62,7 +62,7 @@ module bp_fe_realigner
   wire [cinstr_width_gp-1:0] if2_data_upper = if2_data_i[cinstr_width_gp+:cinstr_width_gp];
   wire [cinstr_width_gp-1:0] if2_data_lower = if2_data_i[0+:cinstr_width_gp];
 
-  wire [vaddr_width_p-1:0] redirect_partial_pc = redirect_pc_i - (redirect_resume_i ? 2'b10 : 2'b00);
+  wire [vaddr_width_p-1:0] redirect_partial_pc = redirect_pc_i;
   wire [vaddr_width_p-1:0] if2_partial_pc = if2_pc_i + (if2_pc_aligned ? 2'b10 : 2'b00);
   wire [cinstr_width_gp-1:0] if2_partial_instr = if2_pc_aligned ? if2_data_upper : if2_data_lower;
   bsg_mux

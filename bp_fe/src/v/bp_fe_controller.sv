@@ -31,6 +31,7 @@ module bp_fe_controller
 
    , output logic                                     redirect_v_o
    , output logic [vaddr_width_p-1:0]                 redirect_pc_o
+   , output logic [vaddr_width_p-1:0]                 redirect_npc_o
    , output logic [cinstr_width_gp-1:0]               redirect_instr_o
    , output logic                                     redirect_resume_o
    , output logic                                     redirect_br_v_o
@@ -140,7 +141,8 @@ module bp_fe_controller
   wire cmd_complex_v    = fe_cmd_v_i & ~cmd_immediate_v & cmd_nonattaboy_v;
 
   assign redirect_v_o               = cmd_nonattaboy_v;
-  assign redirect_pc_o              = fe_cmd_cast_i.npc;
+  assign redirect_pc_o              = fe_cmd_cast_i.npc - (redirect_resume_o ? 2'b10 : 2'b00);
+  assign redirect_npc_o             = fe_cmd_cast_i.npc;
   assign redirect_br_v_o            = br_miss_v;
   assign redirect_br_taken_o        = br_miss_taken;
   assign redirect_br_ntaken_o       = br_miss_ntaken;
