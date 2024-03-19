@@ -484,7 +484,7 @@ module bp_fe_icache
   `bp_cast_o(bp_fe_icache_req_metadata_s, cache_req_metadata);
 
   localparam block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
-  localparam uncached_req_size = e_size_4B;
+  localparam uncached_req_size = `BSG_SAFE_CLOG2(fetch_bytes_gp);
 
   wire cached_req   = decode_tv_r.fetch_op & ~uncached_tv_r & ~snoop_tv_r & ~hit_v_tv;
   wire uncached_req = decode_tv_r.fetch_op &  uncached_tv_r & ~snoop_tv_r & ~hit_v_tv;
@@ -492,8 +492,9 @@ module bp_fe_icache
 
 
   assign cache_req_v_o = v_tv & ~spec_tv_r & |{uncached_req, cached_req, inval_req};
+  wire [vaddr_width_p-1:0] cache_req_addr = `bp_addr_align(paddr_tv_r, fetch_bytes_gp);
   assign cache_req_cast_o =
-   '{addr     : `bp_addr_align(paddr_tv_r, 4)
+   '{addr     : cache_req_addr
      ,size    : bp_cache_req_size_e'(cached_req ? block_req_size : uncached_req_size)
      ,msg_type: cached_req ? e_miss_load : uncached_req ? e_uc_load : e_cache_inval
      ,subop   : e_req_amoswap

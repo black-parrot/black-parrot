@@ -82,7 +82,7 @@ module bp_fe_pc_gen
   bp_fe_branch_metadata_fwd_s next_metadata, ovr_metadata;
   logic next_pred, next_taken;
   logic ovr_ret, ovr_btaken, ovr_jmp, ovr_ntaken, ovr_dbranch, btb_taken;
-  logic [vaddr_width_p-1:0] pc_plus4;
+  logic [vaddr_width_p-1:0] pc_plus;
   logic [vaddr_width_p-1:0] ras_tgt_lo, br_tgt_lo, linear_tgt_lo;
   logic [ras_idx_width_p-1:0] ras_next, ras_tos;
   logic [btb_tag_width_p-1:0] btb_tag;
@@ -112,7 +112,7 @@ module bp_fe_pc_gen
       begin
         next_pred  = bht_pred_lo;
         next_taken = btb_taken;
-        next_pc    = btb_taken ? btb_br_tgt_lo : {pc_plus4[vaddr_width_p-1:2], 2'b00};
+        next_pc    = btb_taken ? btb_br_tgt_lo : `bp_addr_align(pc_plus, fetch_bytes_gp);
 
         next_metadata = '0;
         next_metadata.src_btb = btb_br_tgt_v_lo;
@@ -252,7 +252,7 @@ module bp_fe_pc_gen
   assign ovr_metadata = metadata_if1;
 
   assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
-  assign pc_plus4  = pc_if1_r + vaddr_width_p'(4);
+  assign pc_plus  = pc_if1_r + fetch_bytes_gp;
 
   /////////////////////////////////////////////////////////////////////////////////////
   // IF2
