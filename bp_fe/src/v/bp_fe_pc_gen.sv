@@ -22,11 +22,13 @@ module bp_fe_pc_gen
    , input                                           reset_i
 
    , output logic                                    init_done_o
+
+   , input                                           attaboy_v_i
+   , input                                           attaboy_force_i
    , input [vaddr_width_p-1:0]                       attaboy_pc_i
    , input [branch_metadata_fwd_width_p-1:0]         attaboy_br_metadata_fwd_i
    , input                                           attaboy_taken_i
    , input                                           attaboy_ntaken_i
-   , input                                           attaboy_v_i
    , output logic                                    attaboy_yumi_o
 
    , input                                           redirect_v_i
@@ -134,6 +136,7 @@ module bp_fe_pc_gen
     | (attaboy_v_i & attaboy_taken_i & ~attaboy_br_metadata_fwd_cast_i.src_btb & ~attaboy_br_metadata_fwd_cast_i.src_ras)
     | (redirect_br_v_i & redirect_br_taken_i & redirect_br_metadata_fwd_cast_i.src_btb & redirect_br_metadata_fwd_cast_i.src_ras)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd_cast_i.src_btb);
+  wire btb_w_force_li = redirect_br_v_i | attaboy_force_i;
   wire btb_clr_li = (redirect_br_v_i & redirect_br_taken_i & redirect_br_metadata_fwd_cast_i.src_btb & redirect_br_metadata_fwd_cast_i.src_ras)
     | (redirect_br_v_i & redirect_br_nonbr_i & redirect_br_metadata_fwd_cast_i.src_btb);
   wire btb_jmp_li = redirect_br_v_i ? (redirect_br_metadata_fwd_cast_i.site_jal | redirect_br_metadata_fwd_cast_i.site_jalr) : (attaboy_br_metadata_fwd_cast_i.site_jal | attaboy_br_metadata_fwd_cast_i.site_jalr);
@@ -157,6 +160,7 @@ module bp_fe_pc_gen
      ,.r_tgt_jmp_o(btb_br_tgt_jmp_lo)
 
      ,.w_v_i(btb_w_v_li)
+     ,.w_force_i(btb_w_force_li)
      ,.w_clr_i(btb_clr_li)
      ,.w_jmp_i(btb_jmp_li)
      ,.w_tag_i(btb_tag_li)
@@ -175,6 +179,7 @@ module bp_fe_pc_gen
   wire [ghist_width_p-1:0] bht_r_ghist_li = ghistory_n;
   wire bht_w_v_li =
     (redirect_br_v_i & redirect_br_metadata_fwd_cast_i.site_br) | (attaboy_v_i & attaboy_br_metadata_fwd_cast_i.site_br);
+  wire bht_w_force_li = redirect_br_v_i | attaboy_force_i;
   wire [bht_idx_width_p-1:0] bht_w_idx_li =
     redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.bht_idx : attaboy_br_metadata_fwd_cast_i.bht_idx;
   wire [bht_offset_width_p-1:0] bht_w_offset_li =
@@ -199,6 +204,7 @@ module bp_fe_pc_gen
      ,.r_offset_o(bht_offset)
 
      ,.w_v_i(bht_w_v_li)
+     ,.w_force_i(bht_w_force_li)
      ,.w_idx_i(bht_w_idx_li)
      ,.w_offset_i(bht_w_offset_li)
      ,.w_ghist_i(bht_w_ghist_li)

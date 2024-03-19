@@ -26,6 +26,7 @@ module bp_fe_bht
    , output logic                          init_done_o
 
    , input                                 w_v_i
+   , input                                 w_force_i
    , input [bht_idx_width_p-1:0]           w_idx_i
    , input [bht_offset_width_p-1:0]        w_offset_i
    , input [ghist_width_p-1:0]             w_ghist_i
@@ -83,8 +84,10 @@ module bp_fe_bht
       state_r <= state_n;
 
   logic rw_same_addr;
+  wire suppress_read  = rw_same_addr &  w_force_i;
+  wire suppress_write = rw_same_addr & !w_force_i;
 
-  wire                             w_v_li = is_clear | (w_v_i & ~rw_same_addr);
+  wire                             w_v_li = is_clear | (w_v_i & ~suppress_write);
   wire [addr_width_lp-1:0]      w_addr_li = is_clear ? init_cnt : {w_ghist_i, w_idx_i};
   wire [bht_row_els_p-1:0]      w_mask_li = is_clear ? '1 : (1'b1 << w_offset_i);
   logic [bht_row_width_p-1:0] w_data_li;
@@ -97,7 +100,7 @@ module bp_fe_bht
     end
 
   // GSELECT
-  wire                               r_v_li = r_v_i;
+  wire                               r_v_li = r_v_i & ~suppress_read;
   wire [hash_width_lp-1:0]        r_hash_li = r_addr_i[1];
   wire [bht_idx_width_p-1:0]       r_idx_li = r_addr_i[2+:bht_idx_width_p] ^ r_hash_li;
   wire [addr_width_lp-1:0]        r_addr_li = {r_ghist_i, r_idx_li};
@@ -120,7 +123,7 @@ module bp_fe_bht
      ,.r_addr_i(r_addr_li)
      ,.r_data_o(r_data_lo)
      );
-  assign w_yumi_o = is_run & w_v_i & ~rw_same_addr;
+  assign w_yumi_o = is_run & w_v_li;
 
   bsg_dff_en
    #(.width_p(bht_offset_width_p+bht_idx_width_p))

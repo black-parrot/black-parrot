@@ -41,6 +41,7 @@ module bp_fe_controller
    , output logic [branch_metadata_fwd_width_p-1:0]   redirect_br_metadata_fwd_o
 
    , output logic                                     attaboy_v_o
+   , output logic                                     attaboy_force_o
    , output logic [vaddr_width_p-1:0]                 attaboy_pc_o
    , output logic                                     attaboy_taken_o
    , output logic                                     attaboy_ntaken_o
@@ -150,6 +151,7 @@ module bp_fe_controller
   assign redirect_br_metadata_fwd_o = fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd;
 
   assign attaboy_v_o               = attaboy_v;
+  assign attaboy_force_o           = ~fe_queue_ready_and_i;
   assign attaboy_pc_o              = fe_cmd_cast_i.npc;
   assign attaboy_taken_o           = attaboy_v &  fe_cmd_cast_i.operands.attaboy.taken;
   assign attaboy_ntaken_o          = attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken;

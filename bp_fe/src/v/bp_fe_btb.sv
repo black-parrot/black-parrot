@@ -37,6 +37,7 @@ module bp_fe_btb
 
    // Synchronous write
    , input                              w_v_i
+   , input                              w_force_i
    , input                              w_clr_i
    , input                              w_jmp_i
    , input [btb_tag_width_p-1:0]        w_tag_i
@@ -55,6 +56,7 @@ module bp_fe_btb
   assign init_done_o = is_run;
 
   localparam btb_els_lp = 2**btb_idx_width_p;
+  localparam addr_width_lp = `BSG_SAFE_CLOG2(btb_els_lp);
   logic [`BSG_WIDTH(btb_els_lp)-1:0] init_cnt;
   bsg_counter_clear_up
    #(.max_val_p(btb_els_lp), .init_val_p(0))
@@ -91,51 +93,57 @@ module bp_fe_btb
     logic [vaddr_width_p-1:0]   tgt;
   }  bp_btb_entry_s;
 
-  wire [btb_idx_width_p-1:0] r_idx_li = r_addr_i[2+:btb_idx_width_p] ^ r_addr_i[1];
-  wire [btb_tag_width_p-1:0] r_tag_li = r_addr_i[2+btb_idx_width_p+:btb_tag_width_p];
+  logic rw_same_addr;
+  wire suppress_read  = rw_same_addr &  w_force_i;
+  wire suppress_write = rw_same_addr & !w_force_i;
 
-  bp_btb_entry_s tag_mem_data_li;
-  wire rw_same_addr = r_v_i & w_v_i & (r_idx_li == w_idx_i);
-  wire                          tag_mem_w_v_li = is_clear | (w_v_i & ~rw_same_addr);
-  wire [btb_idx_width_p-1:0] tag_mem_w_addr_li = is_clear ? init_cnt : w_idx_i;
+
+  bp_btb_entry_s w_data_li;
+  wire                        w_v_li = is_clear | (w_v_i & ~suppress_write);
+  wire [addr_width_lp-1:0] w_addr_li = is_clear ? init_cnt : w_idx_i;
   // Bug in XSIM 2019.2 causes SEGV when assigning to structs with a mux
   bp_btb_entry_s new_btb;
   assign new_btb = '{v: 1'b1, jmp: w_jmp_i, tag: w_tag_i, tgt: w_tgt_i};
-  assign tag_mem_data_li = (is_clear | (w_v_i & w_clr_i)) ? '0 : new_btb;
+  assign w_data_li = (is_clear | (w_v_i & w_clr_i)) ? '0 : new_btb;
 
-  bp_btb_entry_s tag_mem_data_lo;
-  wire                           tag_mem_r_v_li = r_v_i;
-  wire [btb_idx_width_p-1:0]  tag_mem_r_addr_li = r_idx_li;
+  bp_btb_entry_s r_data_lo;
+  wire                         r_v_li = r_v_i & ~suppress_read;
+  wire [btb_idx_width_p-1:0] r_idx_li = r_addr_i[2+:btb_idx_width_p] ^ r_addr_i[1];
+  wire [addr_width_lp-1:0]  r_addr_li = r_idx_li;
+  wire [btb_tag_width_p-1:0] r_tag_li = r_addr_i[2+btb_idx_width_p+:btb_tag_width_p];
+
+  assign rw_same_addr = r_v_i & w_v_i & (r_idx_li == w_idx_i);
+
   bsg_mem_1r1w_sync
    #(.width_p($bits(bp_btb_entry_s)), .els_p(btb_els_lp), .latch_last_read_p(1))
-   tag_mem
+   btb_mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.w_v_i(tag_mem_w_v_li)
-     ,.w_addr_i(tag_mem_w_addr_li)
-     ,.w_data_i(tag_mem_data_li)
+     ,.w_v_i(w_v_li)
+     ,.w_addr_i(w_addr_li)
+     ,.w_data_i(w_data_li)
 
-     ,.r_v_i(tag_mem_r_v_li)
-     ,.r_addr_i(tag_mem_r_addr_li)
-     ,.r_data_o(tag_mem_data_lo)
+     ,.r_v_i(r_v_li)
+     ,.r_addr_i(r_addr_li)
+     ,.r_data_o(r_data_lo)
      );
-  assign w_yumi_o = is_run & w_v_i & ~rw_same_addr;
+  assign w_yumi_o = is_run & w_v_li;
 
   bsg_dff_reset_en
    #(.width_p(btb_idx_width_p+btb_tag_width_p))
    tag_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(tag_mem_r_v_li)
+     ,.en_i(r_v_li)
 
      ,.data_i({r_idx_li, r_tag_li})
      ,.data_o({r_idx_o, r_tag_o})
      );
 
-  assign r_tgt_v_o   = tag_mem_data_lo.v & (tag_mem_data_lo.tag == r_tag_o);
-  assign r_tgt_jmp_o = tag_mem_data_lo.v & tag_mem_data_lo.jmp;
-  assign r_tgt_o     = tag_mem_data_lo.tgt;
+  assign r_tgt_v_o   = r_data_lo.v & (r_data_lo.tag == r_tag_o);
+  assign r_tgt_jmp_o = r_data_lo.v & r_data_lo.jmp;
+  assign r_tgt_o     = r_data_lo.tgt;
 
 
 endmodule

@@ -87,7 +87,7 @@ module bp_fe_top
      );
 
   logic pc_gen_init_done_lo;
-  logic attaboy_v_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
+  logic attaboy_v_li, attaboy_force_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
   logic [vaddr_width_p-1:0] attaboy_pc_li;
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
   logic redirect_v_li, redirect_resume_li;
@@ -114,11 +114,13 @@ module bp_fe_top
      ,.reset_i(reset_i)
 
      ,.init_done_o(pc_gen_init_done_lo)
+
+     ,.attaboy_v_i(attaboy_v_li)
+     ,.attaboy_force_i(attaboy_force_li)
      ,.attaboy_pc_i(attaboy_pc_li)
      ,.attaboy_br_metadata_fwd_i(attaboy_br_metadata_fwd_li)
      ,.attaboy_taken_i(attaboy_taken_li)
      ,.attaboy_ntaken_i(attaboy_ntaken_li)
-     ,.attaboy_v_i(attaboy_v_li)
      ,.attaboy_yumi_o(attaboy_yumi_lo)
 
      ,.redirect_v_i(redirect_v_li)
@@ -382,11 +384,12 @@ module bp_fe_top
      ,.redirect_br_nonbr_o(redirect_br_nonbr_li)
      ,.redirect_br_metadata_fwd_o(redirect_br_metadata_fwd_li)
 
+     ,.attaboy_v_o(attaboy_v_li)
+     ,.attaboy_force_o(attaboy_force_li)
      ,.attaboy_pc_o(attaboy_pc_li)
      ,.attaboy_taken_o(attaboy_taken_li)
      ,.attaboy_ntaken_o(attaboy_ntaken_li)
      ,.attaboy_br_metadata_fwd_o(attaboy_br_metadata_fwd_li)
-     ,.attaboy_v_o(attaboy_v_li)
      ,.attaboy_yumi_i(attaboy_yumi_lo)
 
      ,.next_pc_i(next_pc_lo)
