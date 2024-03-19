@@ -23,10 +23,10 @@ module bp_fe_top
 
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
-   , output                                           fe_cmd_yumi_o
+   , output logic                                     fe_cmd_yumi_o
 
-   , output [fe_queue_width_lp-1:0]                   fe_queue_o
-   , output                                           fe_queue_v_o
+   , output logic [fe_queue_width_lp-1:0]             fe_queue_o
+   , output logic                                     fe_queue_v_o
    , input                                            fe_queue_ready_and_i
 
    , output logic [icache_req_width_lp-1:0]           cache_req_o
@@ -60,9 +60,7 @@ module bp_fe_top
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
-  `bp_cast_o(bp_fe_queue_s, fe_queue);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
-  `bp_cast_i(bp_fe_cmd_s, fe_cmd);
 
   logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
   logic shadow_priv_w;
@@ -151,13 +149,13 @@ module bp_fe_top
      ,.fetch_rebase_i(fetch_rebase_lo)
      );
 
+  logic itlb_r_v_li;
   wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
   wire [1:0] r_size_li = 2'b10;
-  logic itlb_r_v_li, itlb_w_v_li, itlb_flush_v_li, itlb_fence_v_li;
 
-  bp_pte_leaf_s w_tlb_entry_li;
-  wire [vtag_width_p-1:0] w_vtag_li = fe_cmd_cast_i.npc[vaddr_width_p-1-:vtag_width_p];
-  assign w_tlb_entry_li = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;
+  logic itlb_w_v_li, itlb_flush_v_li, itlb_fence_v_li;
+  logic [vtag_width_p-1:0] itlb_w_vtag_li;
+  bp_pte_leaf_s itlb_w_tlb_entry_li;
 
   logic instr_access_fault_v, instr_page_fault_v;
   logic ptag_v_li, ptag_uncached_li, ptag_nonidem_li, ptag_dram_li, ptag_miss_li;
@@ -189,8 +187,8 @@ module bp_fe_top
      ,.hio_mask_i(cfg_bus_cast_i.hio_mask)
 
      ,.w_v_i(itlb_w_v_li)
-     ,.w_vtag_i(w_vtag_li)
-     ,.w_entry_i(w_tlb_entry_li)
+     ,.w_vtag_i(itlb_w_vtag_li)
+     ,.w_entry_i(itlb_w_tlb_entry_li)
 
      ,.r_v_i(itlb_r_v_li)
      ,.r_instr_i(1'b1)
@@ -356,26 +354,6 @@ module bp_fe_top
       assign fetch_rebase_lo = '0;
     end
 
-  assign fe_queue_v_o = fetch_instr_v_lo | fetch_exception_v_lo;
-
-  always_comb
-    begin
-      fe_queue_cast_o = '0;
-      fe_queue_cast_o.pc = fetch_pc_lo;
-      fe_queue_cast_o.msg_type = itlb_miss_r
-                                 ? e_itlb_miss
-                                   : instr_page_fault_r
-                                     ? e_instr_page_fault
-                                     : instr_access_fault_r
-                                       ? e_instr_access_fault
-                                       : icache_spec_v_lo
-                                         ? e_icache_miss
-                                         : e_instr_fetch;
-      fe_queue_cast_o.instr = fetch_instr_lo;
-      fe_queue_cast_o.branch_metadata_fwd = if2_br_metadata_fwd_lo;
-      fe_queue_cast_o.partial = fetch_instr_v_lo ? fetch_eager_lo : fetch_partial_lo;
-    end
-
   bp_fe_controller
    #(.bp_params_p(bp_params_p))
    controller
@@ -384,9 +362,13 @@ module bp_fe_top
 
      ,.pc_gen_init_done_i(pc_gen_init_done_lo)
 
-     ,.fe_cmd_i(fe_cmd_cast_i)
+     ,.fe_cmd_i(fe_cmd_i)
      ,.fe_cmd_v_i(fe_cmd_v_i)
      ,.fe_cmd_yumi_o(fe_cmd_yumi_o)
+
+     ,.fe_queue_o(fe_queue_o)
+     ,.fe_queue_v_o(fe_queue_v_o)
+     ,.fe_queue_ready_and_i(fe_queue_ready_and_i)
 
      ,.redirect_v_o(redirect_v_li)
      ,.redirect_pc_o(redirect_pc_li)
@@ -417,12 +399,27 @@ module bp_fe_top
 
      ,.if2_instr_v_i(if2_instr_v)
      ,.if2_exception_v_i(if2_exception_v)
+     ,.if2_itlb_miss_i(itlb_miss_r)
+     ,.if2_instr_page_fault_i(instr_page_fault_r)
+     ,.if2_instr_access_fault_i(instr_access_fault_r)
+     ,.if2_icache_spec_v_i(icache_spec_v_lo)
+     ,.if2_br_metadata_fwd_i(if2_br_metadata_fwd_lo)
      ,.poison_isd_o(poison_isd_lo)
+
+     ,.fetch_instr_v_i(fetch_instr_v_lo)
+     ,.fetch_exception_v_i(fetch_exception_v_lo)
+     ,.fetch_pc_i(fetch_pc_lo)
+     ,.fetch_instr_i(fetch_instr_lo)
+     ,.fetch_partial_i(fetch_partial_lo)
+     ,.fetch_eager_i(fetch_eager_lo)
 
      ,.itlb_r_v_o(itlb_r_v_li)
      ,.itlb_w_v_o(itlb_w_v_li)
+     ,.itlb_w_vtag_o(itlb_w_vtag_li)
+     ,.itlb_w_entry_o(itlb_w_tlb_entry_li)
      ,.itlb_flush_v_o(itlb_flush_v_li)
      ,.itlb_fence_v_o(itlb_fence_v_li)
+
      ,.icache_v_o(icache_v_li)
      ,.icache_force_o(icache_force_li)
      ,.icache_pkt_o(icache_pkt_li)
@@ -430,6 +427,7 @@ module bp_fe_top
 
      ,.shadow_priv_o(shadow_priv_n)
      ,.shadow_priv_w_o(shadow_priv_w)
+
      ,.shadow_translation_en_o(shadow_translation_en_n)
      ,.shadow_translation_en_w_o(shadow_translation_en_w)
      );
