@@ -785,4 +785,12 @@ module testbench
       end
   `endif
 
+  `ifdef VERILATOR_TRACE
+    initial
+      begin
+        $dumpfile("dump.fst");
+        $dumpvars;
+      end
+  `endif
+
 endmodule
