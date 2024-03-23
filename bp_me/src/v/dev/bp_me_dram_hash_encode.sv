@@ -83,9 +83,13 @@ module bp_me_dram_hash_encode
   wire [l2_tag_width_lp-1:0]            tag = daddr[l2_tag_offset_lp+:l2_tag_width_lp];
 
   // assemble the address
-  wire [daddr_width_p-1:0] addr = {tag, {(l2_banks_p>1){bank}}, {(l2_slices_p>1){slice}},
-                                   {(num_cce_p>1){cce}}, {(l2_sets_p>1){set}}, block
-                                  };
+  logic [daddr_width_p-1:0] addr;
+  assign addr[l2_tag_offset_lp+:l2_tag_width_lp] = tag;
+  assign addr[0+:l2_block_offset_width_lp]       = block;
+  if (num_cce_p > 1)   assign addr[l2_cce_offset_lp+:lg_num_cce_lp]      = cce;
+  if (l2_slices_p > 1) assign addr[l2_slice_offset_lp+:lg_l2_slices_lp]  = slice;
+  if (l2_banks_p > 1)  assign addr[l2_bank_offset_lp+:lg_l2_banks_lp]    = bank;
+  if (l2_sets_p > 1)   assign addr[l2_set_offset_lp+:lg_l2_sets_lp]      = set;
 
   wire [dev_id_width_gp-1:0] tag_dev   = paddr_i[dev_addr_width_gp+:dev_id_width_gp];
   wire [lg_l2_slices_lp-1:0] tag_slice = tag_dev - cache_dev_gp;
