@@ -54,9 +54,15 @@ module bp_me_dram_hash_decode
   wire [l2_tag_width_lp-1:0]            tag = daddr_i[l2_tag_offset_lp+:l2_tag_width_lp];
 
   // assemble the address
-  assign daddr_o = {tag, {(l2_sets_p>1){set}}, {(l2_banks_p>1){bank}},
-                    {(l2_slices_p>1){slice}}, {(num_cce_p>1){cce}}, block
-                   };
+  logic [daddr_width_p-1:0] addr;
+  assign addr[l2_tag_offset_lp+:l2_tag_width_lp] = tag;
+  assign addr[0+:l2_block_offset_width_lp]       = block;
+  if (num_cce_p > 1)   assign addr[l2_cce_offset_lp+:lg_num_cce_lp]      = cce;
+  if (l2_slices_p > 1) assign addr[l2_slice_offset_lp+:lg_l2_slices_lp]  = slice;
+  if (l2_banks_p > 1)  assign addr[l2_bank_offset_lp+:lg_l2_banks_lp]    = bank;
+  if (l2_sets_p > 1)   assign addr[l2_set_offset_lp+:lg_l2_sets_lp]      = set;
+
+  assign daddr_o = addr;
 
 endmodule
 
