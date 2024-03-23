@@ -83,6 +83,8 @@ module bp_me_dram_hash_encode
   wire [l2_tag_width_lp-1:0]            tag = daddr[l2_tag_offset_lp+:l2_tag_width_lp];
 
   // assemble the address
+  // note: using concatentation and replication operators would be preferred here,
+  // but Vivado (xsim) v2022.1 throws a fatal error when using them to assemble addr.
   logic [daddr_width_p-1:0] addr;
   assign addr[l2_tag_offset_lp+:l2_tag_width_lp] = tag;
   assign addr[0+:l2_block_offset_width_lp]       = block;
