@@ -82,6 +82,7 @@ $(BUILD_DIR)/obj_dir: | $(VBUILD_COLLATERAL)
 build_dump.sc: VV_OPTS += --trace-fst
 build_dump.sc: VV_OPTS += --trace-structs
 build_dump.sc: VV_OPTS += --trace-depth 15
+build_dump.sc: HDL_DEFINES += +define+VERILATOR_TRACE=1
 build_dump.sc: build.sc
 
 build_cov.sc: VV_OPTS += --coverage-line
