@@ -39,7 +39,7 @@ report:
 	$(RISCV_OBJCOPY) -O binary $*.riscv $@
 
 %.dump: %.riscv
-	$(RISCV_OBJDUMP) $*.riscv > $@
+	$(RISCV_OBJDUMP) -D -t $*.riscv > $@
 
 clean:
 	@rm -rf results/
