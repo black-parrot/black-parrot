@@ -114,7 +114,7 @@ module bp_processor
       `bp_cast_o(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
       `bp_cast_i(bp_bedrock_mem_rev_header_s, mem_rev_header);
 
-      wire [mem_noc_cord_width_p-1:0] mem_fwd_dst_cord_li = 1;
+      wire [mem_noc_cord_width_p-1:0] mem_fwd_dst_cord_li = my_did_i;
       wire [mem_noc_cid_width_p-1:0] mem_fwd_dst_cid_li = '0;
 
       bp_me_stream_to_wormhole
