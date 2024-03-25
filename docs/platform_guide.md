@@ -3,26 +3,26 @@
 ![Tile Taxonomy](tile_taxonomy.png)
 
 ## Instruction Latencies
-* RV64I arithmetic instructions have 1-cycle latency
+* RV64IB arithmetic instructions have 1-cycle latency
 * RV64IA memory instructions have 2/3-cycle latency
 * RV64M instructions have a 3-cycle latency, except for division, which is iterative
 * Rv64FD instructions have a 4-cycle latency, exception for fdiv/fsqrt, which are iterative
 * BlackParrot has a load-to-use time of 2 cycles for dwords, 3 cycles for words, halfs, and bytes
 * BlackParrot has a 2-cycle L1 hit latency for integer loads
 * BlackParrot has a 3-cycle L1 hit latency for floating point loads 
-* BlackParrot has a 2-cycle L2 hit latency, plus possible network interaction
+* BlackParrot has a 2-cycle L2 hit latency, plus network interaction
 
 BlackParrot has full forwarding for integer instructions
 
 ## CSRs
 BlackParrot supports the following CSRs:
 * U-mode
-  * ustatus, cycle, time. instret
+  * ustatus, cycle, time, instret
 * S-mode
   * sstatus, sscratch, sepc, scause, stval, sip, satp
 * M-mode
-  * mvendorid (0), marchid (13), mimpid (1, incremented on tapeout), mhartid, mstatus
-  * misa ({2'b10, 36'b0, 26'h140101}), medeleg, mideleg, mie, mtvec, mtvec, mcounteren
+  * mvendorid, marchid, mimpid, mhartid, mstatus
+  * misa, medeleg, mideleg, mie, mtvec, mtvec, mcounteren
   * mscratch, mepc, mcause, mtval, mip, mcycle, minstret, mcountinhibit
 * D-mode (Full debug mode support is a work-in-progress)
   * dcsr
