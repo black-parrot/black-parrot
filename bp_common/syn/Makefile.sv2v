@@ -1,33 +1,26 @@
-override TOOL := sv2v
+TOOL := sv2v
+SIM  := 0
 
-override LOG_DIR     := $(LOG_PATH)/$(TOOL)
-override RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
-override REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
-override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
+LOG_DIR     := $(LOG_PATH)/$(TOOL)
+RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
+REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
+TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
 
-override CONVERT_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).convert
+CONVERT_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).convert
 
 $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(CONVERT_DIR):
-	mkdir -p $@
-
-.PHONY: clean.sv2v
+	$(MKDIR) $@
 
 include $(TB_PATH)/$(TB)/Makefile.sv2v
 
 ## Tool specific options
 
-convert.bsg_sv2v: $(CONVERT_DIR)/convert_bsg_sv2v
-convert.bsg_sv2v: CONVERT_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).convert.log
-convert.bsg_sv2v: CONVERT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.rpt
-convert.bsg_sv2v: CONVERT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.err
+convert.sv2v: $(CONVERT_DIR)/convert_sv2v
+convert.sv2v: CONVERT_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).convert.log
+convert.sv2v: CONVERT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.rpt
+convert.sv2v: CONVERT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.err
 $(CONVERT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(CONVERT_DIR)
-$(CONVERT_DIR)/convert_bsg_sv2v: $(CONVERT_COLLATERAL)
-	$(MAKE) -C $(BP_TOOLS_DIR)/bsg_sv2v convert_sv2v \
-		DESIGN_FILELIST=$(@D)/flist.vcs DESIGN_NAME=wrapper OUTPUT_DIR=$(@D) 2>&1 | tee $(CONVERT_LOG)
-
-clean.sv2v:
-	@-rm -rf touchfiles/sv2v
-	@-rm -rf results/sv2v
-	@-rm -rf reports/sv2v
-	@-rm -rf logs/sv2v
+$(CONVERT_DIR)/convert_sv2v: $(CONVERT_COLLATERAL)
+	$(MAKE) -C $(BP_TOOLS_DIR)/sv2v convert_sv2v \
+		DESIGN_FILELIST=$(@D)/flist.vcs DESIGN_NAME=wrapper OUTPUT_DIR=$(@D) 2>&1 | $(TEE) $(CONVERT_LOG)
 

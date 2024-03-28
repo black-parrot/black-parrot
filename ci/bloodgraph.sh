@@ -4,13 +4,15 @@
 # Default to 1 core
 N=${1:-1}
 
+SUFFIX=vcs
+
 # Bash array to iterate over for configurations
 cfgs=(\
     "e_bp_default_cfg"
     )
 
 # The base command to append the configuration to
-cmd_base="make -C bp_top/syn build.v sim.v blood.v CORE_PROFILE_P=1 COSIM_P=1 SUITE=bp-tests PROG=cache_hammer"
+cmd_base="make -C bp_top/syn build.${SUFFIX} sim.${SUFFIX} blood CORE_PROFILE_P=1 COSIM_P=1 SUITE=bp-tests PROG=cache_hammer"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"
@@ -23,7 +25,7 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
-cmd_base="make -C bp_top/syn build.v sim.v blood.v CORE_PROFILE_P=1 COSIM_P=1 SUITE=riscv-tests PROG=rv64ui-v-add"
+cmd_base="make -C bp_top/syn build.${SUFFIX} sim.${SUFFIX} blood CORE_PROFILE_P=1 COSIM_P=1 SUITE=riscv-tests PROG=rv64ui-v-add"
 
 # Run the regression in parallel on each configuration
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"

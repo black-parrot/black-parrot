@@ -1,17 +1,20 @@
-override TOOL := yosys
+TOOL := yosys
+SIM  := 0
 
-override LOG_DIR     := $(LOG_PATH)/$(TOOL)
-override RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
-override REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
-override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
+LOG_DIR     := $(LOG_PATH)/$(TOOL)
+RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
+REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
+TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
 
-override SYNTH_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).synth
-override CONVERT_DIR := $(RESULTS_PATH)/sv2v/$(TB).$(CFG).$(TAG).convert
+SYNTH_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).synth
+CONVERT_DIR := $(RESULTS_PATH)/sv2v/$(TB).$(CFG).$(TAG).convert
+
+PDK_ROOT         ?= $(SKY130_DIR)
+PDK              ?= $(SKY130_VER)
+STD_CELL_LIBRARY ?= sky130_fd_sc_hd
 
 $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SYNTH_DIR):
-	mkdir -p $@
-
-.PHONY: clean.yosys
+	$(MKDIR) $@
 
 include $(TB_PATH)/$(TB)/Makefile.yosys
 
@@ -34,12 +37,6 @@ synth.yosys: SYNTH_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).synth.rpt
 synth.yosys: SYNTH_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).synth.err
 $(SYNTH_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SYNTH_DIR)
 $(SYNTH_DIR)/synth_yosys: $(SYNTH_COLLATERAL)
-	cd $(SYNTH_DIR); \
+	$(CD) $(@D); \
 		$(YOSYS) -c $(BP_COMMON_DIR)/syn/tcl/yosys_synth.tcl
-
-clean.yosys:
-	@-rm -rf touchfiles/yosys
-	@-rm -rf results/yosys
-	@-rm -rf reports/yosys
-	@-rm -rf logs/yosys
 

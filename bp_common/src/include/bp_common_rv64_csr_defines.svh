@@ -727,13 +727,13 @@
   `define compress_scounteren_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{ir : data_cast_mp.ir \
       ,cy: data_cast_mp.cy \
-      };
+      }
 
   `define decompress_scounteren_s(data_comp_mp) \
     '{ir : data_comp_mp.ir \
       ,cy: data_comp_mp.cy \
       ,default: '0         \
-      };
+      }
 
   `define compress_sscratch_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     data_cast_mp[0+:64]
@@ -821,7 +821,7 @@
     '{deleg_15     : data_cast_mp[15]    \
       ,deleg_13to12: data_cast_mp[13:12] \
       ,deleg_9to0  : data_cast_mp[9:0]   \
-      };
+      }
 
   `define decompress_medeleg_s(data_comp_mp) \
     rv64_medeleg_s'({data_comp_mp.deleg_15      \
@@ -829,7 +829,7 @@
                      ,data_comp_mp.deleg_13to12 \
                      ,2'b0                      \
                      ,data_comp_mp.deleg_9to0   \
-                     });
+                     })
 
   `define compress_mideleg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{sei : data_cast_mp.sei \
@@ -882,7 +882,7 @@
   `define compress_mcounteren_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{ir : data_cast_mp.ir \
       ,cy: data_cast_mp.cy \
-      };
+      }
 
   `define decompress_mcounteren_s(data_comp_mp) \
     '{ir : data_comp_mp.ir \

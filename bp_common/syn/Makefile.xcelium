@@ -1,18 +1,12 @@
-override TOOL := xcelium
+TOOL := xcelium
+SIM  := 1
 
-override LOG_DIR     := $(LOG_PATH)/$(TOOL)
-override RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
-override REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
-override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
-
-override LINT_DIR  := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).lint
-override BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
-override SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
-override COV_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).cov
+LINT_DIR  := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).lint
+BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
+SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
+COV_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).cov
 $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(SIM_DIR) $(COV_DIR):
-	mkdir -p $@
-
-.PHONY: clean.x lint.x build.x sim.x cov.x
+	$(MKDIR) $@
 
 include $(TB_PATH)/$(TB)/Makefile.xcelium
 
@@ -32,7 +26,7 @@ XRUN_BUILD_OPTS += -timescale 1ps/1ps  # Set timescale
 XRUN_BUILD_OPTS += -elaborate -notimingchecks
 XRUN_BUILD_OPTS += "-Wcxx,-std=c++17"
 XRUN_BUILD_OPTS += "-I$(BP_TOOLS_DIR)/dromajo/include "
-XRUN_BUILD_OPTS += "-I$(BP_TOOLS_INSTALL_DIR)/include -I $(BASEJUMP_STL_DIR)/bsg_test "
+XRUN_BUILD_OPTS += "-I$(BP_TOOLS_INSTALL_DIR)/include -I $(BASEJUMP_STL_DIR)/bsg_$(TEST) "
 #XRUN_BUILD_OPTS += "-L$(BP_RTL_INSTALL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib,-Wl"
 ifeq ($(SPIKE),1)
 XRUN_BUILD_OPTS += "-DSPIKE_COSIM"
@@ -45,80 +39,67 @@ XRUN_BUILD_OPTS += -f flist.vcs
 
 XMSIM_PLUSARGS  =
 
-lint.x: $(LINT_DIR)/lintx
-lint.x: LINT_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).lint.log
-lint.x: LINT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.rpt
-lint.x: LINT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
+lint.xcelium: $(LINT_DIR)/lintx
+lint.xcelium: LINT_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).lint.log
+lint.xcelium: LINT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.rpt
+lint.xcelium: LINT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
 $(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
 $(LINT_DIR)/lintx: | $(LINT_COLLATERAL)
-	cd $(@D); \
-		$(XRUN) $(XRUN_BUILD_OPTS) $(LINT_XMSIM_OPTIONS) $(subst pvalue+,defparam testbench.,$(HDL_PARAMS)) $(HDL_DEFINES) 2>&1 | tee -i $(LINT_LOG)
-	-@grep -A5 "Lint" $(LINT_LOG) > $(LINT_REPORT)
+	$(CD) $(@D); \
+		$(XRUN) $(XRUN_BUILD_OPTS) $(LINT_XMSIM_OPTIONS) $(subst pvalue+,defparam testbench.,$(HDL_PARAMS)) $(HDL_DEFINES) 2>&1 | $(TEE) -i $(LINT_LOG)
+	-@$(GREP) -A5 "Lint" $(LINT_LOG) > $(LINT_REPORT)
 
-build.x: $(BUILD_DIR)/xcelium.d
-build.x: BUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).build.log
-build.x: BUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.rpt
-build.x: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.err
+build.xcelium: $(BUILD_DIR)/xcelium.d
+build.xcelium: BUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).build.log
+build.xcelium: BUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.rpt
+build.xcelium: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.err
 $(BUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/xcelium.d: | $(BUILD_COLLATERAL)
-	cd $(@D); \
-		$(XRUN) $(XRUN_BUILD_OPTS) $(subst pvalue+,defparam testbench.,$(HDL_PARAMS)) $(HDL_DEFINES) 2>&1 | tee -i $(BUILD_LOG)
-	-@grep "Error" -A5 $(BUILD_LOG) > $(BUILD_ERROR)
-	-@tail -n3 $(BUILD_LOG) > $(BUILD_REPORT)
-	-@test -s $(BUILD_ERROR) && echo "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
+	$(CD) $(@D); \
+		$(XRUN) $(XRUN_BUILD_OPTS) $(subst pvalue+,defparam testbench.,$(HDL_PARAMS)) $(HDL_DEFINES) 2>&1 | $(TEE) -i $(BUILD_LOG)
+	-@$(GREP) "Error" -A5 $(BUILD_LOG) > $(BUILD_ERROR)
+	-@$(TAIL) -n3 $(BUILD_LOG) > $(BUILD_REPORT)
+	-@$(TEST) -s $(BUILD_ERROR) && $(ECHO) "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
 
-build_dump.x: XRUN_BUILD_OPTS += -access rc
-build_dump.x: build.x
+build_dump.xcelium: XRUN_BUILD_OPTS += -access rc
+build_dump.xcelium: build.xcelium
 
-build_cov.x: build.x
+build_cov.xcelium: build.xcelium
 	$(error Coverage is currently unsupported for xcelium)
 
-sim.x: build.x
-sim.x: $(SIM_DIR)/run_simx
-sim.x: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
-sim.x: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
-sim.x: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
+$(SIM_DIR)/xcelium.d: $(BUILD_DIR)/xcelium.d
+	@$(SYMLINK) $(<D)/$(@F) $@
+
+sim.xcelium: build.xcelium
+sim.xcelium: $(SIM_DIR)/run_simx
+sim.xcelium: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
+sim.xcelium: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
+sim.xcelium: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 $(SIM_DIR)/run_simx: | $(SIM_COLLATERAL)
-	cd $(@D); $(XMSIM) $(XMSIM_OPTIONS) $(XMSIM_PLUSARGS) 2>&1 | tee -i $(SIM_LOG)
-	-@grep "FAIL" $(SIM_LOG) && echo "FAILED" > $(SIM_ERROR)
-	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
-	-@grep "finish called from file" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
-	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
+	$(CD) $(@D); $(XMSIM) $(XMSIM_OPTIONS) $(XMSIM_PLUSARGS) 2>&1 | $(TEE) -i $(SIM_LOG)
+	-@$(GREP) "FAIL" $(SIM_LOG) && $(ECHO) "FAILED" > $(SIM_ERROR)
+	-@$(GREP) "PASS" $(SIM_LOG) || $(ECHO) "FAILED" > $(SIM_ERROR)
+	-@$(GREP) "Simulation complete via $$finish" $(SIM_LOG) || $(ECHO) "FAILED" > $(SIM_ERROR)
+	-@$(GREP) "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
-sim_dump.x: XMSIM_OPTIONS += -input $(TB_PATH)/$(TB)/xcelium_dump.tcl
-sim_dump.x: sim.x
+sim_dump.xcelium: XMSIM_OPTIONS += -input $(TB_PATH)/$(TB)/xcelium_dump.tcl
+sim_dump.xcelium: sim.xcelium
 
-sim_cov.x: sim.x
+sim_cov.xcelium: sim.xcelium
 	$(error Coverage is currently unsupported for xcelium)
 
-cov.x: $(COV_DIR)/covv
-cov.x: COV_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cov.log
-cov.x: COV_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov
-cov.x: COV_HREPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.hier.rpt
-cov.x: COV_TREPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.test.rpt
-cov.x: COV_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.err
+cov.xcelium: $(COV_DIR)/covv
+cov.xcelium: COV_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cov.log
+cov.xcelium: COV_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov
+cov.xcelium: COV_HREPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.hier.rpt
+cov.xcelium: COV_TREPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.test.rpt
+cov.xcelium: COV_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.err
 $(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(COV_DIR)
-$(COV_DIR)/cov.x: | $(COV_COLLATERAL)
+$(COV_DIR)/cov.xcelium: | $(COV_COLLATERAL)
 	$(error Coverage is currently unsupported for xcelium)
 
-wave.x: $(SIM_DIR)/wavex
-$(SIM_DIR)/wavex:
-	$(SIMVISION) -64BIT $(@D)/dump.shm &
+wave.xcelium: $(SIM_DIR)/wavex
+$(SIM_DIR)/wavex: $(SIM_DIR)/dump.shm
+	$(SIMVISION) -64BIT $< &
 
-# TODO: Make compatible with multi-core
-BLOODGRAPH ?= $(BP_COMMON_DIR)/software/py/blood_graph.py --generate --generate-key
-blood.x: $(SIM_DIR)/bloodx
-$(SIM_DIR)/bloodx:
-	cd $(@D); $(PYTHON) $(BLOODGRAPH) --trace stall_0.trace
-
-clean.x:
-	@-rm -rf touchfiles/vcs
-	@-rm -rf results/vcs
-	@-rm -rf reports/vcs
-	@-rm -rf logs/vcs
-	@-rm -rf DVEfiles
-	@-rm -rf stack.info*
-
-test:
-	xmsc_run -help
