@@ -53,7 +53,7 @@ module bp_be_pipe_int
   wire [int_rec_width_gp-1:0] imm = reservation.isrc3;
   wire opw_v = (decode.irs1_tag == e_int_word);
 
-  localparam num_bytes_lp = dword_width_gp>>8;
+  localparam num_bytes_lp = dword_width_gp>>3;
   localparam lg_bits_lp = `BSG_SAFE_CLOG2(dword_width_gp);
 
   // Shift calculation
