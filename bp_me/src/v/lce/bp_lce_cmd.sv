@@ -307,7 +307,7 @@ module bp_lce_cmd
       ,.count_o(cnt_r)
       );
 
-  wire sync_done = (cnt_r == cnt_width_lp'(num_cce_p-1));
+  wire sync_done = (state_r == e_ready) & cnt_clear;
   bsg_dff_reset_set_clear
    #(.width_p(1))
    sync_done_reg
@@ -349,7 +349,7 @@ module bp_lce_cmd
 
     // Counter
     cnt_inc = 1'b0;
-    cnt_clear = reset_i;
+    cnt_clear = 1'b0;
     dirty_data_select = '0;
 
     // LCE-Cache Interface signals
@@ -380,11 +380,10 @@ module bp_lce_cmd
         stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
         stat_mem_pkt_v_o = 1'b1;
 
-        state_n = ((cnt_r == cnt_width_lp'(sets_p-1)) & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
-                  ? e_ready
-                  : e_clear;
-        cnt_clear = (state_n == e_ready);
-        cnt_inc = ~cnt_clear & (tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i);
+        cnt_clear = (cnt_r == cnt_width_lp'(sets_p-1)) & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
+        cnt_inc = (cnt_r < cnt_width_lp'(sets_p-1)) & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
+
+        state_n = cnt_clear ? e_ready : state_r;
       end
 
       // Ready for LCE Commands
@@ -410,7 +409,7 @@ module bp_lce_cmd
             // reset the counter when last sync is received and ack is sent
             cnt_clear = (cnt_r == cnt_width_lp'(num_cce_p-1)) & fsm_cmd_yumi_lo;
             // increment as long as not resetting counter
-            cnt_inc = ~cnt_clear & fsm_cmd_yumi_lo;
+            cnt_inc = (cnt_r < cnt_width_lp'(num_cce_p-1)) & fsm_cmd_yumi_lo;
           end
 
           // Set Clear - invalidate entire set specified by command

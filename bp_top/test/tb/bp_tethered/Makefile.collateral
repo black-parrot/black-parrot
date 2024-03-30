@@ -69,26 +69,32 @@ endif
 MEM2NBF ?= $(BP_COMMON_DIR)/software/py/nbf.py
 CCE_UCODE_FILE ?= $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
 NBF_INPUTS ?= --ncpus=$(NCPUS)
-ifeq ($(UCODE), 1)
-NBF_INPUTS += --config --ucode=cce_ucode.mem
-else ifeq ($(NBF_CONFIG_P), 1)
+ifeq ($(NBF_CONFIG_P),1)
 NBF_INPUTS += --config
+NBF_INPUTS += --boot_pc=0x80000000
+ifeq ($(UCODE),1)
+NBF_INPUTS += --ucode=cce_ucode.mem
 endif
-ifeq ($(PRELOAD_MEM_P), 0)
+else
+NBF_INPUTS += --boot_pc=0x110000
+NBF_INPUTS += --debug
+endif
+ifeq ($(PRELOAD_MEM_P),0)
 NBF_INPUTS += --mem=prog.mem --mem_size=$(NBF_MEM_SIZE)
-ifeq ($(NBF_SKIP_ZEROS), 1)
+ifeq ($(NBF_SKIP_ZEROS),1)
 NBF_INPUTS += --skip_zeros
 endif
 endif
-NBF_INPUTS += --debug
 %/cce_ucode.mem: $(CCE_UCODE_FILE)
 	$(CP) $< $@
 
 ifeq ($(UCODE),1)
-%/prog.nbf: %/cce_ucode.mem
-endif
+%/prog.nbf: %/prog.mem %/cce_ucode.mem
+else
 %/prog.nbf: %/prog.mem
+endif
 	cd $(@D); $(PYTHON) $(MEM2NBF) $(NBF_INPUTS) > $@
+	echo "$(PYTHON) $(MEM2NBF) $(NBF_INPUTS)"
 
 sigcheck: $(SIM_DIR)/run_sigcheck
 sigcheck: SIGCHECK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).log
