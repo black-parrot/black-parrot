@@ -1,101 +1,8 @@
-
-$(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv:
-	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
-	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
-
-$(LINT_DIR)/bsg_tag_boot_rom.v: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
-	@python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_tag_boot_rom > $@
-
-$(LINT_DIR)/flist.vcs:
-	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-	@echo wrapper.sv                                >> $@
-	@echo testbench.sv                              >> $@
-	@echo bsg_tag_boot_rom.v                        >> $@
-	@echo "$(BP_ME_DIR)/test/common/bp_ddr.sv"      >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv" >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv" >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_dly_line.sv"        >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_dmc/bsg_dmc_clk_rst_gen.sv"     >> $@
-	@echo "$(BASEJUMP_STL_DIR)/testing/bsg_dmc/lpddr_verilog_model/mobile_ddr.sv" >> $@
+include $(TB_PATH)/$(TB)/Makefile.collateral
 
 LINT_COLLATERAL = $(addprefix $(LINT_DIR)/, flist.vcs wrapper.sv testbench.sv bsg_tag_boot_rom.v)
 
-$(BUILD_DIR)/testbench.sv:
-	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
-	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
-
-$(BUILD_DIR)/wrapper.sv:
-	if [ "$(SIM_SYNTH_VIVADO_P)" = "1" ]; then \
-		cp $(SYN_PATH)/results/vivado/bp_tethered.$(CFG).$(TAG).build/wrapper_synth.sv $@; \
-	elif [ "$(SIM_SYNTH_YOSYS_P)" = "1" ]; then \
-		cp $(SYN_PATH)/results/yosys/bp_tethered.$(CFG).$(TAG).synth/wrapper.synth.v $@; \
-	else \
-		sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@; \
-		sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@; \
-	fi
-
-$(BUILD_DIR)/bsg_tag_boot_rom.v: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
-	@python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_tag_boot_rom > $@
-
-$(BUILD_DIR)/flist.vcs:
-	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-	@echo wrapper.sv                                >> $@
-	@echo testbench.sv                              >> $@
-	@echo bsg_tag_boot_rom.v                        >> $@
-	@echo "$(BP_ME_DIR)/test/common/bp_ddr.sv"      >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv" >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv" >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_dly_line.sv"        >> $@
-	@echo "$(BASEJUMP_STL_DIR)/bsg_dmc/bsg_dmc_clk_rst_gen.sv"     >> $@
-	@echo "$(BASEJUMP_STL_DIR)/testing/bsg_dmc/lpddr_verilog_model/mobile_ddr.sv" >> $@
-
 BUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv testbench.sv bsg_tag_boot_rom.v)
-
-$(SIM_DIR)/xcelium.d: $(BUILD_DIR)/xcelium.d
-	@ln -nsf $(<D)/$(@F) $@
-
-$(SIM_DIR)/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
-	cp $^ $@
-
-$(SIM_DIR)/prog.elf: $(SIM_DIR)/prog.riscv
-	cp $^ $@
-
-ifeq ($(UCODE), 1)
-CCE_UCODE_FILE ?= $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
-else
-CCE_UCODE_FILE ?=
-endif
-
-$(SIM_DIR)/cce_ucode.mem: $(CCE_UCODE_FILE)
-ifeq ($(UCODE), 1)
-	cp $< $@
-endif
-
-NBF_INPUTS ?= --ncpus=$(NCPUS)
-ifeq ($(UCODE), 1)
-NBF_INPUTS += --config --ucode=cce_ucode.mem
-else ifeq ($(NBF_CONFIG_P), 1)
-NBF_INPUTS += --config
-endif
-ifeq ($(PRELOAD_MEM_P), 0)
-NBF_INPUTS += --mem=prog.mem --mem_size=$(NBF_MEM_SIZE)
-ifeq ($(NBF_SKIP_ZEROS), 1)
-NBF_INPUTS += --skip_zeros
-endif
-endif
-NBF_INPUTS += --debug
-
-$(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
-	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
-
-$(SIM_DIR)/bootrom.riscv: $(BP_SDK_PROG_DIR)/bootrom/bootrom.riscv
-	cp $< $@
-
-$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
-	$(RISCV_OBJCOPY) -O verilog $< $@
-	$(SED) -i "s/@0011/@0000/g" $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, xcelium.d)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
@@ -108,17 +15,4 @@ sim_sample.x: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PRO
 sim_sample.x: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_DIR)/run_samplex: $(SIM_COLLATERAL)
 	$(error Sampling is currently unsupported for xcelium)
-
-sigcheck.x: $(SIM_DIR)/run_sigcheckx
-sigcheck.x: SIGCHECK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).log
-sigcheck.x: SIGCHECK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).rpt
-sigcheck.x: SIGCHECK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).err
-$(SIM_DIR)/run_sigcheckx:
-	-diff <(tail -n +9 $(@D)/DUT-blackparrot.signature | head -n -0) <(tail -n +9 $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature | head -n -2) > $(SIGCHECK_LOG)
-	echo "Mismatches: " > $(SIGCHECK_REPORT)
-	wc -l < $(SIGCHECK_LOG) >> $(SIGCHECK_REPORT)
-	-@grep [1-9] $(SIGCHECK_REPORT) && echo "FAILED" > $(SIGCHECK_ERROR)
-	wc -l < $(@D)/DUT-blackparrot.signature >> $(SIGCHECK_REPORT)
-	echo "------" >> $(SIGCHECK_REPORT)
-	wc -l < $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature >> $(SIGCHECK_REPORT)
 

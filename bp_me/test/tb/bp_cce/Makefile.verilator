@@ -1,51 +1,10 @@
-$(LINT_DIR)/wrapper.sv $(LINT_DIR)/testbench.sv:
-	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
-	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
-
-$(LINT_DIR)/flist.vcs:
-	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
-	@sed -i "s#.*bp_common_pkg.sv#$(BP_COMMON_DIR)/test/common/bp_common_test_pkg.sv#g" $@
-	@echo testbench.sv                           >> $@
-	@echo wrapper.sv                             >> $@
-
-$(LINT_DIR)/config.vlt:
-	touch $@
+include $(TB_PATH)/$(TB)/Makefile.collateral
 
 LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv)
 
-$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv:
-	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
-	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
-
-$(BUILD_DIR)/flist.vcs:
-	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@
-	@sed -i "s#.*bp_common_pkg.sv#$(BP_COMMON_DIR)/test/common/bp_common_test_pkg.sv#g" $@
-	@echo wrapper.sv                             >> $@
-	@echo testbench.sv                           >> $@
-
-$(BUILD_DIR)/config.vlt:
-	touch $@
-
-VBUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv)
-CBUILD_COLLATERAL  = none
-
-TRACE_TOUCH = test$(ME_TEST_P)_s$(SEED_P)_l$(NUM_LCE_P)_n$(NUM_INSTR_P)_m$(LCE_MODE_P)$(CCE_MODE_P).touch
-$(SIM_DIR)/$(TRACE_TOUCH):
-	$(PYTHON) $(TB_PATH)/$(TB)/me_test.py --out-dir $(@D) --out-file test -n $(NUM_INSTR_P) \
-		-l $(NUM_LCE_P) --seed $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) \
-		--test $(ME_TEST_P) --test-ways $(TEST_WAYS_P) --test-sets $(TEST_SETS_P) $(ME_DEBUG_FLAG) \
-		--in-dir $(TB_PATH)/$(TB) --in-file $(TRACE_FILE_P) $(AXE_FLAG)
-	touch $@
-
-$(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
-	@ln -nsf $</simsc $@
-
-$(SIM_DIR)/cce_ucode.mem: $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
-	@cp $^ $@
+BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv)
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, $(TRACE_TOUCH))
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, test.tr)
 

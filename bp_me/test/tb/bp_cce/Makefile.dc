@@ -1,9 +1,5 @@
-$(BUILD_DIR)/flist.vcs:
-	grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@
-	@sed -i "s#.*bp_common_pkg.sv#$(BP_COMMON_DIR)/test/common/bp_common_test_pkg.sv#g" $@
-	echo wrapper.sv                             >> $@
+exit_dc_job:
+	@$(ECHO) "Check design is not supported for cce testbench"
+	$(EXIT) 1
 
-$(BUILD_DIR)/wrapper.sv:
-	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
-
-CHK_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv)
+CHK_COLLATERAL = exit_dc_job

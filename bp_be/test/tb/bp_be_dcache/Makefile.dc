@@ -1,5 +1,5 @@
 exit_dc_job:
-	@echo "Check design is not supported for dcache testbench"
-	exit 1
+	@$(ECHO) "Check design is not supported for dcache testbench"
+	$(EXIT) 1
 
 CHK_COLLATERAL = exit_dc_job

@@ -1,24 +1,24 @@
-override TOOL := vcs
+TOOL := vcs
+SIM  := 1
 
-override LOG_DIR     := $(LOG_PATH)/$(TOOL)
-override RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
-override REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
-override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
+LOG_DIR     := $(LOG_PATH)/$(TOOL)
+RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
+REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
+TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
 
-override LINT_DIR  := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).lint
-override BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
-override SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
-override COV_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).cov
+LINT_DIR  := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).lint
+BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
+SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
+COV_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).cov
 $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(SIM_DIR) $(COV_DIR):
-	mkdir -p $@
-
-.PHONY: clean.v lint.v build.v sim.v cov.v
+	$(MKDIR) $@
 
 include $(TB_PATH)/$(TB)/Makefile.vcs
 
 ## Tool specific options
 LINT_VCS_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 
+VCS_TIMEOUT = 1000ms
 VCS_OPTIONS  = +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait              # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
@@ -46,7 +46,7 @@ VCS_BUILD_OPTS += $(BP_TOOLS_INSTALL_DIR)/lib/libdromajo_cosim.a
 VCS_BUILD_OPTS += -CFLAGS "-DDROMAJO_COSIM"
 endif
 VCS_BUILD_OPTS += -top testbench
-VCS_BUILD_OPTS += -f flist.vcs
+VCS_BUILD_OPTS += -f $(BUILD_DIR)/flist.vcs
 
 VCS_PLUSARGS  =
 
@@ -56,148 +56,137 @@ URG_OPTIONS += -dir $(COV_DIR)/*
 URG_OPTIONS += -format both
 URG_OPTIONS += -dbname coverage
 
-lint.v: $(LINT_DIR)/lintv
-lint.v: LINT_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).lint.log
-lint.v: LINT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.rpt
-lint.v: LINT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
+lint.vcs: $(LINT_DIR)/lintv
+lint.vcs: LINT_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).lint.log
+lint.vcs: LINT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.rpt
+lint.vcs: LINT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
 $(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
 $(LINT_DIR)/lintv: | $(LINT_COLLATERAL)
-	cd $(@D); \
+	$(CD) $(@D); \
 		$(VCS) $(VCS_BUILD_OPTS) $(LINT_VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee -i $(LINT_LOG)
-	-@grep -A5 "Lint" $(LINT_LOG) > $(LINT_REPORT)
+	-@$(GREP) -A5 "Lint" $(LINT_LOG) > $(LINT_REPORT)
 
-build.v: $(BUILD_DIR)/simv
-build.v: BUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).build.log
-build.v: BUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.rpt
-build.v: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.err
+build.vcs: $(BUILD_DIR)/simv
+build.vcs: BUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).build.log
+build.vcs: BUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.rpt
+build.vcs: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.err
 $(BUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/simv: | $(BUILD_COLLATERAL)
-	cd $(@D); \
+	$(CD) $(@D); \
 		$(VCS) $(VCS_BUILD_OPTS) $(VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee -i $(BUILD_LOG)
-	-@grep "Error" -A5 $(BUILD_LOG) > $(BUILD_ERROR)
+	-@$(GREP) "Error" -A5 $(BUILD_LOG) > $(BUILD_ERROR)
 	-@tail -n3 $(BUILD_LOG) > $(BUILD_REPORT)
-	-@test -s $(BUILD_ERROR) && echo "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
+	-@test -s $(BUILD_ERROR) && $(ECHO) "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
 
-build_dump.v: VCS_BUILD_OPTS += -debug_pp
-build_dump.v: VCS_BUILD_OPTS += +vcs+vcdpluson
-build_dump.v: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
-build_dump.v: VCS_BUILD_OPTS += +vpdfilesize+512
-build_dump.v: build.v
+build_dump.vcs: VCS_BUILD_OPTS += -debug_pp
+build_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdpluson
+build_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
+build_dump.vcs: VCS_BUILD_OPTS += +vpdfilesize+512
+build_dump.vcs: build.vcs
 
-build_cov.v: VCS_BUILD_OPTS += -cm line+tgl
-build_cov.v: VCS_BUILD_OPTS += -cm_dir $(COV_DIR)/$(SUITE)_$(PROG)
-build_cov.v: VCS_BUILD_OPTS += -cm_hier $(SYN_PATH)/coverage_hier.vcs
-build_cov.v: VCS_BUILD_OPTS += -cm_line contassign
-build_cov.v: VCS_BUILD_OPTS += -cm_noconst
-build_cov.v: VCS_BUILD_OPTS += -cm_seqnoconst
-build_cov.v: build.v
+build_cov.vcs: VCS_BUILD_OPTS += -cm line+tgl
+build_cov.vcs: VCS_BUILD_OPTS += -cm_dir $(COV_DIR)/$(SUITE)_$(PROG)
+build_cov.vcs: VCS_BUILD_OPTS += -cm_hier $(SYN_PATH)/coverage_hier.vcs
+build_cov.vcs: VCS_BUILD_OPTS += -cm_line contassign
+build_cov.vcs: VCS_BUILD_OPTS += -cm_noconst
+build_cov.vcs: VCS_BUILD_OPTS += -cm_seqnoconst
+build_cov.vcs: build.vcs
 
-sim.v: build.v
-sim.v: $(SIM_DIR)/run_simv
-sim.v: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
-sim.v: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
-sim.v: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
+$(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
+	$(SYMLINK) $(<D)/$(@F) $@
+
+sim.vcs: build.vcs
+sim.vcs: $(SIM_DIR)/run_simv
+sim.vcs: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
+sim.vcs: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
+sim.vcs: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 $(SIM_DIR)/run_simv: | $(SIM_COLLATERAL)
-	cd $(@D); ./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) 2>&1 | tee -i $(SIM_LOG)
-	-@grep "FAIL" $(SIM_LOG) && echo "FAILED" > $(SIM_ERROR)
-	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
-	-@grep "finish called from file" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
-	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
+	$(CD) $(@D); ./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) 2>&1 | tee -i $(SIM_LOG)
+	-@$(GREP) "FAIL" $(SIM_LOG) && $(ECHO) "FAILED" > $(SIM_ERROR)
+	-@$(GREP) "PASS" $(SIM_LOG) || $(ECHO) "FAILED" > $(SIM_ERROR)
+	-@$(GREP) "finish called from file" $(SIM_LOG) || $(ECHO) "FAILED" > $(SIM_ERROR)
+	-@$(GREP) "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 	-@# HACK: Recover terminal, needed after spike cosim
-	-@stty echo
+	-@$(STTY) echo
 
 ## Need the next build option as mentioned in this link for vivado post synth netlist simulation using VCS
 ## https://forums.xilinx.com/t5/Simulation-and-Verification/VCS-error-regarding-the-glbl-cross-module-reference-resolution/td-p/735596
-build_vivado.v: VCS_BUILD_OPTS += -top glbl
-build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src
-build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unisims
-build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unimacro
-build_vivado.v: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/retarget
-build_vivado.v: VCS_BUILD_OPTS += +incdir+$(XILINX_VIVADO)/data/verilog/src +libext+.v
-build_vivado.v: SIM_SYNTH_VIVADO_P := 1
-build_vivado.v: NO_BIND_P          := 1
-build_vivado.v: build.v
+build_vivado.vcs: VCS_BUILD_OPTS += -top glbl
+build_vivado.vcs: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src
+build_vivado.vcs: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unisims
+build_vivado.vcs: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unimacro
+build_vivado.vcs: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/retarget
+build_vivado.vcs: VCS_BUILD_OPTS += +incdir+$(XILINX_VIVADO)/data/verilog/src +libext+.v
+build_vivado.vcs: SIM_SYNTH_VIVADO_P := 1
+build_vivado.vcs: NO_BIND_P          := 1
+build_vivado.vcs: build.vcs
 
-build_vivado_dump.v: VCS_BUILD_OPTS += -debug_pp
-build_vivado_dump.v: VCS_BUILD_OPTS += +vcs+vcdpluson
-build_vivado_dump.v: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
-build_vivado_dump.v: build_vivado.v
+build_vivado_dump.vcs: VCS_BUILD_OPTS += -debug_pp
+build_vivado_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdpluson
+build_vivado_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
+build_vivado_dump.vcs: build_vivado.vcs
 
-sim_vivado.v: SIM_SYNTH_VIVADO_P := 1
-sim_vivado.v: NO_BIND_P          := 1
-sim_vivado.v: sim.v
+sim_vivado.vcs: SIM_SYNTH_VIVADO_P := 1
+sim_vivado.vcs: NO_BIND_P          := 1
+sim_vivado.vcs: sim.vcs
 
-sim_vivado_dump.v: VCS_OPTIONS += +memcbk
-sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdpluson
-sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdplusmemon
-sim_vivado_dump.v: VCS_OPTIONS += +vcs+vcdplusautoflushon
-sim_vivado_dump.v: sim_vivado.v
+sim_vivado_dump.vcs: VCS_OPTIONS += +memcbk
+sim_vivado_dump.vcs: VCS_OPTIONS += +vcs+vcdpluson
+sim_vivado_dump.vcs: VCS_OPTIONS += +vcs+vcdplusmemon
+sim_vivado_dump.vcs: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_vivado_dump.vcs: sim_vivado.vcs
 
-build_yosys.v: SIM_SYNTH_YOSYS_P := 1
-build_yosys.v: NO_BIND_P         := 1
-build_yosys.v: VCS_BUILD_OPTS += -top testbench
-build_yosys.v: VCS_BUILD_OPTS += +define+FUNCTIONAL
-build_yosys.v: VCS_BUILD_OPTS += +define+UNIT_DELAY
-build_yosys.v: VCS_BUILD_OPTS += $(PDK_ROOT)/$(PDK)/libs.ref/$(STD_CELL_LIBRARY)/verilog/primitives.v
-build_yosys.v: VCS_BUILD_OPTS += $(PDK_ROOT)/$(PDK)/libs.ref/$(STD_CELL_LIBRARY)/verilog/sky130_fd_sc_hd.v
-build_yosys.v: VCS_BUILD_OPTS += $(BP_TOOLS_SHARE_DIR)/yosys/simcells.v
-build_yosys.v: VCS_BUILD_OPTS += $(BP_TOOLS_SHARE_DIR)/yosys/simlib.v
-build_yosys.v: VCS_BUILD_OPTS += +vcs+initreg+zero
-build_yosys.v: build.v
+build_yosys.vcs: SIM_SYNTH_YOSYS_P := 1
+build_yosys.vcs: NO_BIND_P         := 1
+build_yosys.vcs: VCS_BUILD_OPTS += -top testbench
+build_yosys.vcs: VCS_BUILD_OPTS += +define+FUNCTIONAL
+build_yosys.vcs: VCS_BUILD_OPTS += +define+UNIT_DELAY
+build_yosys.vcs: VCS_BUILD_OPTS += $(PDK_ROOT)/$(PDK)/libs.ref/$(STD_CELL_LIBRARY)/verilog/primitives.v
+build_yosys.vcs: VCS_BUILD_OPTS += $(PDK_ROOT)/$(PDK)/libs.ref/$(STD_CELL_LIBRARY)/verilog/sky130_fd_sc_hd.v
+build_yosys.vcs: VCS_BUILD_OPTS += $(BP_TOOLS_SHARE_DIR)/yosys/simcells.v
+build_yosys.vcs: VCS_BUILD_OPTS += $(BP_TOOLS_SHARE_DIR)/yosys/simlib.v
+build_yosys.vcs: VCS_BUILD_OPTS += +vcs+initreg+zero
+build_yosys.vcs: build.vcs
 
-sim_yosys.v: SIM_SYNTH_VIVADO_P := 1
-sim_yosys.v: NO_BIND_P          := 1
-sim_yosys.v: VCS_OPTIONS += +nospecify +notimingchecks
-sim_yosys.v: sim.v
+sim_yosys.vcs: SIM_SYNTH_VIVADO_P := 1
+sim_yosys.vcs: NO_BIND_P          := 1
+sim_yosys.vcs: VCS_OPTIONS += +nospecify +notimingchecks
+sim_yosys.vcs: sim.vcs
 
-build_yosys_dump.v: VCS_BUILD_OPTS += -debug_pp
-build_yosys_dump.v: VCS_BUILD_OPTS += +vcs+vcdpluson
-build_yosys_dump.v: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
-build_yosys_dump.v: build_yosys.v
+build_yosys_dump.vcs: VCS_BUILD_OPTS += -debug_pp
+build_yosys_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdpluson
+build_yosys_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
+build_yosys_dump.vcs: build_yosys.vcs
 
-sim_yosys_dump.v: VCS_OPTIONS += +memcbk
-sim_yosys_dump.v: VCS_OPTIONS += +vcs+vcdpluson
-sim_yosys_dump.v: VCS_OPTIONS += +vcs+vcdplusmemon
-sim_yosys_dump.v: VCS_OPTIONS += +vcs+vcdplusautoflushon
-sim_yosys_dump.v: sim_yosys.v
+sim_yosys_dump.vcs: VCS_OPTIONS += +memcbk
+sim_yosys_dump.vcs: VCS_OPTIONS += +vcs+vcdpluson
+sim_yosys_dump.vcs: VCS_OPTIONS += +vcs+vcdplusmemon
+sim_yosys_dump.vcs: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_yosys_dump.vcs: sim_yosys.vcs
 
-sim_dump.v: VCS_OPTIONS += +memcbk
-sim_dump.v: VCS_OPTIONS += +vcs+vcdpluson
-sim_dump.v: VCS_OPTIONS += +vcs+vcdplusmemon
-sim_dump.v: VCS_OPTIONS += +vcs+vcdplusautoflushon
-sim_dump.v: sim.v
+sim_dump.vcs: VCS_OPTIONS += +memcbk
+sim_dump.vcs: VCS_OPTIONS += +vcs+vcdpluson
+sim_dump.vcs: VCS_OPTIONS += +vcs+vcdplusmemon
+sim_dump.vcs: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_dump.vcs: sim.vcs
 
-sim_cov.v: VCS_OPTIONS += -cm line+tgl
-sim_cov.v: sim.v
+sim_cov.vcs: VCS_OPTIONS += -cm line+tgl
+sim_cov.vcs: sim.vcs
 
-cov.v: $(COV_DIR)/covv
-cov.v: COV_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cov.log
-cov.v: COV_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov
-cov.v: COV_HREPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.hier.rpt
-cov.v: COV_TREPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.test.rpt
-cov.v: COV_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.err
+cov.vcs: $(COV_DIR)/covv
+cov.vcs: COV_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cov.log
+cov.vcs: COV_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov
+cov.vcs: COV_HREPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.hier.rpt
+cov.vcs: COV_TREPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.test.rpt
+cov.vcs: COV_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.err
 $(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(COV_DIR)
-$(COV_DIR)/covv: | $(COV_COLLATERAL)
-	cd $(@D); $(URG) $(URG_OPTIONS) -log $(COV_LOG) -report $(COV_REPORT)
-	@cp $(COV_REPORT)/tests.txt $(COV_TREPORT)
-	@cp $(COV_REPORT)/hierarchy.txt $(COV_HREPORT)
+$(SIM_DIR)/covv: | $(COV_COLLATERAL)
+	$(CD) $(@D); $(URG) $(URG_OPTIONS) -log $(COV_LOG) -report $(COV_REPORT)
+	@$(CP) $(COV_REPORT)/tests.txt $(COV_TREPORT)
+	@$(CP) $(COV_REPORT)/hierarchy.txt $(COV_HREPORT)
 
-wave.v: $(SIM_DIR)/wavev
-$(SIM_DIR)/wavev:
-	$(_DVE) -full64 -vpd $(@D)/vcdplus.vpd &
-
-# TODO: Make compatible with multi-core
-BLOODGRAPH ?= $(BP_COMMON_DIR)/software/py/blood_graph.py --generate --generate-key
-blood.v: $(SIM_DIR)/bloodv
-$(SIM_DIR)/bloodv:
-	cd $(@D); $(PYTHON) $(BLOODGRAPH) --trace stall_0.trace
-
-clean.v:
-	@-rm -rf touchfiles/vcs
-	@-rm -rf results/vcs
-	@-rm -rf reports/vcs
-	@-rm -rf logs/vcs
-	@-rm -rf DVEfiles
-	@-rm -rf stack.info*
+wave.vcs: $(SIM_DIR)/wavev
+$(SIM_DIR)/wavev: $(SIM_DIR)/vcdplus.vpd
+	$(_DVE) -full64 -vpd $< &
 

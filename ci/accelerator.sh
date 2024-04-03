@@ -7,10 +7,10 @@ then
   exit 1
 elif [ $1 == "vcs" ]
 then
-    SUFFIX=v
+    SUFFIX=vcs
 elif [ $1 == "verilator" ]
 then
-    SUFFIX=sc
+    SUFFIX=verilator
 else
   echo "Usage: $0 <verilator, vcs> [num_cores]"
   exit 1
@@ -44,7 +44,7 @@ progs=(
 #"coherent_accelerator_vdp"
 
 # The base command to append the configuration to
-build_base="make -C bp_top/syn build.v NBF_CONFIG_P=1"
+build_base="make -C bp_top/syn build.${SUFFIX} NBF_CONFIG_P=1"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"
@@ -54,7 +54,7 @@ make -C bp_top/syn clean
 sims=()
 for i in "${!progs[@]}"
 do
-    sims+=("make -C bp_top/syn sim.v NBF_CONFIG_P=1 CFG=${cfgs[$i]} SUITE=bp-tests PROG=${progs[$i]}")
+    sims+=("make -C bp_top/syn sim.${SUFFIX} NBF_CONFIG_P=1 CFG=${cfgs[$i]} SUITE=bp-tests PROG=${progs[$i]}")
 done
 
 # build required configs
