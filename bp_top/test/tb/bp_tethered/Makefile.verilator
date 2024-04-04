@@ -1,74 +1,8 @@
-$(LINT_DIR)/testbench.sv $(LINT_DIR)/wrapper.sv:
-	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
-	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
+include $(TB_PATH)/$(TB)/Makefile.collateral
 
-$(LINT_DIR)/flist.vcs:
-	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-	@echo wrapper.sv                                >> $@
-	@echo testbench.sv                              >> $@
+LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv bsg_tag_boot_rom.v)
 
-$(LINT_DIR)/config.vlt:
-	cat $(SYN_PATH)/lint_settings.verilator | envsubst > $@
-
-LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv)
-
-$(BUILD_DIR)/testbench.sv $(BUILD_DIR)/wrapper.sv:
-	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
-	@sed -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
-
-$(BUILD_DIR)/flist.vcs:
-	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-	@echo wrapper.sv                                >> $@
-	@echo testbench.sv                              >> $@
-
-$(BUILD_DIR)/config.vlt:
-	cat $(SYN_PATH)/lint_settings.verilator | envsubst > $@
-
-VBUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv)
-
-$(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
-	@ln -nsf $</simsc $@
-
-$(SIM_DIR)/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
-	cp $^ $@
-
-$(SIM_DIR)/prog.elf: $(SIM_DIR)/prog.riscv
-	cp $^ $@
-
-ifeq ($(UCODE), 1)
-CCE_UCODE_FILE ?= $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
-else
-CCE_UCODE_FILE ?=
-endif
-
-$(SIM_DIR)/cce_ucode.mem: $(CCE_UCODE_FILE)
-ifeq ($(UCODE), 1)
-	cp $< $@
-endif
-
-NBF_INPUTS ?= --ncpus=$(NCPUS)
-ifeq ($(UCODE), 1)
-NBF_INPUTS += --config --ucode=cce_ucode.mem
-else ifeq ($(NBF_CONFIG_P), 1)
-NBF_INPUTS += --config
-endif
-NBF_INPUTS += --mem=prog.mem --mem_size=$(NBF_MEM_SIZE)
-ifeq ($(NBF_SKIP_ZEROS), 1)
-NBF_INPUTS += --skip_zeros
-endif
-NBF_INPUTS += --debug
-
-$(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
-	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
-
-$(SIM_DIR)/bootrom.riscv: $(BP_SDK_PROG_DIR)/bootrom/bootrom.riscv
-	cp $< $@
-
-$(SIM_DIR)/bootrom.mem: $(SIM_DIR)/bootrom.riscv
-	$(RISCV_OBJCOPY) -O verilog $< $@
-	$(SED) -i "s/@0011/@0000/g" $@
+BUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv bsg_tag_boot_rom.v)
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
@@ -115,17 +49,4 @@ $(SIM_DIR)/tire_kick: $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM
 	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) 2>&1 | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
-
-sigcheck.sc: $(SIM_DIR)/run_sigchecksc
-sigcheck.sc: SIGCHECK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).log
-sigcheck.sc: SIGCHECK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).rpt
-sigcheck.sc: SIGCHECK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).err
-$(SIM_DIR)/run_sigchecksc:
-	-diff <(tail -n +9 $(@D)/DUT-blackparrot.signature | head -n -0) <(tail -n +9 $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature | head -n -2) > $(SIGCHECK_LOG)
-	echo "Mismatches: " > $(SIGCHECK_REPORT)
-	wc -l < $(SIGCHECK_LOG) >> $(SIGCHECK_REPORT)
-	-@grep [1-9] $(SIGCHECK_REPORT) && echo "FAILED" > $(SIGCHECK_ERROR)
-	wc -l < $(@D)/DUT-blackparrot.signature >> $(SIGCHECK_REPORT)
-	echo "------" >> $(SIGCHECK_REPORT)
-	wc -l < $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature >> $(SIGCHECK_REPORT)
 

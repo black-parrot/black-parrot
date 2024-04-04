@@ -7,10 +7,10 @@ then
   exit 1
 elif [ $1 == "vcs" ]
 then
-    SUFFIX=v
+    SUFFIX=vcs
 elif [ $1 == "verilator" ]
 then
-    SUFFIX=sc
+    SUFFIX=verilator
 else
   echo "Usage: $0 <verilator, vcs> [num_cores]"
   exit 1
@@ -53,21 +53,21 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Build configs
 # DWP 7/20, weird vcs bug hangs when building without dump
-cmd_base="make -C bp_top/syn build_dump.${SUFFIX} COSIM_P=1 DRAM=axi"
+cmd_base="make -C bp_top/syn build_dump.${SUFFIX} COSIM_P=1 DRAM=axi PRELOAD_MEM_P=0"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
 # Run the regression in parallel on each configuration
-cmd_base="make -C bp_top/syn sim.${SUFFIX} COSIM_P=1 SUITE=bp-tests PROG=hello_world DRAM=axi"
+cmd_base="make -C bp_top/syn sim.${SUFFIX} COSIM_P=1 SUITE=bp-tests PROG=hello_world DRAM=axi PRELOAD_MEM_P=0"
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
 # Run a second set of tests
-cmd_base="make -C bp_top/syn sim.${SUFFIX} COSIM_P=1 SUITE=bp-tests PROG=cache_hammer DRAM=axi"
+cmd_base="make -C bp_top/syn sim.${SUFFIX} COSIM_P=1 SUITE=bp-tests PROG=cache_hammer DRAM=axi PRELOAD_MEM_P=0"
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
 # Run a third set of tests
-cmd_base="make -C bp_top/syn sim.${SUFFIX} COSIM_P=1 SUITE=bp-tests PROG=stream_hammer DRAM=axi"
+cmd_base="make -C bp_top/syn sim.${SUFFIX} COSIM_P=1 SUITE=bp-tests PROG=stream_hammer DRAM=axi PRELOAD_MEM_P=0"
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 

@@ -114,7 +114,7 @@ module bp_ddr
       );
 
   for(genvar i=0; i<13; i++) begin
-    bsg_tag_client #(.width_p(8), .default_p(0))
+    bsg_tag_client #(.width_p(8))
       btc
         (.bsg_tag_i     (dmc_cfg_tag_lines_lo[i])
         ,.recv_clk_i    (clk_i)

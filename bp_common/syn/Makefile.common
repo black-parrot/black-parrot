@@ -3,47 +3,60 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
-.PHONY: clean
-
 .DEFAULT: help
 
-RISCV_OBJDUMP    ?= $(CROSS_COMPILE)objdump -d -t
-RISCV_OBJCOPY    ?= $(CROSS_COMPILE)objcopy
-MEM2NBF          ?= $(BP_COMMON_DIR)/software/py/nbf.py
-DROMAJO          ?= dromajo
-SED              ?= sed
-PDK_ROOT         ?= $(SKY130_DIR)
-PDK              ?= $(SKY130_VER)
-STD_CELL_LIBRARY ?= sky130_fd_sc_hd
+# Infer the tool based on the first non-clean
+SUFFIX := $(firstword $(suffix $(filter-out clean help blood sigcheck,$(MAKECMDGOALS))))
+# Legacy vcs
+ifeq ($(SUFFIX),.v)
+$(error .v deprecated, use .vcs instead)
+# Legacy xcelium
+else ifeq ($(SUFFIX),.x)
+$(error .x deprecated, use .xcelium instead)
+# Legacy verilator
+else ifeq ($(SUFFIX),.sc)
+$(error .sc deprecated, use .verilator instead)
+# Legacy sv2v
+else ifeq ($(SUFFIX),.bsg_sv2v)
+$(error .bsg_sv2v deprecated, use .sv2v instead)
+include $(BP_COMMON_DIR)/syn/Makefile.sv2v
+# straight tools
+else ifeq ($(SUFFIX),.dc)
+include $(BP_COMMON_DIR)/syn/Makefile.dc
+else ifeq ($(SUFFIX),.surelog)
+include $(BP_COMMON_DIR)/syn/Makefile.surelog
+else ifeq ($(SUFFIX),.sv2v)
+include $(BP_COMMON_DIR)/syn/Makefile.sv2v
+else ifeq ($(SUFFIX),.vcs)
+include $(BP_COMMON_DIR)/syn/Makefile.vcs
+else ifeq ($(SUFFIX),.verilator)
+include $(BP_COMMON_DIR)/syn/Makefile.verilator
+else ifeq ($(SUFFIX),.vivado)
+include $(BP_COMMON_DIR)/syn/Makefile.vivado
+else ifeq ($(SUFFIX),.xcelium)
+include $(BP_COMMON_DIR)/syn/Makefile.xcelium
+else ifeq ($(SUFFIX),.yosys)
+include $(BP_COMMON_DIR)/syn/Makefile.yosys
+endif
 
 report:
 	$(eval REPORT_LIST := $(shell find $(REPORT_PATH) -type f -name "*.rpt"))
 	$(eval ERROR_LIST  := $(shell find $(REPORT_PATH) -type f -name "*.err"))
-	@printf "============================= Reports ===============================\n"
-	@$(foreach report,$(REPORT_LIST), echo $(notdir $(report)); \
-		echo "--------------------------------------------------"; \
-		cat $(report); echo "";)
-	@printf "============================= Errors ===============================\n"
-	@$(foreach err,$(ERROR_LIST), echo $(notdir $(err)); \
-		echo "--------------------------------------------------"; \
-		cat $(err); echo "";)
-	@printf "============================ Summary ===============================\n"
-	@echo "Reports: $(words $(REPORT_LIST))"
-	@echo "Errors: $(words $(ERROR_LIST))"
-
-%.mem: %.riscv
-	$(RISCV_OBJCOPY) -O verilog $*.riscv $@
-	$(SED) -i "s/@8/@0/g" $@
-
-%.bin: %.riscv
-	$(RISCV_OBJCOPY) -O binary $*.riscv $@
-
-%.dump: %.riscv
-	$(RISCV_OBJDUMP) -D -t $*.riscv > $@
+	@$(PRINTF) "============================= Reports ===============================\n"
+	@$(foreach report,$(REPORT_LIST), $(ECHO) $(notdir $(report)); \
+		$(ECHO) "--------------------------------------------------"; \
+		cat $(report); $(ECHO) "";)
+	@$(PRINTF) "============================= Errors ===============================\n"
+	@$(foreach err,$(ERROR_LIST), $(ECHO) $(notdir $(err)); \
+		$(ECHO) "--------------------------------------------------"; \
+		cat $(err); $(ECHO) "";)
+	@$(PRINTF) "============================ Summary ===============================\n"
+	@$(ECHO) "Reports: $(words $(REPORT_LIST))"
+	@$(ECHO) "Errors: $(words $(ERROR_LIST))"
 
 clean:
-	@rm -rf results/
-	@rm -rf logs/
-	@rm -rf reports/
-	@rm -rf touchfiles/
+	@$(RMRF) results/
+	@$(RMRF) logs/
+	@$(RMRF) reports/
+	@$(RMRF) touchfiles/
 
