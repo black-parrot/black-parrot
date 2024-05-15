@@ -114,6 +114,7 @@ module bp_nonsynth_cosim
   logic                     commit_ird_w_v_r;
   logic                     commit_frd_w_v_r;
   logic                     commit_req_v_r;
+  logic                     commit_freeze_r;
   logic [dword_width_gp-1:0] cause_r, mstatus_r;
   logic commit_fifo_v_lo, commit_fifo_yumi_li;
   wire instret_v_li = commit_pkt_r.instret;
