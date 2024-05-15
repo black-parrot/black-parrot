@@ -16,37 +16,38 @@ $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(
 include $(TB_PATH)/$(TB)/Makefile.vcs
 
 ## Tool specific options
-LINT_VCS_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
+LINT_VCS_OPTS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
+LINT_VCS_OPTS += -f $(LINT_DIR)/flist.vcs
 
 VCS_TIMEOUT = 1000ms
-VCS_OPTIONS  = +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
-VCS_OPTIONS += +vcs+lic+wait              # Wait for license
-VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
-#VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
+BUILD_VCS_OPTS  = +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
+BUILD_VCS_OPTS += +vcs+lic+wait              # Wait for license
+BUILD_VCS_OPTS += +libext+.v+.vlib+.vh       # Find library files with these extensions
+#BUILD_VCS_OPTS += +vcs+loopdetect +vcs+loopreport
+BUILD_VCS_OPTS += -f $(BUILD_DIR)/flist.vcs
 
-VCS_BUILD_OPTS  = -full64             # Compile a 64-bit executable
-VCS_BUILD_OPTS += -notice
-VCS_BUILD_OPTS += -V
-VCS_BUILD_OPTS += +v2k
-VCS_BUILD_OPTS += -sverilog # Enable SystemVerilog
-VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
-VCS_BUILD_OPTS += +noportcoerce
-VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
-VCS_BUILD_OPTS += -diag timescale
-VCS_BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_DIR)/dromajo/include"
-VCS_BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_INSTALL_DIR)/include -std=c++17 -I $(BASEJUMP_STL_DIR)/bsg_test"
-VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_RTL_INSTALL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib"
-VCS_BUILD_OPTS += +lint=TFIPC-L
-VCS_BUILD_OPTS += +plusarg_save
+VCS_COMMON_OPTS  = -full64             # Compile a 64-bit executable
+VCS_COMMON_OPTS += -notice
+VCS_COMMON_OPTS += -V
+VCS_COMMON_OPTS += +v2k
+VCS_COMMON_OPTS += -sverilog # Enable SystemVerilog
+VCS_COMMON_OPTS += -assert svaext      # Enable elaboration system tasks
+VCS_COMMON_OPTS += +noportcoerce
+VCS_COMMON_OPTS += -timescale=1ps/1ps  # Set timescale
+VCS_COMMON_OPTS += -diag timescale
+VCS_COMMON_OPTS += -CFLAGS "-I$(BP_TOOLS_DIR)/dromajo/include"
+VCS_COMMON_OPTS += -CFLAGS "-I$(BP_TOOLS_INSTALL_DIR)/include -std=c++17 -I $(BASEJUMP_STL_DIR)/bsg_test"
+VCS_COMMON_OPTS += -LDFLAGS "-L$(BP_RTL_INSTALL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib"
+VCS_COMMON_OPTS += +lint=TFIPC-L
+VCS_COMMON_OPTS += +plusarg_save
 ifeq ($(SPIKE),1)
-VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_INSTALL_DIR)/lib -lriscv -Wl,-rpath=$(BP_TOOLS_INSTALL_DIR)/lib"
-VCS_BUILD_OPTS += -CFLAGS "-DSPIKE_COSIM"
+VCS_COMMON_OPTS += -LDFLAGS "-L$(BP_TOOLS_INSTALL_DIR)/lib -lriscv -Wl,-rpath=$(BP_TOOLS_INSTALL_DIR)/lib"
+VCS_COMMON_OPTS += -CFLAGS "-DSPIKE_COSIM"
 else
-VCS_BUILD_OPTS += $(BP_TOOLS_INSTALL_DIR)/lib/libdromajo_cosim.a
-VCS_BUILD_OPTS += -CFLAGS "-DDROMAJO_COSIM"
+VCS_COMMON_OPTS += $(BP_TOOLS_INSTALL_DIR)/lib/libdromajo_cosim.a
+VCS_COMMON_OPTS += -CFLAGS "-DDROMAJO_COSIM"
 endif
-VCS_BUILD_OPTS += -top testbench
-VCS_BUILD_OPTS += -f $(BUILD_DIR)/flist.vcs
+VCS_COMMON_OPTS += -top testbench
 
 VCS_PLUSARGS  =
 
@@ -63,7 +64,7 @@ lint.vcs: LINT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
 $(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
 $(LINT_DIR)/lintv: | $(LINT_COLLATERAL)
 	$(CD) $(@D); \
-		$(VCS) $(VCS_BUILD_OPTS) $(LINT_VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee -i $(LINT_LOG)
+		$(VCS) $(VCS_COMMON_OPTS) $(LINT_VCS_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee -i $(LINT_LOG)
 	-@$(GREP) -A5 "Lint" $(LINT_LOG) > $(LINT_REPORT)
 
 build.vcs: $(BUILD_DIR)/simv
@@ -73,23 +74,23 @@ build.vcs: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.err
 $(BUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/simv: | $(BUILD_COLLATERAL)
 	$(CD) $(@D); \
-		$(VCS) $(VCS_BUILD_OPTS) $(VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee -i $(BUILD_LOG)
+		$(VCS) $(VCS_COMMON_OPTS) $(BUILD_VCS_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee -i $(BUILD_LOG)
 	-@$(GREP) "Error" -A5 $(BUILD_LOG) > $(BUILD_ERROR)
 	-@tail -n3 $(BUILD_LOG) > $(BUILD_REPORT)
 	-@test -s $(BUILD_ERROR) && $(ECHO) "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
 
-build_dump.vcs: VCS_BUILD_OPTS += -debug_pp
-build_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdpluson
-build_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
-build_dump.vcs: VCS_BUILD_OPTS += +vpdfilesize+512
+build_dump.vcs: BUILD_VCS_OPTS += -debug_pp
+build_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdpluson
+build_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdplusautoflushon
+build_dump.vcs: BUILD_VCS_OPTS += +vpdfilesize+512
 build_dump.vcs: build.vcs
 
-build_cov.vcs: VCS_BUILD_OPTS += -cm line+tgl
-build_cov.vcs: VCS_BUILD_OPTS += -cm_dir $(COV_DIR)/$(SUITE)_$(PROG)
-build_cov.vcs: VCS_BUILD_OPTS += -cm_hier $(SYN_PATH)/coverage_hier.vcs
-build_cov.vcs: VCS_BUILD_OPTS += -cm_line contassign
-build_cov.vcs: VCS_BUILD_OPTS += -cm_noconst
-build_cov.vcs: VCS_BUILD_OPTS += -cm_seqnoconst
+build_cov.vcs: BUILD_VCS_OPTS += -cm line+tgl
+build_cov.vcs: BUILD_VCS_OPTS += -cm_dir $(COV_DIR)/$(SUITE)_$(PROG)
+build_cov.vcs: BUILD_VCS_OPTS += -cm_hier $(SYN_PATH)/coverage_hier.vcs
+build_cov.vcs: BUILD_VCS_OPTS += -cm_line contassign
+build_cov.vcs: BUILD_VCS_OPTS += -cm_noconst
+build_cov.vcs: BUILD_VCS_OPTS += -cm_seqnoconst
 build_cov.vcs: build.vcs
 
 $(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
@@ -102,7 +103,7 @@ sim.vcs: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rp
 sim.vcs: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 $(SIM_DIR)/run_simv: | $(SIM_COLLATERAL)
-	$(CD) $(@D); ./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) 2>&1 | tee -i $(SIM_LOG)
+	$(CD) $(@D); ./simv $(BUILD_VCS_OPTS) $(VCS_PLUSARGS) 2>&1 | tee -i $(SIM_LOG)
 	-@$(GREP) "FAIL" $(SIM_LOG) && $(ECHO) "FAILED" > $(SIM_ERROR)
 	-@$(GREP) "PASS" $(SIM_LOG) || $(ECHO) "FAILED" > $(SIM_ERROR)
 	-@$(GREP) "finish called from file" $(SIM_LOG) || $(ECHO) "FAILED" > $(SIM_ERROR)
@@ -112,66 +113,66 @@ $(SIM_DIR)/run_simv: | $(SIM_COLLATERAL)
 
 ## Need the next build option as mentioned in this link for vivado post synth netlist simulation using VCS
 ## https://forums.xilinx.com/t5/Simulation-and-Verification/VCS-error-regarding-the-glbl-cross-module-reference-resolution/td-p/735596
-build_vivado.vcs: VCS_BUILD_OPTS += -top glbl
-build_vivado.vcs: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src
-build_vivado.vcs: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unisims
-build_vivado.vcs: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unimacro
-build_vivado.vcs: VCS_BUILD_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/retarget
-build_vivado.vcs: VCS_BUILD_OPTS += +incdir+$(XILINX_VIVADO)/data/verilog/src +libext+.v
+build_vivado.vcs: BUILD_VCS_OPTS += -top glbl
+build_vivado.vcs: BUILD_VCS_OPTS += -y $(XILINX_VIVADO)/data/verilog/src
+build_vivado.vcs: BUILD_VCS_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unisims
+build_vivado.vcs: BUILD_VCS_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/unimacro
+build_vivado.vcs: BUILD_VCS_OPTS += -y $(XILINX_VIVADO)/data/verilog/src/retarget
+build_vivado.vcs: BUILD_VCS_OPTS += +incdir+$(XILINX_VIVADO)/data/verilog/src +libext+.v
 build_vivado.vcs: SIM_SYNTH_VIVADO_P := 1
 build_vivado.vcs: NO_BIND_P          := 1
 build_vivado.vcs: build.vcs
 
-build_vivado_dump.vcs: VCS_BUILD_OPTS += -debug_pp
-build_vivado_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdpluson
-build_vivado_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
+build_vivado_dump.vcs: BUILD_VCS_OPTS += -debug_pp
+build_vivado_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdpluson
+build_vivado_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdplusautoflushon
 build_vivado_dump.vcs: build_vivado.vcs
 
 sim_vivado.vcs: SIM_SYNTH_VIVADO_P := 1
 sim_vivado.vcs: NO_BIND_P          := 1
 sim_vivado.vcs: sim.vcs
 
-sim_vivado_dump.vcs: VCS_OPTIONS += +memcbk
-sim_vivado_dump.vcs: VCS_OPTIONS += +vcs+vcdpluson
-sim_vivado_dump.vcs: VCS_OPTIONS += +vcs+vcdplusmemon
-sim_vivado_dump.vcs: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_vivado_dump.vcs: BUILD_VCS_OPTS += +memcbk
+sim_vivado_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdpluson
+sim_vivado_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdplusmemon
+sim_vivado_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdplusautoflushon
 sim_vivado_dump.vcs: sim_vivado.vcs
 
 build_yosys.vcs: SIM_SYNTH_YOSYS_P := 1
 build_yosys.vcs: NO_BIND_P         := 1
-build_yosys.vcs: VCS_BUILD_OPTS += -top testbench
-build_yosys.vcs: VCS_BUILD_OPTS += +define+FUNCTIONAL
-build_yosys.vcs: VCS_BUILD_OPTS += +define+UNIT_DELAY
-build_yosys.vcs: VCS_BUILD_OPTS += $(PDK_ROOT)/$(PDK)/libs.ref/$(STD_CELL_LIBRARY)/verilog/primitives.v
-build_yosys.vcs: VCS_BUILD_OPTS += $(PDK_ROOT)/$(PDK)/libs.ref/$(STD_CELL_LIBRARY)/verilog/sky130_fd_sc_hd.v
-build_yosys.vcs: VCS_BUILD_OPTS += $(BP_TOOLS_SHARE_DIR)/yosys/simcells.v
-build_yosys.vcs: VCS_BUILD_OPTS += $(BP_TOOLS_SHARE_DIR)/yosys/simlib.v
-build_yosys.vcs: VCS_BUILD_OPTS += +vcs+initreg+zero
+build_yosys.vcs: BUILD_VCS_OPTS += -top testbench
+build_yosys.vcs: BUILD_VCS_OPTS += +define+FUNCTIONAL
+build_yosys.vcs: BUILD_VCS_OPTS += +define+UNIT_DELAY
+build_yosys.vcs: BUILD_VCS_OPTS += $(PDK_ROOT)/$(PDK)/libs.ref/$(STD_CELL_LIBRARY)/verilog/primitives.v
+build_yosys.vcs: BUILD_VCS_OPTS += $(PDK_ROOT)/$(PDK)/libs.ref/$(STD_CELL_LIBRARY)/verilog/sky130_fd_sc_hd.v
+build_yosys.vcs: BUILD_VCS_OPTS += $(BP_TOOLS_SHARE_DIR)/yosys/simcells.v
+build_yosys.vcs: BUILD_VCS_OPTS += $(BP_TOOLS_SHARE_DIR)/yosys/simlib.v
+build_yosys.vcs: BUILD_VCS_OPTS += +vcs+initreg+zero
 build_yosys.vcs: build.vcs
 
 sim_yosys.vcs: SIM_SYNTH_VIVADO_P := 1
 sim_yosys.vcs: NO_BIND_P          := 1
-sim_yosys.vcs: VCS_OPTIONS += +nospecify +notimingchecks
+sim_yosys.vcs: BUILD_VCS_OPTS += +nospecify +notimingchecks
 sim_yosys.vcs: sim.vcs
 
-build_yosys_dump.vcs: VCS_BUILD_OPTS += -debug_pp
-build_yosys_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdpluson
-build_yosys_dump.vcs: VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
+build_yosys_dump.vcs: BUILD_VCS_OPTS += -debug_pp
+build_yosys_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdpluson
+build_yosys_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdplusautoflushon
 build_yosys_dump.vcs: build_yosys.vcs
 
-sim_yosys_dump.vcs: VCS_OPTIONS += +memcbk
-sim_yosys_dump.vcs: VCS_OPTIONS += +vcs+vcdpluson
-sim_yosys_dump.vcs: VCS_OPTIONS += +vcs+vcdplusmemon
-sim_yosys_dump.vcs: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_yosys_dump.vcs: BUILD_VCS_OPTS += +memcbk
+sim_yosys_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdpluson
+sim_yosys_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdplusmemon
+sim_yosys_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdplusautoflushon
 sim_yosys_dump.vcs: sim_yosys.vcs
 
-sim_dump.vcs: VCS_OPTIONS += +memcbk
-sim_dump.vcs: VCS_OPTIONS += +vcs+vcdpluson
-sim_dump.vcs: VCS_OPTIONS += +vcs+vcdplusmemon
-sim_dump.vcs: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_dump.vcs: BUILD_VCS_OPTS += +memcbk
+sim_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdpluson
+sim_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdplusmemon
+sim_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdplusautoflushon
 sim_dump.vcs: sim.vcs
 
-sim_cov.vcs: VCS_OPTIONS += -cm line+tgl
+sim_cov.vcs: BUILD_VCS_OPTS += -cm line+tgl
 sim_cov.vcs: sim.vcs
 
 cov.vcs: $(COV_DIR)/covv

@@ -1,12 +1,19 @@
 TOOL := verilator
 SIM  := 1
 
+LOG_DIR     := $(LOG_PATH)/$(TOOL)
+RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
+REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
+TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
+
 LINT_DIR  := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).lint
 BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
 COV_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).cov
 SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
 $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(SIM_DIR) $(COV_DIR):
 	$(MKDIR) $@
+
+include $(TB_PATH)/$(TB)/Makefile.verilator
 
 ## Tools
 CC ?= $(GCC)
@@ -48,7 +55,8 @@ VERILATOR_OPTIONS =
 
 VERILATOR_PLUSARGS =
 
-include $(TB_PATH)/$(TB)/Makefile.verilator
+$(LINT_DIR)/config.vlt: $(SYN_PATH)/lint_settings.verilator
+	$(CAT) $< | $(ENVSUBST) > $@
 
 $(BUILD_DIR)/config.vlt: $(SYN_PATH)/lint_settings.verilator
 	$(CAT) $< | $(ENVSUBST) > $@
