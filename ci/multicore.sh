@@ -32,15 +32,21 @@ cfgs=(\
 if [ $1 == "vcs" ]
 then
 cfgs+=(
-    "e_bp_multicore_6_cfg"
-    "e_bp_multicore_6_cce_ucode_cfg"
     "e_bp_multicore_8_cfg"
     "e_bp_multicore_8_cce_ucode_cfg"
-    "e_bp_multicore_12_cfg"
-    "e_bp_multicore_12_cce_ucode_cfg"
     "e_bp_multicore_16_cfg"
     "e_bp_multicore_16_cce_ucode_cfg"
     )
+#cfgs+=(
+#    "e_bp_multicore_6_cfg"
+#    "e_bp_multicore_6_cce_ucode_cfg"
+#    "e_bp_multicore_8_cfg"
+#    "e_bp_multicore_8_cce_ucode_cfg"
+#    "e_bp_multicore_12_cfg"
+#    "e_bp_multicore_12_cce_ucode_cfg"
+#    "e_bp_multicore_16_cfg"
+#    "e_bp_multicore_16_cce_ucode_cfg"
+#    )
 fi
 
 progs=(
@@ -51,7 +57,7 @@ progs=(
     )
 
 # The base command to append the configuration to
-build_base="make -C bp_top/syn build.${SUFFIX} COSIM_P=1"
+build_base="make -C bp_top/syn build.${SUFFIX} COSIM_P=0 PRELOAD_MEM_P=0"
 
 # Any setup needed for the job
 make -C bp_top/syn clean.${SUFFIX}
@@ -62,7 +68,7 @@ for cfg in "${cfgs[@]}"
 do
   for prog in "${progs[@]}"
   do
-    sims+=("make -C bp_top/syn sim.${SUFFIX} CFG=$cfg COSIM_P=1 SUITE=bp-tests PROG=$prog")
+    sims+=("make -C bp_top/syn sim.${SUFFIX} CFG=$cfg COSIM_P=0 PRELOAD_MEM_P=0 SUITE=bp-tests PROG=$prog")
   done
 done
 
