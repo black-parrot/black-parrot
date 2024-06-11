@@ -54,10 +54,11 @@ progs=(
     "mc_rand_walk"
     "mc_work_share_sort"
     "mc_lrsc_add"
+    "mc_amo_add"
     )
 
 # The base command to append the configuration to
-build_base="make -C bp_top/syn build.${SUFFIX} COSIM_P=0 PRELOAD_MEM_P=0"
+build_base="make -C bp_top/syn build.${SUFFIX} COSIM_P=1 PRELOAD_MEM_P=0"
 
 # Any setup needed for the job
 make -C bp_top/syn clean.${SUFFIX}
@@ -68,7 +69,7 @@ for cfg in "${cfgs[@]}"
 do
   for prog in "${progs[@]}"
   do
-    sims+=("make -C bp_top/syn sim.${SUFFIX} CFG=$cfg COSIM_P=0 PRELOAD_MEM_P=0 SUITE=bp-tests PROG=$prog")
+    sims+=("make -C bp_top/syn sim.${SUFFIX} CFG=$cfg COSIM_P=1 PRELOAD_MEM_P=0 SUITE=bp-tests PROG=$prog")
   done
 done
 
