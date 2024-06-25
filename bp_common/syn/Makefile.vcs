@@ -79,7 +79,7 @@ $(BUILD_DIR)/simv: | $(BUILD_COLLATERAL)
 	-@tail -n3 $(BUILD_LOG) > $(BUILD_REPORT)
 	-@test -s $(BUILD_ERROR) && $(ECHO) "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
 
-build_dump.vcs: BUILD_VCS_OPTS += -debug_pp
+build_dump.vcs: BUILD_VCS_OPTS += -debug_access
 build_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdpluson
 build_dump.vcs: BUILD_VCS_OPTS += +vcs+vcdplusautoflushon
 build_dump.vcs: BUILD_VCS_OPTS += +vpdfilesize+512
