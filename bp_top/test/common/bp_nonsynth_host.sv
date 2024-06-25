@@ -138,7 +138,7 @@ module bp_nonsynth_host
       end
 
       if (getchar_r_v_li)
-        ret = $fscanf(32'h8000_0001, "%c", ch);
+        ret <= $fscanf(32'h8000_0001, "%c", ch);
 
       if (mem_fwd_ready_and_o & mem_fwd_v_i & (hio_id != '0))
         $error("Warning: Accesing illegal hio %0h. Sending loopback message!", hio_id);
@@ -244,6 +244,7 @@ module bp_nonsynth_host
   assign data_li[0] = '0;
   assign data_li[1] = '0;
   assign data_li[2] = ch;
+  assign data_li[2] = (ret == 1) ? ch : -1;
   assign data_li[3] = finish_r;
   assign data_li[4] = bootrom_final_lo;
   assign data_li[5] = paramrom_final_lo;
