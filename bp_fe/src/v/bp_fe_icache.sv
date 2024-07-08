@@ -560,7 +560,7 @@ module bp_fe_icache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.set_i(tag_mem_v_li)
-     ,.clear_i(tag_mem_w_li)
+     ,.clear_i(tag_mem_w_li | poison_tl_i | poison_tv_i | !is_miss)
      ,.data_o(tag_mem_last_read_r)
      );
 
@@ -626,6 +626,18 @@ module bp_fe_icache
   ///////////////////////////
   // Data Mem Control
   ///////////////////////////
+  // Could separate out by bank, but this should reduce power a good amount
+  logic data_mem_last_read_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1), .clear_over_set_p(1))
+   data_mem_last_read_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.set_i(|data_mem_v_li)
+     ,.clear_i(|data_mem_w_li | poison_tl_i | poison_tv_i | !is_miss)
+     ,.data_o(data_mem_last_read_r)
+     );
+
   logic [assoc_p-1:0] vaddr_bank_dec;
   bsg_decode
    #(.num_out_p(assoc_p))
@@ -672,7 +684,7 @@ module bp_fe_icache
      ,.o(data_mem_write_bank_mask)
      );
 
-  wire data_mem_bypass = v_tl & (vaddr[vaddr_width_p-1:block_offset_width_lp] == vaddr_tl_r[vaddr_width_p-1:block_offset_width_lp]);
+  wire data_mem_bypass = (vaddr_index == vaddr_index_tl) && (vaddr_vtag == vaddr_vtag_tl) && data_mem_last_read_r;
 
   logic [assoc_p-1:0] data_mem_fast_read, data_mem_fast_write, data_mem_slow_read, data_mem_slow_write;
   for (genvar i = 0; i < assoc_p; i++)
