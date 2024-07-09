@@ -169,7 +169,8 @@ module bp_fe_icache
 
   // Snoop signals
   logic [block_width_p-1:0] snoop_data;
-  logic [1:0][assoc_p-1:0] snoop_hit;
+  logic [assoc_p-1:0] snoop_hit;
+  logic [assoc_p-1:0] snoop_way;
   logic [assoc_p-1:0] snoop_bank_sel_one_hot;
   logic snoop_spec, snoop_uncached;
   bp_fe_icache_decode_s snoop_decode;
@@ -290,15 +291,17 @@ module bp_fe_icache
   // Causes segfault in Synopsys DC O-2018.06-SP4
   // wire [tag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
   wire [tag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
+  wire [ptag_width_p-1:tag_width_p] ptag_high_li = ptag_i >> tag_width_p;
 
   logic [assoc_p-1:0] way_v_tl, hit_v_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
-    assign way_v_tl[i] = (tag_mem_data_lo[i].state != e_COH_I);
-    assign hit_v_tl[i] = (tag_mem_data_lo[i].tag == ctag_li && way_v_tl[i]);
+    wire tag_match_tl  = ptag_v_i & ~|ptag_high_li & (ctag_li == tag_mem_data_lo[i].tag);
+    assign way_v_tl[i] = tag_match_tl & (tag_mem_data_lo[i].state != e_COH_I);
+    assign hit_v_tl[i] = tag_match_tl & (tag_mem_data_lo[i].tag == ctag_li && way_v_tl[i]);
   end
   wire fetch_uncached_tl = (decode_tl_r.fetch_op &  ptag_uncached_i);
   wire fetch_cached_tl   = (decode_tl_r.fetch_op & ~ptag_uncached_i);
-  wire spec_tl           = (spec_tl_r & ptag_nonidem_i);
+  wire spec_tl           = (spec_tl_r & ptag_nonidem_i) || !ptag_v_i;
 
   logic [assoc_p-1:0] bank_sel_one_hot_tl;
   bsg_decode
@@ -324,7 +327,7 @@ module bp_fe_icache
 
   assign safe_tv_we = v_tl & (~v_tv_r || yumi_i || inval_tv);
   assign tv_we = safe_tv_we | poison_tv_i;
-  assign v_tv_n = v_tl & (ptag_v_i | decode_tl_r.inval_op) & ~poison_tv_i;
+  assign v_tv_n = v_tl & ~poison_tv_i;
   bsg_dff_reset_en
    #(.width_p(1))
    v_tv_reg
@@ -346,7 +349,7 @@ module bp_fe_icache
   bsg_mux
    #(.width_p(3*assoc_p+block_width_p+2+$bits(bp_fe_icache_decode_s)), .els_p(2))
    hit_mux
-    (.data_i({{snoop_bank_sel_one_hot, snoop_hit, snoop_data
+    (.data_i({{snoop_bank_sel_one_hot, snoop_way, snoop_hit, snoop_data
                ,snoop_spec, snoop_uncached, snoop_decode}
               ,{bank_sel_one_hot_tl, way_v_tl, hit_v_tl, data_mem_data_lo
                 ,spec_tl, fetch_uncached_tl, decode_tl_r}
@@ -741,7 +744,8 @@ module bp_fe_icache
   /////////////////////////////////////////////////////////////////////////////
   wire [assoc_p-1:0] pseudo_hit =
     (data_mem_pkt_v_i << data_mem_pkt_cast_i.way_id) | (tag_mem_pkt_v_i << tag_mem_pkt_cast_i.way_id);
-  assign snoop_hit = {2{pseudo_hit}};
+  assign snoop_hit = pseudo_hit;
+  assign snoop_way = pseudo_hit;
   assign snoop_data = data_mem_data_li;
   assign snoop_spec = spec_tv_r;
   assign snoop_uncached = uncached_tv_r;
