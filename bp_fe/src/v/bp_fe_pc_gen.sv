@@ -51,7 +51,7 @@ module bp_fe_pc_gen
    , output logic [branch_metadata_fwd_width_p-1:0]  if2_br_metadata_fwd_o
    , output logic                                    if2_taken_branch_site_o
 
-   , input                                           fetch_instr_v_i
+   , input                                           fetch_yumi_i
    , input [instr_scan_width_lp-1:0]                 fetch_instr_scan_i
    , input [vaddr_width_p-1:0]                       fetch_pc_i
    , input [instr_width_gp-1:0]                      fetch_instr_i
@@ -237,7 +237,7 @@ module bp_fe_pc_gen
   always_comb
     begin
       metadata_if1 = metadata_if1_r;
-      if (fetch_instr_v_i)
+      if (fetch_yumi_i)
         begin
           metadata_if1.ras_next    = ras_next;
           metadata_if1.ras_tos     = ras_tos;
@@ -258,7 +258,7 @@ module bp_fe_pc_gen
   // IF2
   /////////////////////////////////////////////////////////////////////////////////////
   bp_fe_branch_metadata_fwd_s metadata_if2_n, metadata_if2_r;
-  assign metadata_if2_n = (fetch_linear_i & ~fetch_instr_v_i) ? metadata_if2_r : metadata_if1;
+  assign metadata_if2_n = (fetch_linear_i & ~fetch_yumi_i) ? metadata_if2_r : metadata_if1;
   bsg_dff_reset_en
    #(.width_p(branch_metadata_fwd_width_p))
    if2_stage_reg
@@ -318,17 +318,17 @@ module bp_fe_pc_gen
   bp_fe_instr_scan_s fetch_instr_scan;
   assign fetch_instr_scan = fetch_instr_scan_i;
 
-  assign ras_call_li = fetch_instr_v_i & fetch_instr_scan.call;
-  assign ras_return_li = fetch_instr_v_i & fetch_instr_scan._return;
+  assign ras_call_li = fetch_yumi_i & fetch_instr_scan.call;
+  assign ras_return_li = fetch_yumi_i & fetch_instr_scan._return;
   assign ras_addr_li = fetch_pc_i + (fetch_instr_scan.clow ? 3'd2 : 3'd4);
 
   // Override calculations
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
 
-  wire taken_ret_if2 = fetch_instr_v_i & btb_miss_ras & fetch_instr_scan._return & ras_valid_lo;
-  wire taken_br_if2  = fetch_instr_v_i & btb_miss_br  & fetch_instr_scan.branch & pred_if1_r;
-  wire taken_jmp_if2 = fetch_instr_v_i & btb_miss_br  & fetch_instr_scan.jal;
+  wire taken_ret_if2 = fetch_yumi_i & btb_miss_ras & fetch_instr_scan._return & ras_valid_lo;
+  wire taken_br_if2  = fetch_yumi_i & btb_miss_br  & fetch_instr_scan.branch & pred_if1_r;
+  wire taken_jmp_if2 = fetch_yumi_i & btb_miss_br  & fetch_instr_scan.jal;
 
   assign ovr_ret     = taken_ret_if2;
   assign ovr_btaken  = taken_br_if2;

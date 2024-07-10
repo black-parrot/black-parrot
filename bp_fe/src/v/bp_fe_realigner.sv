@@ -12,18 +12,14 @@ module bp_fe_realigner
  import bp_fe_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-
-   , localparam scan_width_lp = $bits(bp_fe_instr_scan_s)
    )
   (input                               clk_i
    , input                             reset_i
 
    // Fetch PC and I$ data
-   , input                             if2_instr_v_i
-   , input                             if2_exception_v_i
+   , input                             if2_v_i
    , input [vaddr_width_p-1:0]         if2_pc_i
    , input [instr_width_gp-1:0]        if2_data_i
-   , input [scan_width_lp-1:0]         if2_instr_scan_i
    , input                             if2_taken_branch_site_i
    , output logic                      if2_yumi_o
 
@@ -35,20 +31,18 @@ module bp_fe_realigner
    , input [cinstr_width_gp-1:0]       redirect_instr_i
    , input [vaddr_width_p-1:0]         redirect_pc_i
 
+   , output logic                      fetch_v_o
    , output logic [vaddr_width_p-1:0]  fetch_pc_o
    , output logic [instr_width_gp-1:0] fetch_instr_o
-   , output logic [scan_width_lp-1:0]  fetch_instr_scan_o
-   , output logic                      fetch_instr_v_o
-   , output logic                      fetch_exception_v_o
    , output logic                      fetch_partial_o
    , output logic                      fetch_eager_o
    , output logic                      fetch_linear_o
    , output logic                      fetch_scan_o
    , output logic                      fetch_rebase_o
+   , input                             fetch_yumi_i
    );
 
   logic partial_v_n, partial_v_r;
-  bp_fe_instr_scan_s partial_scan_n, partial_scan_r;
   logic partial_br_site_n, partial_br_site_r;
   logic [cinstr_width_gp-1:0] partial_instr_n, partial_instr_r;
   logic [vaddr_width_p-1:0] partial_pc_n, partial_pc_r;
@@ -76,7 +70,7 @@ module bp_fe_realigner
      );
 
   wire if2_store_v = if2_yumi_o & fetch_linear_o;
-  wire partial_w_v = if2_store_v | redirect_v_i | fetch_instr_v_o;
+  wire partial_w_v = if2_store_v | redirect_v_i | fetch_yumi_i;
   assign partial_v_n = (if2_store_v & ~redirect_v_i) | (redirect_v_i & redirect_resume_i);
   assign partial_br_site_n = if2_high_branch;
   bsg_dff_reset_en
@@ -102,13 +96,6 @@ module bp_fe_realigner
      ,.data_o({fetch_instr_o, fetch_pc_o})
      );
 
-  bp_fe_instr_scan
-   #(.bp_params_p(bp_params_p))
-   partial_instr_scan
-    (.instr_i(fetch_instr_o)
-     ,.scan_o(fetch_instr_scan_o)
-     );
-
   // Here is a table of the possible cases:
   // partial_v  if2_aligned if2_comp[1] if2_comp[0] | fetch_linear fetch_eager fetch_scan fetch_rebase |
   //     0           0          0           x       |      1            0           0          0       |
@@ -126,11 +113,10 @@ module bp_fe_realigner
   //     1           1          1           1       |      -            -           -          -       |
 
   // Fetching at least one valid instruction
-  assign fetch_instr_v_o = if2_instr_v_i & (if2_pc_aligned | partial_v_r | if2_compressed[1]);
-  assign fetch_exception_v_o = if2_exception_v_i;
+  assign fetch_v_o = if2_v_i & (if2_pc_aligned | partial_v_r | if2_compressed[1]);
   assign fetch_partial_o = partial_v_r;
   // Force a linear fetch if we're storing in the realigner (need to complete instruction)
-  assign fetch_linear_o = if2_instr_v_i &&
+  assign fetch_linear_o = if2_v_i &&
     // starting misaligned high
     ((~partial_v_r & ~if2_pc_aligned & ~if2_compressed[1])
      // starting misaligned after compressed
@@ -138,24 +124,24 @@ module bp_fe_realigner
      // continuing misaligned high
      || ( partial_v_r & ~if2_compressed[1] & ~if2_taken_branch_site_i));
   // Eagerly fetch a low or high compressed instruction
-  assign fetch_eager_o = if2_instr_v_i &
+  assign fetch_eager_o = if2_v_i &
     ((~partial_v_r & ~if2_pc_aligned & if2_compressed[1])
       || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & ~if2_compressed[1])
       || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & if2_low_branch)
       );
+  // Refetch a high branch because its site has been aliased
+  assign fetch_rebase_o = fetch_yumi_i &
+    ((partial_v_r & if2_compressed[1] & if2_high_branch & partial_br_site_r)
+     || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & if2_low_branch & if2_high_branch)
+     );
   // Adjust the IF2 PC up to catchup after completing a misaligned instruction or low compressed branch
-  assign fetch_scan_o = if2_instr_v_i &
+  assign fetch_scan_o = fetch_yumi_i &
     ((partial_v_r & if2_compressed[1] & ~if2_taken_branch_site_i)
      || (partial_v_r & if2_compressed[1] & ~partial_br_site_r & if2_high_branch & if2_taken_branch_site_i)
      || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & if2_low_branch & ~if2_taken_branch_site_i)
      );
-  // Refetch a high branch because its site has been aliased
-  assign fetch_rebase_o = if2_instr_v_i &
-    ((partial_v_r & if2_compressed[1] & if2_high_branch & partial_br_site_r)
-     || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & if2_low_branch & if2_high_branch)
-     );
 
-  assign if2_yumi_o = (if2_instr_v_i & ~fetch_scan_o) | if2_exception_v_i;
+  assign if2_yumi_o = if2_v_i & ~fetch_scan_o & (~fetch_v_o | fetch_yumi_i);
 
 endmodule
 

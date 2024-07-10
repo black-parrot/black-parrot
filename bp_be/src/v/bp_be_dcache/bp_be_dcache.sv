@@ -345,7 +345,7 @@ module bp_be_dcache
 
   logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
-    wire tag_match_tl      = ~|ptag_high_li & (ctag_li == tag_mem_data_lo[i].tag);
+    wire tag_match_tl      = ptag_v_i & ~|ptag_high_li & (ctag_li == tag_mem_data_lo[i].tag);
     assign way_v_tl[i]     = (tag_mem_data_lo[i].state != e_COH_I);
     assign load_hit_tl[i]  = tag_match_tl & (tag_mem_data_lo[i].state != e_COH_I);
     assign store_hit_tl[i] = tag_match_tl & (tag_mem_data_lo[i].state inside {e_COH_M, e_COH_E});
@@ -685,18 +685,18 @@ module bp_be_dcache
   `bp_cast_o(bp_be_dcache_req_s, cache_req);
   `bp_cast_o(bp_be_dcache_req_metadata_s, cache_req_metadata);
 
-  wire load_req           = ~uncached_tv_r & load_miss_tv & ~snoop_tv_r;
-  wire store_req          = ~uncached_tv_r & store_miss_tv & ~snoop_tv_r;
-  wire uncached_amo_req   =  uncached_tv_r & decode_tv_r.amo_op & decode_tv_r.ret_op & ~snoop_tv_r;
-  wire uncached_load_req  =  uncached_tv_r & ~decode_tv_r.amo_op & decode_tv_r.load_op & ~snoop_tv_r;
-  wire uncached_store_req =  uncached_tv_r & decode_tv_r.store_op & ~decode_tv_r.ret_op & ~snoop_tv_r;
-  wire binval_req         = ~uncached_tv_r & decode_tv_r.binval_op & ~decode_tv_r.bclean_op & coherent_p & ~snoop_tv_r;
-  wire bclean_req         = ~uncached_tv_r & decode_tv_r.bclean_op & (~decode_tv_r.binval_op | !coherent_p) & (store_hit_tv | coherent_p) & ~snoop_tv_r;
-  wire bflush_req         = ~uncached_tv_r & decode_tv_r.bclean_op & decode_tv_r.binval_op & coherent_p & ~snoop_tv_r;
-  wire inval_req          = ~uncached_tv_r & decode_tv_r.inval_op & ~decode_tv_r.clean_op & ~snoop_tv_r;
-  wire clean_req          = ~uncached_tv_r & decode_tv_r.clean_op & ~decode_tv_r.inval_op & ~snoop_tv_r;
-  wire flush_req          = ~uncached_tv_r & decode_tv_r.inval_op & decode_tv_r.clean_op & ~snoop_tv_r;
-  wire wt_req             = ~uncached_tv_r & decode_tv_r.store_op & ~sc_fail_tv & !writeback_p & ~snoop_tv_r;
+  wire load_req            = v_tv_r & ~uncached_tv_r & load_miss_tv & ~snoop_tv_r;
+  wire store_req           = v_tv_r & ~uncached_tv_r & store_miss_tv & ~snoop_tv_r;
+  wire uncached_amo_req    = v_tv_r &  uncached_tv_r & decode_tv_r.amo_op & decode_tv_r.ret_op & ~snoop_tv_r;
+  wire uncached_load_req   = v_tv_r &  uncached_tv_r & ~decode_tv_r.amo_op & decode_tv_r.load_op & ~snoop_tv_r;
+  wire uncached_store_req  = v_tv_r &  uncached_tv_r & decode_tv_r.store_op & ~decode_tv_r.ret_op & ~snoop_tv_r;
+  wire binval_req          = v_tv_r & ~uncached_tv_r & decode_tv_r.binval_op & ~decode_tv_r.bclean_op & coherent_p & ~snoop_tv_r;
+  wire bclean_req          = v_tv_r & ~uncached_tv_r & decode_tv_r.bclean_op & (~decode_tv_r.binval_op | !coherent_p) & (store_hit_tv | coherent_p) & ~snoop_tv_r;
+  wire bflush_req          = v_tv_r & ~uncached_tv_r & decode_tv_r.bclean_op & decode_tv_r.binval_op & coherent_p & ~snoop_tv_r;
+  wire inval_req           = v_tv_r & ~uncached_tv_r & decode_tv_r.inval_op & ~decode_tv_r.clean_op & ~snoop_tv_r;
+  wire clean_req           = v_tv_r & ~uncached_tv_r & decode_tv_r.clean_op & ~decode_tv_r.inval_op & ~snoop_tv_r;
+  wire flush_req           = v_tv_r & ~uncached_tv_r & decode_tv_r.inval_op & decode_tv_r.clean_op & ~snoop_tv_r;
+  wire wt_req              = v_tv_r & ~uncached_tv_r & decode_tv_r.store_op & ~sc_fail_tv & !writeback_p & ~snoop_tv_r;
 
   // Uncached stores and writethrough requests are non-blocking
   assign nonblocking_req   = (uncached_store_req)
@@ -707,10 +707,10 @@ module bp_be_dcache
   assign nonblocking_sent  = nonblocking_req & cache_req_yumi_i;
   assign blocking_sent     = blocking_req & cache_req_yumi_i;
 
-  assign cache_req_v_o = v_tv_r & (blocking_req | nonblocking_req);
+  assign cache_req_v_o = is_ready & (blocking_req | nonblocking_req);
 
   assign blocking_hazard    = cache_req_v_o & blocking_req;
-  assign nonblocking_hazard = cache_req_v_o & nonblocking_req & ~cache_req_yumi_i;
+  assign nonblocking_hazard = nonblocking_req & ~cache_req_yumi_i;
 
   always_comb
     begin
