@@ -54,17 +54,19 @@ module bp_fe_realigner
   logic [vaddr_width_p-1:0] partial_pc_n, partial_pc_r;
 
   wire if2_pc_aligned = `bp_addr_is_aligned(if2_pc_i, (instr_width_gp>>3));
-  wire [1:0] if2_compressed = ~{&if2_data_i[cinstr_width_gp+:2], &if2_data_i[0+:2]};
-  wire if2_low_branch = if2_data_i[0+:cinstr_width_gp]
-    inside {`RV64_BRANCH, `RV64_JAL, `RV64_JALR, `RV64_CJ, `RV64_CJR, `RV64_CJALR, `RV64_CBEQZ, `RV64_CBNEZ};
-  wire if2_high_branch = if2_data_i[cinstr_width_gp+:cinstr_width_gp]
-    inside {`RV64_BRANCH, `RV64_JAL, `RV64_JALR, `RV64_CJ, `RV64_CJR, `RV64_CJALR, `RV64_CBEQZ, `RV64_CBNEZ};
+
   wire [cinstr_width_gp-1:0] if2_data_upper = if2_data_i[cinstr_width_gp+:cinstr_width_gp];
   wire [cinstr_width_gp-1:0] if2_data_lower = if2_data_i[0+:cinstr_width_gp];
 
+  wire if2_low_branch = if2_data_lower
+    inside {`RV64_BRANCH, `RV64_JAL, `RV64_JALR, `RV64_CJ, `RV64_CJR, `RV64_CJALR, `RV64_CBEQZ, `RV64_CBNEZ};
+  wire if2_high_branch = if2_data_upper
+    inside {`RV64_BRANCH, `RV64_JAL, `RV64_JALR, `RV64_CJ, `RV64_CJR, `RV64_CJALR, `RV64_CBEQZ, `RV64_CBNEZ};
+  wire [1:0] if2_compressed = ~{&if2_data_upper[0+:2], &if2_data_lower[0+:2]};
+
   wire [vaddr_width_p-1:0] redirect_partial_pc = redirect_pc_i;
   wire [vaddr_width_p-1:0] if2_partial_pc = if2_pc_i + (if2_pc_aligned ? 2'b10 : 2'b00);
-  wire [cinstr_width_gp-1:0] if2_partial_instr = if2_pc_aligned ? if2_data_upper : if2_data_lower;
+  wire [cinstr_width_gp-1:0] if2_partial_instr = if2_data_upper;
   bsg_mux
    #(.width_p(cinstr_width_gp+vaddr_width_p), .els_p(2))
    redirect_mux
@@ -73,53 +75,39 @@ module bp_fe_realigner
      ,.data_o({partial_instr_n, partial_pc_n})
      );
 
-  bp_fe_instr_scan
-   #(.bp_params_p(bp_params_p))
-   partial_instr_scan
-    (.instr_i({16'b0, partial_instr_n})
-     ,.scan_o(partial_scan_n)
-     );
-
   wire if2_store_v = if2_yumi_o & fetch_linear_o;
   wire partial_w_v = if2_store_v | redirect_v_i | fetch_instr_v_o;
   assign partial_v_n = (if2_store_v & ~redirect_v_i) | (redirect_v_i & redirect_resume_i);
   assign partial_br_site_n = if2_high_branch;
   bsg_dff_reset_en
-   #(.width_p(scan_width_lp+2+cinstr_width_gp+vaddr_width_p))
+   #(.width_p(2+cinstr_width_gp+vaddr_width_p))
    partial_instr_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.en_i(partial_w_v)
-     ,.data_i({partial_scan_n, partial_v_n, partial_br_site_n, partial_instr_n, partial_pc_n})
-     ,.data_o({partial_scan_r, partial_v_r, partial_br_site_r, partial_instr_r, partial_pc_r})
+     ,.data_i({partial_v_n, partial_br_site_n, partial_instr_n, partial_pc_n})
+     ,.data_o({partial_v_r, partial_br_site_r, partial_instr_r, partial_pc_r})
      );
 
   // Scan data for assembled instructions depends on the second half
-  bp_fe_instr_scan_s scan_assembled;
   rv64_instr_rtype_s instr_assembled, instr_aligned;
+  assign instr_aligned   = if2_pc_aligned ? {if2_data_upper, if2_data_lower} : {'0, if2_data_upper};
   assign instr_assembled = {if2_data_lower, partial_instr_r};
-  assign instr_aligned   = {if2_data_upper, if2_data_lower};
   bsg_mux
-   #(.width_p(scan_width_lp+instr_width_gp+vaddr_width_p), .els_p(2))
+   #(.width_p(instr_width_gp+vaddr_width_p), .els_p(2))
    instr_mux
-    (.data_i({{scan_assembled, instr_assembled, partial_pc_r}, {if2_instr_scan_i, instr_aligned, if2_pc_i}})
+    (.data_i({{instr_assembled, partial_pc_r}, {instr_aligned, if2_pc_i}})
      ,.sel_i(partial_v_r)
-     ,.data_o({fetch_instr_scan_o, fetch_instr_o, fetch_pc_o})
+     ,.data_o({fetch_instr_o, fetch_pc_o})
      );
 
-  wire dest_link   = (instr_assembled.rd_addr inside {32'h1, 32'h5});
-  wire src_link    = (instr_assembled.rs1_addr inside {32'h1, 32'h5});
-  wire dest_src_eq = (instr_assembled.rd_addr == instr_assembled.rs1_addr);
-  assign scan_assembled =
-    '{full     : partial_scan_r.full
-      ,branch  : partial_scan_r.branch
-      ,jal     : partial_scan_r.jal
-      ,jalr    : partial_scan_r.jalr
-      ,call    : (partial_scan_r.jal | partial_scan_r.jalr) & dest_link
-      ,_return : partial_scan_r.jalr & src_link & !dest_src_eq
-      ,default: '0
-      };
+  bp_fe_instr_scan
+   #(.bp_params_p(bp_params_p))
+   partial_instr_scan
+    (.instr_i(fetch_instr_o)
+     ,.scan_o(fetch_instr_scan_o)
+     );
 
   // Here is a table of the possible cases:
   // partial_v  if2_aligned if2_comp[1] if2_comp[0] | fetch_linear fetch_eager fetch_scan fetch_rebase |

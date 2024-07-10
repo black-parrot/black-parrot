@@ -226,7 +226,7 @@ module bp_fe_top
   logic [instr_width_gp-1:0] icache_data_lo;
   logic icache_v_li, icache_force_li, icache_yumi_lo;
   logic icache_tv_we;
-  logic icache_data_v_lo, icache_spec_v_lo, icache_fence_v_lo, icache_yumi_li;
+  logic icache_data_v_lo, icache_spec_v_lo, icache_yumi_li;
   logic poison_if1_lo, poison_if2_lo, poison_isd_lo;
   bp_fe_icache
    #(.bp_params_p(bp_params_p))
@@ -253,8 +253,6 @@ module bp_fe_top
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
      ,.spec_v_o(icache_spec_v_lo)
-     ,.fence_v_o(icache_fence_v_lo)
-     ,.scan_i(fetch_scan_lo)
      ,.yumi_i(icache_yumi_li)
 
      ,.cache_req_o(cache_req_o)
@@ -284,7 +282,7 @@ module bp_fe_top
      ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
      ,.stat_mem_o(stat_mem_o)
      );
-  assign icache_yumi_li = if2_yumi_lo | icache_fence_v_lo;
+  assign icache_yumi_li = if2_yumi_lo;
   wire if2_instr_v = ~poison_isd_lo & fe_queue_ready_and_i & icache_data_v_lo;
 
   // This tracks the I$ valid. Could move inside entirely, but we're trying to separate
