@@ -146,7 +146,8 @@
                               | (1 << e_cfg_amo_swap)
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)
-                              | (1 << e_cfg_hit_under_miss)
+
+                              //| (1 << e_cfg_hit_under_miss)
 
       ,l2_features          : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
