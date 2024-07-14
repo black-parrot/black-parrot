@@ -61,7 +61,7 @@ progs=(
 build_base="make -C bp_top/syn build.${SUFFIX} COSIM_P=1 PRELOAD_MEM_P=0"
 
 # Any setup needed for the job
-make -C bp_top/syn clean.${SUFFIX}
+make -C bp_top/syn clean
 
 # run simulations
 sims=()
