@@ -16,7 +16,7 @@ module bp_fe_pc_gen
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
-   , localparam instr_scan_width_lp = $bits(bp_fe_instr_scan_s)
+   , localparam scan_width_lp = $bits(bp_fe_scan_s)
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -52,11 +52,11 @@ module bp_fe_pc_gen
    , output logic                                    if2_taken_branch_site_o
 
    , input                                           fetch_yumi_i
-   , input [instr_scan_width_lp-1:0]                 fetch_instr_scan_i
+   , input [scan_width_lp-1:0]                       fetch_scan_i
    , input [vaddr_width_p-1:0]                       fetch_pc_i
    , input [instr_width_gp-1:0]                      fetch_instr_i
    , input                                           fetch_linear_i
-   , input                                           fetch_scan_i
+   , input                                           fetch_catchup_i
    , input                                           fetch_rebase_i
    );
 
@@ -242,11 +242,11 @@ module bp_fe_pc_gen
           metadata_if1.ras_next    = ras_next;
           metadata_if1.ras_tos     = ras_tos;
           metadata_if1.src_ras     = ovr_ret;
-          metadata_if1.site_br     = fetch_instr_scan.branch;
-          metadata_if1.site_jal    = fetch_instr_scan.jal;
-          metadata_if1.site_jalr   = fetch_instr_scan.jalr;
-          metadata_if1.site_call   = fetch_instr_scan.call;
-          metadata_if1.site_return = fetch_instr_scan._return;
+          metadata_if1.site_br     = fetch_scan.branch;
+          metadata_if1.site_jal    = fetch_scan.jal;
+          metadata_if1.site_jalr   = fetch_scan.jalr;
+          metadata_if1.site_call   = fetch_scan.call;
+          metadata_if1.site_return = fetch_scan._return;
         end
     end
   assign ovr_metadata = metadata_if1;
@@ -264,20 +264,20 @@ module bp_fe_pc_gen
    if2_stage_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(if2_we_i | fetch_scan_i)
+     ,.en_i(if2_we_i | fetch_catchup_i)
 
      ,.data_i(metadata_if2_n)
      ,.data_o(metadata_if2_r)
      );
 
   logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
-  assign pc_if2_n = fetch_scan_i ? {pc_if2_r[vaddr_width_p-1:2], 2'b10} : pc_if1_r;
+  assign pc_if2_n = fetch_catchup_i ? {pc_if2_r[vaddr_width_p-1:2], 2'b10} : pc_if1_r;
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p))
    pc_if2_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(if2_we_i | fetch_scan_i)
+     ,.en_i(if2_we_i | fetch_catchup_i)
      ,.data_i(pc_if2_n)
      ,.data_o(pc_if2_r)
      );
@@ -315,20 +315,20 @@ module bp_fe_pc_gen
      );
 
   // Scan fetched instruction
-  bp_fe_instr_scan_s fetch_instr_scan;
-  assign fetch_instr_scan = fetch_instr_scan_i;
+  bp_fe_scan_s fetch_scan;
+  assign fetch_scan = fetch_scan_i;
 
-  assign ras_call_li = fetch_yumi_i & fetch_instr_scan.call;
-  assign ras_return_li = fetch_yumi_i & fetch_instr_scan._return;
-  assign ras_addr_li = fetch_pc_i + (fetch_instr_scan.clow ? 3'd2 : 3'd4);
+  assign ras_call_li = fetch_yumi_i & fetch_scan.call;
+  assign ras_return_li = fetch_yumi_i & fetch_scan._return;
+  assign ras_addr_li = fetch_pc_i + (fetch_scan.clow ? 3'd2 : 3'd4);
 
   // Override calculations
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
 
-  wire taken_ret_if2 = fetch_yumi_i & btb_miss_ras & fetch_instr_scan._return & ras_valid_lo;
-  wire taken_br_if2  = fetch_yumi_i & btb_miss_br  & fetch_instr_scan.branch & pred_if1_r;
-  wire taken_jmp_if2 = fetch_yumi_i & btb_miss_br  & fetch_instr_scan.jal;
+  wire taken_ret_if2 = fetch_yumi_i & btb_miss_ras & fetch_scan._return & ras_valid_lo;
+  wire taken_br_if2  = fetch_yumi_i & btb_miss_br  & fetch_scan.branch & pred_if1_r;
+  wire taken_jmp_if2 = fetch_yumi_i & btb_miss_br  & fetch_scan.jal;
 
   assign ovr_ret     = taken_ret_if2;
   assign ovr_btaken  = taken_br_if2;
@@ -341,19 +341,19 @@ module bp_fe_pc_gen
   wire [cinstr_width_gp-1:0] fetch_cinstr_lo = fetch_instr_i[0+:cinstr_width_gp];
   wire [cinstr_width_gp-1:0] fetch_cinstr_hi = fetch_instr_i[cinstr_width_gp+:cinstr_width_gp];
   always_comb
-    unique if (fetch_instr_scan.clow & fetch_instr_scan.jal)
+    unique if (fetch_scan.clow & fetch_scan.jal)
       br_imm = `rv64_signext_cj_imm(fetch_cinstr_lo);
-    else if (fetch_instr_scan.chigh & fetch_instr_scan.jal)
+    else if (fetch_scan.chigh & fetch_scan.jal)
       br_imm = `rv64_signext_cj_imm(fetch_cinstr_hi);
-    else if (fetch_instr_scan.clow & fetch_instr_scan.branch)
+    else if (fetch_scan.clow & fetch_scan.branch)
       br_imm = `rv64_signext_cb_imm(fetch_cinstr_lo);
-    else if (fetch_instr_scan.chigh & fetch_instr_scan.branch)
+    else if (fetch_scan.chigh & fetch_scan.branch)
       br_imm = `rv64_signext_cb_imm(fetch_cinstr_hi);
-    else if (fetch_instr_scan.full & fetch_instr_scan.jal)
+    else if (fetch_scan.full & fetch_scan.jal)
       br_imm = `rv64_signext_j_imm(fetch_instr_i);
     else
       br_imm = `rv64_signext_b_imm(fetch_instr_i);
-  wire [1:0] cimm = fetch_instr_scan.chigh ? 2'b10 : 2'b00;
+  wire [1:0] cimm = fetch_scan.chigh ? 2'b10 : 2'b00;
 
   assign br_tgt_lo     = fetch_pc_i + br_imm + cimm;
   assign linear_tgt_lo = pc_if2_r + 3'd2;

@@ -37,7 +37,7 @@ module bp_fe_realigner
    , output logic                      fetch_partial_o
    , output logic                      fetch_eager_o
    , output logic                      fetch_linear_o
-   , output logic                      fetch_scan_o
+   , output logic                      fetch_catchup_o
    , output logic                      fetch_rebase_o
    , input                             fetch_yumi_i
    );
@@ -135,13 +135,13 @@ module bp_fe_realigner
      || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & if2_low_branch & if2_high_branch)
      );
   // Adjust the IF2 PC up to catchup after completing a misaligned instruction or low compressed branch
-  assign fetch_scan_o = fetch_yumi_i &
+  assign fetch_catchup_o = fetch_yumi_i &
     ((partial_v_r & if2_compressed[1] & ~if2_taken_branch_site_i)
      || (partial_v_r & if2_compressed[1] & ~partial_br_site_r & if2_high_branch & if2_taken_branch_site_i)
      || (~partial_v_r & if2_pc_aligned & if2_compressed[0] & if2_low_branch & ~if2_taken_branch_site_i)
      );
 
-  assign if2_yumi_o = if2_v_i & ~fetch_scan_o & (~fetch_v_o | fetch_yumi_i);
+  assign if2_yumi_o = if2_v_i & ~fetch_catchup_o & (~fetch_v_o | fetch_yumi_i);
 
 endmodule
 

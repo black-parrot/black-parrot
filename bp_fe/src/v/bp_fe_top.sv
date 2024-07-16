@@ -105,7 +105,7 @@ module bp_fe_top
   logic fetch_v_lo;
   logic [vaddr_width_p-1:0] fetch_pc_lo;
   logic [instr_width_gp-1:0] fetch_instr_lo;
-  bp_fe_instr_scan_s fetch_instr_scan_lo;
+  bp_fe_scan_s fetch_scan_lo;
   logic fetch_partial_lo, fetch_linear_lo, fetch_eager_lo, fetch_scan_lo, fetch_rebase_lo;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
@@ -146,9 +146,9 @@ module bp_fe_top
      ,.fetch_yumi_i(fetch_yumi_lo)
      ,.fetch_pc_i(fetch_pc_lo)
      ,.fetch_instr_i(fetch_instr_lo)
-     ,.fetch_instr_scan_i(fetch_instr_scan_lo)
-     ,.fetch_linear_i(fetch_linear_lo)
      ,.fetch_scan_i(fetch_scan_lo)
+     ,.fetch_linear_i(fetch_linear_lo)
+     ,.fetch_catchup_i(fetch_catchup_lo)
      ,.fetch_rebase_i(fetch_rebase_lo)
      );
 
@@ -308,16 +308,16 @@ module bp_fe_top
      ,.fetch_partial_o(fetch_partial_lo)
      ,.fetch_linear_o(fetch_linear_lo)
      ,.fetch_eager_o(fetch_eager_lo)
-     ,.fetch_scan_o(fetch_scan_lo)
+     ,.fetch_catchup_o(fetch_catchup_lo)
      ,.fetch_rebase_o(fetch_rebase_lo)
      ,.fetch_yumi_i(fetch_yumi_lo)
      );
 
-  bp_fe_instr_scan
+  bp_fe_scan
    #(.bp_params_p(bp_params_p))
-   instr_scan
+   scan
     (.instr_i(fetch_instr_lo)
-     ,.scan_o(fetch_instr_scan_lo)
+     ,.scan_o(fetch_scan_lo)
      );
 
   bp_fe_controller
