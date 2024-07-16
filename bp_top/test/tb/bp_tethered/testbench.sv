@@ -463,9 +463,9 @@ module testbench
 
           ,.br_ovr_i(fe.pc_gen.ovr_btaken | fe.pc_gen.ovr_jmp)
           ,.ret_ovr_i(fe.pc_gen.ovr_ret)
-          ,.realigner_i(fe.if2_instr_v & ~fe.fetch_instr_v_lo)
+          ,.realigner_i(1'b0)
 
-          ,.icache_data_v_i(fe.icache.data_v_o)
+          ,.icache_data_v_i(fe.icache.hit_v_o)
           ,.icache_v_i(fe.icache.v_i)
           ,.icache_yumi_i(fe.icache.yumi_o)
 
@@ -532,10 +532,10 @@ module testbench
            ,.state_resume_i(controller.is_resume)
            ,.state_wait_i(controller.is_wait)
 
-           ,.icache_spec_i(icache_spec_v_lo)
-           ,.access_fault_i(instr_access_fault_r)
-           ,.page_fault_i(instr_page_fault_r)
-           ,.itlb_miss_i(itlb_miss_r)
+           ,.icache_spec_i(controller.icache_miss_tv_i)
+           ,.access_fault_i(controller.instr_access_fault_tv_r)
+           ,.page_fault_i(controller.instr_page_fault_tv_r)
+           ,.itlb_miss_i(controller.itlb_miss_tv_r)
 
            ,.src_redirect_i(pc_gen.redirect_v_i)
            ,.src_override_ntaken_i(pc_gen.ovr_ntaken)
@@ -544,7 +544,7 @@ module testbench
            ,.src_btb_taken_branch_i(pc_gen.btb_taken)
 
            ,.if2_pc_i(pc_gen.pc_if2_r)
-           ,.if2_v_i(if2_instr_v)
+           ,.if2_v_i(fetch_yumi_lo)
 
            ,.fetch_v_i(fe_queue_ready_and_i & fe_queue_v_o)
            ,.fetch_pc_i(fetch_pc_lo)

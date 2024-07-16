@@ -95,9 +95,8 @@ module bp_be_director
      );
   assign expected_npc_o = npc_r;
 
-  wire instr_v = issue_pkt_cast_i.v & ~commit_pkt_cast_i.npc_w_v;
-  wire npc_mismatch_v = instr_v & (expected_npc_o != issue_pkt_cast_i.pc);
-  wire npc_match_v    = instr_v & (expected_npc_o == issue_pkt_cast_i.pc);
+  wire npc_mismatch_v = issue_pkt_cast_i.v & (expected_npc_o != issue_pkt_cast_i.pc);
+  wire npc_match_v    = issue_pkt_cast_i.v & (expected_npc_o == issue_pkt_cast_i.pc);
   assign poison_isd_o = npc_mismatch_v;
 
   logic btaken_pending, attaboy_pending;
@@ -108,7 +107,7 @@ module bp_be_director
      ,.reset_i(reset_i)
 
      ,.set_i({br_pkt_cast_i.btaken, br_pkt_cast_i.branch})
-     ,.clear_i({instr_v, instr_v})
+     ,.clear_i({fe_cmd_v_li, fe_cmd_v_li})
      ,.data_o({btaken_pending, attaboy_pending})
      );
   wire last_instr_was_branch = attaboy_pending | br_pkt_cast_i.branch;
@@ -121,21 +120,18 @@ module bp_be_director
   always_comb
     begin
       unique casez (state_r)
+        e_run   : state_n = freeze_li
+                            ? e_freeze
+                            : commit_pkt_cast_i.wfi
+                              ? e_wait
+                              : commit_pkt_cast_i.fencei
+                                ? e_fencei
+                                : fe_cmd_nonattaboy_v
+                                  ? e_cmd_fence
+                                  : state_r;
         e_freeze
         ,e_fencei
-        ,e_wait
-        ,e_cmd_fence
-        ,e_run  : state_n = commit_pkt_cast_i.wfi
-                            ? e_wait
-                            : commit_pkt_cast_i.fencei
-                              ? e_fencei
-                              : (commit_pkt_cast_i.resume | fe_cmd_nonattaboy_v)
-                                ? e_cmd_fence
-                                : freeze_li
-                                  ? e_freeze
-                                  : clear_iss_o
-                                    ? e_run
-                                    : state_r;
+        ,e_wait : state_n = commit_pkt_cast_i.resume ? e_cmd_fence : state_r;
         // e_cmd_fence:
         default : state_n = cmd_empty_r_lo ? e_run : state_r;
       endcase
@@ -162,7 +158,7 @@ module bp_be_director
 
       if (commit_pkt_cast_i.resume)
         begin
-          fe_cmd_li.opcode = is_freeze ? e_op_state_reset : e_op_pc_redirection;
+          fe_cmd_li.opcode = is_freeze ? e_op_state_reset : is_fencei ? e_op_icache_fence : e_op_pc_redirection;
           fe_cmd_li.npc = npc_n;
 
           fe_cmd_pc_redirect_operands.priv           = commit_pkt_cast_i.priv_n;
@@ -204,13 +200,6 @@ module bp_be_director
           fe_cmd_li.npc = commit_pkt_cast_i.npc;
 
           fe_cmd_v_li = ~cmd_full_r_lo;
-        end
-      else if (commit_pkt_cast_i.fencei)
-        begin
-          fe_cmd_li.opcode = e_op_icache_fence;
-          fe_cmd_li.npc = commit_pkt_cast_i.npc;
-
-          fe_cmd_v_li = !icache_features_p[e_cfg_coherent];
         end
       else if (commit_pkt_cast_i.icache_miss)
         begin

@@ -32,8 +32,7 @@ module bp_fe_nonsynth_icache_tracer
    , input                                                yumi_o
 
    , input [instr_width_gp-1:0]                           data_o
-   , input                                                data_v_o
-   , input                                                spec_v_o
+   , input                                                hit_v_o
 
    , input [icache_req_width_lp-1:0]                      cache_req_o
    , input                                                cache_req_v_o
@@ -134,10 +133,8 @@ module bp_fe_nonsynth_icache_tracer
       if (stat_mem_read_r)
         $fwrite(file, "%12t | stat_mem_read: %x\n", $time, stat_mem_info_cast_o);
 
-      if (data_v_o)
+      if (hit_v_o)
         $fwrite(file, "%12t | fetch: [%x]->%x\n", $time, paddr_tv_r, data_o);
-      if (spec_v_o)
-        $fwrite(file, "%12t | spec miss: [%x]\n", $time, paddr_tv_r);
 
       if (cache_req_yumi_i)
         $fwrite(file, "%12t | cache_req: %p\n", $time, cache_req_cast_o);
