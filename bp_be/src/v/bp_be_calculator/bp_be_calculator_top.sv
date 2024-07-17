@@ -247,7 +247,7 @@ module bp_be_calculator_top
      ,.instr_misaligned_v_o(pipe_int_early_instr_misaligned_lo)
      );
 
-  assign br_pkt_cast_o.v      = exc_stage_r[0].v & exc_stage_r[0].queue_v & ~commit_pkt_cast_o.npc_w_v;
+  assign br_pkt_cast_o.v      = exc_stage_r[0].v & exc_stage_r[0].queue_v;
   assign br_pkt_cast_o.branch = br_pkt_cast_o.v & pipe_int_early_branch_lo;
   assign br_pkt_cast_o.btaken = br_pkt_cast_o.v & pipe_int_early_btaken_lo;
   assign br_pkt_cast_o.bspec  = br_pkt_cast_o.v & exc_stage_r[0].ispec_v;

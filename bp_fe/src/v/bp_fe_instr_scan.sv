@@ -1,5 +1,5 @@
 /*
- * bp_fe_instr_scan.v
+ * bp_fe_scan.v
  *
  * Instr scan check if the intruction is aligned, compressed, or normal instruction.
  * The entire block is implemented in combinational logic, achieved within one cycle.
@@ -8,20 +8,20 @@
 `include "bp_common_defines.svh"
 `include "bp_fe_defines.svh"
 
-module bp_fe_instr_scan
+module bp_fe_scan
  import bp_common_pkg::*;
  import bp_fe_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
-   , localparam instr_scan_width_lp = $bits(bp_fe_instr_scan_s)
+   , localparam scan_width_lp = $bits(bp_fe_scan_s)
    )
   (input [instr_width_gp-1:0]               instr_i
-   , output logic [instr_scan_width_lp-1:0] scan_o
+   , output logic [scan_width_lp-1:0] scan_o
    );
 
   `bp_cast_i(rv64_instr_rtype_s, instr);
-  `bp_cast_o(bp_fe_instr_scan_s, scan);
+  `bp_cast_o(bp_fe_scan_s, scan);
 
   rv64_cinstr_s cinstr_low_li, cinstr_high_li;
   assign cinstr_low_li = instr_i[0+:cinstr_width_gp];

@@ -252,7 +252,7 @@ module bp_be_issue_queue
      ,.r_addr_i(rptr_r[ptr_wrap_bit_lp-1:ptr_base_bit_lp])
      ,.r_data_o(fe_queue_lo)
      );
-  assign fe_queue_ready_and_o = ~full & ~suppress;
+  assign fe_queue_ready_and_o = ~full;
 
   rv64_instr_fmatype_s issue_instr;
   assign issue_instr = preissue_pkt_r.instr;
