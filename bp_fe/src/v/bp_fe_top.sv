@@ -106,7 +106,7 @@ module bp_fe_top
   logic [vaddr_width_p-1:0] fetch_pc_lo;
   logic [instr_width_gp-1:0] fetch_instr_lo;
   bp_fe_scan_s fetch_scan_lo;
-  logic fetch_partial_lo, fetch_linear_lo, fetch_eager_lo, fetch_scan_lo, fetch_rebase_lo;
+  logic fetch_partial_lo, fetch_linear_lo, fetch_eager_lo, fetch_rebase_lo;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
    pc_gen
