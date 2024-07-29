@@ -239,8 +239,6 @@ module bp_fe_pc_gen
       metadata_if1 = metadata_if1_r;
       if (fetch_yumi_i)
         begin
-          metadata_if1.ras_next    = ras_next;
-          metadata_if1.ras_tos     = ras_tos;
           metadata_if1.src_ras     = ovr_ret;
           metadata_if1.site_br     = fetch_scan.branch;
           metadata_if1.site_jal    = fetch_scan.jal;
@@ -257,7 +255,7 @@ module bp_fe_pc_gen
   /////////////////////////////////////////////////////////////////////////////////////
   // IF2
   /////////////////////////////////////////////////////////////////////////////////////
-  bp_fe_branch_metadata_fwd_s metadata_if2_n, metadata_if2_r;
+  bp_fe_branch_metadata_fwd_s metadata_if2_n, metadata_if2_r, metadata_if2;
   assign metadata_if2_n = (fetch_linear_i & ~fetch_yumi_i) ? metadata_if2_r : metadata_if1;
   bsg_dff_reset_en
    #(.width_p(branch_metadata_fwd_width_p))
@@ -358,7 +356,14 @@ module bp_fe_pc_gen
   assign br_tgt_lo     = fetch_pc_i + br_imm + cimm;
   assign linear_tgt_lo = pc_if2_r + 3'd2;
 
-  assign if2_br_metadata_fwd_o = metadata_if2_r;
+  always_comb
+    begin
+      metadata_if2 = metadata_if2_r;
+      metadata_if2.ras_next = ras_next;
+      metadata_if2.ras_tos  = ras_tos;
+    end
+
+  assign if2_br_metadata_fwd_o = metadata_if2;
   assign if2_pc_o = pc_if2_r;
 
   assign if2_taken_branch_site_o = taken_if1_r || taken_ret_if2 || taken_br_if2 || taken_jmp_if2;
