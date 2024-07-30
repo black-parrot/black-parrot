@@ -144,7 +144,7 @@ module bp_be_director
     else
       state_r <= state_n;
 
-  assign suppress_iss_o = !is_run;
+  assign suppress_iss_o = !is_run || commit_pkt_cast_i.npc_w_v;
   assign clear_iss_o    = is_cmd_fence & cmd_empty_r_lo;
   assign resume_o       = (is_freeze & ~freeze_li)
                           || (is_wait & irq_waiting_i)
