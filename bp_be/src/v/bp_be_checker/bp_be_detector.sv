@@ -74,7 +74,7 @@ module bp_be_detector
   assign decode = issue_pkt_cast_i.decode;
   bp_be_dep_status_s [3:0] dep_status_r;
 
-  logic fence_haz_v, cmd_haz_v, fflags_haz_v, exception_haz_v, iscore_haz_v, fscore_haz_v;
+  logic fence_haz_v, cmd_haz_v, fflags_haz_v, iscore_haz_v, fscore_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
 
   wire [reg_addr_width_gp-1:0] score_rd_li  = commit_pkt_cast_i.instr.t.fmatype.rd_addr;
@@ -242,9 +242,7 @@ module bp_be_detector
                         | fdiv_busy_i
                         );
 
-      exception_haz_v = commit_pkt_cast_i.npc_w_v;
-
-      control_haz_v = fence_haz_v | fflags_haz_v | exception_haz_v;
+      control_haz_v = fence_haz_v | fflags_haz_v;
 
       // Combine all data hazard information
       // TODO: Parameterize away floating point data hazards without hardware support
