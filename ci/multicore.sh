@@ -37,16 +37,6 @@ cfgs+=(
     "e_bp_multicore_16_cfg"
     "e_bp_multicore_16_cce_ucode_cfg"
     )
-#cfgs+=(
-#    "e_bp_multicore_6_cfg"
-#    "e_bp_multicore_6_cce_ucode_cfg"
-#    "e_bp_multicore_8_cfg"
-#    "e_bp_multicore_8_cce_ucode_cfg"
-#    "e_bp_multicore_12_cfg"
-#    "e_bp_multicore_12_cce_ucode_cfg"
-#    "e_bp_multicore_16_cfg"
-#    "e_bp_multicore_16_cce_ucode_cfg"
-#    )
 fi
 
 progs=(
