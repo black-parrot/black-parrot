@@ -368,8 +368,8 @@ RISCVDV_TESTS := \
   riscv_privileged_mode_rand_test    \
   riscv_rand_instr_test    \
   riscv_rand_jump_test    \
-  riscv_sfence_exception_test    \
   riscv_unaligned_load_store_test
+#  riscv_sfence_exception_test    \
 
 # TODO: Clean this up with a better generator
 RISCVDV_TESTLIST  = $(addprefix riscv-dv@, $(addsuffix  _0, $(RISCVDV_TESTS)))

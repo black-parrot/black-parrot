@@ -54,6 +54,10 @@ module bp_nonsynth_host
    , output logic [num_core_p-1:0]                  finish_o
    );
 
+  import "DPI-C" context function void start();
+  import "DPI-C" context function int scan();
+  import "DPI-C" context function void pop();
+
   integer tmp;
   integer stdout[num_core_p];
   integer stdout_global;
@@ -68,6 +72,7 @@ module bp_nonsynth_host
         end
       stdout_global = $fopen("stdout_global.txt", "w");
       signature = $fopen("DUT-blackparrot.signature", "w");
+      start();
     end
 
   localparam bedrock_reg_els_lp = 8;
@@ -96,7 +101,6 @@ module bp_nonsynth_host
   localparam byte_offset_width_lp = 3;
   localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
   wire [lg_num_core_lp-1:0] addr_core_enc = addr_lo[byte_offset_width_lp+:lg_num_core_lp];
-  logic [7:0] ch;
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
@@ -121,6 +125,7 @@ module bp_nonsynth_host
   assign finish_o = finish_r | finish_set;
 
   integer ret;
+  logic [7:0] ch;
   always_ff @(negedge clk_i)
     begin
       if (putchar_w_v_li) begin
@@ -137,8 +142,10 @@ module bp_nonsynth_host
         $write("%x", data_lo[0+:dword_width_gp]);
       end
 
-      if (getchar_r_v_li)
-        ret = $fscanf(32'h8000_0001, "%c", ch);
+      if (getchar_r_v_li) begin
+          ch <= scan();
+          pop();
+      end
 
       if (mem_fwd_ready_and_o & mem_fwd_v_i & (hio_id != '0))
         $error("Warning: Accesing illegal hio %0h. Sending loopback message!", hio_id);

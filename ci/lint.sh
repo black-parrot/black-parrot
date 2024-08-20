@@ -35,7 +35,7 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 cmd_base="make -C bp_top/syn lint.${SUFFIX}"
 
 # Any setup needed for the job
-make -C bp_top/syn clean.${SUFFIX}
+make -C bp_top/syn clean
 
 # Run the regression in parallel on each configuration
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"

@@ -65,7 +65,7 @@ module bp_be_detector
   // Floating point data hazards
   logic frs1_sb_raw_haz_v, frs2_sb_raw_haz_v, frs3_sb_raw_haz_v;
   logic frd_sb_waw_haz_v;
-  logic [2:0] frs1_data_haz_v , frs2_data_haz_v, frs3_data_haz_v;
+  logic [2:0] frs1_data_haz_v, frs2_data_haz_v, frs3_data_haz_v;
   logic [2:0] rs1_match_vector, rs2_match_vector, rs3_match_vector, rd_match_vector;
   logic score_rs1_match, score_rs2_match, score_rs3_match, score_rd_match;
 
@@ -74,7 +74,7 @@ module bp_be_detector
   assign decode = issue_pkt_cast_i.decode;
   bp_be_dep_status_s [3:0] dep_status_r;
 
-  logic fence_haz_v, cmd_haz_v, fflags_haz_v, exception_haz_v, iscore_haz_v, fscore_haz_v;
+  logic fence_haz_v, cmd_haz_v, fflags_haz_v, iscore_haz_v, fscore_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
 
   wire [reg_addr_width_gp-1:0] score_rd_li  = commit_pkt_cast_i.instr.t.fmatype.rd_addr;
@@ -242,9 +242,7 @@ module bp_be_detector
                         | fdiv_busy_i
                         );
 
-      exception_haz_v = commit_pkt_cast_i.npc_w_v;
-
-      control_haz_v = fence_haz_v | fflags_haz_v | exception_haz_v;
+      control_haz_v = fence_haz_v | fflags_haz_v;
 
       // Combine all data hazard information
       // TODO: Parameterize away floating point data hazards without hardware support
@@ -274,6 +272,7 @@ module bp_be_detector
   always_comb
     begin
       dep_status_n.v           = dispatch_pkt_cast_i.v;
+      // nspec == writeback, could reduce to only fflags setting
       dep_status_n.fflags_v    = dispatch_pkt_cast_i.nspec_v | dep_decode.pipe_aux_v | dep_decode.pipe_fma_v;
       dep_status_n.eint_iwb_v  = dep_decode.pipe_int_v       & dep_decode.irf_w_v  & ~ispec_v_o;
       dep_status_n.eint_fwb_v  = dep_decode.pipe_int_v       & dep_decode.frf_w_v;

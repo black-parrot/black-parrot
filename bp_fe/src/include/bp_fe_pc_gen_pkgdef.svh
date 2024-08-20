@@ -5,7 +5,7 @@
   import bp_common_pkg::*;
 
   /*
-   * bp_fe_instr_scan_s specifies metadata about the instruction, including FE-special opcodes
+   * bp_fe_scan_s specifies metadata about the instruction, including FE-special opcodes
    *   and the calculated branch target
    */
   typedef struct packed
@@ -18,7 +18,7 @@
     logic full;
     logic clow;
     logic chigh;
-  }  bp_fe_instr_scan_s;
+  }  bp_fe_scan_s;
 
 `endif
 

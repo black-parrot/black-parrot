@@ -66,8 +66,8 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.sv
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.sv
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_dynamic.sv
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_passthrough.sv
-$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.v
-$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.v
+$BP_COMMON_DIR/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.sv
+$BP_COMMON_DIR/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.sv
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_1_to_n.sv
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.sv
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.sv
@@ -328,6 +328,6 @@ $BP_TOP_DIR/src/v/bp_processor.sv
 
 # BSG Staging area
 $BP_COMMON_DIR/src/v/bsg_async_noc_link.sv
-$BP_COMMON_DIR/src/v/bsg_dff_sync_read.v
-$BP_COMMON_DIR/src/v/bsg_rom_param.v
+$BP_COMMON_DIR/src/v/bsg_dff_sync_read.sv
+$BP_COMMON_DIR/src/v/bsg_rom_param.sv
 

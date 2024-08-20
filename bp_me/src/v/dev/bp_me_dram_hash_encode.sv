@@ -43,6 +43,9 @@ module bp_me_dram_hash_encode
    , output logic [l2_data_width_p-1:0] data_o
    );
 
+  if (bedrock_fill_width_p != l2_data_width_p)
+    $error("Bedrock fill width must match L2 data width");
+
   bp_me_l2_csr_addr_s tag_addr_li;
   assign tag_addr_li = paddr_i;
 

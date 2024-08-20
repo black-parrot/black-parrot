@@ -1,6 +1,11 @@
 `ifndef BP_COMMON_RV64_PKGDEF_SVH
 `define BP_COMMON_RV64_PKGDEF_SVH
 
+  // TODO: Bring into aviary
+  localparam fetch_width_gp          = 32;
+  localparam fetch_cinstr_gp         = fetch_width_gp>>4;
+  localparam fetch_bytes_gp          = fetch_width_gp>>3;
+
   localparam dword_width_gp          = 64;
   localparam word_width_gp           = 32;
   localparam half_width_gp           = 16;

@@ -116,17 +116,15 @@ module bp_be_scheduler
   //   2) resume request
   //   3) interrupt request
   //   4) finally, fe queue
-  wire issue_queued = issue_pkt_cast_o.v & ~hazard_v_i;
-
-  wire writeback_v =  late_wb_v_i & (late_wb_force_i | ~issue_queued);
-  wire resume_v    = ~late_wb_v_i & ~writeback_v & ~hazard_v_i &  resume_i;
-  wire interrupt_v = ~late_wb_v_i & ~writeback_v & ~hazard_v_i & ~resume_i & irq_pending_i;
+  wire writeback_v =  late_wb_v_i & (late_wb_force_i | ~issue_pkt_cast_o.v);
+  wire resume_v    = ~writeback_v & ~ptw_busy_lo &  resume_i;
+  wire interrupt_v = ~writeback_v & ~ptw_busy_lo & ~resume_i & irq_pending_i;
 
   wire be_exc_not_instr_li =  ptw_v_lo | writeback_v | resume_v | interrupt_v;
-  wire fe_exc_not_instr_li = ~be_exc_not_instr_li & issue_queued & !issue_pkt_cast_o.instr_v;
-  wire fe_instr_not_exc_li = ~be_exc_not_instr_li & issue_queued &  issue_pkt_cast_o.instr_v;
+  wire fe_exc_not_instr_li = ~be_exc_not_instr_li & issue_pkt_cast_o.v & !issue_pkt_cast_o.instr_v;
+  wire fe_instr_not_exc_li = ~be_exc_not_instr_li & issue_pkt_cast_o.v &  issue_pkt_cast_o.instr_v;
 
-  wire fe_queue_suppress_li  = suppress_iss_i | ptw_busy_lo;
+  wire fe_queue_suppress_li  = suppress_iss_i | hazard_v_i | ptw_busy_lo;
   wire fe_queue_clr_li       = clear_iss_i;
   wire fe_queue_deq_li       = commit_pkt_cast_i.queue_v;
   wire fe_queue_deq_skip_li  = !commit_pkt_cast_i.compressed | commit_pkt_cast_i.partial;
@@ -226,7 +224,7 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.queue_v    = (fe_queue_read_li & ~poison_isd_i);
       dispatch_pkt_cast_o.instr_v    = fe_instr_not_exc_li;
       dispatch_pkt_cast_o.ispec_v    = fe_instr_not_exc_li & ispec_v_i;
-      dispatch_pkt_cast_o.nspec_v    = be_exc_not_instr_li;
+      dispatch_pkt_cast_o.nspec_v    = ptw_v_lo | writeback_v;
       dispatch_pkt_cast_o.pc         = expected_npc_i;
       dispatch_pkt_cast_o.instr      = be_exc_not_instr_li ? be_exc_instr_li   : fe_exc_not_instr_li ? fe_exc_instr_li   : issue_pkt_cast_o.instr;
       dispatch_pkt_cast_o.partial    = be_exc_not_instr_li ? be_exc_partial_li : fe_exc_not_instr_li ? fe_exc_partial_li : issue_pkt_cast_o.partial;
