@@ -10,12 +10,8 @@
  *   IN:   [ tag ][ set ][ bank ][ slice ][ cce ][ block ]
  *   OUT:  [ tag ][ bank ][ slice ][ cce ][ set ][ block ]
  *
- *   Blocks are striped across CCEs by bsg_hash_bank using least-significant log2(num_cce_p) bits
- *   from the block number field. Blocks are then distributed across slices and across banks at
- *   the selected L2.
- *
  *   This hashing assumes the number of slices, banks, and sets are powers of two. The number
- *   of CCEs (L2s) must be a value supported by bsg_hash_bank.
+ *   of CCEs (L2s) must be a power of two.
  *
  */
 
