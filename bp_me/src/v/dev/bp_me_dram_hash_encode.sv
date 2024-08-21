@@ -10,12 +10,8 @@
  *   IN:   [ tag ][ set ][ bank ][ slice ][ cce ][ block ]
  *   OUT:  [ tag ][ bank ][ slice ][ cce ][ set ][ block ]
  *
- *   Blocks are striped across CCEs by bsg_hash_bank using least-significant log2(num_cce_p) bits
- *   from the block number field. Blocks are then distributed across slices and across banks at
- *   the selected L2.
- *
  *   This hashing assumes the number of slices, banks, and sets are powers of two. The number
- *   of CCEs (L2s) must be a value supported by bsg_hash_bank.
+ *   of CCEs (L2s) must be a power of two.
  *
  */
 
@@ -42,6 +38,9 @@ module bp_me_dram_hash_encode
    , output logic [lg_l2_banks_lp-1:0]  bank_o
    , output logic [l2_data_width_p-1:0] data_o
    );
+
+  if (bedrock_fill_width_p != l2_data_width_p)
+    $error("Bedrock fill width must match L2 data width");
 
   bp_me_l2_csr_addr_s tag_addr_li;
   assign tag_addr_li = paddr_i;

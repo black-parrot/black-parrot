@@ -127,3 +127,8 @@ wave.verilator: $(SIM_DIR)/wavesc
 $(SIM_DIR)/wavesc: $(SIM_DIR)/dump.fst
 	$(GTKWAVE) -f $< &
 
+clean.verilator:
+	@$(RMRF) results/verilator
+	@$(RMRF) logs/verilator
+	@$(RMRF) reports/verilator
+	@$(RMRF) touchfiles/verilator

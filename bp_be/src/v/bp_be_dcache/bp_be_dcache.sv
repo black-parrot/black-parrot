@@ -717,6 +717,7 @@ module bp_be_dcache
       cache_req_cast_o = '0;
       cache_req_cast_o.addr = paddr_tv_r;
       cache_req_cast_o.data = nonblocking_req ? wbuf_entry_in.data : st_data_tv_r;
+      cache_req_cast_o.atomic_mem_data = atomic_mem_data;
       cache_req_cast_o.hit = load_hit_tv;
       cache_req_cast_o.id = '0;
 
