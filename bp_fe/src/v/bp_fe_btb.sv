@@ -55,6 +55,8 @@ module bp_fe_btb
 
   assign init_done_o = is_run;
 
+  localparam hash_base_lp = 1;
+  localparam hash_width_lp = 1;
   localparam btb_els_lp = 2**btb_idx_width_p;
   localparam addr_width_lp = `BSG_SAFE_CLOG2(btb_els_lp);
   logic [`BSG_WIDTH(btb_els_lp)-1:0] init_cnt;
@@ -108,7 +110,8 @@ module bp_fe_btb
 
   bp_btb_entry_s r_data_lo;
   wire                         r_v_li = r_v_i & ~suppress_read;
-  wire [btb_idx_width_p-1:0] r_idx_li = r_addr_i[2+:btb_idx_width_p] ^ r_addr_i[1];
+  wire [hash_width_lp-1:0]  r_hash_li = r_addr_i[hash_base_lp+:hash_width_lp];
+  wire [btb_idx_width_p-1:0] r_idx_li = r_addr_i[2+:btb_idx_width_p] ^ r_hash_li;
   wire [addr_width_lp-1:0]  r_addr_li = r_idx_li;
   wire [btb_tag_width_p-1:0] r_tag_li = r_addr_i[2+btb_idx_width_p+:btb_tag_width_p];
 
@@ -130,21 +133,32 @@ module bp_fe_btb
      );
   assign w_yumi_o = is_run & w_v_li;
 
+  logic r_v_r;
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   r_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.set_i(r_v_li)
+     ,.clear_i(r_v_i)
+     ,.data_o(r_v_r)
+     );
+
   bsg_dff_reset_en
    #(.width_p(btb_idx_width_p+btb_tag_width_p))
    tag_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(r_v_li)
+     ,.en_i(r_v_i)
 
      ,.data_i({r_idx_li, r_tag_li})
      ,.data_o({r_idx_o, r_tag_o})
      );
 
-  assign r_tgt_v_o   = r_data_lo.v & (r_data_lo.tag == r_tag_o);
-  assign r_tgt_jmp_o = r_data_lo.v & r_data_lo.jmp;
+  assign r_tgt_v_o   = r_v_r & r_data_lo.v & (r_data_lo.tag == r_tag_o);
+  assign r_tgt_jmp_o = r_v_r & r_data_lo.v & r_data_lo.jmp;
   assign r_tgt_o     = r_data_lo.tgt;
-
 
 endmodule
 

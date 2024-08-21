@@ -107,6 +107,8 @@ module bp_be_reservation
       reservation.pc     = dispatch_pkt_r.pc;
       reservation.instr  = dispatch_pkt_r.instr;
       reservation.decode = dispatch_pkt_r.decode;
+      reservation.size   = dispatch_pkt_r.size;
+      reservation.count  = dispatch_pkt_r.count;
 
       reservation.isrc1  = rs1;
       reservation.isrc2  = rs2;

@@ -26,13 +26,13 @@
       logic                                    frs2_v;                                             \
       logic                                    frs3_v;                                             \
       rv64_instr_s                             instr;                                              \
-      logic                                    compressed;                                         \
+      logic [fetch_ptr_gp-1:0]                 size;                                               \
     }  bp_be_preissue_pkt_s;                                                                       \
                                                                                                    \
     typedef struct packed                                                                          \
     {                                                                                              \
       logic                                    v;                                                  \
-      logic                                    instr_v;                                            \
+      logic                                    fetch;                                              \
       logic                                    itlb_miss;                                          \
       logic                                    instr_access_fault;                                 \
       logic                                    instr_page_fault;                                   \
@@ -53,7 +53,8 @@
                                                                                                    \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
-      logic                                    partial;                                            \
+      logic [fetch_ptr_gp-1:0]                 count;                                              \
+      logic [fetch_ptr_gp-1:0]                 size;                                               \
       bp_be_decode_s                           decode;                                             \
       logic [dpath_width_gp-1:0]               imm;                                                \
       logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                \
@@ -63,12 +64,12 @@
     {                                                                                              \
       logic                                    v;                                                  \
       logic                                    queue_v;                                            \
-      logic                                    instr_v;                                            \
       logic                                    ispec_v;                                            \
       logic                                    nspec_v;                                            \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
-      logic                                    partial;                                            \
+      logic [fetch_ptr_gp-1:0]                 size;                                               \
+      logic [fetch_ptr_gp-1:0]                 count;                                              \
       bp_be_decode_s                           decode;                                             \
                                                                                                    \
       logic [dpath_width_gp-1:0]               rs1;                                                \
@@ -84,6 +85,8 @@
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
       bp_be_decode_s                           decode;                                             \
+      logic [fetch_ptr_gp-1:0]                 size;                                               \
+      logic [fetch_ptr_gp-1:0]                 count;                                              \
                                                                                                    \
       logic [int_rec_width_gp-1:0]             isrc1;                                              \
       logic [int_rec_width_gp-1:0]             isrc2;                                              \
@@ -135,8 +138,8 @@
       logic [vaddr_width_p-1:0]  vaddr;                                                            \
       logic [dpath_width_gp-1:0] data;                                                             \
       rv64_instr_s               instr;                                                            \
-      logic                      partial;                                                          \
-      logic                      compressed;                                                       \
+      logic [fetch_ptr_gp-1:0]   size;                                                             \
+      logic [fetch_ptr_gp-1:0]   count;                                                            \
       bp_be_exception_s          exception;                                                        \
       bp_be_special_s            special;                                                          \
       logic                      iscore;                                                           \
@@ -161,8 +164,8 @@
       logic                           npc_w_v;                                                     \
       logic                           queue_v;                                                     \
       logic                           instret;                                                     \
-      logic                           partial;                                                     \
-      logic                           compressed;                                                  \
+      logic [fetch_ptr_gp-1:0]        size;                                                        \
+      logic [fetch_ptr_gp-1:0]        count;                                                       \
       logic [vaddr_width_p-1:0]       pc;                                                          \
       logic [vaddr_width_p-1:0]       npc;                                                         \
       logic [vaddr_width_p-1:0]       vaddr;                                                       \
@@ -233,43 +236,31 @@
    *   and an unfortunate, necessary consequence of parameterized structs.
    */
   `define bp_be_preissue_pkt_width \
-    (6+rv64_instr_width_gp)
+    (5+rv64_instr_width_gp+fetch_ptr_gp)
 
   `define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-    (7+vaddr_width_mp+instr_width_gp+$bits(bp_be_decode_s)+dpath_width_gp+branch_metadata_fwd_width_mp+13)
+    (6+vaddr_width_mp+instr_width_gp+2*fetch_ptr_gp+$bits(bp_be_decode_s)+dpath_width_gp+branch_metadata_fwd_width_mp+13)
 
   `define bp_be_dispatch_pkt_width(vaddr_width_mp) \
-    (5                                                                                             \
-     + vaddr_width_mp                                                                              \
-     + rv64_instr_width_gp                                                                         \
-     + 1                                                                                           \
-     + 3 * dpath_width_gp                                                                          \
-     + $bits(bp_be_decode_s)                                                                       \
-     + $bits(bp_be_exception_s)                                                                    \
-     + $bits(bp_be_special_s)                                                                      \
-     )
+    (4+vaddr_width_mp+rv64_instr_width_gp+2*fetch_ptr_gp+3*dpath_width_gp+$bits(bp_be_decode_s)+$bits(bp_be_exception_s)+$bits(bp_be_special_s))
 
   `define bp_be_reservation_width(vaddr_width_mp) \
-    (1+vaddr_width_mp+rv64_instr_width_gp+$bits(bp_be_decode_s)+3*int_rec_width_gp+3*dp_rec_width_gp)
+    (1+vaddr_width_mp+rv64_instr_width_gp+2*fetch_ptr_gp+$bits(bp_be_decode_s)+3*int_rec_width_gp+3*dp_rec_width_gp)
 
   `define bp_be_branch_pkt_width(vaddr_width_mp) \
-    (4 + vaddr_width_mp)
+    (4+vaddr_width_mp)
 
   `define bp_be_retire_pkt_width(vaddr_width_mp) \
-    (6 + dpath_width_gp + 2*vaddr_width_mp + instr_width_gp + 1 + $bits(bp_be_exception_s) + $bits(bp_be_special_s))
+    (5+dpath_width_gp+2*vaddr_width_mp+instr_width_gp+2*fetch_ptr_gp+$bits(bp_be_exception_s)+$bits(bp_be_special_s))
 
   `define bp_be_pte_leaf_width(paddr_width_mp) \
     (paddr_width_mp - page_offset_width_gp + 8)
 
   `define bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp) \
-    (5 + `bp_be_pte_leaf_width(paddr_width_mp) +  3*vaddr_width_mp + instr_width_gp + rv64_priv_width_gp + 19)
+    (4+`bp_be_pte_leaf_width(paddr_width_mp)+3*vaddr_width_mp+instr_width_gp+2*fetch_ptr_gp+rv64_priv_width_gp+18)
 
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
-    (3                                                                                             \
-     + reg_addr_width_gp                                                                           \
-     + dpath_width_gp                                                                              \
-     + $bits(rv64_fflags_s)                                                                        \
-     )
+    (3+reg_addr_width_gp+dpath_width_gp+$bits(rv64_fflags_s))
 
   `define bp_be_trans_info_width(ptag_width_mp) \
     (rv64_priv_width_gp+ptag_width_mp+3)

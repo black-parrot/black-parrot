@@ -59,7 +59,6 @@ module bp_be_instr_decoder
   always_comb
     begin
       decode_cast_o = '0;
-      decode_cast_o.compressed = preissue_pkt_cast_i.compressed;
 
       decode_cast_o.irs1_r_v = preissue_pkt_cast_i.irs1_v;
       decode_cast_o.irs2_r_v = preissue_pkt_cast_i.irs2_v;

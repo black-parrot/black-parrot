@@ -51,6 +51,7 @@ module bp_fe_bht
 
   assign init_done_o = is_run;
 
+  localparam hash_base_lp = 1;
   localparam hash_width_lp = 1;
   localparam addr_width_lp = bht_idx_width_p+ghist_width_p;
   localparam bht_els_lp = 2**addr_width_lp;
@@ -101,7 +102,7 @@ module bp_fe_bht
 
   // GSELECT
   wire                               r_v_li = r_v_i & ~suppress_read;
-  wire [hash_width_lp-1:0]        r_hash_li = r_addr_i[1];
+  wire [hash_width_lp-1:0]        r_hash_li = r_addr_i[hash_base_lp+:hash_width_lp];
   wire [bht_idx_width_p-1:0]       r_idx_li = r_addr_i[2+:bht_idx_width_p] ^ r_hash_li;
   wire [addr_width_lp-1:0]        r_addr_li = {r_ghist_i, r_idx_li};
   wire [bht_offset_width_p-1:0] r_offset_li = r_addr_i[2+bht_idx_width_p+:bht_offset_width_p];
@@ -129,7 +130,7 @@ module bp_fe_bht
    #(.width_p(bht_offset_width_p+bht_idx_width_p))
    pred_idx_reg
     (.clk_i(clk_i)
-     ,.en_i(r_v_li)
+     ,.en_i(r_v_i)
      ,.data_i({r_offset_li, r_idx_li})
      ,.data_o({r_offset_o, r_idx_o})
      );
