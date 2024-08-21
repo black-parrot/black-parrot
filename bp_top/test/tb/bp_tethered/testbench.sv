@@ -544,7 +544,7 @@ module testbench
            ,.src_btb_taken_branch_i(pc_gen.btb_taken)
 
            ,.if2_pc_i(pc_gen.pc_if2_r)
-           ,.if2_v_i(pc_gen.if2_v_o)
+           ,.if2_v_i(pc_gen.if2_hit_v_o)
 
            ,.fetch_v_i(fe_queue_ready_and_i & fe_queue_v_o)
            ,.fetch_pc_i(fetch_pc_lo)

@@ -469,14 +469,14 @@ module bp_fe_icache
   `bp_cast_o(bp_fe_icache_req_metadata_s, cache_req_metadata);
 
   localparam block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
-  localparam uncached_req_size = `BSG_SAFE_CLOG2(fetch_bytes_gp);
+  localparam uncached_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(icache_data_width_p/8));
 
   wire cached_req   = decode_tv_r.fetch_op & ~snoop_tv_r & ~hit_v_tv & ~uncached_tv_r & ~spec_tv_r;
   wire uncached_req = decode_tv_r.fetch_op & ~snoop_tv_r & ~hit_v_tv &  uncached_tv_r & ~spec_tv_r;
   wire inval_req    = decode_tv_r.inval_op & ~snoop_tv_r;
 
   assign cache_req_v_o = is_ready & v_tv_r & |{uncached_req, cached_req, inval_req} & ~tv_flush_i;
-  wire [vaddr_width_p-1:0] cache_req_addr = `bp_addr_align(paddr_tv_r, fetch_bytes_gp);
+  wire [vaddr_width_p-1:0] cache_req_addr = `bp_addr_align(paddr_tv_r, icache_data_width_p/8);
   assign cache_req_cast_o =
    '{addr     : cache_req_addr
      ,size    : bp_cache_req_size_e'(cached_req ? block_req_size : uncached_req_size)

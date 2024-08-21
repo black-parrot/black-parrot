@@ -42,9 +42,9 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [vaddr_width_mp-1:0]                pc;                                                \
-      logic [fetch_width_gp-1:0]                instr;                                             \
+      logic [fetch_width_p-1:0]                instr;                                             \
       logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                               \
-      logic [fetch_ptr_gp-1:0]                  count;                                             \
+      logic [fetch_ptr_p-1:0]                   count;                                             \
       bp_fe_queue_type_e                        msg_type;                                          \
     }  bp_fe_queue_s;                                                                              \
                                                                                                    \
@@ -108,7 +108,7 @@
     {                                                                                              \
       bp_pte_leaf_s              pte_leaf;                                                         \
       logic [instr_width_gp-1:0] instr;                                                            \
-      logic [fetch_ptr_gp-1:0]   count;                                                            \
+      logic [fetch_ptr_p-1:0]    count;                                                            \
       logic [`bp_fe_cmd_itlb_fill_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_itlb_fill_s;                                                                      \
@@ -121,7 +121,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [instr_width_gp-1:0] instr;                                                            \
-      logic [fetch_ptr_gp-1:0]   count;                                                            \
+      logic [fetch_ptr_p-1:0]    count;                                                            \
       logic [`bp_fe_cmd_icache_fill_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                  padding;                                                          \
     }  bp_fe_cmd_icache_fill_s;                                                                    \
@@ -169,7 +169,7 @@
 
   /* Declare width macros so that clients can use structs in ports before struct declaration */
   `define bp_fe_queue_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                          \
-    ($bits(bp_fe_queue_type_e)+branch_metadata_fwd_width_mp+fetch_width_gp+fetch_ptr_gp+vaddr_width_mp)
+    ($bits(bp_fe_queue_type_e)+branch_metadata_fwd_width_mp+fetch_width_p+fetch_ptr_p+vaddr_width_mp)
 
   `define bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (vaddr_width_mp                                                                                \
@@ -212,10 +212,10 @@
     (        1+branch_metadata_fwd_width_mp)
 
   `define bp_fe_cmd_itlb_fill_width_no_padding(vaddr_width_mp, paddr_width_mp) \
-    (`bp_pte_leaf_width(paddr_width_mp)+instr_width_gp+fetch_ptr_gp)
+    (`bp_pte_leaf_width(paddr_width_mp)+instr_width_gp+fetch_ptr_p)
 
   `define bp_fe_cmd_icache_fill_width_no_padding \
-    (instr_width_gp+fetch_ptr_gp)
+    (instr_width_gp+fetch_ptr_p)
 
   `define bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp) \
     (asid_width_mp + 2)

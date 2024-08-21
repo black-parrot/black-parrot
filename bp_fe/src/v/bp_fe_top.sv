@@ -99,27 +99,26 @@ module bp_fe_top
   logic [vaddr_width_p-1:0] next_pc_lo;
   logic ovr_lo;
 
-  logic if2_v_lo, if2_yumi_li;
+  logic if2_hit_v_lo, if2_miss_v_lo, if2_yumi_li;
   logic [vaddr_width_p-1:0] if2_pc_lo;
-  logic [fetch_width_gp-1:0] if2_data_lo;
+  logic [icache_data_width_p-1:0] if2_data_lo;
   bp_fe_branch_metadata_fwd_s if2_br_metadata_fwd_lo;
-  logic if2_taken_branch_site_lo;
 
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt_li;
-  logic [instr_width_gp-1:0] icache_data_lo;
+  logic [icache_data_width_p-1:0] icache_data_lo;
   logic icache_v_li, icache_force_li, icache_yumi_lo, tl_flush_lo;
   logic icache_tv_we;
   logic icache_hit_v_lo, icache_miss_v_lo, icache_fence_v_lo, icache_hit_yumi_li, icache_yumi_li;
 
   logic fetch_v_lo, fetch_yumi_li;
   logic [vaddr_width_p-1:0] fetch_pc_lo;
-  logic [fetch_cinstr_gp-1:0][cinstr_width_gp-1:0] fetch_instr_lo;
+  logic [fetch_width_p-1:0] fetch_instr_lo;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_fwd_lo;
   bp_fe_scan_s fetch_scan_lo;
   logic fetch_partial_lo, fetch_taken_li;
-  logic [fetch_ptr_gp-1:0] fetch_count_lo;
-  logic fetch_linear_lo, fetch_catchup_lo, fetch_rebase_lo;
+  logic [fetch_ptr_p-1:0] fetch_count_lo;
+  logic fetch_startup_lo, fetch_catchup_lo, fetch_rebase_lo, fetch_linear_lo;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
    pc_gen
@@ -152,21 +151,24 @@ module bp_fe_top
      ,.icache_tv_we_i(icache_tv_we)
 
      ,.icache_hit_v_i(icache_hit_v_lo)
+     ,.icache_miss_v_i(icache_miss_v_lo)
      ,.icache_data_i(icache_data_lo)
      ,.icache_hit_yumi_o(icache_hit_yumi_li)
 
-     ,.if2_v_o(if2_v_lo)
+     ,.if2_hit_v_o(if2_hit_v_lo)
+     ,.if2_miss_v_o(if2_miss_v_lo)
      ,.if2_pc_o(if2_pc_lo)
      ,.if2_data_o(if2_data_lo)
      ,.if2_br_metadata_fwd_o(if2_br_metadata_fwd_lo)
      ,.if2_yumi_i(if2_yumi_li)
 
      ,.fetch_pc_i(fetch_pc_lo)
-     ,.fetch_instr_i(fetch_instr_lo)
+     ,.fetch_count_i(fetch_count_lo)
      ,.fetch_scan_i(fetch_scan_lo)
-     ,.fetch_linear_i(fetch_linear_lo)
+     ,.fetch_startup_i(fetch_startup_lo)
      ,.fetch_catchup_i(fetch_catchup_lo)
      ,.fetch_rebase_i(fetch_rebase_lo)
+     ,.fetch_linear_i(fetch_linear_lo)
      ,.fetch_yumi_i(fetch_yumi_li)
      ,.fetch_taken_o(fetch_taken_li)
      );
@@ -301,17 +303,18 @@ module bp_fe_top
 
   logic assembled_v_lo, assembled_yumi_li;
   logic [vaddr_width_p-1:0] assembled_pc_lo;
-  logic [fetch_cinstr_gp:0][cinstr_width_gp-1:0] assembled_instr_lo;
+  logic [fetch_cinstr_p-1:0][cinstr_width_gp-1:0] assembled_instr_lo;
   bp_fe_branch_metadata_fwd_s assembled_br_metadata_fwd_lo;
   logic assembled_partial_lo;
-  logic [fetch_ptr_gp-1:0] assembled_count_lo, assembled_count_li;
+  logic [fetch_ptr_p-1:0] assembled_count_lo, assembled_count_li;
   bp_fe_realigner
    #(.bp_params_p(bp_params_p))
    realigner
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.if2_v_i(if2_v_lo)
+     ,.if2_hit_v_i(if2_hit_v_lo)
+     ,.if2_miss_v_i(if2_miss_v_lo)
      ,.if2_pc_i(if2_pc_lo)
      ,.if2_data_i(if2_data_lo)
      ,.if2_br_metadata_fwd_i(if2_br_metadata_fwd_lo)
@@ -331,10 +334,6 @@ module bp_fe_top
      ,.assembled_count_o(assembled_count_lo)
      ,.assembled_count_i(assembled_count_li)
      ,.assembled_yumi_i(assembled_yumi_li)
-
-     ,.fetch_linear_o(fetch_linear_lo)
-     ,.fetch_catchup_o(fetch_catchup_lo)
-     ,.fetch_taken_i(fetch_taken_li)
      );
 
   bp_fe_scan
@@ -356,10 +355,12 @@ module bp_fe_top
      ,.fetch_partial_o(fetch_partial_lo)
      ,.fetch_count_o(fetch_count_lo)
      ,.fetch_scan_o(fetch_scan_lo)
+     ,.fetch_startup_o(fetch_startup_lo)
+     ,.fetch_catchup_o(fetch_catchup_lo)
+     ,.fetch_rebase_o(fetch_rebase_lo)
+     ,.fetch_linear_o(fetch_linear_lo)
      ,.fetch_yumi_i(fetch_yumi_li)
      ,.fetch_taken_i(fetch_taken_li)
-
-     ,.fetch_rebase_o(fetch_rebase_lo)
      );
 
   bp_fe_controller
