@@ -305,7 +305,7 @@
       ,icache_block_width   : 512
       ,icache_fill_width    : 128
       ,icache_mshr          : 1
-      ,icache_data_width    : 32
+      ,icache_data_width    : 64
 
       ,dcache_features      : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)

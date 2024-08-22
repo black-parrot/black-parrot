@@ -190,7 +190,7 @@
     , localparam acache_tag_width_p = caddr_width_p -                                              \
         (`BSG_SAFE_CLOG2(acache_sets_p*acache_block_width_p/8))                                    \
                                                                                                    \
-    , localparam fetch_width_p  = cinstr_width_gp + instr_width_gp                                 \
+    , localparam fetch_width_p  = cinstr_width_gp + icache_data_width_p                            \
     , localparam fetch_cinstr_p = fetch_width_p >> 4                                               \
     , localparam fetch_sel_p    = `BSG_SAFE_CLOG2(fetch_cinstr_p)                                  \
     , localparam fetch_ptr_p    = `BSG_WIDTH(fetch_cinstr_p)                                       \
