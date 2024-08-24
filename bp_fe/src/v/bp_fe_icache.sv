@@ -44,10 +44,11 @@ module bp_fe_icache
    , parameter assoc_p       = icache_assoc_p
    , parameter block_width_p = icache_block_width_p
    , parameter fill_width_p  = icache_fill_width_p
+   , parameter data_width_p  = icache_data_width_p
    , parameter tag_width_p   = icache_tag_width_p
    , parameter id_width_p    = icache_req_id_width_p
 
-   `declare_bp_fe_icache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
+   `declare_bp_fe_icache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p)
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
@@ -89,7 +90,7 @@ module bp_fe_icache
    //   will prevent them from escaping the I$.
    // data_o is the outgoing data, with v_o being valid
    // yumi_i is dequeues the data
-   , output logic [instr_width_gp-1:0]                data_o
+   , output logic [data_width_p-1:0]                  data_o
    , output logic                                     hit_v_o
    , output logic                                     miss_v_o
    , output logic                                     fence_v_o
@@ -127,15 +128,14 @@ module bp_fe_icache
    , output logic [icache_stat_info_width_lp-1:0]     stat_mem_o
    );
 
-  `declare_bp_fe_icache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
+  `declare_bp_fe_icache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p);
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Various localparameters
   localparam lg_assoc_lp            =`BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp          = block_width_p / assoc_p;
-  localparam num_instr_per_bank_lp  = bank_width_lp / instr_width_gp;
-  localparam num_cinstr_per_bank_lp = bank_width_lp / cinstr_width_gp;
+  localparam num_data_per_bank_lp   = bank_width_lp / data_width_p;
   localparam data_mem_mask_width_lp = (bank_width_lp >> 3);
   localparam byte_offset_width_lp   = `BSG_SAFE_CLOG2(bank_width_lp >> 3);
   localparam bindex_width_lp        = `BSG_SAFE_CLOG2(assoc_p);
@@ -252,7 +252,7 @@ module bp_fe_icache
   logic spec_tl_r;
   bp_fe_icache_decode_s decode_tl_r;
 
-  assign tl_we = v_tl_r ? (tv_we | force_i) : 1'b1;
+  assign tl_we = v_tl_r ? (tv_we | force_i) : ~cache_req_lock_i;
   bsg_dff_reset_en
    #(.width_p(1))
    v_tl_reg
@@ -414,12 +414,12 @@ module bp_fe_icache
      );
 
   // TODO: Can retime manually for critical path?
-  logic [instr_width_gp-1:0] final_data_tv;
-  wire [`BSG_SAFE_CLOG2(num_instr_per_bank_lp)-1:0] ld_data_word_sel_tv =
-    paddr_tv_r[2+:`BSG_SAFE_CLOG2(num_instr_per_bank_lp)];
+  logic [data_width_p-1:0] final_data_tv;
+  wire [`BSG_SAFE_CLOG2(num_data_per_bank_lp)-1:0] ld_data_word_sel_tv =
+    paddr_tv_r[2+:`BSG_SAFE_CLOG2(num_data_per_bank_lp)];
   bsg_mux
-   #(.width_p(instr_width_gp), .els_p(num_instr_per_bank_lp))
-   word_select_mux
+   #(.width_p(data_width_p), .els_p(num_data_per_bank_lp))
+   data_select_mux
     (.data_i(ld_data_way_picked)
      ,.sel_i(ld_data_word_sel_tv)
      ,.data_o(final_data_tv)
@@ -469,16 +469,15 @@ module bp_fe_icache
   `bp_cast_o(bp_fe_icache_req_metadata_s, cache_req_metadata);
 
   localparam block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
-  localparam uncached_req_size = `BSG_SAFE_CLOG2(fetch_bytes_gp);
+  localparam uncached_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(data_width_p/8));
 
   wire cached_req   = decode_tv_r.fetch_op & ~snoop_tv_r & ~hit_v_tv & ~uncached_tv_r & ~spec_tv_r;
   wire uncached_req = decode_tv_r.fetch_op & ~snoop_tv_r & ~hit_v_tv &  uncached_tv_r & ~spec_tv_r;
   wire inval_req    = decode_tv_r.inval_op & ~snoop_tv_r;
 
   assign cache_req_v_o = is_ready & v_tv_r & |{uncached_req, cached_req, inval_req} & ~tv_flush_i;
-  wire [vaddr_width_p-1:0] cache_req_addr = `bp_addr_align(paddr_tv_r, fetch_bytes_gp);
   assign cache_req_cast_o =
-   '{addr     : cache_req_addr
+   '{addr     : paddr_tv_r
      ,size    : bp_cache_req_size_e'(cached_req ? block_req_size : uncached_req_size)
      ,msg_type: cached_req ? e_miss_load : uncached_req ? e_uc_load : e_cache_inval
      ,subop   : e_req_amoswap

@@ -1,5 +1,5 @@
 /*
- * bp_fe_scan.v
+ * bp_fe_instr_scan.v
  *
  * Instr scan check if the intruction is aligned, compressed, or normal instruction.
  * The entire block is implemented in combinational logic, achieved within one cycle.
@@ -14,41 +14,44 @@ module bp_fe_scan
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
 
+   , localparam decode_width_lp = $bits(bp_fe_decode_s)
    , localparam scan_width_lp = $bits(bp_fe_scan_s)
    )
-  (input                                                     assembled_v_i
-   , input [vaddr_width_p-1:0]                               assembled_pc_i
-   , input [fetch_cinstr_gp  :0][cinstr_width_gp-1:0]        assembled_instr_i
-   , input [branch_metadata_fwd_width_p-1:0]                 assembled_br_metadata_fwd_i
-   , input [fetch_ptr_gp-1:0]                                assembled_count_i
-   , input                                                   assembled_partial_i
-   , output logic [fetch_ptr_gp-1:0]                         assembled_count_o
-   , output logic                                            assembled_yumi_o
+  (input                                             assembled_v_i
+   , input [vaddr_width_p-1:0]                       assembled_pc_i
+   , input [fetch_cinstr_p-1:0][cinstr_width_gp-1:0] assembled_instr_i
+   , input [branch_metadata_fwd_width_p-1:0]         assembled_br_metadata_fwd_i
+   , input [fetch_ptr_p-1:0]                         assembled_count_i
+   , input                                           assembled_partial_i
+   , output logic [fetch_ptr_p-1:0]                  assembled_count_o
+   , output logic                                    assembled_yumi_o
 
-   , output logic                                            fetch_v_o
-   , output logic [vaddr_width_p-1:0]                        fetch_pc_o
-   , output logic [fetch_cinstr_gp-1:0][cinstr_width_gp-1:0] fetch_instr_o
-   , output logic [branch_metadata_fwd_width_p-1:0]          fetch_br_metadata_fwd_o
-   , output logic                                            fetch_partial_o
-   , output logic [fetch_ptr_gp-1:0]                         fetch_count_o
-   , output logic [scan_width_lp-1:0]                        fetch_scan_o
-   , input                                                   fetch_yumi_i
-   , input                                                   fetch_taken_i
-
-   , output logic                                            fetch_rebase_o
+   , output logic                                    fetch_v_o
+   , output logic [vaddr_width_p-1:0]                fetch_pc_o
+   , output logic [fetch_width_p-1:0]                fetch_instr_o
+   , output logic [branch_metadata_fwd_width_p-1:0]  fetch_br_metadata_fwd_o
+   , output logic [fetch_ptr_p-1:0]                  fetch_count_o
+   , output logic                                    fetch_partial_o
+   , output logic [scan_width_lp-1:0]                fetch_scan_o
+   , output logic                                    fetch_startup_o
+   , output logic                                    fetch_catchup_o
+   , output logic                                    fetch_rebase_o
+   , output logic                                    fetch_linear_o
+   , input                                           fetch_taken_i
+   , input                                           fetch_yumi_i
    );
 
- `bp_cast_o(bp_fe_scan_s, fetch_scan);
+  `bp_cast_o(bp_fe_scan_s, fetch_scan);
 
-  bp_fe_decode_s [fetch_cinstr_gp : 0] decode_lo;
-  logic [fetch_cinstr_gp :-1][cinstr_width_gp-1:0] instr;
-  logic [fetch_cinstr_gp :-1] full1;
-  logic [fetch_cinstr_gp : 0] branch;
-  logic [fetch_cinstr_gp : 0] complete;
+  bp_fe_decode_s [fetch_cinstr_p : 0] decode_lo;
+  logic [fetch_cinstr_p :-1][cinstr_width_gp-1:0] instr;
+  logic [fetch_cinstr_p :-1] full1;
+  logic [fetch_cinstr_p : 0] branch;
+  logic [fetch_cinstr_p : 0] complete;
 
   assign instr = {assembled_instr_i, 16'b0};
   assign full1[-1] = 1'b0;
-  for (genvar i = 0; i <= fetch_cinstr_gp; i++)
+  for (genvar i = 0; i <= fetch_cinstr_p; i++)
     begin : scan
       rv64_instr_rtype_s curr_instr;
 
@@ -103,76 +106,98 @@ module bp_fe_scan
     end
 
   logic any_complete;
-  logic [fetch_sel_gp-1:0] complete_addr;
-  wire [fetch_cinstr_gp-1:0] complete_vector = complete;
+  logic [fetch_sel_p-1:0] complete_addr;
+  wire [fetch_cinstr_p-1:0] complete_vector = complete;
   bsg_priority_encode
-   #(.width_p(fetch_cinstr_gp), .lo_to_hi_p(0))
+   #(.width_p(fetch_cinstr_p), .lo_to_hi_p(0))
    complete_pe
     (.i(complete_vector)
      ,.addr_o(complete_addr)
      ,.v_o(any_complete)
      );
-  wire [fetch_ptr_gp-1:0] linear_sel   = fetch_cinstr_gp - 1'b1 - complete_addr;
-  wire [fetch_ptr_gp-1:0] linear_count = any_complete ? linear_sel + 1'b1 : '0;
+  wire [fetch_ptr_p-1:0] linear_sel   = fetch_cinstr_p - 1'b1 - complete_addr;
+  wire [fetch_ptr_p-1:0] linear_count = any_complete ? linear_sel + 1'b1 : '0;
 
   logic any_branch;
-  logic [fetch_sel_gp-1:0] branch_sel;
-  wire [fetch_cinstr_gp-1:0] branch_vector = branch;
+  logic [fetch_sel_p-1:0] branch_sel;
+  wire [fetch_cinstr_p-1:0] branch_vector = branch;
   bsg_priority_encode
-   #(.width_p(fetch_cinstr_gp), .lo_to_hi_p(1))
+   #(.width_p(fetch_cinstr_p), .lo_to_hi_p(1))
    branch_sel_pe
     (.i(branch_vector)
      ,.addr_o(branch_sel)
      ,.v_o(any_branch)
      );
-  wire [fetch_ptr_gp-1:0] branch_count = any_branch ? branch_sel + 1'b1 : '0;
+  wire [fetch_ptr_p-1:0] branch_count = any_branch ? branch_sel + 1'b1 : '0;
 
   logic any_last_branch;
-  logic [fetch_ptr_gp-1:0] last_branch_addr;
-  wire [fetch_cinstr_gp :0] last_branch_vector = branch;
+  logic [fetch_ptr_p-1:0] last_branch_addr;
+  wire [fetch_cinstr_p :0] last_branch_vector = branch;
   bsg_priority_encode
-   #(.width_p(fetch_cinstr_gp+1), .lo_to_hi_p(0))
+   #(.width_p(fetch_cinstr_p+1), .lo_to_hi_p(0))
    second_branch_pe
     (.i(last_branch_vector)
      ,.addr_o(last_branch_addr)
      ,.v_o(any_last_branch)
      );
 
-  wire [fetch_ptr_gp-1:0] last_branch_sel = fetch_cinstr_gp - last_branch_addr;
-  wire [fetch_ptr_gp-1:0] last_branch_count = any_last_branch ? last_branch_sel + 1'b1 : '0;
+  wire [fetch_ptr_p-1:0] last_branch_sel = fetch_cinstr_p - last_branch_addr;
+  wire [fetch_ptr_p-1:0] last_branch_count = any_last_branch ? last_branch_sel + 1'b1 : '0;
   wire double_branch = any_branch && (branch_sel != last_branch_sel);
- 
+
   bp_fe_decode_s branch_decode_lo;
   bsg_mux
-   #(.width_p($bits(bp_fe_decode_s)), .els_p(fetch_cinstr_gp+1))
+   #(.width_p(decode_width_lp), .els_p(fetch_cinstr_p+1))
    branch_decode_mux
     (.data_i(decode_lo)
-     ,.sel_i({1'b0, branch_sel})
+     ,.sel_i(branch_sel)
      ,.data_o(branch_decode_lo)
-     ); 
+     );
 
+  bp_fe_decode_s next_decode_lo;
+  wire [fetch_ptr_p-1:0] next_sel = any_branch ? branch_sel+1'b1 : linear_sel+1'b1;
+  bsg_mux
+   #(.width_p(decode_width_lp), .els_p(fetch_cinstr_p+1))
+   next_decode_mux
+    (.data_i(decode_lo)
+     ,.sel_i(next_sel)
+     ,.data_o(next_decode_lo)
+     );
+  wire [fetch_ptr_p-1:0] next_count = any_complete ? next_sel : 1'b1;
+
+  wire assembled_startup = ~any_branch & ~fetch_taken_i & ('0               == linear_count);
+  wire assembled_catchup =  any_branch & ~fetch_taken_i & (assembled_count_i > branch_count) & ~double_branch;
+  wire assembled_rebase  =  any_branch & ~fetch_taken_i & (assembled_count_i > branch_count) &  double_branch;
+  wire assembled_linear  = ~any_branch                  & (assembled_count_i > linear_count);
   always_comb
     begin
-      fetch_scan_cast_o.linear_imm = (linear_count + 1'd1) << 3'd1;
-      fetch_scan_cast_o.ntaken_imm = (assembled_count_i + 1'd0) << 3'd1;
-      fetch_scan_cast_o.taken_imm = branch_decode_lo.imm;
+      fetch_scan_cast_o = '0;
+      fetch_scan_cast_o.linear_imm = (linear_count + 1'd1) << 3'b1;
+      fetch_scan_cast_o.ntaken_imm = (next_count + 1'd0) << 3'b1;
+      fetch_scan_cast_o.taken_imm  = branch_decode_lo.imm;
 
-      fetch_scan_cast_o.br = branch_decode_lo.br;
-      fetch_scan_cast_o.jal = branch_decode_lo.jal;
-      fetch_scan_cast_o.jalr = branch_decode_lo.jalr;
-      fetch_scan_cast_o.call = branch_decode_lo.call;
-      fetch_scan_cast_o._return = branch_decode_lo._return;
+      if (fetch_yumi_i)
+        begin
+          fetch_scan_cast_o.br = branch_decode_lo.br;
+          fetch_scan_cast_o.jal = branch_decode_lo.jal;
+          fetch_scan_cast_o.jalr = branch_decode_lo.jalr;
+          fetch_scan_cast_o.call = branch_decode_lo.call;
+          fetch_scan_cast_o._return = branch_decode_lo._return;
+        end
     end
-
-  assign fetch_rebase_o =  any_branch & (assembled_count_i > branch_count) &  double_branch;
 
   assign fetch_v_o = assembled_v_i;
   assign fetch_pc_o = assembled_pc_i;
   assign fetch_instr_o = assembled_instr_i;
   assign fetch_br_metadata_fwd_o = assembled_br_metadata_fwd_i;
   assign fetch_partial_o = assembled_partial_i;
-  assign fetch_count_o = assembled_count_i;
-  assign assembled_count_o = fetch_count_o;
+  assign fetch_count_o = any_branch ? branch_count : linear_count;
+  assign fetch_startup_o = fetch_yumi_i & assembled_startup;
+  assign fetch_catchup_o = fetch_yumi_i & assembled_catchup;
+  assign fetch_rebase_o = fetch_yumi_i & assembled_rebase;
+  assign fetch_linear_o = fetch_yumi_i & assembled_linear;
+
+  assign assembled_count_o = any_branch ? (assembled_rebase | fetch_taken_i) ? assembled_count_i : branch_count : linear_count;
   assign assembled_yumi_o = fetch_yumi_i;
 
 endmodule

@@ -21,6 +21,7 @@ module bp_lce
    , parameter `BSG_INV_PARAM(sets_p)
    , parameter `BSG_INV_PARAM(block_width_p)
    , parameter `BSG_INV_PARAM(fill_width_p)
+   , parameter `BSG_INV_PARAM(data_width_p)
    , parameter `BSG_INV_PARAM(id_width_p)
 
    // LCE-cache interface timeout in cycles
@@ -32,7 +33,7 @@ module bp_lce
    , parameter `BSG_INV_PARAM(tag_width_p)
 
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p, cache)
   )
   (
     input                                            clk_i
@@ -120,7 +121,7 @@ module bp_lce
   if (fill_width_p < dword_width_gp)
     $error("fill width must be greater or equal than cache request data width");
 
-  `declare_bp_cache_engine_generic_if(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p, cache);
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   // LCE Request Module
@@ -136,6 +137,7 @@ module bp_lce
      ,.sets_p(sets_p)
      ,.block_width_p(block_width_p)
      ,.fill_width_p(fill_width_p)
+     ,.data_width_p(data_width_p)
      ,.tag_width_p(tag_width_p)
      ,.credits_p(credits_p)
      ,.non_excl_reads_p(non_excl_reads_p)
@@ -229,6 +231,7 @@ module bp_lce
      ,.sets_p(sets_p)
      ,.block_width_p(block_width_p)
      ,.fill_width_p(fill_width_p)
+     ,.data_width_p(data_width_p)
      ,.tag_width_p(tag_width_p)
      ,.id_width_p(id_width_p)
      )

@@ -16,6 +16,7 @@ module bp_me_nonsynth_lce_tracer
     , parameter `BSG_INV_PARAM(assoc_p)
     , parameter `BSG_INV_PARAM(block_width_p)
     , parameter `BSG_INV_PARAM(fill_width_p)
+    , parameter `BSG_INV_PARAM(data_width_p)
 
     , localparam lce_trace_file_p = "lce"
 
@@ -29,8 +30,6 @@ module bp_me_nonsynth_lce_tracer
     , localparam ptag_width_lp=(paddr_width_p-lg_sets_lp-block_offset_bits_lp)
 
     , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
-
-    , localparam lce_req_data_width_lp = dword_width_gp
 
     `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
 

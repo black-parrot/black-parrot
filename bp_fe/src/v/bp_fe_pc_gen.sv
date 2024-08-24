@@ -47,22 +47,25 @@ module bp_fe_pc_gen
    , input                                           icache_tv_we_i
 
    , input                                           icache_hit_v_i
+   , input                                           icache_miss_v_i
    , output logic                                    icache_hit_yumi_o
-   , input [fetch_width_gp-1:0]                      icache_data_i
+   , input [icache_data_width_p-1:0]                 icache_data_i
 
-   , output logic                                    if2_v_o
+   , output logic                                    if2_hit_v_o
+   , output logic                                    if2_miss_v_o
    , output logic [vaddr_width_p-1:0]                if2_pc_o
-   , output logic [fetch_width_gp-1:0]               if2_data_o
+   , output logic [icache_data_width_p-1:0]          if2_data_o
    , output logic [branch_metadata_fwd_width_p-1:0]  if2_br_metadata_fwd_o
    , input                                           if2_yumi_i
 
-   , input [vaddr_width_p-1:0]                       fetch_pc_i
-   , input [instr_width_gp-1:0]                      fetch_instr_i
+   , input                                           fetch_yumi_i
    , input [scan_width_lp-1:0]                       fetch_scan_i
-   , input                                           fetch_linear_i
+   , input [vaddr_width_p-1:0]                       fetch_pc_i
+   , input [fetch_ptr_p-1:0]                         fetch_count_i
+   , input                                           fetch_startup_i
    , input                                           fetch_catchup_i
    , input                                           fetch_rebase_i
-   , input                                           fetch_yumi_i
+   , input                                           fetch_linear_i
    , output logic                                    fetch_taken_o
    );
 
@@ -87,9 +90,9 @@ module bp_fe_pc_gen
   ///////////////////////////
   bp_fe_branch_metadata_fwd_s next_metadata, ovr_metadata;
   logic next_pred, next_taken;
-  logic ovr_ret, ovr_btaken, ovr_jmp, ovr_linear, ovr_rebase, btb_taken;
+  logic ovr_ret, ovr_btaken, ovr_jmp, ovr_rebase, ovr_linear, btb_taken;
   logic [vaddr_width_p-1:0] pc_plus;
-  logic [vaddr_width_p-1:0] ras_tgt_lo, linear_tgt_lo, ntaken_tgt_lo, taken_tgt_lo;
+  logic [vaddr_width_p-1:0] ras_tgt_lo, taken_tgt_lo, ntaken_tgt_lo, linear_tgt_lo;
   logic [ras_idx_width_p-1:0] ras_next, ras_tos;
   logic [btb_tag_width_p-1:0] btb_tag;
   logic [btb_idx_width_p-1:0] btb_idx;
@@ -113,6 +116,7 @@ module bp_fe_pc_gen
         next_pc    = ovr_ret ? ras_tgt_lo : (ovr_btaken | ovr_jmp) ? taken_tgt_lo : ovr_rebase ? ntaken_tgt_lo : linear_tgt_lo;
 
         next_metadata = ovr_metadata;
+        next_metadata.src_ras = ovr_ret;
       end
     else
       begin
@@ -224,9 +228,9 @@ module bp_fe_pc_gen
   /////////////////////////////////////////////////////////////////////////////////////
   // IF1
   /////////////////////////////////////////////////////////////////////////////////////
-  logic [vaddr_width_p-1:0] pc_if1_r;
   bp_fe_branch_metadata_fwd_s metadata_if1_r;
   logic pred_if1_r, taken_if1_r;
+  logic [vaddr_width_p-1:0] pc_if1, pc_if1_r, pc_if1_aligned;
   bsg_dff_reset_en
    #(.width_p(2+branch_metadata_fwd_width_p+vaddr_width_p))
    if1_stage_reg
@@ -247,9 +251,9 @@ module bp_fe_pc_gen
   always_comb
     begin
       metadata_if1 = metadata_if1_r;
+
       if (fetch_yumi_i)
         begin
-          metadata_if1.src_ras     = ovr_ret;
           metadata_if1.site_br     = fetch_scan.br;
           metadata_if1.site_jal    = fetch_scan.jal;
           metadata_if1.site_jalr   = fetch_scan.jalr;
@@ -259,41 +263,49 @@ module bp_fe_pc_gen
     end
   assign ovr_metadata = metadata_if1;
 
-  wire [vaddr_width_p-1:0] pc_if1_aligned = `bp_addr_align(pc_if1_r, fetch_bytes_gp);
+  localparam icache_bytes_lp = icache_data_width_p >> 3;
+  assign pc_if1_aligned = `bp_addr_align(pc_if1_r, icache_bytes_lp);
+  assign pc_if1 = fetch_catchup_i ? ntaken_tgt_lo : pc_if1_r;
 
   assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
-  assign pc_plus = pc_if1_aligned + fetch_bytes_gp;
+  assign pc_plus = pc_if1_aligned + icache_bytes_lp;
 
   /////////////////////////////////////////////////////////////////////////////////////
   // IF2
   /////////////////////////////////////////////////////////////////////////////////////
-  logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
   bp_fe_branch_metadata_fwd_s metadata_if2_n, metadata_if2_r, metadata_if2;
-  assign metadata_if2_n = (fetch_linear_i & ~fetch_yumi_i) ? metadata_if2_r : metadata_if1;
-  assign pc_if2_n = fetch_catchup_i ? ntaken_tgt_lo : pc_if1_r;
+  logic pred_if2_r, taken_if2_r;
+  logic [vaddr_width_p-1:0] pc_if2, pc_if2_r, pc_if2_aligned;
+
+  assign metadata_if2_n = fetch_startup_i ? metadata_if2 : metadata_if1;
   bsg_dff_reset_en
-   #(.width_p(vaddr_width_p+branch_metadata_fwd_width_p))
+   #(.width_p(2+vaddr_width_p+branch_metadata_fwd_width_p))
    if2_stage_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(icache_tv_we_i | fetch_catchup_i)
 
-     ,.data_i({pc_if2_n, metadata_if2_n})
-     ,.data_o({pc_if2_r, metadata_if2_r})
+     ,.data_i({pred_if1_r, taken_if1_r, pc_if1, metadata_if2_n})
+     ,.data_o({pred_if2_r, taken_if2_r, pc_if2_r, metadata_if2_r})
      );
 
   always_comb
     begin
       metadata_if2 = metadata_if2_r;
+
       metadata_if2.ras_next = ras_next;
       metadata_if2.ras_tos  = ras_tos;
     end
 
-  assign if2_v_o = icache_hit_v_i;
+  assign pc_if2 = pc_if2_r;
+  assign pc_if2_aligned = `bp_addr_align(pc_if2, icache_bytes_lp);
+
+  assign if2_hit_v_o = icache_hit_v_i;
+  assign if2_miss_v_o = icache_miss_v_i;
   assign if2_pc_o = pc_if2_r;
   assign if2_data_o = icache_data_i;
   assign if2_br_metadata_fwd_o = metadata_if2;
-  assign icache_hit_yumi_o = if2_yumi_i;
+  assign icache_hit_yumi_o = icache_hit_v_i & if2_yumi_i;
 
   ///////////////////////////
   // RAS Storage
@@ -341,12 +353,12 @@ module bp_fe_pc_gen
   wire rebase_miss  = !taken_if1_r;
   wire linear_miss  =  taken_if1_r;
 
-  assign ovr_ret     = fetch_yumi_i & btb_miss_ras & fetch_scan._return & ras_valid_lo;
-  assign ovr_btaken  = fetch_yumi_i & btb_miss_br  & fetch_scan.br & pred_if1_r;
-  assign ovr_jmp     = fetch_yumi_i & btb_miss_br  & fetch_scan.jal;
-  assign ovr_rebase  = fetch_rebase_i & rebase_miss;
-  assign ovr_linear  = fetch_linear_i & linear_miss;
-  assign ovr_o       = ovr_btaken | ovr_jmp | ovr_ret | ovr_rebase | ovr_linear;
+  assign ovr_ret     = btb_miss_ras & fetch_scan._return & ras_valid_lo;
+  assign ovr_btaken  = btb_miss_br  & fetch_scan.br & pred_if1_r;
+  assign ovr_jmp     = btb_miss_br  & fetch_scan.jal;
+  assign ovr_linear  = linear_miss  & fetch_linear_i;
+  assign ovr_rebase  = rebase_miss  & fetch_rebase_i;
+  assign ovr_o       = ovr_btaken | ovr_jmp | ovr_ret | ovr_linear | ovr_rebase;
 
   assign fetch_taken_o = taken_if1_r | ovr_ret | ovr_btaken | ovr_jmp;
 
