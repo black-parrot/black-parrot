@@ -476,9 +476,8 @@ module bp_fe_icache
   wire inval_req    = decode_tv_r.inval_op & ~snoop_tv_r;
 
   assign cache_req_v_o = is_ready & v_tv_r & |{uncached_req, cached_req, inval_req} & ~tv_flush_i;
-  wire [vaddr_width_p-1:0] cache_req_addr = `bp_addr_align(paddr_tv_r, icache_data_width_p/8);
   assign cache_req_cast_o =
-   '{addr     : cache_req_addr
+   '{addr     : paddr_tv_r
      ,size    : bp_cache_req_size_e'(cached_req ? block_req_size : uncached_req_size)
      ,msg_type: cached_req ? e_miss_load : uncached_req ? e_uc_load : e_cache_inval
      ,subop   : e_req_amoswap
