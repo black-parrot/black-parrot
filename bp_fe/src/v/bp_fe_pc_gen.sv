@@ -58,6 +58,8 @@ module bp_fe_pc_gen
    , output logic [branch_metadata_fwd_width_p-1:0]  if2_br_metadata_fwd_o
    , input                                           if2_yumi_i
 
+   , input                                           fetch_yumi_i
+   , input [scan_width_lp-1:0]                       fetch_scan_i
    , input [vaddr_width_p-1:0]                       fetch_pc_i
    , input [fetch_ptr_p-1:0]                         fetch_count_i
    , input                                           fetch_startup_i
@@ -271,7 +273,6 @@ module bp_fe_pc_gen
   /////////////////////////////////////////////////////////////////////////////////////
   // IF2
   /////////////////////////////////////////////////////////////////////////////////////
-  logic [vaddr_width_p-1:0] pc_if2_n, pc_if2_r;
   bp_fe_branch_metadata_fwd_s metadata_if2_n, metadata_if2_r, metadata_if2;
   logic pred_if2_r, taken_if2_r;
   logic [vaddr_width_p-1:0] pc_if2, pc_if2_r, pc_if2_aligned;

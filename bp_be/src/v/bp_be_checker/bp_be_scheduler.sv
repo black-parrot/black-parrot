@@ -62,8 +62,6 @@ module bp_be_scheduler
    , output logic                             late_wb_yumi_o
    );
 
-  localparam op_ptr_width_lp = `BSG_WIDTH(fetch_cinstr_gp);
-
   // Declare parameterizable structures
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);

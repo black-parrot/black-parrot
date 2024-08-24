@@ -62,13 +62,8 @@ module bp_fe_controller
 
    , input                                            fetch_v_i
    , input [vaddr_width_p-1:0]                        fetch_pc_i
-<<<<<<< HEAD
-   , input [instr_width_gp-1:0]                       fetch_instr_i
-   , input [fetch_ptr_gp-1:0]                         fetch_count_i
-=======
    , input [fetch_width_p-1:0]                        fetch_instr_i
    , input [fetch_ptr_p-1:0]                          fetch_count_i
->>>>>>> dev
    , input                                            fetch_partial_i
    , input [branch_metadata_fwd_width_p-1:0]          fetch_br_metadata_fwd_i
    , output logic                                     fetch_yumi_o
@@ -135,11 +130,7 @@ module bp_fe_controller
   wire cmd_immediate_v  = fe_cmd_v_i & (pc_redirect_v | icache_fill_response_v | wait_v);
   wire cmd_complex_v    = fe_cmd_v_i & (state_reset_v | itlb_fill_response_v | icache_fence_v | itlb_fence_v);
 
-<<<<<<< HEAD
-  assign redirect_v_o               = cmd_nonattaboy_v;
-=======
   assign redirect_v_o               = !is_wait & cmd_nonattaboy_v;
->>>>>>> dev
   assign redirect_pc_o              = fe_cmd_cast_i.npc - (redirect_resume_o << 1'b1);
   assign redirect_npc_o             = fe_cmd_cast_i.npc;
   assign redirect_br_v_o            = !is_wait & br_miss_v;
@@ -192,13 +183,8 @@ module bp_fe_controller
      );
   wire if2_exception_v = |{itlb_miss_tv_r, instr_page_fault_tv_r, instr_access_fault_tv_r, icache_miss_tv_i};
 
-<<<<<<< HEAD
-  wire fetch_exception_v = is_run && fe_queue_ready_and_i && if2_exception_v;
-  wire fetch_instr_v     = is_run && fe_queue_ready_and_i && fetch_v_i && (fetch_count_i > '0);
-=======
   wire fetch_instr_v     = is_run && fe_queue_ready_and_i && fetch_v_i && (fetch_count_i > '0);
   wire fetch_exception_v = is_run && fe_queue_ready_and_i && if2_exception_v && ~fetch_instr_v;
->>>>>>> dev
 
   assign fetch_yumi_o    = is_run && fe_queue_ready_and_i && fetch_v_i;
   always_comb
