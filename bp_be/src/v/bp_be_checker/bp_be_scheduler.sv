@@ -78,7 +78,7 @@ module bp_be_scheduler
 
   logic ptw_busy_lo;
   logic ptw_v_lo, ptw_walk_lo, ptw_itlb_fill_lo, ptw_dtlb_fill_lo;
-  logic [fetch_ptr_gp-1:0] ptw_count_lo;
+  logic [fetch_ptr_p-1:0] ptw_count_lo;
   logic ptw_instr_page_fault_lo, ptw_load_page_fault_lo, ptw_store_page_fault_lo;
   logic [dword_width_gp-1:0] ptw_addr_lo, ptw_pte_lo;
   wire ptw_v_li = late_wb_yumi_o & late_wb_pkt_cast_i.ptw_w_v;
@@ -127,6 +127,8 @@ module bp_be_scheduler
   wire fe_exc_not_instr_li = ~be_exc_not_instr_li & issue_pkt_cast_o.v & !issue_pkt_cast_o.fetch;
   wire fe_instr_not_exc_li = ~be_exc_not_instr_li & issue_pkt_cast_o.v &  issue_pkt_cast_o.fetch;
 
+  localparam entry_cinstr_gp = 2**fetch_sel_p;
+  localparam op_ptr_width_lp = `BSG_WIDTH(entry_cinstr_gp);
   wire fe_queue_en_li                              = ~suppress_iss_i & ~ptw_busy_lo & ~hazard_v_i;
   wire fe_queue_clr_li                             = clear_iss_i;
   wire fe_queue_roll_li                            = commit_pkt_cast_i.npc_w_v;
@@ -208,8 +210,8 @@ module bp_be_scheduler
   wire [dpath_width_gp-1:0] fe_exc_imm_li = '0;
   assign fe_exc_decode_li = '0;
   assign fe_exc_instr_li = issue_pkt_cast_o.instr;
-  wire [fetch_ptr_gp-1:0] fe_exc_size_li = issue_pkt_cast_o.size;
-  wire [fetch_ptr_gp-1:0] fe_exc_count_li = issue_pkt_cast_o.count;
+  wire [fetch_ptr_p-1:0] fe_exc_size_li = issue_pkt_cast_o.size;
+  wire [fetch_ptr_p-1:0] fe_exc_count_li = issue_pkt_cast_o.count;
 
   bp_be_decode_s be_exc_decode_li, wb_decode_li, walk_decode_li;
   rv64_instr_fmatype_s be_exc_instr_li, wb_instr_li;
@@ -218,8 +220,8 @@ module bp_be_scheduler
   wire [dpath_width_gp-1:0] be_exc_imm_li = ptw_v_lo ? '0 : writeback_v ? late_wb_pkt_cast_i.fflags : '0;
   assign be_exc_decode_li = ptw_v_lo ? walk_decode_li : writeback_v ? wb_decode_li : '0;
   assign be_exc_instr_li = ptw_v_lo ? issue_pkt_cast_o.instr : writeback_v ? wb_instr_li : '0;
-  wire [fetch_ptr_gp-1:0] be_exc_size_li = '0;
-  wire [fetch_ptr_gp-1:0] be_exc_count_li = ptw_v_lo ? ptw_count_lo : writeback_v ? '0 : '0;
+  wire [fetch_ptr_p-1:0] be_exc_size_li = '0;
+  wire [fetch_ptr_p-1:0] be_exc_count_li = ptw_v_lo ? ptw_count_lo : writeback_v ? '0 : '0;
 
   assign wb_instr_li = '{rd_addr: late_wb_pkt_cast_i.rd_addr, default: '0};
   assign wb_decode_li = '{irf_w_v: late_wb_pkt_cast_i.ird_w_v, frf_w_v: late_wb_pkt_cast_i.frd_w_v, default: '0};

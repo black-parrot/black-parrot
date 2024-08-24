@@ -265,6 +265,7 @@ module testbench
        ,.sets_p(sets_p)
        ,.block_width_p(block_width_p)
        ,.fill_width_p(fill_width_p)
+       ,.data_width_p(data_width_p)
        ,.tag_width_p(tag_width_p)
        )
      icache_tracer
@@ -280,6 +281,7 @@ module testbench
       bp_me_nonsynth_lce_tracer
        #(.bp_params_p(bp_params_p)
          ,.fill_width_p(fill_width_p)
+         ,.data_width_p(data_width_p)
          ,.sets_p(sets_p)
          ,.assoc_p(assoc_p)
          ,.block_width_p(block_width_p)

@@ -19,6 +19,9 @@
 
   typedef struct packed
   {
+    logic startup;
+    logic catchup;
+    logic rebase;
     logic br;
     logic jal;
     logic jalr;

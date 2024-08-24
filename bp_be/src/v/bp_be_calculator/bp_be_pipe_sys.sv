@@ -121,8 +121,8 @@ module bp_be_pipe_sys
   logic [vaddr_width_p-1:0] retire_npc_r;
   logic [dword_width_gp-1:0] retire_nvaddr_r, retire_vaddr_r;
   logic [dword_width_gp-1:0] retire_ndata_r, retire_data_r;
-  logic [fetch_ptr_gp-1:0] retire_nsize_r, retire_size_r;
-  logic [fetch_ptr_gp-1:0] retire_ncount_r, retire_count_r;
+  logic [fetch_ptr_p-1:0] retire_nsize_r, retire_size_r;
+  logic [fetch_ptr_p-1:0] retire_ncount_r, retire_count_r;
   rv64_instr_s retire_ninstr_r, retire_instr_r;
   logic retire_niscore_r, retire_iscore_r;
   logic retire_nfscore_r, retire_fscore_r;

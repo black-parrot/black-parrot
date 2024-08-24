@@ -9,7 +9,8 @@ module bp_be_issue_queue
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
-   , localparam op_ptr_width_lp = `BSG_WIDTH(fetch_cinstr_gp)
+   , localparam entry_cinstr_gp = 2**fetch_sel_p
+   , localparam op_ptr_width_lp = `BSG_WIDTH(entry_cinstr_gp)
    , localparam decode_info_width_lp = `bp_be_decode_info_width
    , localparam preissue_pkt_width_lp = `bp_be_preissue_pkt_width
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
@@ -42,7 +43,7 @@ module bp_be_issue_queue
   `bp_cast_o(bp_be_preissue_pkt_s, preissue_pkt);
   `bp_cast_o(bp_be_issue_pkt_s, issue_pkt);
 
-  localparam entry_ptr_width_lp = fetch_sel_gp;
+  localparam entry_ptr_width_lp = fetch_sel_p;
   localparam mem_ptr_width_lp = `BSG_SAFE_CLOG2(fe_queue_fifo_els_p);
   localparam ptr_width_lp = mem_ptr_width_lp+entry_ptr_width_lp+1;
 
@@ -71,9 +72,9 @@ module bp_be_issue_queue
   wire read_catchup = (rptr_r.entry + read_size_i >= read_cnt_i);
   wire deq_catchup  = (cptr_r.entry + cmt_size_i  >= cmt_cnt_i );
 
-  assign enq  = ack    ? enq_catchup  ? (fetch_cinstr_gp - wptr_r.entry) : '0          : '0;
-  assign read = read_i ? read_catchup ? (fetch_cinstr_gp - rptr_r.entry) : read_size_i : '0;
-  assign deq  = cmt_i  ? deq_catchup  ? (fetch_cinstr_gp - cptr_r.entry) : cmt_size_i  : '0;
+  assign enq  = ack    ? enq_catchup  ? (entry_cinstr_gp - wptr_r.entry) : '0          : '0;
+  assign read = read_i ? read_catchup ? (entry_cinstr_gp - rptr_r.entry) : read_size_i : '0;
+  assign deq  = cmt_i  ? deq_catchup  ? (entry_cinstr_gp - cptr_r.entry) : cmt_size_i  : '0;
 
   // Calculate next pointer jump
   logic [ptr_width_lp-1:0] wptr_jmp, rptr_jmp, cptr_jmp;
@@ -111,12 +112,12 @@ module bp_be_issue_queue
      ,.n_o(rptr_n)
      );
 
-  logic [fetch_width_gp-1:0] queue_instr, queue_instr_n;
+  logic [fetch_width_p-1:0] queue_instr, queue_instr_n;
   assign queue_instr = fe_queue_cast_i.instr;
   wire preissue_v = (|read & ~empty_n) | roll_i | (|enq & empty);
   wire bypass_preissue = (wptr_r == rptr_n);
   bsg_mem_1r1w
-   #(.width_p(fetch_width_gp), .els_p(fe_queue_fifo_els_p))
+   #(.width_p(fetch_width_p), .els_p(fe_queue_fifo_els_p))
    preissue_fifo_mem
     (.w_clk_i(clk_i)
      ,.w_reset_i(reset_i)
@@ -129,13 +130,13 @@ module bp_be_issue_queue
      );
 
   wire [entry_ptr_width_lp-1:0] preissue_entry_sel = bypass_preissue ? wptr_r.entry : rptr_n.entry;
-  logic [fetch_cinstr_gp:0][cinstr_width_gp-1:0] queue_instr_raw;
-  assign queue_instr_raw[0+:fetch_cinstr_gp] = bypass_preissue ? queue_instr : queue_instr_n;
-  assign queue_instr_raw[fetch_cinstr_gp] = '0;
+  logic [fetch_cinstr_p:0][cinstr_width_gp-1:0] queue_instr_raw;
+  assign queue_instr_raw[0+:fetch_cinstr_p] = bypass_preissue ? queue_instr : queue_instr_n;
+  assign queue_instr_raw[fetch_cinstr_p] = '0;
 
-  rv64_instr_s [fetch_cinstr_gp-1:0] preissue_instr;
-  logic [fetch_cinstr_gp-1:0][fetch_ptr_gp-1:0] preissue_size;
-  for (genvar i = 0; i < fetch_ptr_gp; i++)
+  rv64_instr_s [fetch_cinstr_p-1:0] preissue_instr;
+  logic [fetch_cinstr_p-1:0][fetch_ptr_p-1:0] preissue_size;
+  for (genvar i = 0; i < fetch_cinstr_p; i++)
     begin : e
       logic [instr_width_gp-1:0] instr;
       wire [cinstr_width_gp-1:0] cinstr = queue_instr_raw[i];
@@ -247,8 +248,8 @@ module bp_be_issue_queue
 
   wire [vaddr_width_p-1:0] issue_pc = fe_queue_lo.pc + (rptr_r.entry << 1'b1);
   wire [instr_width_gp-1:0] issue_instr = preissue_pkt_r.instr;
-  wire [fetch_ptr_gp-1:0] issue_size = issue_pkt_cast_o.fetch ? preissue_pkt_r.size : fetch_cinstr_gp;
-  wire [fetch_ptr_gp-1:0] issue_count = fe_queue_lo.count;
+  wire [fetch_ptr_p-1:0] issue_size = issue_pkt_cast_o.fetch ? preissue_pkt_r.size : entry_ptr_width_lp;
+  wire [fetch_ptr_p-1:0] issue_count = fe_queue_lo.count;
 
   // Decode the dispatched instruction
   bp_be_decode_s decoded_instr_lo;
