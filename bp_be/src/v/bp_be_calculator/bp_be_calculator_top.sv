@@ -203,7 +203,6 @@ module bp_be_calculator_top
 
      ,.retire_v_i(exc_stage_r[2].v)
      ,.retire_queue_v_i(exc_stage_r[2].queue_v)
-     ,.retire_partial_v_i(exc_stage_r[2].partial_v)
      ,.retire_data_i(comp_stage_r[2].rd_data)
      ,.retire_exception_i(exc_stage_r[2].exc)
      ,.retire_special_i(exc_stage_r[2].spec)
@@ -315,7 +314,7 @@ module bp_be_calculator_top
       assign pipe_int_catchup_mispredict_lo = exc_stage_r[1].ispec_v & (pipe_int_catchup_npc_lo != reservation_r.pc);
 
       assign rs2_val_r =
-        catchup_reservation_r.decode.irs2_r_v ? catchup_reservation_r.isrc2 : catchup_reservation_r.fsrc2;;
+        catchup_reservation_r.decode.irs2_r_v ? catchup_reservation_r.isrc2 : catchup_reservation_r.fsrc2;
     end
   else
     begin : no_catchup
@@ -566,7 +565,6 @@ module bp_be_calculator_top
           exc_stage_n[0].queue_v                  |= dispatch_pkt_cast_i.queue_v;
           exc_stage_n[0].ispec_v                  |= dispatch_pkt_cast_i.ispec_v;
           exc_stage_n[0].nspec_v                  |= dispatch_pkt_cast_i.nspec_v;
-          exc_stage_n[0].partial_v                |= dispatch_pkt_cast_i.partial;
           exc_stage_n[0].spec                     |= dispatch_pkt_cast_i.special;
           exc_stage_n[0].exc                      |= dispatch_pkt_cast_i.exception;
 

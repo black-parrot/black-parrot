@@ -100,11 +100,12 @@ module bp_be_dcache
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
    , parameter fill_width_p   = dcache_fill_width_p
+   , parameter data_width_p   = dcache_data_width_p
    , parameter tag_width_p    = dcache_tag_width_p
    , parameter mshr_p         = dcache_mshr_p
    , parameter id_width_p     = dcache_req_id_width_p
 
-   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p)
+   `declare_bp_be_dcache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p)
 
    , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
@@ -128,13 +129,13 @@ module bp_be_dcache
    , input                                           ptag_v_i
    , input                                           ptag_uncached_i
    , input                                           ptag_dram_i
-   , input [dword_width_gp-1:0]                      st_data_i
+   , input [data_width_p-1:0]                        st_data_i
    , input                                           flush_i
 
    // Cycle 2: "Tag Verify"
    // Data (or miss result) comes out of the cache
    , output logic                                    v_o
-   , output logic [dword_width_gp-1:0]               data_o
+   , output logic [data_width_p-1:0]                 data_o
    , output logic [reg_addr_width_gp-1:0]            rd_addr_o
    , output logic [$bits(bp_be_int_tag_e)-1:0]       tag_o
    , output logic                                    unsigned_o
@@ -177,12 +178,12 @@ module bp_be_dcache
    , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
    );
 
-  `declare_bp_be_dcache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p);
+  `declare_bp_be_dcache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p);
 
   localparam lg_assoc_lp              = `BSG_SAFE_CLOG2(assoc_p);
   localparam bank_width_lp            = block_width_p / assoc_p;
-  localparam num_dwords_per_bank_lp   = bank_width_lp / dword_width_gp;
-  localparam wbuf_data_mask_width_lp  = (dword_width_gp >> 3);
+  localparam num_words_per_bank_lp    = bank_width_lp / data_width_p;
+  localparam wbuf_data_mask_width_lp  = (data_width_p >> 3);
   localparam data_mem_mask_width_lp   = (bank_width_lp >> 3);
   localparam byte_offset_width_lp     = `BSG_SAFE_CLOG2(bank_width_lp>>3);
   localparam bindex_width_lp          = `BSG_SAFE_CLOG2(assoc_p);
@@ -223,7 +224,7 @@ module bp_be_dcache
   logic snoop_v;
   logic [block_width_p-1:0] snoop_ld_data;
   logic [paddr_width_p-1:0] snoop_paddr;
-  logic [dword_width_gp-1:0] snoop_st_data;
+  logic [data_width_p-1:0] snoop_st_data;
   logic [2:0][assoc_p-1:0] snoop_hit;
   logic [assoc_p-1:0] snoop_bank_sel_one_hot;
   bp_be_dcache_decode_s snoop_decode;
@@ -361,14 +362,14 @@ module bp_be_dcache
 
   wire uncached_tl = ~decode_tl_r.cache_op & (decode_tl_r.uncached_op | ptag_uncached_i);
   wire dram_tl =  decode_tl_r.cache_op | ptag_dram_i;
-  wire [dword_width_gp-1:0] st_data_tl = st_data_i;
+  wire [data_width_p-1:0] st_data_tl = st_data_i;
 
   /////////////////////////////////////////////////////////////////////////////
   // TV Stage
   /////////////////////////////////////////////////////////////////////////////
   logic uncached_tv_r, snoop_tv_r;
   logic [paddr_width_p-1:0] paddr_tv_r;
-  logic [dword_width_gp-1:0] st_data_tv_r;
+  logic [data_width_p-1:0] st_data_tv_r;
   logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
   logic [assoc_p-1:0] load_hit_v_tv_r, store_hit_v_tv_r, way_v_tv_r, bank_sel_one_hot_tv_r;
   bp_be_dcache_decode_s decode_tv_r;
@@ -394,12 +395,12 @@ module bp_be_dcache
   logic [assoc_p-1:0] way_v_tv_n, store_hit_tv_n, load_hit_tv_n;
   logic [block_width_p-1:0] ld_data_tv_n;
   logic [paddr_width_p-1:0] paddr_tv_n;
-  logic [dword_width_gp-1:0] st_data_tv_n;
+  logic [data_width_p-1:0] st_data_tv_n;
   logic [assoc_p-1:0] bank_sel_one_hot_tv_n;
   logic uncached_tv_n;
   bp_be_dcache_decode_s decode_tv_n;
   bsg_mux
-   #(.width_p(3*assoc_p+block_width_p+dword_width_gp+paddr_width_p+assoc_p+1+$bits(bp_be_dcache_decode_s)), .els_p(2))
+   #(.width_p(3*assoc_p+block_width_p+data_width_p+paddr_width_p+assoc_p+1+$bits(bp_be_dcache_decode_s)), .els_p(2))
    tv_snoop_mux
     (.data_i({{snoop_hit, snoop_ld_data, snoop_st_data, snoop_paddr, snoop_bank_sel_one_hot
                ,snoop_uncached, snoop_decode}
@@ -414,7 +415,7 @@ module bp_be_dcache
 
   wire snoop_tv_n = snoop_v;
   bsg_dff
-   #(.width_p(1+3*assoc_p+paddr_width_p+block_width_p+dword_width_gp+assoc_p+1+$bits(bp_be_dcache_decode_s)))
+   #(.width_p(1+3*assoc_p+paddr_width_p+block_width_p+data_width_p+assoc_p+1+$bits(bp_be_dcache_decode_s)))
    tv_stage_reg
     (.clk_i(clk_i)
      ,.data_i({snoop_tv_n, way_v_tv_n, store_hit_tv_n, load_hit_tv_n, paddr_tv_n, ld_data_tv_n
@@ -462,21 +463,21 @@ module bp_be_dcache
      ,.data_o(ld_data_way_picked)
      );
 
-  logic [dword_width_gp-1:0] ld_data_dword_raw;
-  wire [`BSG_SAFE_CLOG2(num_dwords_per_bank_lp)-1:0] ld_data_dword_sel =
-    paddr_tv_r[3+:`BSG_SAFE_CLOG2(num_dwords_per_bank_lp)];
+  logic [data_width_p-1:0] ld_data_dword_raw;
+  wire [`BSG_SAFE_CLOG2(num_words_per_bank_lp)-1:0] ld_data_dword_sel =
+    paddr_tv_r[3+:`BSG_SAFE_CLOG2(num_words_per_bank_lp)];
   bsg_mux
-   #(.width_p(dword_width_gp), .els_p(num_dwords_per_bank_lp))
+   #(.width_p(data_width_p), .els_p(num_words_per_bank_lp))
    dword_mux
     (.data_i(ld_data_way_picked)
      ,.sel_i(ld_data_dword_sel)
      ,.data_o(ld_data_dword_raw)
      );
 
-  logic [dword_width_gp-1:0] ld_data_dword_merged;
-  wire [`BSG_SAFE_CLOG2(dword_width_gp)-1:0] ld_data_shift_tv = paddr_tv_r << 3;
+  logic [data_width_p-1:0] ld_data_dword_merged;
+  wire [`BSG_SAFE_CLOG2(data_width_p)-1:0] ld_data_shift_tv = paddr_tv_r << 3;
 
-  wire [dword_width_gp-1:0] dword_data_tv = ld_data_dword_merged >> ld_data_shift_tv;
+  wire [data_width_p-1:0] final_data_tv = ld_data_dword_merged >> ld_data_shift_tv;
 
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
   wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & ~nonblocking_req & writeback_p;
@@ -489,7 +490,7 @@ module bp_be_dcache
   wire cache_hit_tv        = v_tv_r & ~any_miss_tv;
 
   assign v_o        = cache_hit_tv;
-  assign data_o     = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : dword_data_tv;
+  assign data_o     = sc_success_tv ? 1'b0 : sc_fail_tv ? 1'b1 : final_data_tv;
   assign rd_addr_o  = decode_tv_r.rd_addr;
   assign unsigned_o = !decode_tv_r.signed_op;
   assign tag_o      = decode_tv_r.tag;
@@ -556,8 +557,8 @@ module bp_be_dcache
   wire [dword_width_gp-1:0] amo64_reg_in = st_data_tv_r[0+:dword_width_gp];
   assign atomic_reg_data = decode_tv_r.double_op ? amo64_reg_in : amo32_reg_in;
 
-  wire [dword_width_gp-1:0] amo32_mem_in = dword_data_tv << word_width_gp;
-  wire [dword_width_gp-1:0] amo64_mem_in = dword_data_tv;
+  wire [dword_width_gp-1:0] amo32_mem_in = final_data_tv << word_width_gp;
+  wire [dword_width_gp-1:0] amo64_mem_in = final_data_tv;
   assign atomic_mem_data = decode_tv_r.double_op ? amo64_mem_in : amo32_mem_in;
 
   // Atomic ALU
@@ -931,9 +932,9 @@ module bp_be_dcache
      );
   wire [assoc_p-1:0][bank_width_lp-1:0] data_mem_pkt_data_li = {block_size_in_fill_lp{data_mem_pkt_fill_data_li}};
 
-  localparam dword_mask_width_lp = `BSG_SAFE_CLOG2(num_dwords_per_bank_lp);
+  localparam dword_mask_width_lp = `BSG_SAFE_CLOG2(num_words_per_bank_lp);
   wire [dword_mask_width_lp-1:0] wbuf_dword_sel = wbuf_entry_out.caddr[3+:dword_mask_width_lp];
-  wire [byte_offset_width_lp-1:0] mask_shift = (num_dwords_per_bank_lp > 1)
+  wire [byte_offset_width_lp-1:0] mask_shift = (num_words_per_bank_lp > 1)
     ? (wbuf_dword_sel << 3)
     : '0;
   wire [data_mem_mask_width_lp-1:0] wbuf_data_mem_mask = wbuf_entry_out.mask << mask_shift;
@@ -970,7 +971,7 @@ module bp_be_dcache
             : {data_mem_pkt_cast_i.index, {(assoc_p > 1){data_mem_pkt_offset}}};
 
       assign data_mem_data_li[i] = data_mem_fast_write[i]
-        ? {num_dwords_per_bank_lp{wbuf_entry_out.data}}
+        ? {num_words_per_bank_lp{wbuf_entry_out.data}}
         : data_mem_pkt_data_li[i];
     end
   assign wbuf_yumi_li = wbuf_v_lo && (~|{data_mem_fast_read & wbuf_entry_out.bank_sel} || wbuf_force_lo);

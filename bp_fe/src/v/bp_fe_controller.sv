@@ -51,7 +51,6 @@ module bp_fe_controller
    , input [vaddr_width_p-1:0]                        next_pc_i
 
    , input                                            ovr_i
-   , output logic                                     if1_we_o
    , output logic                                     tl_flush_o
 
    , input                                            tv_we_i
@@ -60,14 +59,13 @@ module bp_fe_controller
    , input                                            instr_access_fault_tl_i
    , input                                            icache_miss_tv_i
    , output logic                                     tv_flush_o
-   , output logic                                     if2_we_o
 
    , input                                            fetch_v_i
    , input [vaddr_width_p-1:0]                        fetch_pc_i
-   , input [instr_width_gp-1:0]                       fetch_instr_i
-   , input [branch_metadata_fwd_width_p-1:0]          fetch_br_metadata_fwd_i
+   , input [fetch_width_p-1:0]                        fetch_instr_i
+   , input [fetch_ptr_p-1:0]                          fetch_count_i
    , input                                            fetch_partial_i
-   , input                                            fetch_eager_i
+   , input [branch_metadata_fwd_width_p-1:0]          fetch_br_metadata_fwd_i
    , output logic                                     fetch_yumi_o
 
    , output logic                                     itlb_r_v_o
@@ -99,20 +97,18 @@ module bp_fe_controller
 
   // Decoded state signals
   wire is_reset    = (state_r == e_reset);
-  wire is_wait     = (state_r == e_wait);
   wire is_run      = (state_r == e_run);
+  wire is_wait     = (state_r == e_wait);
   wire is_resume   = (state_r == e_resume);
 
-  wire state_reset_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
   wire pc_redirect_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
-  wire icache_fill_response_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode inside {e_op_icache_fill_restart, e_op_icache_fill_resume});
-  wire icache_fill_resume_v   = compressed_support_p & fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fill_resume);
-  wire wait_v                 = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_wait);
-
-  wire itlb_fill_response_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode inside {e_op_itlb_fill_restart, e_op_itlb_fill_resume});
-  wire itlb_fill_resume_v     = compressed_support_p & fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_resume);
+  wire icache_fill_response_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fill_response);
   wire icache_fence_v         = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence);
+
+  wire state_reset_v          = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset);
+  wire itlb_fill_response_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
   wire itlb_fence_v           = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
+  wire wait_v                 = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_wait);
 
   wire br_miss_v     = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
   wire eret_v        = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_eret);
@@ -120,7 +116,7 @@ module bp_fe_controller
   wire trap_v        = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
   wire translation_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_translation_switch);
   // Unsupported
-  //wire context_v     = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_context_swi
+  //wire context_v     = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_context_switch);
 
   wire br_miss_taken = br_miss_v
     & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_incorrect_pred_taken);
@@ -130,19 +126,14 @@ module bp_fe_controller
     & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
 
   wire attaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
-
-  wire cmd_nonreset_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_state_reset);
   wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
   wire cmd_immediate_v  = fe_cmd_v_i & (pc_redirect_v | icache_fill_response_v | wait_v);
   wire cmd_complex_v    = fe_cmd_v_i & (state_reset_v | itlb_fill_response_v | icache_fence_v | itlb_fence_v);
 
-  assign if1_we_o = icache_yumi_i;
-  assign if2_we_o = tv_we_i;
-
-  assign redirect_v_o               = cmd_nonattaboy_v;
-  assign redirect_pc_o              = fe_cmd_cast_i.npc - (redirect_resume_o ? 2'b10 : 2'b00);
+  assign redirect_v_o               = !is_wait & cmd_nonattaboy_v;
+  assign redirect_pc_o              = fe_cmd_cast_i.npc - (redirect_resume_o << 1'b1);
   assign redirect_npc_o             = fe_cmd_cast_i.npc;
-  assign redirect_br_v_o            = br_miss_v;
+  assign redirect_br_v_o            = !is_wait & br_miss_v;
   assign redirect_br_taken_o        = br_miss_taken;
   assign redirect_br_ntaken_o       = br_miss_ntaken;
   assign redirect_br_nonbr_o        = br_miss_nonbr;
@@ -170,10 +161,15 @@ module bp_fe_controller
       ,spec: !icache_fill_response_v
       };
 
-  assign redirect_resume_o = itlb_fill_resume_v | icache_fill_resume_v;
   assign redirect_instr_o = itlb_fill_response_v
     ? fe_cmd_cast_i.operands.itlb_fill_response.instr
     : fe_cmd_cast_i.operands.icache_fill_response.instr;
+  assign redirect_resume_o =
+    itlb_fill_response_v
+    ? (fe_cmd_cast_i.operands.itlb_fill_response.count > '0)
+    : icache_fill_response_v
+      ? (fe_cmd_cast_i.operands.icache_fill_response.count > '0)
+      : '0;
 
   logic itlb_miss_tv_r, instr_page_fault_tv_r, instr_access_fault_tv_r;
   bsg_dff_reset_en
@@ -185,17 +181,20 @@ module bp_fe_controller
      ,.data_i({itlb_miss_tl_i, instr_page_fault_tl_i, instr_access_fault_tl_i})
      ,.data_o({itlb_miss_tv_r, instr_page_fault_tv_r, instr_access_fault_tv_r})
      );
-  wire if2_exception_v = is_run && fe_queue_ready_and_i &&
-    |{itlb_miss_tv_r, instr_page_fault_tv_r, instr_access_fault_tv_r, icache_miss_tv_i};
+  wire if2_exception_v = |{itlb_miss_tv_r, instr_page_fault_tv_r, instr_access_fault_tv_r, icache_miss_tv_i};
 
-  assign fetch_yumi_o = fetch_v_i & fe_queue_ready_and_i;
+  wire fetch_instr_v     = is_run && fe_queue_ready_and_i && fetch_v_i && (fetch_count_i > '0);
+  wire fetch_exception_v = is_run && fe_queue_ready_and_i && if2_exception_v && ~fetch_instr_v;
+
+  assign fetch_yumi_o    = is_run && fe_queue_ready_and_i && fetch_v_i;
   always_comb
     begin
-      fe_queue_v_o = (fetch_yumi_o | if2_exception_v);
+      fe_queue_v_o = (fetch_instr_v | fetch_exception_v);
 
       fe_queue_cast_o = '0;
       fe_queue_cast_o.pc = fetch_pc_i;
-      fe_queue_cast_o.msg_type = fetch_v_i
+      fe_queue_cast_o.instr = fetch_instr_i;
+      fe_queue_cast_o.msg_type = fetch_instr_v
                                  ? e_instr_fetch
                                  : itlb_miss_tv_r
                                    ? e_itlb_miss
@@ -204,9 +203,8 @@ module bp_fe_controller
                                      : instr_access_fault_tv_r
                                        ? e_instr_access_fault
                                        : e_icache_miss;
-      fe_queue_cast_o.instr = fetch_instr_i;
       fe_queue_cast_o.branch_metadata_fwd = fetch_br_metadata_fwd_i;
-      fe_queue_cast_o.partial = fetch_v_i ? fetch_eager_i : fetch_partial_i;
+      fe_queue_cast_o.count = fetch_instr_v ? fetch_count_i : fetch_partial_i;
     end
 
   always_comb
@@ -237,6 +235,9 @@ module bp_fe_controller
           begin
             fe_cmd_yumi_o = attaboy_v && attaboy_yumi_i;
 
+            tl_flush_o = 1'b1;
+            tv_flush_o = 1'b1;
+
             state_n = cmd_nonattaboy_v ? e_run : state_r;
           end
         e_resume:
@@ -262,7 +263,7 @@ module bp_fe_controller
               end
             else if (cmd_complex_v)
               begin
-                icache_v_o = icache_fence_v;
+                icache_v_o = icache_fence_v && !icache_features_p[e_cfg_coherent];
                 icache_force_o = 1'b1;
 
                 itlb_w_v_o = itlb_fill_response_v;
@@ -283,10 +284,9 @@ module bp_fe_controller
 
                 fe_cmd_yumi_o = attaboy_v && attaboy_yumi_i;
 
-                state_n = if2_exception_v ? e_wait : state_r;
+                state_n = fetch_exception_v ? e_wait : state_r;
               end
           end
-        default: begin end
       endcase
     end
 

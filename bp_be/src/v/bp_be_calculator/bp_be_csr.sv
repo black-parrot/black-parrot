@@ -647,8 +647,8 @@ module bp_be_csr
   assign commit_pkt_cast_o.npc_w_v           = |{retire_pkt_cast_i.special, retire_pkt_cast_i.exception};
   assign commit_pkt_cast_o.queue_v           = retire_pkt_cast_i.queue_v & ~|retire_pkt_cast_i.exception;
   assign commit_pkt_cast_o.instret           = retire_pkt_cast_i.instret;
-  assign commit_pkt_cast_o.partial           = retire_pkt_cast_i.partial;
-  assign commit_pkt_cast_o.compressed        = retire_pkt_cast_i.compressed;
+  assign commit_pkt_cast_o.size              = retire_pkt_cast_i.size;
+  assign commit_pkt_cast_o.count             = retire_pkt_cast_i.count;
   assign commit_pkt_cast_o.pc                = apc_r;
   assign commit_pkt_cast_o.npc               = apc_n;
   assign commit_pkt_cast_o.vaddr             = retire_pkt_cast_i.vaddr;

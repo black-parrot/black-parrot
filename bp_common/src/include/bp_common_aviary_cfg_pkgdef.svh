@@ -153,6 +153,7 @@
     integer unsigned icache_assoc;
     integer unsigned icache_block_width;
     integer unsigned icache_fill_width;
+    integer unsigned icache_data_width;
     integer unsigned icache_mshr;
 
     // D$ cache features
@@ -162,6 +163,7 @@
     integer unsigned dcache_assoc;
     integer unsigned dcache_block_width;
     integer unsigned dcache_fill_width;
+    integer unsigned dcache_data_width;
     integer unsigned dcache_mshr;
 
     // A$ cache features
@@ -171,6 +173,7 @@
     integer unsigned acache_assoc;
     integer unsigned acache_block_width;
     integer unsigned acache_fill_width;
+    integer unsigned acache_data_width;
     integer unsigned acache_mshr;
 
     // CCE selection and parameters
@@ -302,6 +305,7 @@
       ,icache_block_width   : 512
       ,icache_fill_width    : 128
       ,icache_mshr          : 1
+      ,icache_data_width    : 64
 
       ,dcache_features      : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
@@ -315,12 +319,14 @@
       ,dcache_block_width   : 512
       ,dcache_fill_width    : 128
       ,dcache_mshr          : 1
+      ,dcache_data_width    : 64
 
       ,acache_features      : (1 << e_cfg_enabled)
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
       ,acache_fill_width    : 128
+      ,acache_data_width    : 64
       ,acache_mshr          : 1
 
       ,cce_type             : e_cce_uce
@@ -430,6 +436,7 @@
       ,`bp_aviary_define_override(icache_assoc, BP_ICACHE_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_block_width, BP_ICACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_fill_width, BP_ICACHE_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(icache_data_width, BP_ICACHE_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_mshr, BP_ICACHE_MSHR, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(dcache_features, BP_DCACHE_FEATURES, `BP_CUSTOM_BASE_CFG)
@@ -437,6 +444,7 @@
       ,`bp_aviary_define_override(dcache_assoc, BP_DCACHE_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_block_width, BP_DCACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_fill_width, BP_DCACHE_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(dcache_data_width, BP_DCACHE_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(dcache_mshr, BP_DCACHE_MSHR, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(acache_features, BP_ACACHE_FEATURES, `BP_CUSTOM_BASE_CFG)
@@ -444,6 +452,7 @@
       ,`bp_aviary_define_override(acache_assoc, BP_ACACHE_ASSOC, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_block_width, BP_ACACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_fill_width, BP_ACACHE_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(acache_data_width, BP_ACACHE_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(acache_mshr, BP_ACACHE_MSHR, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(cce_type, BP_CCE_TYPE, `BP_CUSTOM_BASE_CFG)

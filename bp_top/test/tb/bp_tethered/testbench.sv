@@ -397,6 +397,7 @@ module testbench
            ,.fill_width_p(fill_width_p)
            ,.tag_width_p(tag_width_p)
            ,.id_width_p(id_width_p)
+           ,.data_width_p(data_width_p)
            )
          icache_tracer
           (.clk_i(clk_i & testbench.icache_trace_en_lo)
@@ -538,18 +539,18 @@ module testbench
            ,.itlb_miss_i(controller.itlb_miss_tv_r)
 
            ,.src_redirect_i(pc_gen.redirect_v_i)
-           ,.src_override_ntaken_i(pc_gen.ovr_ntaken)
+           ,.src_override_ntaken_i(pc_gen.ovr_linear)
            ,.src_override_ras_i(pc_gen.ovr_ret)
            ,.src_override_branch_i(pc_gen.ovr_btaken | pc_gen.ovr_jmp)
            ,.src_btb_taken_branch_i(pc_gen.btb_taken)
 
            ,.if2_pc_i(pc_gen.pc_if2_r)
-           ,.if2_v_i(fetch_yumi_lo)
+           ,.if2_v_i(pc_gen.if2_hit_v_o)
 
            ,.fetch_v_i(fe_queue_ready_and_i & fe_queue_v_o)
            ,.fetch_pc_i(fetch_pc_lo)
            ,.fetch_instr_i(fetch_instr_lo)
-           ,.fetch_partial_i(fetch_partial_lo)
+           ,.fetch_partial_i(1'b0)
            );
 
       bind bp_be_top

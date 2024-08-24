@@ -144,7 +144,7 @@ module bp_be_director
     else
       state_r <= state_n;
 
-  assign suppress_iss_o = !is_run || commit_pkt_cast_i.npc_w_v;
+  assign suppress_iss_o = !is_run || cmd_full_r_lo || commit_pkt_cast_i.npc_w_v;
   assign clear_iss_o    = is_cmd_fence & cmd_empty_r_lo;
   assign resume_o       = (is_freeze & ~freeze_li)
                           || (is_wait & irq_waiting_i)
@@ -166,23 +166,24 @@ module bp_be_director
           fe_cmd_pc_redirect_operands.subopcode      = e_subop_resume;
           fe_cmd_li.operands.pc_redirect_operands    = fe_cmd_pc_redirect_operands;
 
-          fe_cmd_v_li = ~cmd_full_r_lo;
+          fe_cmd_v_li = 1'b1;
         end
       else if (commit_pkt_cast_i.itlb_fill_v)
         begin
-          fe_cmd_li.opcode                               = (compressed_support_p & commit_pkt_cast_i.partial) ? e_op_itlb_fill_resume : e_op_itlb_fill_restart;
+          fe_cmd_li.opcode                               = e_op_itlb_fill_response;
           fe_cmd_li.npc                                  = commit_pkt_cast_i.vaddr;
           fe_cmd_li.operands.itlb_fill_response.pte_leaf = commit_pkt_cast_i.pte_leaf;
-          fe_cmd_li.operands.itlb_fill_response.instr    = compressed_support_p ? commit_pkt_cast_i.instr : '0;
+          fe_cmd_li.operands.itlb_fill_response.instr    = commit_pkt_cast_i.instr;
+          fe_cmd_li.operands.itlb_fill_response.count    = commit_pkt_cast_i.count;
 
-          fe_cmd_v_li = ~cmd_full_r_lo;
+          fe_cmd_v_li = 1'b1;
         end
       else if (commit_pkt_cast_i.sfence)
         begin
           fe_cmd_li.opcode = e_op_itlb_fence;
           fe_cmd_li.npc = commit_pkt_cast_i.npc;
 
-          fe_cmd_v_li = ~cmd_full_r_lo;
+          fe_cmd_v_li = 1'b1;
         end
       else if (commit_pkt_cast_i.csrw)
         begin
@@ -192,22 +193,24 @@ module bp_be_director
           fe_cmd_pc_redirect_operands.translation_en  = commit_pkt_cast_i.translation_en_n;
           fe_cmd_li.operands.pc_redirect_operands     = fe_cmd_pc_redirect_operands;
 
-          fe_cmd_v_li = ~cmd_full_r_lo;
+          fe_cmd_v_li = 1'b1;
         end
       else if (commit_pkt_cast_i.wfi)
         begin
           fe_cmd_li.opcode = e_op_wait;
           fe_cmd_li.npc = commit_pkt_cast_i.npc;
 
-          fe_cmd_v_li = ~cmd_full_r_lo;
+          fe_cmd_v_li = 1'b1;
         end
       else if (commit_pkt_cast_i.icache_miss)
         begin
-          fe_cmd_li.opcode = (compressed_support_p & commit_pkt_cast_i.partial) ? e_op_icache_fill_resume : e_op_icache_fill_restart;
-          fe_cmd_li.npc    = commit_pkt_cast_i.vaddr;
-          fe_cmd_li.operands.icache_fill_response.instr = compressed_support_p ? commit_pkt_cast_i.instr : '0;
+          fe_cmd_li.opcode                              = e_op_icache_fill_response;
+          fe_cmd_li.npc                                 = commit_pkt_cast_i.vaddr;
+          fe_cmd_li.operands.icache_fill_response.instr = commit_pkt_cast_i.instr;
+          fe_cmd_li.operands.icache_fill_response.count = commit_pkt_cast_i.count;
 
-          fe_cmd_v_li = ~cmd_full_r_lo;
+
+          fe_cmd_v_li = 1'b1;
         end
       else if (commit_pkt_cast_i.eret)
         begin
@@ -218,7 +221,7 @@ module bp_be_director
           fe_cmd_pc_redirect_operands.translation_en       = commit_pkt_cast_i.translation_en_n;
           fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
-          fe_cmd_v_li = ~cmd_full_r_lo;
+          fe_cmd_v_li = 1'b1;
         end
       else if (commit_pkt_cast_i.exception | commit_pkt_cast_i._interrupt)
         begin
@@ -229,7 +232,7 @@ module bp_be_director
           fe_cmd_pc_redirect_operands.translation_en       = commit_pkt_cast_i.translation_en_n;
           fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
-          fe_cmd_v_li = ~cmd_full_r_lo;
+          fe_cmd_v_li = 1'b1;
         end
       else if (npc_mismatch_v)
         begin
@@ -244,7 +247,7 @@ module bp_be_director
                                                              : e_not_a_branch;
           fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
-          fe_cmd_v_li = ~cmd_full_r_lo;
+          fe_cmd_v_li = 1'b1;
         end
       // Send an attaboy if there's a correct prediction
       else if (npc_match_v & last_instr_was_branch)
@@ -254,7 +257,7 @@ module bp_be_director
           fe_cmd_li.operands.attaboy.taken               = last_instr_was_btaken;
           fe_cmd_li.operands.attaboy.branch_metadata_fwd = issue_pkt_cast_i.branch_metadata_fwd;
 
-          fe_cmd_v_li = ~cmd_full_r_lo;
+          fe_cmd_v_li = 1'b1;
         end
     end
 
