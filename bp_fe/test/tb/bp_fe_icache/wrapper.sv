@@ -12,7 +12,7 @@ module wrapper
    , parameter fill_width_p = icache_fill_width_p
    , parameter id_width_p = icache_req_id_width_p
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_tag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, icache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_tag_width_p, icache_sets_p, icache_assoc_p, icache_data_width_p, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, icache)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
@@ -107,19 +107,20 @@ module wrapper
      ,.v_i(v_i)
      ,.yumi_o(yumi_o)
      ,.force_i(1'b0)
-     ,.poison_tl_i(1'b0)
+     ,.tl_flush_i(1'b0)
 
      ,.ptag_i(ptag_r)
      ,.ptag_v_i(1'b1)
      ,.ptag_uncached_i(ptag_uncached_r)
      ,.ptag_nonidem_i(ptag_nonidem_r)
      ,.ptag_dram_i(ptag_dram_r)
-     ,.poison_tv_i(1'b0)
+     ,.tv_flush_i(1'b0)
      ,.tv_we_o()
 
      ,.data_o(data_o)
-     ,.data_v_o(data_v_o)
-     ,.spec_v_o()
+     ,.hit_v_o(data_v_o)
+     ,.miss_v_o()
+     ,.fence_v_o()
      ,.yumi_i(ready_i & data_v_o)
 
      ,.cache_req_o(cache_req_lo)
@@ -178,6 +179,7 @@ module wrapper
        ,.sets_p(icache_sets_p)
        ,.block_width_p(icache_block_width_p)
        ,.fill_width_p(icache_fill_width_p)
+       ,.data_width_p(icache_data_width_p)
        ,.id_width_p(icache_req_id_width_p)
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
@@ -292,6 +294,7 @@ module wrapper
        ,.sets_p(icache_sets_p)
        ,.block_width_p(icache_block_width_p)
        ,.fill_width_p(icache_fill_width_p)
+       ,.data_width_p(icache_data_width_p)
        ,.tag_width_p(icache_tag_width_p)
        ,.id_width_p(icache_req_id_width_p)
        ,.writeback_p(icache_features_p[e_cfg_writeback])
@@ -301,6 +304,7 @@ module wrapper
        ,.reset_i(reset_i)
 
        ,.lce_id_i('0)
+       ,.did_i('0)
 
        ,.cache_req_i(cache_req_lo)
        ,.cache_req_v_i(cache_req_v_lo)

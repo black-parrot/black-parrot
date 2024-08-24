@@ -652,6 +652,7 @@ module testbench
                 ,.assoc_p(assoc_p)
                 ,.block_width_p(block_width_p)
                 ,.fill_width_p(fill_width_p)
+                ,.data_width_p(data_width_p)
                 )
               lce_tracer
               (.clk_i(clk_i & testbench.lce_trace_en_lo)

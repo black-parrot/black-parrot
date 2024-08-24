@@ -252,7 +252,7 @@ module bp_fe_icache
   logic spec_tl_r;
   bp_fe_icache_decode_s decode_tl_r;
 
-  assign tl_we = v_tl_r ? (tv_we | force_i) : 1'b1;
+  assign tl_we = v_tl_r ? (tv_we | force_i) : ~cache_req_lock_i;
   bsg_dff_reset_en
    #(.width_p(1))
    v_tl_reg
