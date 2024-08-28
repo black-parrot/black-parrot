@@ -182,8 +182,8 @@ module bp_nonsynth_host
       $system("stty echo");
     end
 
-  localparam bootrom_width_p = 32;
-  localparam bootrom_els_p = 2048;
+  localparam bootrom_width_p = 64;
+  localparam bootrom_els_p = 1024;
   localparam lg_bootrom_els_lp = `BSG_SAFE_CLOG2(bootrom_els_p);
   bit [bootrom_width_p-1:0] bootrom_data_lo;
   bit [lg_bootrom_els_lp-1:0] bootrom_addr_li;
@@ -193,7 +193,11 @@ module bp_nonsynth_host
   assign bootrom_addr_li = addr_lo[2+:lg_bootrom_els_lp];
 
   assign bootrom_data_lo = {
-    bootrom_mem[4*bootrom_addr_li+3]
+    bootrom_mem[4*bootrom_addr_li+7]
+    ,bootrom_mem[4*bootrom_addr_li+6]
+    ,bootrom_mem[4*bootrom_addr_li+5]
+    ,bootrom_mem[4*bootrom_addr_li+4]
+    ,bootrom_mem[4*bootrom_addr_li+3]
     ,bootrom_mem[4*bootrom_addr_li+2]
     ,bootrom_mem[4*bootrom_addr_li+1]
     ,bootrom_mem[4*bootrom_addr_li+0]
