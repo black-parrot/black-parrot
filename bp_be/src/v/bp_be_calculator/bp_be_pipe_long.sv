@@ -7,9 +7,7 @@ module bp_be_pipe_long
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-
-   , localparam reservation_width_lp = `bp_be_reservation_width(vaddr_width_p)
-   , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_p)
+   `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
    )
   (input                                clk_i
    , input                              reset_i
@@ -30,7 +28,7 @@ module bp_be_pipe_long
    , input                              fwb_yumi_i
    );
 
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
   `bp_cast_o(bp_be_wb_pkt_s, iwb_pkt);
   `bp_cast_o(bp_be_wb_pkt_s, fwb_pkt);
   bp_be_reservation_s reservation;

@@ -7,13 +7,12 @@ module bp_be_ptw
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
+   `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
    , parameter `BSG_INV_PARAM(pte_width_p)
    , parameter `BSG_INV_PARAM(page_table_depth_p)
    , parameter `BSG_INV_PARAM(pte_size_in_bytes_p)
    , parameter `BSG_INV_PARAM(page_idx_width_p)
 
-   , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
-   , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    )
   (input                                      clk_i
    , input                                    reset_i
@@ -39,7 +38,7 @@ module bp_be_ptw
    , input [dword_width_gp-1:0]               data_i
    );
 
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
   `bp_cast_i(bp_be_commit_pkt_s, commit_pkt);
   `bp_cast_i(bp_be_trans_info_s, trans_info);
 
