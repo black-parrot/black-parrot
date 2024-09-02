@@ -16,16 +16,12 @@ module bp_be_pipe_sys
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
+   `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
 
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    // Generated parameters
-   , localparam reservation_width_lp = `bp_be_reservation_width(vaddr_width_p)
    , localparam exception_width_lp    = $bits(bp_be_exception_s)
    , localparam special_width_lp      = $bits(bp_be_special_s)
-   , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
-   , localparam decode_info_width_lp  = `bp_be_decode_info_width
-   , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
-   , localparam wb_pkt_width_lp       = `bp_be_wb_pkt_width(vaddr_width_p)
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -62,7 +58,7 @@ module bp_be_pipe_sys
    , output rv64_frm_e                       frm_dyn_o
    );
 
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
 
   bp_be_reservation_s reservation;
   bp_be_decode_s decode;

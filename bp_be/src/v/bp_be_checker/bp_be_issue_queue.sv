@@ -8,12 +8,10 @@ module bp_be_issue_queue
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+   `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
 
    , localparam entry_cinstr_gp = 2**fetch_sel_p
    , localparam op_ptr_width_lp = `BSG_WIDTH(entry_cinstr_gp)
-   , localparam decode_info_width_lp = `bp_be_decode_info_width
-   , localparam preissue_pkt_width_lp = `bp_be_preissue_pkt_width
-   , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    )
   (input                                       clk_i
    , input                                     reset_i
@@ -38,7 +36,7 @@ module bp_be_issue_queue
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
   `bp_cast_i(bp_fe_queue_s, fe_queue);
   `bp_cast_o(bp_be_preissue_pkt_s, preissue_pkt);
   `bp_cast_o(bp_be_issue_pkt_s, issue_pkt);
@@ -157,7 +155,7 @@ module bp_be_issue_queue
       preissue_pkt_cast_o.instr = preissue_instr[preissue_entry_sel];
 
       // Decide whether to read from regfile
-      casez (preissue_pkt_cast_o.instr.t.fmatype.opcode)
+      casez (preissue_instr[preissue_entry_sel].t.fmatype.opcode)
         `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
           begin
             preissue_pkt_cast_o.irs1_v = preissue_v;
