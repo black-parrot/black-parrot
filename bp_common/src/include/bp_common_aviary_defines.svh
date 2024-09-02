@@ -196,6 +196,13 @@
     , localparam fetch_ptr_p    = `BSG_WIDTH(fetch_cinstr_p)                                       \
     , localparam fetch_bytes_p  = fetch_width_p >> 3                                               \
     , localparam fetch_offset_p = `BSG_SAFE_CLOG2(fetch_bytes_p)                                   \
+                                                                                                   \
+    , localparam issue_width_p  = instr_width_gp                                                   \
+    , localparam issue_cinstr_p = instr_width_gp >> 4                                              \
+    , localparam issue_sel_p    = `BSG_SAFE_CLOG2(issue_cinstr_p)                                  \
+    , localparam issue_ptr_p    = `BSG_WIDTH(issue_cinstr_p)                                       \
+    , localparam issue_bytes_p  = issue_width_p >> 3                                               \
+    , localparam issue_offset_p = `BSG_SAFE_CLOG2(issue_bytes_p)                                   \
 
     `define bp_aviary_parameter_override(parameter_mp, override_cfg_mp, default_cfg_mp) \
       parameter_mp: (override_cfg_mp.``parameter_mp`` == "inv") \

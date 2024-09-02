@@ -24,6 +24,7 @@ package bp_common_pkg;
     '{cce_type              : e_cce_fsm
       ,ic_y_dim             : 1
       ,icache_features      : (1 << e_cfg_enabled) | (1 << e_cfg_coherent)
+      ,icache_data_width    : 32
       ,dcache_features      : (1 << e_cfg_enabled)
                               | (1 << e_cfg_coherent)
                               | (1 << e_cfg_writeback)
@@ -50,6 +51,7 @@ package bp_common_pkg;
 
   localparam bp_proc_param_s bp_test_unicore_half_override_p =
     '{num_lce  : 1
+      ,icache_data_width : 32
       ,default : "inv"
       };
   `bp_aviary_derive_cfg(bp_test_unicore_half_cfg_p

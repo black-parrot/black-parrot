@@ -13,8 +13,8 @@ module bp_fe_controller
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
-   , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    , localparam pte_leaf_width_lp = `bp_pte_leaf_width(paddr_width_p)
+   , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
   (input                                              clk_i
    , input                                            reset_i

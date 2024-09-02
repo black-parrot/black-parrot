@@ -75,10 +75,12 @@
   `define RV64_LB         `rv64_i_type(`RV64_LOAD_OP,3'b000)
   `define RV64_LH         `rv64_i_type(`RV64_LOAD_OP,3'b001)
   `define RV64_LW         `rv64_i_type(`RV64_LOAD_OP,3'b010)
+  `define RV64_LOAD       `rv64_i_type(`RV64_LOAD_OP,3'b???)
   `define RV64_LD         `rv64_i_type(`RV64_LOAD_OP,3'b011)
   `define RV64_LBU        `rv64_i_type(`RV64_LOAD_OP,3'b100)
   `define RV64_LHU        `rv64_i_type(`RV64_LOAD_OP,3'b101)
   `define RV64_LWU        `rv64_i_type(`RV64_LOAD_OP,3'b110)
+  `define RV64_STORE      `rv64_s_type(`RV64_STORE_OP,3'b???)
   `define RV64_SB         `rv64_s_type(`RV64_STORE_OP,3'b000)
   `define RV64_SH         `rv64_s_type(`RV64_STORE_OP,3'b001)
   `define RV64_SW         `rv64_s_type(`RV64_STORE_OP,3'b010)
@@ -367,6 +369,15 @@
   `define RV64_BINVI      `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b011010_??????)
   `define RV64_BSET       `rv64_r_type(`RV64_OP_OP,3'b001,7'b0010100)
   `define RV64_BSETI      `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b001010_??????)
+
+  // Fusion candidates
+  //`define RV64_ADD        `rv64_r_type(`RV64_OP_OP,3'b000,7'b0000000)
+  `define RV64_LI         {{12'b????????????},{5'b00000},{3'b000},{5'b?????},{7'b0010011}}
+  `define RV64_MV         {{12'b000000000000},{5'b?????},{3'b000},{5'b?????},{7'b0010011}}
+  `define RV64_RET        {{12'b000000000000},{5'b?????},{3'b000},{5'b00000},{7'b1100111}}
+  //`define RV64_BRANCH     `rv64_s_type(`RV64_BRANCH_OP,3'b???)
+  //`define RV64_LUI        `rv64_u_type(`RV64_LUI_OP)
+  //`define RV64_AUIPC      `rv64_u_type(`RV64_AUIPC_OP)
 
 `endif
 
