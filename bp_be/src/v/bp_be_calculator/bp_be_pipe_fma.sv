@@ -181,6 +181,8 @@ module bp_be_pipe_fma
      ,.out_sig(fma_raw_lo.sig)
      ,.out_imul(imul_out)
      );
+  assign fma_raw_lo.is_snan = 1'b0;
+  assign fma_raw_lo.is_sub = 1'b0;
 
   logic [dpath_width_gp-1:0] ird_data_lo;
   bp_be_int_box

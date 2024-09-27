@@ -30,7 +30,7 @@ module bsg_bus_pack
 
   localparam num_size_lp = 2**size_width_lp;
   logic [num_size_lp-1:0][in_width_p-1:0] data_repl_lo;
-  for (genvar i = 0; i <= sel_width_lp; i++)
+  for (genvar i = 0; i < num_size_lp; i++)
     begin : repl
       localparam slice_width_lp = (unit_width_p*(2**i));
       assign data_repl_lo[i] = {in_width_p/slice_width_lp{data_rot_lo[0+:slice_width_lp]}};

@@ -258,9 +258,9 @@ module bp_unicore_tile
      ,.rt_clk_i(rt_clk_i)
      ,.reset_i(reset_i)
 
-     ,.my_did_i(my_did_li)
-     ,.host_did_i(host_did_li)
-     ,.my_cord_i(cord_li)
+     ,.my_did_i(my_did_i)
+     ,.host_did_i(host_did_i)
+     ,.my_cord_i(my_cord_i)
 
      ,.mem_fwd_header_o(mem_fwd_header_lo)
      ,.mem_fwd_data_o(mem_fwd_data_lo)

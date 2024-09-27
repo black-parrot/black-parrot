@@ -430,6 +430,7 @@ module bp_uce
       stat_mem_pkt_cast_o = '0;
       stat_mem_pkt_v_o    = '0;
 
+      cache_req_id_o = '0;
       cache_req_critical_o = '0;
       cache_req_last_o = '0;
       cache_req_done = '0;

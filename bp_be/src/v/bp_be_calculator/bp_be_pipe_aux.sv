@@ -138,6 +138,8 @@ module bp_be_pipe_aux
      ,.sig(i2f_sig)
      );
   assign i2f_result.sig = i2f_sig << 2'b10;
+  assign i2f_result.is_sub = 1'b0;
+  assign i2f_result.is_snan = 1'b0;
 
   //
   // FCVT Float -> Int

@@ -198,6 +198,8 @@ module bp_be_pipe_long
      ,.out_sExp(fdivsqrt_raw_lo.sexp)
      ,.out_sig(fdivsqrt_raw_lo.sig)
      );
+  assign fdivsqrt_raw_lo.is_snan = 1'b0;
+  assign fdivsqrt_raw_lo.is_sub = 1'b0;
 
   // outValid of fdivsqrt only goes high one cycle
   logic fdivsqrt_pending_r;
