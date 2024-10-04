@@ -31,7 +31,7 @@ We presented BlackParrot at the ICS 2020 Workshop on RISC-V and OpenPOWER! [slid
 We first announced BlackParrot at FOSDEM 2020! [slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) [video](https://video.fosdem.org/2020/K.3.401/riscv_blackparrot.mp4) [pdf](https://drive.google.com/file/d/16BXCT1kK3gQ0XKfZPR-K8Zs2E648qFp9/view?usp=sharing)
 
 ## Getting Started
-This RTL repo is intended to be used with a specific [SDK](github.com/black-parrot-sdk/) and [HDK](github.com/black-parrot-hdk/) depending on the simulation / FPGA /
+This RTL repo is intended to be used with a specific [SDK](https://github.com/black-parrot-sdk/) and [HDK](https://github.com/black-parrot-hdk/) depending on the simulation / FPGA /
 ASIC environment desired. For first-time users of BlackParrot, we recommend starting from the [BlackParrot
 Simulation Environment](https://github.com/black-parrot/black-parrot-sim), which packages the
 BlackParrot RTL and SDK in a compatible manner. We intend to release several examples of BlackParrot
