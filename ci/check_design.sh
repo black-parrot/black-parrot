@@ -10,8 +10,10 @@ cfgs=(\
     "e_bp_unicore_cfg"
     "e_bp_multicore_1_cfg"
     "e_bp_multicore_1_cce_ucode_cfg"
+    "e_bp_multicore_1_cce_hybrid_cfg"
     "e_bp_multicore_4_cfg"
     "e_bp_multicore_4_cce_ucode_cfg"
+    "e_bp_multicore_4_cce_hybrid_cfg"
     )
 
 # The base command to append the configuration to
@@ -31,6 +33,7 @@ parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" :::
 echo "Running check_design on bp_me"
 make -C bp_me/syn CFG=e_bp_test_multicore_half_cfg &
 make -C bp_me/syn CFG=e_bp_test_multicore_half_cce_ucode_cfg &
+make -C bp_me/syn CFG=e_bp_test_multicore_half_cce_hybrid_cfg &
 wait
 
 # Check for failures in the report directory
