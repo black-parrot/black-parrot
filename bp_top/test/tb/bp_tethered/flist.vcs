@@ -30,6 +30,7 @@ $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.sv
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.sv
 # me files
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
+$BP_ME_DIR/test/common/bp_me_nonsynth_cce_pending_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_inst_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_pending_tracer.sv
