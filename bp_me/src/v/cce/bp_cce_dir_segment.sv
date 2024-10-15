@@ -125,6 +125,7 @@ module bp_cce_dir_segment
   // input address hashing
   logic [lg_num_cce_lp-1:0] cce_id_lo;
   logic [hash_index_width_lp-1:0] set_id_lo;
+  /*
   // NOTE: reverse the address to use the low order bits for striping cache blocks across CCEs
   wire [lg_sets_lp-1:0] hash_addr_rev = { <<{addr_i[lg_block_size_in_bytes_lp+:lg_sets_lp]}};
 
@@ -137,7 +138,10 @@ module bp_cce_dir_segment
       ,.bank_o(cce_id_lo)
       ,.index_o(set_id_lo)
       );
-
+  */
+  assign cce_id_lo = (num_cce_p > 1) ? addr_i[lg_block_size_in_bytes_lp+:lg_num_cce_lp] : '0;
+  localparam set_id_offset_lp = lg_block_size_in_bytes_lp + ((num_cce_p > 1) ? lg_num_cce_lp : 0);
+  assign set_id_lo = addr_i[set_id_offset_lp+:lg_sets_lp];
   // Bypass hashing if input wants to use raw address input
   logic [lg_rows_lp-1:0] set_id;
   assign set_id = addr_bypass_i ? {'0, addr_i[0+:lg_tag_sets_lp]} : {'0, set_id_lo};
