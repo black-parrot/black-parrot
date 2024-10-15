@@ -46,6 +46,7 @@ module bp_me_addr_to_cce_id
   // convert miss address (excluding block offset bits) into CCE ID
   // For now, assume all CCE's have ID [0,num_core_p-1] and addresses are striped
   // at the cache block granularity
+  /*
   logic [lce_sets_width_p-1:0] hash_addr_li;
   logic [lg_num_cce_lp-1:0] cce_dst_id_lo;
   assign hash_addr_li = {<< {paddr_i[block_offset_lp+:lce_sets_width_p]}};
@@ -58,6 +59,13 @@ module bp_me_addr_to_cce_id
       ,.bank_o(cce_dst_id_lo)
       ,.index_o()
       );
+  */
+
+  // TODO: assumes POT number of CCE
+  if (!`BSG_IS_POW2(num_cce_p))
+    $error("Error: number of CCE must be a power of two");
+  logic [lg_num_cce_lp-1:0] cce_dst_id_lo;
+  assign cce_dst_id_lo = (num_cce_p > 1) ? paddr_i[block_offset_lp+:lg_num_cce_lp] : '0;
 
   always_comb
     begin
