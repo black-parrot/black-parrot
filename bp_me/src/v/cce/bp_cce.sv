@@ -592,6 +592,7 @@ module bp_cce
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
       ,.addr_offset_p(lg_block_size_in_bytes_lp)
+      ,.block_width_p(bedrock_block_width_p)
       ,.cce_id_width_p(cce_id_width_p)
      )
     pending_bits
@@ -804,6 +805,7 @@ module bp_cce
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
       ,.addr_offset_p(lg_block_size_in_bytes_lp)
+      ,.block_width_p(bedrock_block_width_p)
       )
     spec_bits
      (.clk_i(clk_i)

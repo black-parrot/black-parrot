@@ -13,10 +13,8 @@
  *
  *   WARNING: the pending bit counters do not saturate and may over/underflow. Be careful!
  *
- *   The width of address into bsg_hash_bank is log2(cce_way_groups_p), where cce_way_groups_p
- *   is the total number of way groups in the system.
- *   num_way_groups_p is the number of way groups managed by this CCE (or that number
- *   plus one in the event that there is not an even number of way groups per CCE).
+ *   cce_way_groups_p is the total number of way groups in the system.
+ *   num_way_groups_p is the number of way groups managed by this CCE.
  */
 
 `include "bp_common_defines.svh"
@@ -30,6 +28,7 @@ module bp_cce_pending_bits
     , parameter `BSG_INV_PARAM(paddr_width_p)
     , parameter `BSG_INV_PARAM(addr_offset_p)
     , parameter `BSG_INV_PARAM(cce_id_width_p)
+    , parameter `BSG_INV_PARAM(block_width_p)
 
     // Default parameters
     , parameter width_p = 3  // pending bit counter width
@@ -60,30 +59,37 @@ module bp_cce_pending_bits
   );
 
   // Address to way group hashing
-  // The address to use as input starts at addr_offset_p and is lg_cce_way_groups_lp bits in length
-  logic [hash_idx_width_lp-1:0] r_wg_lo, w_wg_lo;
-  wire [lg_cce_way_groups_lp-1:0] r_addr_rev = {<< {r_addr_i[addr_offset_p+:lg_cce_way_groups_lp]}};
-  wire [lg_cce_way_groups_lp-1:0] w_addr_rev = {<< {w_addr_i[addr_offset_p+:lg_cce_way_groups_lp]}};
+  logic [lg_num_way_groups_lp-1:0] r_wg_lo, w_wg_lo;
   logic [lg_num_way_groups_lp-1:0] r_wg, w_wg;
 
-  bsg_hash_bank
-    #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
-      ,.width_p(lg_cce_way_groups_lp) // width of address input
+  bp_me_addr_to_cce_wg_id
+    #(.paddr_width_p(paddr_width_p)
+      ,.num_way_groups_p(cce_way_groups_p)
+      ,.num_cce_p(num_cce_p)
+      ,.block_width_p(block_width_p)
+      ,.dir_sets_p(1)
       )
     r_addr_hash
-     (.i(r_addr_rev)
-      ,.bank_o()
-      ,.index_o(r_wg_lo)
+     (.addr_i(r_addr_i)
+      ,.cce_id_o()
+      ,.wg_id_o()
+      ,.dir_set_id_o()
+      ,.dir_wg_id_o(r_wg_lo)
       );
 
-  bsg_hash_bank
-    #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
-      ,.width_p(lg_cce_way_groups_lp) // width of address input
+  bp_me_addr_to_cce_wg_id
+    #(.paddr_width_p(paddr_width_p)
+      ,.num_way_groups_p(cce_way_groups_p)
+      ,.num_cce_p(num_cce_p)
+      ,.block_width_p(block_width_p)
+      ,.dir_sets_p(1)
       )
     w_addr_hash
-     (.i(w_addr_rev)
-      ,.bank_o()
-      ,.index_o(w_wg_lo)
+     (.addr_i(w_addr_i)
+      ,.cce_id_o()
+      ,.wg_id_o()
+      ,.dir_set_id_o()
+      ,.dir_wg_id_o(w_wg_lo)
       );
 
   assign r_wg = (r_addr_bypass_hash_i) ? r_addr_i[0+:lg_num_way_groups_lp]
