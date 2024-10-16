@@ -484,6 +484,7 @@ module bp_fe_icache
      ,hit     : hit_v_tv
      ,id      : '0
      ,data    : '0
+     ,atomic_mem_data: '0
      };
 
   // The cache pipeline is designed to always send metadata a cycle after the request

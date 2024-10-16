@@ -40,6 +40,12 @@ module bp_lce_cmd
     , output logic                                   cache_init_done_o
     , output logic                                   sync_done_o
 
+    // Cache-LCE Request Interface
+    // managed by bp_lce_req
+    , input [cache_req_width_lp-1:0]                 cache_req_i
+    , input                                          cache_req_v_i
+    , input                                          cache_req_yumi_i
+
     // LCE-Cache Interface
     // valid->yumi
     // commands issued that read and return data have data returned the cycle after
@@ -115,6 +121,27 @@ module bp_lce_cmd
   localparam tag_offset_lp = block_byte_offset_lp + (sets_p > 1 ? lg_sets_lp : 0);
   // coherence request size for cached requests
   localparam cmd_block_size_lp = bp_bedrock_msg_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
+
+  // cache req
+  // handshake is managed by bp_lce_req module
+  `bp_cast_i(bp_cache_req_s, cache_req);
+  bp_cache_req_s cache_req_r;
+  logic cache_req_v_r;
+  bsg_two_fifo
+   #(.width_p($bits(bp_cache_req_s)), .ready_THEN_valid_p(1))
+   cache_req_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(cache_req_cast_i)
+     ,.v_i(cache_req_v_i)
+     ,.ready_param_o()
+
+     ,.data_o(cache_req_r)
+     ,.v_o(cache_req_v_r)
+     ,.yumi_i(cache_req_yumi_i)
+     );
+
 
   // FSM states
   enum logic [3:0] {
@@ -464,14 +491,17 @@ module bp_lce_cmd
             tag_mem_pkt_v_o = fsm_cmd_v_li;
 
             data_mem_pkt_cast_o.way_id = fsm_cmd_header_li.payload.way_id[0+:lg_assoc_lp];
+            data_mem_pkt_cast_o.data = {(fill_width_p/dword_width_gp){cache_req_r.atomic_mem_data}};
+            data_mem_pkt_v_o = fsm_cmd_v_li;
 
             // consume header when tag write consumed by cache
-            fsm_cmd_yumi_lo = tag_mem_pkt_yumi_i;
+            fsm_cmd_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
 
             // inform cache that tag is returning to resolve miss
             cache_req_critical_o = fsm_cmd_v_li & (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup});
 
-            state_n = (tag_mem_pkt_yumi_i && (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup}))
+            state_n = (tag_mem_pkt_yumi_i && data_mem_pkt_yumi_i
+                       && (fsm_cmd_header_li.msg_type inside {e_bedrock_cmd_st_wakeup}))
                       ? e_coh_ack
                       : state_r;
           end

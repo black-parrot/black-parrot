@@ -91,7 +91,7 @@ module bp_be_top
   bp_be_decode_info_s decode_info_lo;
   bp_be_trans_info_s trans_info_lo;
 
-  logic [wb_pkt_width_lp-1:0] late_wb_pkt;
+  bp_be_wb_pkt_s late_wb_pkt;
   logic late_wb_v_lo, late_wb_force_lo, late_wb_yumi_li;
 
   bp_be_issue_pkt_s issue_pkt;

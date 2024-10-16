@@ -1,0 +1,134 @@
+TOOL := verilator
+SIM  := 1
+
+LOG_DIR     := $(LOG_PATH)/$(TOOL)
+RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
+REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
+TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
+
+LINT_DIR  := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).lint
+BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
+COV_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).cov
+SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
+$(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(SIM_DIR) $(COV_DIR):
+	$(MKDIR) $@
+
+include $(TB_PATH)/$(TB)/Makefile.verilator
+
+## Tools
+CC ?= $(GCC)
+VV ?= $(VERILATOR)
+
+# Max number of threads to run verilated model with
+# TODO: Increase, higher threads currently break CI though
+VERILATOR_THREADS ?= 1
+## Tool options
+VV_OPTS  = --cc                 # Output in C++
+#VV_OPTS += --debug --gdbbt     # Debugs and produces stack trace
+VV_OPTS += -O2
+VV_OPTS += --x-assign fast --x-initial fast
+VV_OPTS += --threads $(VERILATOR_THREADS)
+VV_OPTS += --top-module testbench
+VV_OPTS += -f flist.vcs
+VV_OPTS += config.vlt
+VV_OPTS += --binary
+VV_OPTS += -o simsc
+VV_OPTS += -Wno-timescalemod
+#VV_OPTS += --assert
+
+LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module testbench -f flist.vcs config.vlt
+BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat -CFLAGS -std=c++17
+BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_DIR)/dromajo/include"
+BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_INSTALL_DIR)/include"
+BUILD_OPTS += -CFLAGS "-I$(BP_RTL_INSTALL_DIR)/include -I$(BASEJUMP_STL_DIR)/bsg_test/"
+BUILD_OPTS += -LDFLAGS "-lpthread"
+BUILD_OPTS += -LDFLAGS "-L$(BP_RTL_INSTALL_DIR)/lib -ldramsim3 -Wl,-rpath=$(BP_RTL_INSTALL_DIR)/lib"
+ifeq ($(SPIKE),1)
+BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_INSTALL_DIR)/lib -lriscv -Wl,-rpath=$(BP_TOOLS_INSTALL_DIR)/lib"
+BUILD_OPTS += -CFLAGS "-DSPIKE_COSIM"
+else
+BUILD_OPTS += $(BP_TOOLS_INSTALL_DIR)/lib/libdromajo_cosim.a
+BUILD_OPTS += -CFLAGS "-DDROMAJO_COSIM"
+endif
+
+VERILATOR_OPTIONS =
+
+VERILATOR_PLUSARGS =
+
+$(LINT_DIR)/config.vlt: $(SYN_PATH)/lint_settings.verilator
+	$(CAT) $< | $(ENVSUBST) > $@
+
+$(BUILD_DIR)/config.vlt: $(SYN_PATH)/lint_settings.verilator
+	$(CAT) $< | $(ENVSUBST) > $@
+
+lint.verilator: $(LINT_DIR)/lintsc
+lint.verilator: LINT_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).lint.log
+lint.verilator: LINT_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.rpt
+lint.verilator: LINT_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
+$(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
+$(LINT_DIR)/lintsc: | $(LINT_COLLATERAL)
+	$(CD) $(@D); $(VV) $(LINT_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) 2>&1 | $(TEE) -i $(LINT_LOG)
+	-@$(GREP) -E "Exiting due to .* error\(s\)" -A 5 $(LINT_LOG) > $(LINT_ERROR)
+	-@$(TEST) -s $(LINT_ERROR) && $(ECHO) "FAILED" >> $(LINT_REPORT) \
+	|| { rm -f $(LINT_ERROR); $(ECHO) "PASS" >> $(LINT_REPORT); }
+
+build.verilator: $(BUILD_DIR)/obj_dir
+build.verilator: BUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).build.log
+build.verilator: BUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.rpt
+build.verilator: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.err
+$(BUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
+$(BUILD_DIR)/obj_dir: | $(BUILD_COLLATERAL)
+	$(CD) $(@D); \
+		$(VV) $(VV_OPTS) $(BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) 2>&1 | $(TEE) -i $(BUILD_LOG)
+	-@$(GREP) "Error" -A 5 $(BUILD_LOG) > $(BUILD_ERROR)
+	-@$(TAIL) -n 3 $(BUILD_LOG) > $(BUILD_REPORT)
+	-@$(TEST) -s $(BUILD_ERROR) && $(ECHO) "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
+
+build_dump.verilator: VV_OPTS += --trace-fst
+build_dump.verilator: VV_OPTS += --trace-structs
+build_dump.verilator: VV_OPTS += --trace-depth 15
+build_dump.verilator: HDL_DEFINES += +define+VERILATOR_TRACE=1
+build_dump.verilator: build.verilator
+
+build_cov.verilator: VV_OPTS += --coverage-line
+build_cov.verilator: VV_OPTS += --coverage-toggle
+build_cov.verilator: build.verilator
+
+$(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
+	$(SYMLINK) $</$(@F) $@
+
+sim.verilator: build.verilator
+sim.verilator: $(SIM_DIR)/run_simsc
+sim.verilator: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
+sim.verilator: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
+sim.verilator: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
+$(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
+$(SIM_DIR)/run_simsc: | $(SIM_COLLATERAL)
+	$(CD) $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) 2>&1 | $(TEE) -i $(SIM_LOG)
+	-@$(GREP) "FAIL" $(SIM_LOG) && $(ECHO) "FAILED" > $(SIM_ERROR)
+	-@$(GREP) "PASS" $(SIM_LOG) || $(ECHO) "FAILED" > $(SIM_ERROR)
+	-@$(GREP) "Executing final" $(SIM_LOG) || $(ECHO) "FAILED" > $(SIM_ERROR)
+	-@$(GREP) "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
+
+sim_dump.verilator: VV_OPTS += --trace-fst
+sim_dump.verilator: VV_OPTS += --trace-structs
+sim_dump.verilator: VV_OPTS += --trace-depth 15
+sim_dump.verilator: sim.verilator
+
+cov.verilator: $(RESULTS_DIR)/covsc
+cov.verilator: COV_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cov.log
+cov.verilator: COV_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.rpt
+cov.verilator: COV_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.err
+$(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
+$(COV_DIR)/covsc: | $(COV_COLLATERAL)
+	$(CD) $(@D); verilator_coverage */*.dat --rank --annotate $(COV_REPORT) 2>&1 | $(TEE) -i $(COV_LOG)
+
+wave.verilator: $(SIM_DIR)/wavesc
+$(SIM_DIR)/wavesc: $(SIM_DIR)/dump.fst
+	$(GTKWAVE) -f $< &
+
+clean.verilator:
+	@$(RMRF) results/verilator
+	@$(RMRF) logs/verilator
+	@$(RMRF) reports/verilator
+	@$(RMRF) touchfiles/verilator

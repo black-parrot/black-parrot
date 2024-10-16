@@ -130,6 +130,7 @@ module bp_lce
   logic cache_req_done_lo;
   logic sync_done_lo;
   logic cache_init_done_lo;
+  logic lce_cmd_cache_req_v_lo, lce_cmd_cache_req_yumi_lo;
   bp_lce_req
    #(.bp_params_p(bp_params_p)
      ,.assoc_p(assoc_p)
@@ -159,6 +160,8 @@ module bp_lce
      ,.cache_req_yumi_o(cache_req_yumi_o)
      ,.cache_req_metadata_i(cache_req_metadata_i)
      ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
+     ,.lce_cmd_cache_req_v_o(lce_cmd_cache_req_v_lo)
+     ,.lce_cmd_cache_req_yumi_o(lce_cmd_cache_req_yumi_lo)
      ,.cache_req_credits_full_o(cache_req_credits_full_o)
      ,.cache_req_credits_empty_o(cache_req_credits_empty_o)
      ,.credit_return_i(credit_return_lo)
@@ -246,6 +249,10 @@ module bp_lce
      ,.cache_req_last_o(cache_req_last_o)
      ,.credit_return_o(credit_return_lo)
      ,.cache_req_done_o(cache_req_done_lo)
+
+     ,.cache_req_i(cache_req_i)
+     ,.cache_req_v_i(lce_cmd_cache_req_v_lo)
+     ,.cache_req_yumi_i(lce_cmd_cache_req_yumi_lo)
 
      ,.data_mem_pkt_o(data_mem_pkt_o)
      ,.data_mem_pkt_v_o(data_mem_pkt_v_o)

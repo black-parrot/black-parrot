@@ -22,7 +22,7 @@ endif
 	$(SED) -i "s/BP_CFG_FLOWVAR/$(CFG)/g" $@
 	$(SED) -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
-%/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
+%/prog.riscv: $(BP_RISCV_DIR)/$(SUITE)/$(PROG).riscv
 	$(MKDIR) -p $(@D)
 	$(CP) $^ $@
 
@@ -44,7 +44,7 @@ endif
 	$(RISCV_OBJDUMP) $< > $@
 
 MEM2NBF ?= $(BP_COMMON_DIR)/software/py/nbf.py
-CCE_UCODE_FILE ?= $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
+CCE_UCODE_FILE ?= $(BP_RISCV_UCODE_DIR)/$(CCE_MEM)
 NBF_INPUTS ?= --ncpus=$(NCPUS)
 NBF_INPUTS += --config
 NBF_INPUTS += --boot_pc=0x80000000
