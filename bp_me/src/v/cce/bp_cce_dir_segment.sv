@@ -80,7 +80,7 @@ module bp_cce_dir_segment
   (input                                                          clk_i
    , input                                                        reset_i
 
-   // input address, fed to bsg_hash_bank
+   // input address
    , input [paddr_width_p-1:0]                                    addr_i
    // bypass signal to use low bits of raw address instead of hashed address
    , input                                                        addr_bypass_i
@@ -123,28 +123,25 @@ module bp_cce_dir_segment
     $error("Number of tag sets must be at least 1");
 
   // input address hashing
-  logic [lg_num_cce_lp-1:0] cce_id_lo;
-  logic [hash_index_width_lp-1:0] set_id_lo;
-  /*
-  // NOTE: reverse the address to use the low order bits for striping cache blocks across CCEs
-  wire [lg_sets_lp-1:0] hash_addr_rev = { <<{addr_i[lg_block_size_in_bytes_lp+:lg_sets_lp]}};
-
-  bsg_hash_bank
-    #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
-      ,.width_p(lg_sets_lp) // width of address input
+  logic [lg_tag_sets_lp-1:0] dir_set_id_lo;
+  bp_me_addr_to_cce_wg_id
+    #(.paddr_width_p(paddr_width_p)
+      ,.num_way_groups_p(1)
+      ,.num_cce_p(num_cce_p)
+      ,.block_width_p(block_size_in_bytes_p*8)
+      ,.dir_sets_p(tag_sets_p)
       )
-    addr_to_cce_id
-     (.i(hash_addr_rev)
-      ,.bank_o(cce_id_lo)
-      ,.index_o(set_id_lo)
+    addr_hash
+     (.addr_i(addr_i)
+      ,.cce_id_o()
+      ,.wg_id_o()
+      ,.dir_set_id_o(dir_set_id_lo)
+      ,.dir_wg_id_o()
       );
-  */
-  assign cce_id_lo = (num_cce_p > 1) ? addr_i[lg_block_size_in_bytes_lp+:lg_num_cce_lp] : '0;
-  localparam set_id_offset_lp = lg_block_size_in_bytes_lp + ((num_cce_p > 1) ? lg_num_cce_lp : 0);
-  assign set_id_lo = addr_i[set_id_offset_lp+:lg_sets_lp];
+
   // Bypass hashing if input wants to use raw address input
   logic [lg_rows_lp-1:0] set_id;
-  assign set_id = addr_bypass_i ? {'0, addr_i[0+:lg_tag_sets_lp]} : {'0, set_id_lo};
+  assign set_id = addr_bypass_i ? {'0, addr_i[0+:lg_tag_sets_lp]} : {'0, dir_set_id_lo};
 
   // address offset table
   logic [rows_per_set_lp-1:0][lg_rows_lp-1:0] addr_offset_table;
