@@ -11,6 +11,7 @@
       logic [id_width_mp-1:0] id;                     \
       logic hit;                                      \
       logic [data_width_mp-1:0] data;                 \
+      logic [data_width_mp-1:0] atomic_mem_data;      \
       bp_cache_req_size_e size;                       \
       logic [paddr_width_mp-1:0] addr;                \
       bp_cache_req_msg_type_e msg_type;               \
@@ -18,7 +19,7 @@
     }  bp_``cache_name_mp``_req_s
 
   `define bp_cache_req_width(data_width_mp, paddr_width_mp, id_width_mp, cache_name_mp) \
-    (id_width_mp+1+data_width_mp+$bits(bp_cache_req_size_e)+paddr_width_mp+$bits(bp_cache_req_msg_type_e)+$bits(bp_cache_req_wr_subop_e))
+    (id_width_mp+1+(2*data_width_mp)+$bits(bp_cache_req_size_e)+paddr_width_mp+$bits(bp_cache_req_msg_type_e)+$bits(bp_cache_req_wr_subop_e))
 
   `define declare_bp_cache_req_metadata_s(ways_mp, cache_name_mp) \
     typedef struct packed                                   \

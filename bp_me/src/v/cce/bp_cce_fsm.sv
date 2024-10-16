@@ -1125,7 +1125,7 @@ module bp_cce_fsm
           fsm_fwd_header_lo.msg_type.fwd = e_bedrock_mem_wr;
           fsm_fwd_header_lo.subop = mshr_r.msg_subop;
           fsm_fwd_header_lo.payload.lce_id = mshr_r.lce_id;
-          fsm_fwd_header_lo.payload.src_did = fsm_req_header_li.payload.src_did;
+          fsm_fwd_header_lo.payload.src_did = mshr_r.src_did;
           fsm_fwd_header_lo.payload.uncached = 1'b1;
           fsm_fwd_data_lo = fsm_req_data_li;
 
@@ -1147,7 +1147,7 @@ module bp_cce_fsm
           fsm_fwd_header_lo.size = mshr_r.msg_size;
           fsm_fwd_header_lo.msg_type.fwd = e_bedrock_mem_rd;
           fsm_fwd_header_lo.payload.lce_id = mshr_r.lce_id;
-          fsm_fwd_header_lo.payload.src_did = fsm_req_header_li.payload.src_did;
+          fsm_fwd_header_lo.payload.src_did = mshr_r.src_did;
           fsm_fwd_header_lo.payload.uncached = 1'b1;
 
           state_n = fsm_req_yumi_lo ? e_ready : e_uncached_req;
@@ -1204,7 +1204,7 @@ module bp_cce_fsm
           fsm_fwd_header_lo.size = mshr_r.msg_size;
           fsm_fwd_header_lo.payload.lce_id = mshr_r.lce_id;
           fsm_fwd_header_lo.payload.way_id = mshr_r.lru_way_id;
-          fsm_fwd_header_lo.payload.src_did = fsm_req_header_li.payload.src_did;
+          fsm_fwd_header_lo.payload.src_did = mshr_r.src_did;
           // speculatively issue request for E state
           fsm_fwd_header_lo.payload.state = e_COH_E;
           fsm_fwd_header_lo.payload.speculative = 1'b1;
@@ -1428,7 +1428,7 @@ module bp_cce_fsm
             fsm_fwd_header_lo.msg_type = e_bedrock_mem_wr;
             fsm_fwd_header_lo.addr = fsm_resp_header_li.addr;
             fsm_fwd_header_lo.size = fsm_resp_header_li.size;
-            fsm_fwd_header_lo.payload.src_did = fsm_req_header_li.payload.src_did;
+            fsm_fwd_header_lo.payload.src_did = mshr_r.src_did;
             fsm_fwd_header_lo.payload.lce_id = mshr_r.lce_id;
             fsm_fwd_header_lo.payload.way_id = '0;
             fsm_fwd_data_lo = fsm_resp_data_li;
@@ -1598,7 +1598,7 @@ module bp_cce_fsm
               fsm_fwd_header_lo.msg_type.fwd = e_bedrock_mem_wr;
               fsm_fwd_header_lo.addr = fsm_resp_header_li.addr;
               fsm_fwd_header_lo.size = fsm_resp_header_li.size;
-              fsm_fwd_header_lo.payload.src_did = fsm_req_header_li.payload.src_did;
+              fsm_fwd_header_lo.payload.src_did = mshr_r.src_did;
               fsm_fwd_header_lo.payload.lce_id = mshr_r.lce_id;
               fsm_fwd_data_lo = fsm_resp_data_li;
 
@@ -1649,7 +1649,7 @@ module bp_cce_fsm
           //fsm_fwd_header_lo.amo_no_return = mshr_r.flags.atomic_no_return;
           fsm_fwd_header_lo.payload.lce_id = mshr_r.lce_id;
           fsm_fwd_header_lo.payload.way_id = '0;
-          fsm_fwd_header_lo.payload.src_did = fsm_req_header_li.payload.src_did;
+          fsm_fwd_header_lo.payload.src_did = mshr_r.src_did;
           // this op is uncached in LCE for both amo or uncached requests
           fsm_fwd_header_lo.payload.uncached = 1'b1;
           fsm_fwd_data_lo = fsm_req_data_li;
@@ -1755,7 +1755,7 @@ module bp_cce_fsm
             fsm_fwd_header_lo.addr = fsm_resp_header_li.addr;
             fsm_fwd_header_lo.payload.lce_id = mshr_r.lce_id;
             fsm_fwd_header_lo.payload.way_id = '0;
-            fsm_fwd_header_lo.payload.src_did = fsm_req_header_li.payload.src_did;
+            fsm_fwd_header_lo.payload.src_did = mshr_r.src_did;
             fsm_fwd_header_lo.size = fsm_resp_header_li.size;
             fsm_fwd_data_lo = fsm_resp_data_li;
 

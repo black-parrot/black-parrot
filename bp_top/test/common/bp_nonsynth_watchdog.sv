@@ -55,9 +55,9 @@ module bp_nonsynth_watchdog
      ,.count_o(stall_cnt)
      );
 
-  logic [`BSG_SAFE_CLOG2(stall_cycles_p)-1:0] halt_cnt;
+  logic [`BSG_SAFE_CLOG2(halt_cycles_p)-1:0] halt_cnt;
   bsg_counter_clear_up
-   #(.max_val_p(stall_cycles_p), .init_val_p(0))
+   #(.max_val_p(halt_cycles_p), .init_val_p(0))
    halt_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i | freeze_i | wfi_i | is_halt)

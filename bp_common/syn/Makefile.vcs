@@ -191,3 +191,8 @@ wave.vcs: $(SIM_DIR)/wavev
 $(SIM_DIR)/wavev: $(SIM_DIR)/vcdplus.vpd
 	$(_DVE) -full64 -vpd $< &
 
+clean.vcs:
+	@$(RMRF) results/vcs
+	@$(RMRF) logs/vcs
+	@$(RMRF) reports/vcs
+	@$(RMRF) touchfiles/vcs
