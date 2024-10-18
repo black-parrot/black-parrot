@@ -888,7 +888,7 @@
     '{ir : data_comp_mp.ir \
       ,cy: data_comp_mp.cy \
       ,default: '0         \
-      };
+      }
 
   `define compress_mscratch_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     data_cast_mp[0+:64]
