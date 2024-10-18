@@ -8,10 +8,10 @@ then
   exit 1
 elif [ $1 == "vcs" ]
 then
-    SUFFIX=v
+    SUFFIX=vcs
 elif [ $1 == "verilator" ]
 then
-    SUFFIX=sc
+    SUFFIX=verilator
 else
   echo "Usage: $0 <verilator, vcs> <testlist> [num_cores]"
   exit 1

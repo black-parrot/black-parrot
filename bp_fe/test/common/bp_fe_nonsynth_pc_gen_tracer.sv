@@ -111,7 +111,7 @@ module bp_fe_nonsynth_pc_gen_tracer
    , input                     fetch_v_i
    , input                     fetch_partial_i
    , input [vaddr_width_p-1:0] fetch_pc_i
-   , input [instr_width_gp-1:0] fetch_instr_i
+   , input [fetch_width_p-1:0] fetch_instr_i
    );
 
   // Cycle counter

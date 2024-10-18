@@ -54,6 +54,10 @@ module bp_nonsynth_host
    , output logic [num_core_p-1:0]                  finish_o
    );
 
+  import "DPI-C" context function void start();
+  import "DPI-C" context function int scan();
+  import "DPI-C" context function void pop();
+
   integer tmp;
   integer stdout[num_core_p];
   integer stdout_global;
@@ -68,6 +72,7 @@ module bp_nonsynth_host
         end
       stdout_global = $fopen("stdout_global.txt", "w");
       signature = $fopen("DUT-blackparrot.signature", "w");
+      start();
     end
 
   localparam bedrock_reg_els_lp = 8;
@@ -96,7 +101,6 @@ module bp_nonsynth_host
   localparam byte_offset_width_lp = 3;
   localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
   wire [lg_num_core_lp-1:0] addr_core_enc = addr_lo[byte_offset_width_lp+:lg_num_core_lp];
-  logic [7:0] ch;
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
@@ -121,6 +125,7 @@ module bp_nonsynth_host
   assign finish_o = finish_r | finish_set;
 
   integer ret;
+  logic [7:0] ch;
   always_ff @(negedge clk_i)
     begin
       if (putchar_w_v_li) begin
@@ -137,8 +142,10 @@ module bp_nonsynth_host
         $write("%x", data_lo[0+:dword_width_gp]);
       end
 
-      if (getchar_r_v_li)
-        ret = $fscanf(32'h8000_0001, "%c", ch);
+      if (getchar_r_v_li) begin
+          ch <= scan();
+          pop();
+      end
 
       if (mem_fwd_ready_and_o & mem_fwd_v_i & (hio_id != '0))
         $error("Warning: Accesing illegal hio %0h. Sending loopback message!", hio_id);
@@ -175,38 +182,26 @@ module bp_nonsynth_host
       $system("stty echo");
     end
 
+  localparam bootrom_width_p = 64;
   localparam bootrom_els_p = 1024;
   localparam lg_bootrom_els_lp = `BSG_SAFE_CLOG2(bootrom_els_p);
-  bit [dword_width_gp-1:0] bootrom_data_lo;
+  bit [bootrom_width_p-1:0] bootrom_data_lo;
   bit [lg_bootrom_els_lp-1:0] bootrom_addr_li;
   bit [7:0] bootrom_mem [0:8*bootrom_els_p-1];
 
   initial $readmemh("bootrom.mem", bootrom_mem);
-  assign bootrom_addr_li = addr_lo[3+:lg_bootrom_els_lp];
+  assign bootrom_addr_li = addr_lo[2+:lg_bootrom_els_lp];
 
   assign bootrom_data_lo = {
-    bootrom_mem[8*bootrom_addr_li+7]
-    ,bootrom_mem[8*bootrom_addr_li+6]
-    ,bootrom_mem[8*bootrom_addr_li+5]
-    ,bootrom_mem[8*bootrom_addr_li+4]
-    ,bootrom_mem[8*bootrom_addr_li+3]
-    ,bootrom_mem[8*bootrom_addr_li+2]
-    ,bootrom_mem[8*bootrom_addr_li+1]
-    ,bootrom_mem[8*bootrom_addr_li+0]
+    bootrom_mem[4*bootrom_addr_li+7]
+    ,bootrom_mem[4*bootrom_addr_li+6]
+    ,bootrom_mem[4*bootrom_addr_li+5]
+    ,bootrom_mem[4*bootrom_addr_li+4]
+    ,bootrom_mem[4*bootrom_addr_li+3]
+    ,bootrom_mem[4*bootrom_addr_li+2]
+    ,bootrom_mem[4*bootrom_addr_li+1]
+    ,bootrom_mem[4*bootrom_addr_li+0]
     };
-
-  // Convert to little endian
-  wire [dword_width_gp-1:0] bootrom_data_reverse = {<<8{bootrom_data_lo}};
-
-  logic [dword_width_gp-1:0] bootrom_final_lo;
-  bsg_bus_pack
-   #(.in_width_p(dword_width_gp))
-   bootrom_pack
-    (.data_i(bootrom_data_lo)
-     ,.size_i(size_lo)
-     ,.sel_i(addr_lo[0+:3])
-     ,.data_o(bootrom_final_lo)
-     );
 
   localparam param_els_lp = `BSG_CDIV($bits(proc_param_lp),word_width_gp);
   localparam lg_param_els_lp = `BSG_SAFE_CLOG2(param_els_lp);
@@ -245,7 +240,7 @@ module bp_nonsynth_host
   assign data_li[1] = '0;
   assign data_li[2] = ch;
   assign data_li[3] = finish_r;
-  assign data_li[4] = bootrom_final_lo;
+  assign data_li[4] = bootrom_data_lo;
   assign data_li[5] = paramrom_final_lo;
 
 endmodule

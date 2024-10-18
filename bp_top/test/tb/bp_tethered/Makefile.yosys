@@ -1,6 +1,7 @@
+include $(TB_PATH)/$(TB)/Makefile.collateral
 
 $(SYNTH_DIR)/wrapper.sv2v.v: $(CONVERT_DIR)/wrapper.sv2v.v
-	cp $< $@
+	$(CP) $< $@
 
 SYNTH_COLLATERAL = $(addprefix $(SYNTH_DIR)/, wrapper.sv2v.v)
 

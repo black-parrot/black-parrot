@@ -12,7 +12,7 @@ cfgs=(\
     )
 
 # The base command to append the configuration to
-cmd_base="make -C bp_top/syn convert.bsg_sv2v synth.yosys build_yosys.v sim_yosys.v"
+cmd_base="make -C bp_top/syn convert.bsg_sv2v synth.yosys build_yosys.vcs sim_yosys.vcs"
 
 # Any setup needed for the job
 echo "Cleaning bp_top"

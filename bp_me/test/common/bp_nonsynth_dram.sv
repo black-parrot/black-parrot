@@ -86,7 +86,8 @@ module bp_nonsynth_dram
          end
 
        // TODO: May need to use actual hash function
-       localparam cache_bank_addr_width_lp = `dram_pkg::channel_addr_width_p - `BSG_SAFE_CLOG2(num_dma_p);
+       localparam dram_channel_addr_width_lp = `dram_pkg::channel_addr_width_p;
+       localparam cache_bank_addr_width_lp = dram_channel_addr_width_lp - `BSG_SAFE_CLOG2(num_dma_p);
        bsg_cache_to_test_dram
         #(.num_cache_p(num_dma_p)
           ,.addr_width_p(daddr_width_p)
@@ -174,32 +175,59 @@ module bp_nonsynth_dram
           );
 
 
-      // Preloading is not supported in Verilator due to heirarchical reference and clk
-      //   delay statement.
-      `ifndef VERILATOR
+// Preloading is not supported in Verilator due to heirarchical reference and clk
+//   delay statement.
+`ifndef VERILATOR
       // This whole segment is unoptimized because it's storing this memory even though it's
       //   only used for initialization. We could read byte-by-byte to avoid this
-      logic [7:0] preload_mem [*];
+      logic [7:0] preload_mem [integer];
+      logic [dram_channel_addr_width_lp-1:0] ch_addr_li;
+      logic [7:0] ch_data_li;
+      localparam lg_num_l2_slices_lp = `BSG_SAFE_CLOG2(l2_slices_p);
+      localparam lg_num_l2_banks_lp = `BSG_SAFE_CLOG2(l2_banks_p);
+      localparam lg_num_dma_lp = `BSG_SAFE_CLOG2(num_dma_p);
+      logic [paddr_width_p-1:0] preload_addr_li;
+      logic [`BSG_SAFE_CLOG2(l2_slices_p)-1:0] preload_slice_lo;
+      logic [`BSG_SAFE_CLOG2(l2_banks_p)-1:0] preload_bank_lo;
+      logic [`BSG_SAFE_CLOG2(l2_banks_p*l2_slices_p)-1:0] preload_dma_lo;
+      logic [dram_channel_addr_width_lp-1:0] test1, test2;
+      assign ch_addr_li = {preload_dma_lo
+                          ,{(dram_channel_addr_width_lp-cache_bank_addr_width_lp-lg_num_dma_lp){1'b0}}
+                          ,preload_addr_li[cache_bank_addr_width_lp-1:0]
+                          };
       initial
         begin
-          automatic integer h = $fopen("prog.mem", "r");
-          if (h)
-            begin
-              $readmemh("prog.mem", preload_mem);
-              @(posedge clk_i)
-              for (integer i = 0; i < preload_mem.num(); i++)
-                if (preload_mem_p)
-                  dram.channels[0].channel.bsg_mem_dma_set(dram.channels[0].channel.memory, i, preload_mem[i]);
-              preload_mem.delete();
-              $fclose(h);
-            end
+          $readmemh("prog.mem", preload_mem);
+          if (preload_mem_p) foreach (preload_mem[i]) begin //if (preload_mem[i]) begin
+            preload_addr_li = dram_base_addr_gp+i;
+            ch_data_li = preload_mem[i];
+            test1 = dram_channel_addr_width_lp-cache_bank_addr_width_lp-lg_num_dma_lp;
+            test2 = preload_addr_li[cache_bank_addr_width_lp-1:0];
+            #1;
+            dram.channels[0].channel.bsg_mem_dma_set(
+                dram.channels[0].channel.memory, ch_addr_li, ch_data_li
+            );
+          end
         end
-      `else
+
+      bp_me_dram_hash_encode
+       #(.bp_params_p(bp_params_p))
+       dma_hash
+        (.paddr_i(preload_addr_li)
+         ,.data_i()
+         ,.daddr_o()
+         ,.slice_o(preload_slice_lo)
+         ,.bank_o(preload_bank_lo)
+         ,.dram_o()
+         ,.data_o()
+         );
+      assign preload_dma_lo = preload_slice_lo*l2_slices_p + preload_bank_lo;
+`else
         if (preload_mem_p)
           begin : preload
             $error("Preloading is not supported in Verilator");
           end
-      `endif
+`endif
     end
   else if (dram_type_p == "axi")
     begin : axi

@@ -1,3 +1,4 @@
+include $(TB_PATH)/$(TB)/Makefile.collateral
 
 # We need to build openram into the flow to fully support hardening SRAMs here
 HARDEN_SRAMS ?= 0

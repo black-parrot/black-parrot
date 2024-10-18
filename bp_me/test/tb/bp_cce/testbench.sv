@@ -42,7 +42,7 @@ module testbench
    , localparam trace_rom_addr_width_lp = 20
 
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_tag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_tag_width_p, icache_sets_p, icache_assoc_p, icache_data_width_p, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache)
    )
   (output bit reset_i);
 
@@ -406,8 +406,9 @@ module testbench
      #(.bp_params_p(bp_params_p)
        ,.assoc_p(icache_assoc_p)
        ,.sets_p(icache_sets_p)
-       ,.block_width_p(bedrock_block_width_p)
-       ,.fill_width_p(bedrock_fill_width_p)
+       ,.block_width_p(icache_block_width_p)
+       ,.fill_width_p(icache_fill_width_p)
+       ,.data_width_p(icache_data_width_p)
        ,.id_width_p(icache_req_id_width_p)
        ,.timeout_max_limit_p(4)
        ,.credits_p(coh_noc_max_credits_p)
@@ -633,6 +634,7 @@ module testbench
         ,.assoc_p(assoc_p)
         ,.block_width_p(block_width_p)
         ,.fill_width_p(fill_width_p)
+        ,.data_width_p(data_width_p)
         )
       lce_tracer
        (.clk_i(clk_i & testbench.lce_trace_en)

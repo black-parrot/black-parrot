@@ -34,8 +34,8 @@ module bp_core_tile
    , input                                                    reset_i
 
    // Memory side connection
-   , input [mem_noc_did_width_p-1:0]                           my_did_i
-   , input [mem_noc_did_width_p-1:0]                           host_did_i
+   , input [mem_noc_did_width_p-1:0]                          my_did_i
+   , input [mem_noc_did_width_p-1:0]                          host_did_i
    , input [coh_noc_cord_width_p-1:0]                         my_cord_i
 
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_req_link_i
@@ -76,27 +76,27 @@ module bp_core_tile
 
   // Core-side LCE-CCE network connections
   bp_bedrock_lce_req_header_s [1:0] lce_req_header_lo;
-  logic [1:0][icache_fill_width_p-1:0] lce_req_data_lo;
+  logic [1:0][bedrock_fill_width_p-1:0] lce_req_data_lo;
   logic [1:0] lce_req_v_lo, lce_req_ready_and_li;
   logic [1:0][coh_noc_cord_width_p-1:0] lce_req_dst_cord_lo;
   logic [1:0][coh_noc_cid_width_p-1:0] lce_req_dst_cid_lo;
 
   bp_bedrock_lce_cmd_header_s [1:0] lce_cmd_header_li;
-  logic [1:0][icache_fill_width_p-1:0] lce_cmd_data_li;
+  logic [1:0][bedrock_fill_width_p-1:0] lce_cmd_data_li;
   logic [1:0] lce_cmd_v_li, lce_cmd_ready_and_lo;
 
   bp_bedrock_lce_fill_header_s [1:0] lce_fill_header_li;
-  logic [1:0][icache_fill_width_p-1:0] lce_fill_data_li;
+  logic [1:0][bedrock_fill_width_p-1:0] lce_fill_data_li;
   logic [1:0] lce_fill_v_li, lce_fill_ready_and_lo;
 
   bp_bedrock_lce_fill_header_s [1:0] lce_fill_header_lo;
-  logic [1:0][icache_fill_width_p-1:0] lce_fill_data_lo;
+  logic [1:0][bedrock_fill_width_p-1:0] lce_fill_data_lo;
   logic [1:0] lce_fill_v_lo, lce_fill_ready_and_li;
   logic [1:0][coh_noc_cord_width_p-1:0] lce_fill_dst_cord_lo;
   logic [1:0][coh_noc_cid_width_p-1:0] lce_fill_dst_cid_lo;
 
   bp_bedrock_lce_resp_header_s [1:0] lce_resp_header_lo;
-  logic [1:0][icache_fill_width_p-1:0] lce_resp_data_lo;
+  logic [1:0][bedrock_fill_width_p-1:0] lce_resp_data_lo;
   logic [1:0] lce_resp_v_lo, lce_resp_ready_and_li;
   logic [1:0][coh_noc_cord_width_p-1:0] lce_resp_dst_cord_lo;
   logic [1:0][coh_noc_cid_width_p-1:0] lce_resp_dst_cid_lo;
@@ -153,7 +153,7 @@ module bp_core_tile
        ,.pr_hdr_width_p(lce_req_header_width_lp)
        ,.pr_payload_width_p(lce_req_payload_width_lp)
        ,.pr_stream_mask_p(lce_req_stream_mask_gp)
-       ,.pr_data_width_p(icache_fill_width_p)
+       ,.pr_data_width_p(bedrock_fill_width_p)
        )
      lce_req_stream_to_wh
      (.clk_i(clk_i)
@@ -183,7 +183,7 @@ module bp_core_tile
        ,.pr_hdr_width_p(lce_cmd_header_width_lp)
        ,.pr_payload_width_p(lce_cmd_payload_width_lp)
        ,.pr_stream_mask_p(lce_cmd_stream_mask_gp)
-       ,.pr_data_width_p(icache_fill_width_p)
+       ,.pr_data_width_p(bedrock_fill_width_p)
        )
      lce_cmd_wh_to_stream
      (.clk_i(clk_i)
@@ -212,7 +212,7 @@ module bp_core_tile
        ,.pr_hdr_width_p(lce_fill_header_width_lp)
        ,.pr_payload_width_p(lce_fill_payload_width_lp)
        ,.pr_stream_mask_p(lce_fill_stream_mask_gp)
-       ,.pr_data_width_p(icache_fill_width_p)
+       ,.pr_data_width_p(bedrock_fill_width_p)
        )
      lce_fill_wh_to_stream
      (.clk_i(clk_i)
@@ -246,7 +246,7 @@ module bp_core_tile
        ,.pr_hdr_width_p(lce_fill_header_width_lp)
        ,.pr_payload_width_p(lce_fill_payload_width_lp)
        ,.pr_stream_mask_p(lce_fill_stream_mask_gp)
-       ,.pr_data_width_p(icache_fill_width_p)
+       ,.pr_data_width_p(bedrock_fill_width_p)
        )
      lce_fill_stream_to_wh
      (.clk_i(clk_i)
@@ -282,7 +282,7 @@ module bp_core_tile
        ,.pr_hdr_width_p(lce_resp_header_width_lp)
        ,.pr_payload_width_p(lce_resp_payload_width_lp)
        ,.pr_stream_mask_p(lce_resp_stream_mask_gp)
-       ,.pr_data_width_p(icache_fill_width_p)
+       ,.pr_data_width_p(bedrock_fill_width_p)
        )
      lce_resp_stream_to_wh
      (.clk_i(clk_i)

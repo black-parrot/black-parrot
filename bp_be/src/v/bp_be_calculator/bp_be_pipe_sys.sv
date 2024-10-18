@@ -16,16 +16,12 @@ module bp_be_pipe_sys
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
+   `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
 
    , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    // Generated parameters
-   , localparam reservation_width_lp = `bp_be_reservation_width(vaddr_width_p)
    , localparam exception_width_lp    = $bits(bp_be_exception_s)
    , localparam special_width_lp      = $bits(bp_be_special_s)
-   , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
-   , localparam decode_info_width_lp  = `bp_be_decode_info_width
-   , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
-   , localparam wb_pkt_width_lp       = `bp_be_wb_pkt_width(vaddr_width_p)
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -37,7 +33,6 @@ module bp_be_pipe_sys
 
    , input                                   retire_v_i
    , input                                   retire_queue_v_i
-   , input                                   retire_partial_v_i
    , input [dpath_width_gp-1:0]              retire_data_i
    , input [exception_width_lp-1:0]          retire_exception_i
    , input [special_width_lp-1:0]            retire_special_i
@@ -63,7 +58,7 @@ module bp_be_pipe_sys
    , output rv64_frm_e                       frm_dyn_o
    );
 
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
 
   bp_be_reservation_s reservation;
   bp_be_decode_s decode;
@@ -119,18 +114,18 @@ module bp_be_pipe_sys
      ,.frm_dyn_o(frm_dyn_o)
      );
 
-  logic [vaddr_width_p-1:0] retire_npc_r, retire_pc_r;
+  logic [vaddr_width_p-1:0] retire_npc_r;
   logic [dword_width_gp-1:0] retire_nvaddr_r, retire_vaddr_r;
   logic [dword_width_gp-1:0] retire_ndata_r, retire_data_r;
+  logic [fetch_ptr_p-1:0] retire_nsize_r, retire_size_r;
+  logic [fetch_ptr_p-1:0] retire_ncount_r, retire_count_r;
   rv64_instr_s retire_ninstr_r, retire_instr_r;
-  logic retire_ncompressed_r, retire_compressed_r;
   logic retire_niscore_r, retire_iscore_r;
   logic retire_nfscore_r, retire_fscore_r;
   logic retire_nspec_w_r, retire_spec_w_r;
   always_ff @(posedge clk_i)
     begin
       retire_npc_r <= reservation.pc;
-      retire_pc_r  <= retire_npc_r;
 
       retire_nvaddr_r <= rs1+imm;
       retire_vaddr_r  <= retire_nvaddr_r;
@@ -138,11 +133,14 @@ module bp_be_pipe_sys
       retire_ndata_r <= rs2;
       retire_data_r  <= retire_ndata_r;
 
+      retire_nsize_r <= reservation.size;
+      retire_size_r <= retire_nsize_r;
+
+      retire_ncount_r <= reservation.count;
+      retire_count_r <= retire_ncount_r;
+
       retire_ninstr_r <= reservation.instr;
       retire_instr_r  <= retire_ninstr_r;
-
-      retire_ncompressed_r <= reservation.decode.compressed;
-      retire_compressed_r  <= retire_ncompressed_r;
 
       retire_niscore_r <= reservation.decode.score_v & reservation.decode.irf_w_v;
       retire_iscore_r  <= retire_niscore_r;
@@ -175,19 +173,19 @@ module bp_be_pipe_sys
   wire fscore_li =
     (~retire_spec_w_r & retire_fscore_r) | (retire_spec_w_r & retire_fscore_r & |retire_special_i);
   assign retire_pkt =
-    '{v           : retire_v_i
-      ,queue_v    : retire_queue_v_i
-      ,partial    : retire_partial_v_i
-      ,instret    : instret_li
-      ,npc        : retire_npc_r
-      ,vaddr      : retire_vaddr_r
-      ,data       : retire_data_li
-      ,instr      : retire_instr_r
-      ,compressed : retire_compressed_r
-      ,exception  : retire_v_i ? retire_exception_i : '0
-      ,special    : instret_li ? retire_special_i   : '0
-      ,iscore     : instret_li ? iscore_li : '0
-      ,fscore     : instret_li ? fscore_li : '0
+    '{v            : retire_v_i
+      ,queue_v     : retire_queue_v_i
+      ,instret     : instret_li
+      ,size        : retire_size_r
+      ,count       : retire_count_r
+      ,npc         : retire_npc_r
+      ,vaddr       : retire_vaddr_r
+      ,data        : retire_data_li
+      ,instr       : retire_instr_r
+      ,exception   : retire_v_i ? retire_exception_i : '0
+      ,special     : instret_li ? retire_special_i   : '0
+      ,iscore      : instret_li ? iscore_li : '0
+      ,fscore      : instret_li ? fscore_li : '0
       };
 
   assign v_o = csr_v_li;

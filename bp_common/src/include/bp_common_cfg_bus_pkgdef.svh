@@ -33,6 +33,7 @@
   localparam cfg_base_addr_gp           = (dev_id_width_gp+dev_addr_width_gp)'('h0020_0000);
   localparam cfg_match_addr_gp          = (dev_id_width_gp+dev_addr_width_gp)'('h002?_????);
 
+  localparam cfg_unused_00_gp           = (dev_addr_width_gp)'('h0_0000);
   localparam cfg_reg_freeze_gp          = (dev_addr_width_gp)'('h0_0008);
   localparam cfg_reg_npc_gp             = (dev_addr_width_gp)'('h0_0010);
   localparam cfg_reg_core_id_gp         = (dev_addr_width_gp)'('h0_0018);

@@ -8,10 +8,10 @@ then
   exit 1
 elif [ $1 == "vcs" ]
 then
-    SUFFIX=v
+    SUFFIX=vcs
 elif [ $1 == "verilator" ]
 then
-    SUFFIX=sc
+    SUFFIX=verilator
 else
   echo "Usage: $0 <verilator, vcs> <testlist> [num_cores]"
   exit 1
@@ -34,7 +34,7 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 cmd_base="make -j ${CORES_PER_JOB} -C bp_top/syn COSIM_P=1 run_testlist.${SUFFIX} TESTLIST=$TESTLIST"
 
 # Any setup needed for the job
-make -C bp_top/syn clean.${SUFFIX}
+make -C bp_top/syn clean
 
 # Run the regression in parallel on each configuration
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"

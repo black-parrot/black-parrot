@@ -7,10 +7,10 @@ then
   exit 1
 elif [ $1 == "vcs" ]
 then
-    SUFFIX=v
+    SUFFIX=vcs
 elif [ $1 == "verilator" ]
 then
-    SUFFIX=sc
+    SUFFIX=verilator
 else
   echo "Usage: $0 <verilator, vcs>"
   exit 1
@@ -30,7 +30,7 @@ let JOBS=${#cfgs[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Any setup needed for the job
-make -C bp_top/syn clean.${SUFFIX}
+make -C bp_top/syn clean
 
 # The base command to append the configuration to
 cmd_base="make -C bp_top/syn sim_sample.${SUFFIX} SUITE=beebs PROG=aha-compress COSIM_P=1 NBF_CONFIG_P=1 CHECKPOINT_P=1 SAMPLE_START_P=1000 SAMPLE_INSTR_P=100000 SAMPLE_MEMSIZE=256"

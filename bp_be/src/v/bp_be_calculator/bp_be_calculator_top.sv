@@ -21,16 +21,11 @@ module bp_be_calculator_top
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
     `declare_bp_be_dcache_engine_if_widths(paddr_width_p, dcache_tag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p)
 
    // Generated parameters
    , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
-   , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p)
-   , localparam branch_pkt_width_lp     = `bp_be_branch_pkt_width(vaddr_width_p)
-   , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
-   , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
-   , localparam decode_info_width_lp    = `bp_be_decode_info_width
-   , localparam trans_info_width_lp     = `bp_be_trans_info_width(ptag_width_p)
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -96,7 +91,7 @@ module bp_be_calculator_top
 
   // Declare parameterizable structs
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
 
   `bp_cast_i(bp_be_dispatch_pkt_s, dispatch_pkt);
   `bp_cast_o(bp_be_commit_pkt_s, commit_pkt);
@@ -203,7 +198,6 @@ module bp_be_calculator_top
 
      ,.retire_v_i(exc_stage_r[2].v)
      ,.retire_queue_v_i(exc_stage_r[2].queue_v)
-     ,.retire_partial_v_i(exc_stage_r[2].partial_v)
      ,.retire_data_i(comp_stage_r[2].rd_data)
      ,.retire_exception_i(exc_stage_r[2].exc)
      ,.retire_special_i(exc_stage_r[2].spec)
@@ -247,7 +241,7 @@ module bp_be_calculator_top
      ,.instr_misaligned_v_o(pipe_int_early_instr_misaligned_lo)
      );
 
-  assign br_pkt_cast_o.v      = exc_stage_r[0].v & exc_stage_r[0].queue_v & ~commit_pkt_cast_o.npc_w_v;
+  assign br_pkt_cast_o.v      = exc_stage_r[0].v & exc_stage_r[0].queue_v;
   assign br_pkt_cast_o.branch = br_pkt_cast_o.v & pipe_int_early_branch_lo;
   assign br_pkt_cast_o.btaken = br_pkt_cast_o.v & pipe_int_early_btaken_lo;
   assign br_pkt_cast_o.bspec  = br_pkt_cast_o.v & exc_stage_r[0].ispec_v;
@@ -315,7 +309,7 @@ module bp_be_calculator_top
       assign pipe_int_catchup_mispredict_lo = exc_stage_r[1].ispec_v & (pipe_int_catchup_npc_lo != reservation_r.pc);
 
       assign rs2_val_r =
-        catchup_reservation_r.decode.irs2_r_v ? catchup_reservation_r.isrc2 : catchup_reservation_r.fsrc2;;
+        catchup_reservation_r.decode.irs2_r_v ? catchup_reservation_r.isrc2 : catchup_reservation_r.fsrc2;
     end
   else
     begin : no_catchup
@@ -566,7 +560,6 @@ module bp_be_calculator_top
           exc_stage_n[0].queue_v                  |= dispatch_pkt_cast_i.queue_v;
           exc_stage_n[0].ispec_v                  |= dispatch_pkt_cast_i.ispec_v;
           exc_stage_n[0].nspec_v                  |= dispatch_pkt_cast_i.nspec_v;
-          exc_stage_n[0].partial_v                |= dispatch_pkt_cast_i.partial;
           exc_stage_n[0].spec                     |= dispatch_pkt_cast_i.special;
           exc_stage_n[0].exc                      |= dispatch_pkt_cast_i.exception;
 

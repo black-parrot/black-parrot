@@ -7,13 +7,12 @@ module bp_be_ptw
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
+   `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
    , parameter `BSG_INV_PARAM(pte_width_p)
    , parameter `BSG_INV_PARAM(page_table_depth_p)
    , parameter `BSG_INV_PARAM(pte_size_in_bytes_p)
    , parameter `BSG_INV_PARAM(page_idx_width_p)
 
-   , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
-   , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
    )
   (input                                      clk_i
    , input                                    reset_i
@@ -31,7 +30,7 @@ module bp_be_ptw
    , output logic                             instr_page_fault_o
    , output logic                             load_page_fault_o
    , output logic                             store_page_fault_o
-   , output logic                             partial_o
+   , output logic [fetch_ptr_p-1:0]           count_o
    , output logic [dword_width_gp-1:0]        addr_o
    , output logic [dword_width_gp-1:0]        pte_o
 
@@ -39,7 +38,7 @@ module bp_be_ptw
    , input [dword_width_gp-1:0]               data_i
    );
 
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
   `bp_cast_i(bp_be_commit_pkt_s, commit_pkt);
   `bp_cast_i(bp_be_trans_info_s, trans_info);
 
@@ -61,7 +60,7 @@ module bp_be_ptw
   logic instr_n, instr_r;
   logic store_n, store_r;
   logic load_n, load_r;
-  logic partial_n, partial_r;
+  logic [fetch_ptr_p-1:0] count_n, count_r;
   logic [vaddr_width_p-1:0] vaddr_n, vaddr_r;
 
   logic [dword_width_gp-1:0] vpn;
@@ -120,15 +119,15 @@ module bp_be_ptw
   assign instr_n = commit_pkt_cast_i.itlb_miss;
   assign load_n = commit_pkt_cast_i.dtlb_load_miss;
   assign store_n = commit_pkt_cast_i.dtlb_store_miss;
-  assign partial_n = commit_pkt_cast_i.partial;
+  assign count_n = commit_pkt_cast_i.count;
   assign vaddr_n = commit_pkt_cast_i.vaddr;
   bsg_dff_en
-   #(.width_p(4+vaddr_width_p))
+   #(.width_p(3+fetch_ptr_p+vaddr_width_p))
    miss_reg
     (.clk_i(clk_i)
      ,.en_i(walk_start)
-     ,.data_i({instr_n, load_n, store_n, partial_n, vaddr_n})
-     ,.data_o({instr_r, load_r, store_r, partial_r, vaddr_r})
+     ,.data_i({instr_n, load_n, store_n, count_n, vaddr_n})
+     ,.data_o({instr_r, load_r, store_r, count_r, vaddr_r})
      );
 
   assign ppn_n = walk_start ? trans_info_cast_i.base_ppn : dcache_pte.ppn;
@@ -162,7 +161,7 @@ module bp_be_ptw
   assign instr_page_fault_o = walk_done & instr_page_fault;
   assign load_page_fault_o  = walk_done & load_page_fault;
   assign store_page_fault_o = walk_done & store_page_fault;
-  assign partial_o          = walk_done & partial_r;
+  assign count_o            = walk_done ? count_r : '0;
   assign addr_o             = walk_done ? vaddr_r : walk_addr;
   assign pte_o              = tlb_w_entry;
 

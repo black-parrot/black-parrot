@@ -101,7 +101,7 @@ module bsg_parallel_in_serial_out_passthrough_dynamic #( parameter `BSG_INV_PARA
         begin
           assert (v_i)
             else $error("v_i must be held high during the entire PISO transaction");
-          assert (data_i == initial_data_r)
+          assert (data_i === initial_data_r)
             else $error("data_i must be held constant during the entire PISO transaction");
         end
     end

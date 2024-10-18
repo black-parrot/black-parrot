@@ -397,6 +397,7 @@ module testbench
            ,.fill_width_p(fill_width_p)
            ,.tag_width_p(tag_width_p)
            ,.id_width_p(id_width_p)
+           ,.data_width_p(data_width_p)
            )
          icache_tracer
           (.clk_i(clk_i & testbench.icache_trace_en_lo)
@@ -463,9 +464,9 @@ module testbench
 
           ,.br_ovr_i(fe.pc_gen.ovr_btaken | fe.pc_gen.ovr_jmp)
           ,.ret_ovr_i(fe.pc_gen.ovr_ret)
-          ,.realigner_i(fe.if2_instr_v & ~fe.fetch_instr_v_lo)
+          ,.realigner_i(1'b0)
 
-          ,.icache_data_v_i(fe.icache.data_v_o)
+          ,.icache_data_v_i(fe.icache.hit_v_o)
           ,.icache_v_i(fe.icache.v_i)
           ,.icache_yumi_i(fe.icache.yumi_o)
 
@@ -532,24 +533,24 @@ module testbench
            ,.state_resume_i(controller.is_resume)
            ,.state_wait_i(controller.is_wait)
 
-           ,.icache_spec_i(icache_spec_v_lo)
-           ,.access_fault_i(instr_access_fault_r)
-           ,.page_fault_i(instr_page_fault_r)
-           ,.itlb_miss_i(itlb_miss_r)
+           ,.icache_spec_i(controller.icache_miss_tv_i)
+           ,.access_fault_i(controller.instr_access_fault_tv_r)
+           ,.page_fault_i(controller.instr_page_fault_tv_r)
+           ,.itlb_miss_i(controller.itlb_miss_tv_r)
 
            ,.src_redirect_i(pc_gen.redirect_v_i)
-           ,.src_override_ntaken_i(pc_gen.ovr_ntaken)
+           ,.src_override_ntaken_i(pc_gen.ovr_linear)
            ,.src_override_ras_i(pc_gen.ovr_ret)
            ,.src_override_branch_i(pc_gen.ovr_btaken | pc_gen.ovr_jmp)
            ,.src_btb_taken_branch_i(pc_gen.btb_taken)
 
            ,.if2_pc_i(pc_gen.pc_if2_r)
-           ,.if2_v_i(if2_instr_v)
+           ,.if2_v_i(pc_gen.if2_hit_v_o)
 
            ,.fetch_v_i(fe_queue_ready_and_i & fe_queue_v_o)
            ,.fetch_pc_i(fetch_pc_lo)
            ,.fetch_instr_i(fetch_instr_lo)
-           ,.fetch_partial_i(fetch_partial_lo)
+           ,.fetch_partial_i(1'b0)
            );
 
       bind bp_be_top
@@ -651,6 +652,7 @@ module testbench
                 ,.assoc_p(assoc_p)
                 ,.block_width_p(block_width_p)
                 ,.fill_width_p(fill_width_p)
+                ,.data_width_p(data_width_p)
                 )
               lce_tracer
               (.clk_i(clk_i & testbench.lce_trace_en_lo)
@@ -782,6 +784,14 @@ module testbench
         @(posedge clk_i);
         @(negedge reset_i);
         $asserton();
+      end
+  `endif
+
+  `ifdef VERILATOR_TRACE
+    initial
+      begin
+        $dumpfile("dump.fst");
+        $dumpvars;
       end
   `endif
 

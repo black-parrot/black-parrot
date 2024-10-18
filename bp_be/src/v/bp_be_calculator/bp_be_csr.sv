@@ -7,13 +7,10 @@ module bp_be_csr
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
+   `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
 
-   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_p, paddr_width_p)
-   , localparam decode_info_width_lp = `bp_be_decode_info_width
-   , localparam trans_info_width_lp = `bp_be_trans_info_width(ptag_width_p)
-   , localparam retire_pkt_width_lp = `bp_be_retire_pkt_width(vaddr_width_p)
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -51,7 +48,7 @@ module bp_be_csr
 
   // Declare parameterizable structs
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
 
   `declare_csr_structs(vaddr_width_p, paddr_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
@@ -623,7 +620,7 @@ module bp_be_csr
       if (~(csr_w_v_li & csr_addr_li inside {`CSR_ADDR_CYCLE, `CSR_ADDR_MCYCLE}) & ~mcountinhibit_lo.cy)
         mcycle_li = mcycle_lo + 1'b1;
       if (~(csr_w_v_li & csr_addr_li inside {`CSR_ADDR_INSTRET, `CSR_ADDR_MINSTRET}) & ~mcountinhibit_lo.ir)
-        minstret_li = minstret_lo + 1'b1;
+        minstret_li = minstret_lo + retire_pkt_cast_i.instret;
 
       // Set FS to dirty if: fflags set, frf written, fcsr written
       mstatus_li.fs |= {2{csr_w_v_li & csr_fany_li}};
@@ -647,8 +644,8 @@ module bp_be_csr
   assign commit_pkt_cast_o.npc_w_v           = |{retire_pkt_cast_i.special, retire_pkt_cast_i.exception};
   assign commit_pkt_cast_o.queue_v           = retire_pkt_cast_i.queue_v & ~|retire_pkt_cast_i.exception;
   assign commit_pkt_cast_o.instret           = retire_pkt_cast_i.instret;
-  assign commit_pkt_cast_o.partial           = retire_pkt_cast_i.partial;
-  assign commit_pkt_cast_o.compressed        = retire_pkt_cast_i.compressed;
+  assign commit_pkt_cast_o.size              = retire_pkt_cast_i.size;
+  assign commit_pkt_cast_o.count             = retire_pkt_cast_i.count;
   assign commit_pkt_cast_o.pc                = apc_r;
   assign commit_pkt_cast_o.npc               = apc_n;
   assign commit_pkt_cast_o.vaddr             = retire_pkt_cast_i.vaddr;

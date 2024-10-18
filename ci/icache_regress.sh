@@ -7,10 +7,10 @@ then
   exit 1
 elif [ $1 == "vcs" ]
 then
-    SUFFIX=v
+    SUFFIX=vcs
 elif [ $1 == "verilator" ]
 then
-    SUFFIX=sc
+    SUFFIX=verilator
 else
   echo "Usage: $0 <verilator, vcs> [num_cores]"
   exit 1
@@ -25,7 +25,7 @@ cfgs=(\
     )
 
 # The base command to append the configuration to
-cmd_base="make -C bp_fe/syn run_testlist.v"
+cmd_base="make -C bp_fe/syn run_testlist.${SUFFIX}"
 
 # Any setup needed for the job
 make -C bp_fe/syn clean

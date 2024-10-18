@@ -20,11 +20,11 @@ module bp_be_instr_decoder
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
+   `declare_bp_core_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+   `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
 
    // Generated parameters
    , localparam decode_width_lp = $bits(bp_be_decode_s)
-   , localparam decode_info_width_lp = `bp_be_decode_info_width
-   , localparam preissue_pkt_width_lp = `bp_be_preissue_pkt_width
    )
   (input [preissue_pkt_width_lp-1:0]    preissue_pkt_i
    , input [decode_info_width_lp-1:0]   decode_info_i
@@ -47,7 +47,7 @@ module bp_be_instr_decoder
    , output logic [dword_width_gp-1:0]  imm_o
    );
 
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
   `bp_cast_i(bp_be_preissue_pkt_s, preissue_pkt);
   `bp_cast_i(bp_be_decode_info_s, decode_info);
   `bp_cast_o(bp_be_decode_s, decode);
@@ -59,7 +59,6 @@ module bp_be_instr_decoder
   always_comb
     begin
       decode_cast_o = '0;
-      decode_cast_o.compressed = preissue_pkt_cast_i.compressed;
 
       decode_cast_o.irs1_r_v = preissue_pkt_cast_i.irs1_v;
       decode_cast_o.irs2_r_v = preissue_pkt_cast_i.irs2_v;

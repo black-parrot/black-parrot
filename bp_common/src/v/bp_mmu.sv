@@ -94,26 +94,13 @@ module bp_mmu
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.set_i(r_v_i)
-     ,.clear_i(flush_i | !latch_last_read_p)
+     ,.clear_i(flush_i || !latch_last_read_p)
      ,.data_o(r_v_r)
-     );
-
-  logic bypass_v_r;
-  wire r_etag_match = r_etag_li[0+:vtag_width_p] == r_etag_r[0+:vtag_width_p];
-  wire tlb_bypass = (~trans_li & ~flush_i) | (bypass_v_r & r_etag_match);
-  bsg_dff_reset_set_clear
-   #(.width_p(1), .clear_over_set_p(1))
-   bypass_v_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.set_i(r_v_i)
-     ,.clear_i(flush_i)
-     ,.data_o(bypass_v_r)
      );
 
   logic tlb_r_v_lo;
   bp_pte_leaf_s tlb_r_entry_lo;
-  wire tlb_r_v_li = (r_v_i & ~tlb_bypass) | flush_i;
+  wire tlb_r_v_li = r_v_i | flush_i;
   wire tlb_w_v_li = w_v_i;
   wire tlb_v_li = tlb_r_v_li | tlb_w_v_li;
   wire [vtag_width_p-1:0] tlb_vtag_li = w_v_i ? w_vtag_i : r_etag_li;
@@ -148,7 +135,7 @@ module bp_mmu
   bp_pte_leaf_s passthrough_entry, tlb_entry_lo;
   assign passthrough_entry = '{ptag: r_etag_r, default: '0};
   assign tlb_entry_lo      = trans_r ? tlb_r_entry_r : passthrough_entry;
-  wire tlb_v_lo            = trans_r ? tlb_r_v_r : 1'b1;
+  wire tlb_v_lo            = trans_r ? tlb_r_v_r : r_v_r;
 
   wire ptag_v_lo                  = tlb_v_lo;
   wire [ptag_width_p-1:0] ptag_lo = tlb_entry_lo.ptag;
@@ -170,15 +157,15 @@ module bp_mmu
 
   // Fault if higher bits of eaddr do not match vaddr MSB
   wire eaddr_fault_v = ~&r_etag_r[etag_width_p-1:vtag_width_p-1] & |r_etag_r[etag_width_p-1:vtag_width_p-1];
+  wire cached_fault_v = r_cbo_r & ptag_v_lo & ptag_uncached_lo;
   // Fault if hio bit is not enabled and we're accessing that hio
-  wire hio_fault_v = (r_instr_r & ptag_lo[ptag_width_p-1-:hio_width_p] != '0)
-    || (ptag_lo[ptag_width_p-1-:hio_width_p] & ~hio_mask_i);
-  wire cached_fault_v = r_cbo_r & ptag_uncached_lo;
+  wire hio_fault_v = (r_instr_r & ptag_v_lo & ptag_lo[ptag_width_p-1-:hio_width_p] != '0)
+    || (ptag_v_lo & ptag_lo[ptag_width_p-1-:hio_width_p] & ~hio_mask_i);
 
   // Access faults
   wire instr_access_fault_v = r_instr_r & hio_fault_v;
-  wire load_access_fault_v  = r_load_r  & hio_fault_v;
-  wire store_access_fault_v = r_store_r & (hio_fault_v | cached_fault_v);
+  wire load_access_fault_v  = r_load_r  & cached_fault_v;
+  wire store_access_fault_v = r_store_r & cached_fault_v;
   wire any_access_fault_v   = |{instr_access_fault_v, load_access_fault_v, store_access_fault_v};
 
   // Page faults

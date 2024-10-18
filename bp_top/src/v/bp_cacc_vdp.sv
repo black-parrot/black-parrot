@@ -195,6 +195,7 @@ module bp_cacc_vdp
      ,.sets_p(acache_sets_p)
      ,.block_width_p(acache_block_width_p)
      ,.fill_width_p(acache_fill_width_p)
+     ,.data_width_p(acache_data_width_p)
      ,.tag_width_p(acache_tag_width_p)
      ,.id_width_p(acache_req_id_width_p)
      ,.timeout_max_limit_p(4)

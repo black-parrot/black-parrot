@@ -17,9 +17,10 @@ module wrapper
    , parameter assoc_p = dcache_assoc_p
    , parameter block_width_p = dcache_block_width_p
    , parameter fill_width_p = dcache_fill_width_p
+   , parameter data_width_p = dcache_data_width_p
    , parameter id_width_p = dcache_req_id_width_p
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, dcache_tag_width_p, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, dcache)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, dcache_tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p, dcache)
 
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
@@ -41,10 +42,10 @@ module wrapper
 
    , input [num_caches_p-1:0][ptag_width_p-1:0]        ptag_i
    , input [num_caches_p-1:0]                          uncached_i
-   , input [num_caches_p-1:0][dword_width_gp-1:0]      st_data_i
+   , input [num_caches_p-1:0][data_width_p-1:0]        st_data_i
 
-   , output logic [num_caches_p-1:0][dword_width_gp-1:0] data_o
-   , output logic [num_caches_p-1:0]                     v_o
+   , output logic [num_caches_p-1:0][data_width_p-1:0] data_o
+   , output logic [num_caches_p-1:0]                   v_o
 
    , output logic [mem_fwd_header_width_lp-1:0]        mem_fwd_header_o
    , output logic [l2_data_width_p-1:0]                mem_fwd_data_o
@@ -177,6 +178,7 @@ module wrapper
         ,.assoc_p(assoc_p)
         ,.block_width_p(block_width_p)
         ,.fill_width_p(fill_width_p)
+        ,.data_width_p(data_width_p)
         )
       dcache
       (.clk_i(clk_i)
@@ -244,6 +246,7 @@ module wrapper
              ,.sets_p(sets_p)
              ,.block_width_p(block_width_p)
              ,.fill_width_p(fill_width_p)
+             ,.data_width_p(data_width_p)
              ,.timeout_max_limit_p(4)
              ,.credits_p(coh_noc_max_credits_p)
              ,.tag_width_p(dcache_tag_width_p)
@@ -321,6 +324,7 @@ module wrapper
             ,.sets_p(sets_p)
             ,.block_width_p(block_width_p)
             ,.fill_width_p(fill_width_p)
+            ,.data_width_p(data_width_p)
             ,.tag_width_p(dcache_tag_width_p)
             ,.id_width_p(id_width_p)
             ,.writeback_p(!wt_p)
@@ -330,10 +334,12 @@ module wrapper
             ,.reset_i(reset_i)
 
             ,.lce_id_i('0)
+            ,.did_i('0)
 
             ,.cache_req_i(cache_req_lo)
             ,.cache_req_v_i(cache_req_v_lo)
             ,.cache_req_yumi_o(cache_req_yumi_lo)
+            ,.cache_req_id_o()
             ,.cache_req_lock_o(cache_req_lock_lo)
             ,.cache_req_metadata_i(cache_req_metadata_lo)
             ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)

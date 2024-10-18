@@ -17,8 +17,7 @@ module bp_be_pipe_int
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-
-   , localparam reservation_width_lp = `bp_be_reservation_width(vaddr_width_p)
+   `declare_bp_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p)
    )
   (input                                    clk_i
    , input                                  reset_i
@@ -39,7 +38,7 @@ module bp_be_pipe_int
   // Suppress unused signal warning
   wire unused = &{clk_i, reset_i, flush_i};
 
-  `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
   bp_be_reservation_s reservation;
   bp_be_decode_s decode;
   rv64_instr_s instr;
@@ -53,7 +52,7 @@ module bp_be_pipe_int
   wire [int_rec_width_gp-1:0] imm = reservation.isrc3;
   wire opw_v = (decode.irs1_tag == e_int_word);
 
-  localparam num_bytes_lp = dword_width_gp>>8;
+  localparam num_bytes_lp = dword_width_gp>>3;
   localparam lg_bits_lp = `BSG_SAFE_CLOG2(dword_width_gp);
 
   // Shift calculation
@@ -66,7 +65,7 @@ module bp_be_pipe_int
   wire [vaddr_width_p-1:0] baddr = decode.jr_v ? rs1 : pc;
   wire [vaddr_width_p-1:0] taken_raw = baddr + imm;
   wire [vaddr_width_p-1:0] taken_tgt = taken_raw & {{vaddr_width_p-1{1'b1}}, 1'b0};
-  wire [vaddr_width_p-1:0] ntaken_tgt = pc + (decode.compressed ? 4'd2 : 4'd4);
+  wire [vaddr_width_p-1:0] ntaken_tgt = pc + (reservation.size << 1'b1);
   wire [dword_width_gp-1:0] ntaken_data = `BSG_SIGN_EXTEND(ntaken_tgt, dword_width_gp);
   wire [dword_width_gp-1:0] pc_data = `BSG_SIGN_EXTEND(pc, dword_width_gp);
 

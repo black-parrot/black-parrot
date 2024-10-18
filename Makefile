@@ -14,18 +14,24 @@ $(TARGET_DIRS):
 
 checkout: | $(TARGET_DIRS)
 	git fetch --all
-	cd $(BP_RTL_DIR); git submodule update --init --recursive --checkout
+	git submodule sync --recursive
+	git submodule update --init
 
-libs_lite: checkout
+patch_tag ?= $(addprefix $(BP_RTL_TOUCH_DIR)/patch.,$(shell $(GIT) rev-parse HEAD))
+apply_patches: | $(patch_tag)
+$(patch_tag):
+	$(MAKE) checkout
+	git submodule update --init --recursive --recommend-shallow
+	touch $@
+	@echo "Patching successful, ignore errors"
 
-libs: libs_lite
+libs_lite: apply_patches
 	$(MAKE) dramsim3
 
-tidy:
-	echo "BlackParrot RTL is tidy enough"
+libs: libs_lite
 
-clean:
-	$(MAKE) libs_clean
+libs_bsg: libs
+	$(MAKE) $(BSG_CADENV_DIR)
 
 ## This target just wipes the whole repo clean.
 #  Use with caution.
