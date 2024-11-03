@@ -688,24 +688,26 @@ module testbench
               ,.cache_req_last_i(cache_req_last_o)
               );
 
-          bind bp_cce_pending_bits
-            bp_me_nonsynth_cce_pending_tracer
-              #(.num_way_groups_p(num_way_groups_p)
-                ,.cce_id_width_p(cce_id_width_p)
-                ,.width_p(width_p)
-                ,.paddr_width_p(paddr_width_p)
-                )
-              cce_pending_tracer
-              (.clk_i(clk_i & testbench.cce_trace_en_lo)
-              ,.reset_i(reset_i)
-              ,.cce_id_i(cce_id_i)
-              ,.pending_bits_i(pending_bits_r)
-              ,.w_v_i(w_v_i)
-              ,.w_wg_i(w_wg)
-              ,.w_addr_i(w_addr_i)
-              ,.pending_i(pending_i)
-              ,.clear_i(clear_i)
-              );
+          if (cce_type_p == e_cce_ucode || cce_type_p == e_cce_fsm) begin
+            bind bp_cce_pending_bits
+              bp_me_nonsynth_cce_pending_tracer
+                #(.num_way_groups_p(num_way_groups_p)
+                  ,.cce_id_width_p(cce_id_width_p)
+                  ,.width_p(width_p)
+                  ,.paddr_width_p(paddr_width_p)
+                  )
+                cce_pending_tracer
+                (.clk_i(clk_i & testbench.cce_trace_en_lo)
+                ,.reset_i(reset_i)
+                ,.cce_id_i(cce_id_i)
+                ,.pending_bits_i(pending_bits_r)
+                ,.w_v_i(w_v_i)
+                ,.w_wg_i(w_wg)
+                ,.w_addr_i(w_addr_i)
+                ,.pending_i(pending_i)
+                ,.clear_i(clear_i)
+                );
+          end
 
           // CCE instruction tracer
           // this is connected to the instruction registered in the EX stage
@@ -762,9 +764,28 @@ module testbench
                  ,.mem_rev_receive_i(fsm_rev_yumi_lo & fsm_rev_last_li)
                  ,.mem_rev_squash_i(fsm_rev_yumi_lo & spec_bits_lo.squash & fsm_rev_last_li)
                  ,.mem_rev_header_i(fsm_rev_header_li)
-                 ,.mem_fwd_send_i(fsm_fwd_v_lo & fsm_fwd_new_lo)
+                 ,.mem_fwd_send_i(fsm_fwd_v_lo & fsm_fwd_new_li)
                  ,.mem_fwd_header_i(fsm_fwd_header_lo)
                  );
+          end else if (cce_type_p == e_cce_hybrid) begin
+            bind bp_cce_hybrid_pending_bits
+              bp_me_nonsynth_cce_pending_tracer
+                #(.num_way_groups_p(num_way_groups_p)
+                  ,.width_p(width_p)
+                  ,.cce_id_width_p(cce_id_width_p)
+                  ,.paddr_width_p(paddr_width_p)
+                  )
+                pending_bit_tracer
+                (.clk_i(clk_i & testbench.cce_trace_en_lo)
+                ,.reset_i(reset_i)
+                ,.cce_id_i(cce_id_i)
+                ,.pending_bits_i(pending_bits_r)
+                ,.w_v_i(w_v_i)
+                ,.w_wg_i(w_wg)
+                ,.w_addr_i(w_addr_i)
+                ,.pending_i(up_i)
+                ,.clear_i(clear_i)
+                );
           end
         end
     end

@@ -38,7 +38,7 @@ module bp_cce_msg
    , input [cfg_bus_width_lp-1:0]                   cfg_bus_i
 
    // LCE-CCE Interface
-   // BedRock Burst protocol: ready&valid
+   // BedRock Stream protocol: ready&valid
    // inbound headers use valid->yumi
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
    , input [bedrock_fill_width_p-1:0]               lce_req_data_i

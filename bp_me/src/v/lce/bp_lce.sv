@@ -80,7 +80,7 @@ module bp_lce
     , input [cache_stat_info_width_lp-1:0]           stat_mem_i
 
     // LCE-CCE Interface
-    // BedRock Burst protocol: ready&valid
+    // BedRock Stream protocol: ready&valid
     , output logic [lce_req_header_width_lp-1:0]     lce_req_header_o
     , output logic [bedrock_fill_width_p-1:0]        lce_req_data_o
     , output logic                                   lce_req_v_o

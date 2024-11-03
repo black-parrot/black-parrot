@@ -27,7 +27,7 @@ module bp_io_cce
    , input [cce_id_width_p-1:0]                   cce_id_i
 
    // LCE-CCE Interface
-   // BedRock Burst protocol: ready&valid
+   // BedRock Stream protocol: ready&valid
    , input [lce_req_header_width_lp-1:0]          lce_req_header_i
    , input [bedrock_fill_width_p-1:0]             lce_req_data_i
    , input                                        lce_req_v_i

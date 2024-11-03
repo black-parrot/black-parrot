@@ -28,10 +28,8 @@ module bp_cce_fsm
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
-    , localparam block_size_in_bytes_lp    = (bedrock_block_width_p/8)
     , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
     , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)
-    , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam num_way_groups_lp         = `BSG_CDIV(cce_way_groups_p, num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
@@ -56,7 +54,7 @@ module bp_cce_fsm
    , input [cfg_bus_width_lp-1:0]                   cfg_bus_i
 
    // LCE-CCE Interface
-   // BedRock Burst protocol: ready&valid
+   // BedRock Stream protocol: ready&valid
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
    , input [bedrock_fill_width_p-1:0]               lce_req_data_i
    , input                                          lce_req_v_i
@@ -131,8 +129,8 @@ module bp_cce_fsm
   bp_bedrock_lce_cmd_header_s fsm_cmd_header_lo;
   logic [bedrock_fill_width_p-1:0] fsm_cmd_data_lo;
   logic fsm_cmd_v_lo, fsm_cmd_ready_then_li;
-  logic [paddr_width_p-1:0] fsm_cmd_addr_lo;
-  logic fsm_cmd_new_lo, fsm_cmd_critical_lo, fsm_cmd_last_lo;
+  logic [paddr_width_p-1:0] fsm_cmd_addr_li;
+  logic fsm_cmd_new_li, fsm_cmd_critical_li, fsm_cmd_last_li;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(bedrock_fill_width_p)
@@ -150,13 +148,13 @@ module bp_cce_fsm
      ,.msg_ready_and_i(lce_cmd_ready_and_i)
 
      ,.fsm_header_i(fsm_cmd_header_lo)
-     ,.fsm_addr_o(fsm_cmd_addr_lo)
+     ,.fsm_addr_o(fsm_cmd_addr_li)
      ,.fsm_data_i(fsm_cmd_data_lo)
      ,.fsm_v_i(fsm_cmd_v_lo)
      ,.fsm_ready_then_o(fsm_cmd_ready_then_li)
-     ,.fsm_new_o(fsm_cmd_new_lo)
-     ,.fsm_critical_o(fsm_cmd_critical_lo)
-     ,.fsm_last_o(fsm_cmd_last_lo)
+     ,.fsm_new_o(fsm_cmd_new_li)
+     ,.fsm_critical_o(fsm_cmd_critical_li)
+     ,.fsm_last_o(fsm_cmd_last_li)
      );
 
   bp_bedrock_lce_resp_header_s fsm_resp_header_li;
@@ -227,7 +225,7 @@ module bp_cce_fsm
   logic [bedrock_fill_width_p-1:0] fsm_fwd_data_lo;
   logic fsm_fwd_v_lo, fsm_fwd_ready_then_li;
   logic [paddr_width_p-1:0] fsm_fwd_addr_lo;
-  logic fsm_fwd_new_lo, fsm_fwd_critical_lo, fsm_fwd_last_lo;
+  logic fsm_fwd_new_li, fsm_fwd_critical_li, fsm_fwd_last_li;
   bp_me_stream_pump_out
    #(.bp_params_p(bp_params_p)
      ,.data_width_p(bedrock_fill_width_p)
@@ -249,9 +247,9 @@ module bp_cce_fsm
      ,.fsm_v_i(fsm_fwd_v_lo)
      ,.fsm_ready_then_o(fsm_fwd_ready_then_li)
      ,.fsm_addr_o(fsm_fwd_addr_lo)
-     ,.fsm_new_o(fsm_fwd_new_lo)
-     ,.fsm_critical_o(fsm_fwd_critical_lo)
-     ,.fsm_last_o(fsm_fwd_last_lo)
+     ,.fsm_new_o(fsm_fwd_new_li)
+     ,.fsm_critical_o(fsm_fwd_critical_li)
+     ,.fsm_last_o(fsm_fwd_last_li)
      );
 
   // Config bus
@@ -283,7 +281,6 @@ module bp_cce_fsm
       ,.cce_way_groups_p(cce_way_groups_p) // total number of way groups in system
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
-      ,.addr_offset_p(lg_block_size_in_bytes_lp)
       ,.cce_id_width_p(cce_id_width_p)
       ,.block_width_p(bedrock_block_width_p)
      )
@@ -311,14 +308,14 @@ module bp_cce_fsm
   logic [num_lce_p-1:0][lce_assoc_width_p-1:0] sharers_ways_lo;
   bp_coh_states_e [num_lce_p-1:0] sharers_coh_states_lo;
   logic dir_lru_v_lo;
-  logic [paddr_width_p-1:0] dir_lru_addr_lo, dir_addr_lo;
+  logic [paddr_width_p-1:0] dir_lru_addr_lo;
   bp_coh_states_e dir_lru_coh_state_lo;
   logic dir_busy_lo;
 
   logic [paddr_width_p-1:0] dir_addr_li;
   logic dir_addr_bypass_li;
   logic [lce_id_width_p-1:0] dir_lce_li;
-  logic [lce_assoc_width_p-1:0] dir_way_li, dir_lru_way_li;
+  logic [lce_assoc_width_p-1:0] dir_way_li;
   bp_coh_states_e dir_coh_state_li;
 
   // GAD signals
@@ -537,7 +534,7 @@ module bp_cce_fsm
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      // memory commands consume credits
-     ,.v_i(fsm_fwd_v_lo & fsm_fwd_last_lo)
+     ,.v_i(fsm_fwd_v_lo & fsm_fwd_last_li)
      ,.ready_param_i(fsm_fwd_ready_then_li)
      // memory responses return credits
      ,.yumi_i(fsm_rev_yumi_lo & fsm_rev_last_li)
@@ -557,7 +554,6 @@ module bp_cce_fsm
       ,.cce_way_groups_p(cce_way_groups_p)
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
-      ,.addr_offset_p(lg_block_size_in_bytes_lp)
       ,.block_width_p(bedrock_block_width_p)
       )
     spec_bits
@@ -703,7 +699,6 @@ module bp_cce_fsm
     dir_cmd = e_rdw_op;
     dir_lce_li = mshr_r.lce_id;
     dir_way_li = mshr_r.way_id;
-    dir_lru_way_li = mshr_r.lru_way_id;
     dir_addr_li = mshr_r.paddr;
     dir_addr_bypass_li = '0;
     dir_coh_state_li = mshr_r.next_coh_state;
@@ -982,7 +977,7 @@ module bp_cce_fsm
           // handshake is r&v on both LCE request data and memory command stream, and
           // valid->yumi on LCE request header
           fsm_fwd_v_lo = fsm_fwd_ready_then_li & fsm_req_v_li & ~mem_credits_empty;
-          fsm_req_yumi_lo = fsm_fwd_v_lo & fsm_fwd_last_lo;
+          fsm_req_yumi_lo = fsm_fwd_v_lo & fsm_fwd_last_li;
 
           // form message
           fsm_fwd_header_lo.addr = fsm_req_header_li.addr;
@@ -999,7 +994,7 @@ module bp_cce_fsm
         else if (fsm_req_v_li & (fsm_req_header_li.msg_type.req == e_bedrock_req_uc_rd)) begin
           // uncached load has no data
           fsm_fwd_v_lo = fsm_fwd_ready_then_li & fsm_req_v_li & ~mem_credits_empty;
-          fsm_req_yumi_lo = fsm_fwd_v_lo & fsm_fwd_last_lo;
+          fsm_req_yumi_lo = fsm_fwd_v_lo & fsm_fwd_last_li;
 
           fsm_fwd_header_lo.addr = fsm_req_header_li.addr;
           fsm_fwd_header_lo.size = fsm_req_header_li.size;
@@ -1143,7 +1138,7 @@ module bp_cce_fsm
         else begin
           // uncached load has no data
           fsm_fwd_v_lo = fsm_fwd_ready_then_li & fsm_req_v_li & ~mem_credits_empty;
-          fsm_req_yumi_lo = fsm_fwd_v_lo & fsm_fwd_last_lo;
+          fsm_req_yumi_lo = fsm_fwd_v_lo & fsm_fwd_last_li;
 
           fsm_fwd_header_lo.addr = mshr_r.paddr;
           fsm_fwd_header_lo.size = mshr_r.msg_size;
@@ -1223,7 +1218,7 @@ module bp_cce_fsm
           spec_bits_li.state = e_COH_I;
 
           // write spec bit on first beat
-          pending_w_v = fsm_fwd_v_lo & fsm_fwd_new_lo & fwd_pma_cacheable_addr_lo;
+          pending_w_v = fsm_fwd_v_lo & fsm_fwd_new_li & fwd_pma_cacheable_addr_lo;
           pending_li = 1'b1;
           pending_w_addr = mshr_r.paddr;
 
@@ -1239,7 +1234,6 @@ module bp_cce_fsm
         dir_addr_li = mshr_r.paddr;
         dir_cmd = e_rdw_op;
         dir_lce_li = mshr_r.lce_id;
-        dir_lru_way_li = mshr_r.lru_way_id;
         state_n = e_wait_dir_gad;
       end // e_read_dir
 
@@ -1436,7 +1430,7 @@ module bp_cce_fsm
             fsm_fwd_data_lo = fsm_resp_data_li;
 
             // set the pending bit on first beat
-            pending_w_v = fsm_fwd_v_lo & fsm_fwd_new_lo & fwd_pma_cacheable_addr_lo;
+            pending_w_v = fsm_fwd_v_lo & fsm_fwd_new_li & fwd_pma_cacheable_addr_lo;
             pending_li = 1'b1;
             pending_w_addr = fsm_resp_header_li.addr;
 
@@ -1444,7 +1438,7 @@ module bp_cce_fsm
             mshr_n.flags.replacement = 1'b0;
 
             // setup required state for sending invalidations
-            if (fsm_fwd_v_lo & fsm_fwd_last_lo & invalidate_flag) begin
+            if (fsm_fwd_v_lo & fsm_fwd_last_li & invalidate_flag) begin
               // don't invalidate the requesting LCE
               pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
               // if doing a transfer, also remove owner LCE since transfer
@@ -1456,7 +1450,7 @@ module bp_cce_fsm
             end
 
             // send remaining beats
-            state_n = (fsm_fwd_v_lo & fsm_fwd_last_lo)
+            state_n = (fsm_fwd_v_lo & fsm_fwd_last_li)
                       ? (invalidate_flag)
                         ? e_inv_cmd
                         : (transfer_flag)
@@ -1483,7 +1477,7 @@ module bp_cce_fsm
             fsm_cmd_header_lo.payload.way_id = sharers_ways_r[pe_lce_id];
 
             // message sent, increment count, write directory, clear bit for the destination LCE
-            cnt_inc = fsm_cmd_v_lo & fsm_cmd_new_lo;
+            cnt_inc = fsm_cmd_v_lo & fsm_cmd_new_li;
             dir_w_v = cnt_inc;
             dir_cmd = e_wds_op;
             dir_addr_li = mshr_r.paddr;
@@ -1605,7 +1599,7 @@ module bp_cce_fsm
               fsm_fwd_data_lo = fsm_resp_data_li;
 
               // set the pending bit on first beat
-              pending_w_v = fsm_fwd_v_lo & fsm_fwd_new_lo & fwd_pma_cacheable_addr_lo;
+              pending_w_v = fsm_fwd_v_lo & fsm_fwd_new_li & fwd_pma_cacheable_addr_lo;
               pending_li = 1'b1;
               pending_w_addr = fsm_resp_header_li.addr;
 
@@ -1657,7 +1651,7 @@ module bp_cce_fsm
           fsm_fwd_data_lo = fsm_req_data_li;
 
           // set the pending bit on first beat
-          pending_w_v = fsm_fwd_v_lo & fsm_fwd_new_lo & fwd_pma_cacheable_addr_lo;
+          pending_w_v = fsm_fwd_v_lo & fsm_fwd_new_li & fwd_pma_cacheable_addr_lo;
           pending_li = 1'b1;
           pending_w_addr = mshr_r.paddr;
 
@@ -1762,7 +1756,7 @@ module bp_cce_fsm
             fsm_fwd_data_lo = fsm_resp_data_li;
 
             // set the pending bit
-            pending_w_v = fsm_fwd_v_lo & fsm_fwd_new_lo & fwd_pma_cacheable_addr_lo;
+            pending_w_v = fsm_fwd_v_lo & fsm_fwd_new_li & fwd_pma_cacheable_addr_lo;
             pending_li = 1'b1;
             pending_w_addr = fsm_resp_header_li.addr;
 

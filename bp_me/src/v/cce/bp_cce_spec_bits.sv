@@ -22,7 +22,6 @@ module bp_cce_spec_bits
     , parameter `BSG_INV_PARAM(cce_way_groups_p)
     , parameter `BSG_INV_PARAM(num_cce_p)
     , parameter `BSG_INV_PARAM(paddr_width_p)
-    , parameter `BSG_INV_PARAM(addr_offset_p)
     , parameter `BSG_INV_PARAM(block_width_p)
 
     // Derived parameters
