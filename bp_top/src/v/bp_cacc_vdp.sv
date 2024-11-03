@@ -137,22 +137,24 @@ module bp_cacc_vdp
      ,.reset_i(reset_i)
 
      ,.cfg_bus_i(cfg_bus_cast_i)
+     ,.busy_o(acache_busy_lo)
+     ,.ordered_o()
 
      ,.dcache_pkt_i(acache_pkt_li)
      ,.v_i(acache_v_li)
-     ,.busy_o(acache_busy_lo)
-     ,.flush_i(1'b0)
-     ,.ordered_o()
 
-     ,.ptag_v_i(1'b1)
      ,.ptag_i(acache_ptag_li)
+     ,.ptag_v_i(1'b1)
      ,.ptag_uncached_i(1'b0)
      ,.ptag_dram_i(1'b1)
      ,.st_data_i(acache_st_data_r)
+     ,.flush_i(1'b0)
 
      ,.v_o(acache_v_lo)
      ,.data_o(acache_data_lo)
      ,.rd_addr_o()
+     ,.tag_o()
+     ,.unsigned_o()
      ,.int_o()
      ,.float_o()
      ,.ptw_o()
@@ -168,11 +170,12 @@ module bp_cacc_vdp
      ,.cache_req_lock_i(acache_req_lock_li)
      ,.cache_req_metadata_o(acache_req_metadata_lo)
      ,.cache_req_metadata_v_o(acache_req_metadata_v_lo)
-     ,.cache_req_credits_full_i(acache_req_credits_full_lo)
-     ,.cache_req_credits_empty_i(acache_req_credits_empty_lo)
      ,.cache_req_id_i(acache_req_id_lo)
      ,.cache_req_critical_i(acache_req_critical_lo)
      ,.cache_req_last_i(acache_req_last_lo)
+
+     ,.cache_req_credits_full_i(acache_req_credits_full_lo)
+     ,.cache_req_credits_empty_i(acache_req_credits_empty_lo)
 
      ,.data_mem_pkt_v_i(acache_data_mem_pkt_v_li)
      ,.data_mem_pkt_i(acache_data_mem_pkt_li)

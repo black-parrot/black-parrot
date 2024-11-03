@@ -507,11 +507,64 @@
                         ,bp_multicore_16_cfg_p
                         );
 
+  // hybrid CCE configs
+  localparam bp_proc_param_s bp_multicore_1_cce_hybrid_override_p =
+    '{cce_type: e_cce_hybrid
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_1_cce_hybrid_cfg_p
+                        ,bp_multicore_1_cce_hybrid_override_p
+                        ,bp_multicore_1_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_2_cce_hybrid_override_p =
+    '{cce_type: e_cce_hybrid
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_2_cce_hybrid_cfg_p
+                        ,bp_multicore_2_cce_hybrid_override_p
+                        ,bp_multicore_2_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_4_cce_hybrid_override_p =
+    '{cce_type: e_cce_hybrid
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_4_cce_hybrid_cfg_p
+                        ,bp_multicore_4_cce_hybrid_override_p
+                        ,bp_multicore_4_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_8_cce_hybrid_override_p =
+    '{cce_type: e_cce_hybrid
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_8_cce_hybrid_cfg_p
+                        ,bp_multicore_8_cce_hybrid_override_p
+                        ,bp_multicore_8_cfg_p
+                        );
+
+  localparam bp_proc_param_s bp_multicore_16_cce_hybrid_override_p =
+    '{cce_type: e_cce_hybrid
+      ,default : "inv"
+      };
+  `bp_aviary_derive_cfg(bp_multicore_16_cce_hybrid_cfg_p
+                        ,bp_multicore_16_cce_hybrid_override_p
+                        ,bp_multicore_16_cfg_p
+                        );
+
   /* verilator lint_off WIDTH */
   parameter bp_proc_param_s [max_cfgs-1:0] all_cfgs_gp =
   {
+    // Hybrid CCE configs
+    bp_multicore_16_cce_hybrid_cfg_p
+    ,bp_multicore_8_cce_hybrid_cfg_p
+    ,bp_multicore_4_cce_hybrid_cfg_p
+    ,bp_multicore_2_cce_hybrid_cfg_p
+    ,bp_multicore_1_cce_hybrid_cfg_p
+
     // L2 extension configurations
-    bp_multicore_4_l2e_cfg_p
+    ,bp_multicore_4_l2e_cfg_p
     ,bp_multicore_2_l2e_cfg_p
     ,bp_multicore_1_l2e_cfg_p
 
@@ -561,8 +614,15 @@
   // This enum MUST be kept up to date with the parameter array above
   typedef enum bit [lg_max_cfgs-1:0]
   {
+    // Hybrid CCE configurations
+    e_bp_multicore_16_cce_hybrid_cfg                = 37
+    ,e_bp_multicore_8_cce_hybrid_cfg                = 36
+    ,e_bp_multicore_4_cce_hybrid_cfg                = 35
+    ,e_bp_multicore_2_cce_hybrid_cfg                = 34
+    ,e_bp_multicore_1_cce_hybrid_cfg                = 33
+
     // L2 extension configurations
-    e_bp_multicore_4_l2e_cfg                        = 32
+    ,e_bp_multicore_4_l2e_cfg                       = 32
     ,e_bp_multicore_2_l2e_cfg                       = 31
     ,e_bp_multicore_1_l2e_cfg                       = 30
 

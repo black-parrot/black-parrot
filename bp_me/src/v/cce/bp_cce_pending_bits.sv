@@ -26,7 +26,6 @@ module bp_cce_pending_bits
     , parameter `BSG_INV_PARAM(cce_way_groups_p)
     , parameter `BSG_INV_PARAM(num_cce_p)
     , parameter `BSG_INV_PARAM(paddr_width_p)
-    , parameter `BSG_INV_PARAM(addr_offset_p)
     , parameter `BSG_INV_PARAM(cce_id_width_p)
     , parameter `BSG_INV_PARAM(block_width_p)
 
@@ -36,8 +35,6 @@ module bp_cce_pending_bits
     // Derived parameters
     , localparam lg_num_way_groups_lp     = `BSG_SAFE_CLOG2(num_way_groups_p)
     , localparam lg_cce_way_groups_lp     = `BSG_SAFE_CLOG2(cce_way_groups_p)
-    , localparam hash_idx_width_lp = $clog2((2**lg_cce_way_groups_lp+num_cce_p-1)/num_cce_p)
-
   )
   (input                                                          clk_i
    , input                                                        reset_i

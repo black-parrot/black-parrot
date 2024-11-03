@@ -6,7 +6,7 @@
  * Description:
  *   This is the top level module for the CCE.
  *
- *   The LCE-CCE Interfaces use the BedRock Burst protocol.
+ *   The LCE-CCE Interfaces use the BedRock Stream protocol.
  *   The CCE-MEM Intercaces use the BedRock Stream protocol
  *
  *   It instantiates either the microcode or FSM CCE, based on the param in bp_params_p.
@@ -40,7 +40,7 @@ module bp_cce_wrapper
    , output logic [cce_instr_width_gp-1:0]          ucode_data_o
 
    // LCE-CCE Interface
-   // BedRock Burst protocol: ready&valid
+   // BedRock Stream protocol: ready&valid
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
    , input [bedrock_fill_width_p-1:0]               lce_req_data_i
    , input                                          lce_req_v_i
@@ -76,13 +76,20 @@ module bp_cce_wrapper
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  if (cce_type_p == e_cce_ucode) begin : ucode
+  if (cce_type_p == e_cce_fsm) begin : fsm
+    bp_cce_fsm
+    #(.bp_params_p(bp_params_p))
+    cce
+     (.*);
+  end
+  else if (cce_type_p == e_cce_ucode) begin : ucode
     bp_cce
     #(.bp_params_p(bp_params_p))
     cce
      (.*);
-  end else if (cce_type_p == e_cce_fsm) begin : fsm
-    bp_cce_fsm
+  end
+  else if (cce_type_p == e_cce_hybrid) begin : hybrid
+    bp_cce_hybrid
     #(.bp_params_p(bp_params_p))
     cce
      (.*);

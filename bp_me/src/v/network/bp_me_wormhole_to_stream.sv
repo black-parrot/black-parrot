@@ -4,7 +4,7 @@
  *   bp_me_wormhole_to_stream.sv
  *
  * Description:
- *   Converts a wormhole router stream to BedRock Burst protocol without
+ *   Converts a wormhole router stream to BedRock Stream protocol without
  *   deserializing the data.
  *
  *   The data arriving on from the wormhole network is gearboxed to match the
@@ -29,7 +29,7 @@
  *     may require more than one wormhole link flits if pr_hdr length
  *     is greater than flit_width - cord_width - len_width - cid_width
  *
- *  Burst header is output before data.
+ *  Stream header is output before data.
  *
  */
 
@@ -77,7 +77,7 @@ module bp_me_wormhole_to_stream
    , input                              link_v_i
    , output logic                       link_ready_and_o
 
-   // BedRock Burst output
+   // BedRock Stream output
    , output logic [pr_hdr_width_p-1:0]  pr_hdr_o
    , output logic [pr_data_width_p-1:0] pr_data_o
    , output logic                       pr_v_o

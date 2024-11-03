@@ -79,7 +79,7 @@ module bp_lce_cmd
     , output logic                                   cache_req_done_o
 
     // LCE-CCE Interface
-    // BedRock Burst protocol: ready&valid
+    // BedRock Stream protocol: ready&valid
     , input [lce_cmd_header_width_lp-1:0]            lce_cmd_header_i
     , input [bedrock_fill_width_p-1:0]               lce_cmd_data_i
     , input                                          lce_cmd_v_i

@@ -18,9 +18,6 @@ module bp_cce
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
-    , localparam block_size_in_bytes_lp    = (bedrock_block_width_p/8)
-    , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
-
     // number of way groups managed by this CCE
     , localparam num_way_groups_lp         = `BSG_CDIV(cce_way_groups_p, num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
@@ -44,7 +41,7 @@ module bp_cce
    , output logic [cce_instr_width_gp-1:0]          ucode_data_o
 
    // LCE-CCE Interface
-   // BedRock Burst protocol: ready&valid
+   // BedRock Stream protocol: ready&valid
    , input [lce_req_header_width_lp-1:0]            lce_req_header_i
    , input [bedrock_fill_width_p-1:0]               lce_req_data_i
    , input                                          lce_req_v_i
@@ -283,8 +280,6 @@ module bp_cce
      ,.fsm_last_o(fsm_req_last_li)
      );
 
-  localparam block_size_in_fill_lp = bedrock_block_width_p / bedrock_fill_width_p;
-  localparam fill_cnt_width_lp = `BSG_SAFE_CLOG2(block_size_in_fill_lp);
   bp_bedrock_lce_cmd_header_s fsm_cmd_header_lo;
   logic [bedrock_fill_width_p-1:0] fsm_cmd_data_lo;
   logic fsm_cmd_v_lo, fsm_cmd_ready_then_li;
@@ -591,7 +586,6 @@ module bp_cce
       ,.cce_way_groups_p(cce_way_groups_p)
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
-      ,.addr_offset_p(lg_block_size_in_bytes_lp)
       ,.block_width_p(bedrock_block_width_p)
       ,.cce_id_width_p(cce_id_width_p)
      )
@@ -708,7 +702,7 @@ module bp_cce
       ,.cfg_bus_i(cfg_bus_i)
 
       // LCE-CCE Interface
-      // BedRock Burst protocol: ready&valid
+      // BedRock Stream protocol: ready&valid
       // inbound headers use valid->yumi
       ,.lce_req_header_i(fsm_req_header_li)
       ,.lce_req_data_i(fsm_req_data_li)
@@ -732,7 +726,7 @@ module bp_cce
       ,.lce_resp_last_i(fsm_resp_last_li)
 
       // CCE-MEM Interface
-      // BedRock Burst protocol: ready&valid
+      // BedRock Stream protocol: ready&valid
       // inbound headers use valid->yumi
       ,.mem_rev_header_i(fsm_rev_header_li)
       ,.mem_rev_data_i(fsm_rev_data_li)
@@ -804,7 +798,6 @@ module bp_cce
       ,.cce_way_groups_p(cce_way_groups_p)
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
-      ,.addr_offset_p(lg_block_size_in_bytes_lp)
       ,.block_width_p(bedrock_block_width_p)
       )
     spec_bits
