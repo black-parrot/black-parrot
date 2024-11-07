@@ -1,40 +1,35 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
-
-.PHONY: help libs tidy bleach_all
-
 include $(TOP)/Makefile.common
-include $(TOP)/Makefile.libs
+include $(TOP)/Makefile.env
 
-help:
-	@echo "usage: make [libs, tidy, bleach_all]"
+include $(BP_RTL_MK_DIR)/Makefile.libs
 
-override TARGET_DIRS := $(BP_RTL_BIN_DIR) $(BP_RTL_LIB_DIR) $(BP_RTL_INCLUDE_DIR) $(BP_RTL_TOUCH_DIR)
-$(TARGET_DIRS):
-	mkdir -p $@
+checkout: ## checkout submodules, but not recursively
+	@$(MKDIR) -p $(BP_RTL_BIN_DIR) \
+		$(BP_RTL_LIB_DIR) \
+		$(BP_RTL_INCLUDE_DIR) \
+		$(BP_RTL_TOUCH_DIR)
+	@$(GIT) fetch --all
+	@$(GIT) submodule sync
+	@$(GIT) submodule update --init
 
-checkout: | $(TARGET_DIRS)
-	git fetch --all
-	git submodule sync --recursive
-	git submodule update --init
+apply_patches: ## applies patches to submodules
+apply_patches: build.patch
+$(eval $(call bsg_fn_build_if_new,patch,$(CURDIR),$(BP_RTL_TOUCH_DIR)))
+%/.patch_build: checkout
+	@$(GIT) submodule sync --recursive
+	@$(GIT) submodule update --init --recursive --recommend-shallow
+	@$(ECHO) "Patching successful, ignore errors"
 
-patch_tag ?= $(addprefix $(BP_RTL_TOUCH_DIR)/patch.,$(shell $(GIT) rev-parse HEAD))
-apply_patches: | $(patch_tag)
-$(patch_tag):
-	$(MAKE) checkout
-	git submodule update --init --recursive --recommend-shallow
-	touch $@
-	@echo "Patching successful, ignore errors"
-
+libs_lite: ## minimal RTL libraries
 libs_lite: apply_patches
-	$(MAKE) dramsim3
+	@$(MAKE) build.dramsim3
 
+libs: ## standard RTL libraries
 libs: libs_lite
+	# Placeholder
 
+libs_bsg: ## addition RTL libraries for BSG users 
 libs_bsg: libs
-	$(MAKE) $(BSG_CADENV_DIR)
-
-## This target just wipes the whole repo clean.
-#  Use with caution.
-bleach_all:
-	cd $(TOP); git clean -fdx; git submodule deinit -f .
+	# Placeholder
 

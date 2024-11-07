@@ -1,0 +1,27 @@
+## Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+# Infer the tool based on the first non-clean
+TOOL := $(subst .,,$(firstword $(suffix $(filter-out clean help blood sigcheck,$(MAKECMDGOALS)))))
+SIM := $(if $(filter $(TOOL),vcs verilator),1,0)
+
+LOG_DIR     ?= $(LOG_PATH)/$(TOOL)
+RESULTS_DIR ?= $(RESULTS_PATH)/$(TOOL)
+REPORT_DIR  ?= $(REPORT_PATH)/$(TOOL)
+TOUCH_DIR   ?= $(TOUCH_PATH)/$(TOOL)
+
+BUILD_DIR   ?= $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
+CHECK_DIR   ?= $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).check
+CONVERT_DIR ?= $(RESULTS_PATH)/sv2v/$(TB).$(CFG).$(TAG).convert
+PARSE_DIR   ?= $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).parse
+SIM_DIR     ?= $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
+SYNTH_DIR   ?= $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).synth
+
+clean:
+	@$(RMRF) results/
+	@$(RMRF) logs/
+	@$(RMRF) reports/
+	@$(RMRF) touchfiles/
+
+-include $(BP_RTL_MK_DIR)/Makefile.$(TOOL)
+

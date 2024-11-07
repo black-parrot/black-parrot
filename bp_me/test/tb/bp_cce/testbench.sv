@@ -37,14 +37,13 @@ module testbench
 
    , localparam lg_num_lce_lp = `BSG_SAFE_CLOG2(num_lce_p)
 
+   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
+   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_tag_width_p, icache_sets_p, icache_assoc_p, icache_data_width_p, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache)
+
    // LCE Trace Replay Width
    , localparam trace_replay_data_width_lp=`bp_me_nonsynth_tr_pkt_width(paddr_width_p, dword_width_gp)
    , localparam trace_rom_addr_width_lp = 20
-
-   `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   `declare_bp_cache_engine_generic_if_widths(paddr_width_p, icache_tag_width_p, icache_sets_p, icache_assoc_p, icache_data_width_p, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache)
-   )
-  (output bit reset_i);
+   );
 
   if (l2_data_width_p != bedrock_fill_width_p)
     $error("L2 data width must match bedrock data width");
@@ -278,7 +277,7 @@ module testbench
      ,.msg_ready_and_i(lce_cmd_ready_and_lo)
      );
 
-  `declare_bp_cache_engine_generic_if(paddr_width_p, icache_tag_width_p, icache_sets_p, icache_assoc_p, dword_width_gp, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, icache_tag_width_p, icache_sets_p, icache_assoc_p, icache_data_width_p, icache_block_width_p, icache_fill_width_p, icache_req_id_width_p, cache);
 
   bp_cache_req_s [num_lce_p-1:0] cache_req_lo;
   logic [num_lce_p-1:0] cache_req_v_lo, cache_req_yumi_li, cache_req_lock_li;
@@ -332,8 +331,15 @@ module testbench
 
     // ugly hack to construct the test ROM filename_p input based on the genvar
     // seems to work in both vcs and verilator...
+    // EDIT: Verilator 5.030 seems to have a regression here:
+    //   https://github.com/verilator/verilator/issues/1328
     localparam logic [7:0] id_lp = i;
-    localparam string trace_file_lp = {trace_file_p, "_", id_lp+8'h30, ".tr"};
+    //localparam string trace_file_lp = {trace_file_p, "_", id_lp+8'h30, ".tr"};
+    localparam trace_file_lp = {trace_file_p, "_", id_lp+8'h30, ".tr"};
+    
+    initial begin
+    $display("trace file is %s", trace_file_lp);
+    end
     bsg_nonsynth_test_rom
      #(.data_width_p(trace_replay_data_width_lp+4)
        ,.addr_width_p(trace_rom_addr_width_lp)
@@ -347,6 +353,7 @@ module testbench
     // nonsynth cache
     bp_me_nonsynth_cache
      #(.bp_params_p(bp_params_p)
+       ,.data_width_p(icache_data_width_p)
        ,.sets_p(icache_sets_p)
        ,.assoc_p(icache_assoc_p)
        ,.block_width_p(icache_block_width_p)
@@ -936,15 +943,35 @@ module testbench
     end
   end
 
-  `ifndef VERILATOR
-    initial
+`ifdef ASSERT_ENABLE
+  initial
+    begin
+      $assertoff();
+      @(posedge clk_i);
+      @(negedge reset_i);
+      $asserton();
+    end
+`endif
+
+`ifdef TRACE_ENABLE
+  string dumpfile;
+  initial
+    if ($value$plusargs("bsg_trace=%s", dumpfile))
       begin
-        $assertoff();
-        @(posedge clk_i);
-        @(negedge reset_i);
-        $asserton();
+        $display("[BSG-INFO]: Dumping to %s", dumpfile);
+`ifdef FSDB_ENABLE
+        $fsdbDumpfile(dumpfile);
+        $fsdbDumpvars(0,testbench.wrapper);
+`elsif VPD_ENABLE
+        $vcdplusfile(dumpfile);
+        $vcdpluson(0,testbench.wrapper);
+        $vcdplusautoflushon();
+`else
+        $dumpfile(dumpfile);
+        $dumpvars(0,testbench.wrapper);
+`endif
       end
-  `endif
+`endif
 
 endmodule
 

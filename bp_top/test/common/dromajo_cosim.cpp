@@ -1,70 +1,74 @@
 
-#ifdef DROMAJO_COSIM
-
 #include "svdpi.h"
 #include <iostream>
 #include "dromajo_cosim.h"
 #include "stdlib.h"
-#include <string>
+#include <string.h>
 #include <vector>
 
-using namespace std;
+extern "C" void* cosim_init(int hartid, int ncpus, bool checkpoint) {
+    char *argv[64];
+    char argv_str[1024];
+    int argc = 0;
 
-dromajo_cosim_state_t* dromajo_pointer;
-
-extern "C" void cosim_init(int hartid, int ncpus, int memory_size, bool checkpoint) {
-    if (dromajo_pointer == NULL && hartid == 0) {
-        cout << "Running with Dromajo cosimulation" << endl;
-
-        char dromajo_str[50];
-        sprintf(dromajo_str, "dromajo");
-        char ncpus_str[50];
-        sprintf(ncpus_str, "--ncpus=%d", ncpus);
-        char memsize_str[50];
-        sprintf(memsize_str, "--memory_size=%d", memory_size);
-        char load_str[50];
-        sprintf(load_str, "--load=prog");
-        char prog_str[50];
-        sprintf(prog_str, "prog.elf");
-
-        if (checkpoint) {
-            char* argv[] = {dromajo_str, ncpus_str, memsize_str, load_str, prog_str};
-            dromajo_pointer = dromajo_cosim_init(5, argv);
-        }
-        else {
-            char* argv[] = {dromajo_str, ncpus_str, memsize_str, prog_str};
-            dromajo_pointer = dromajo_cosim_init(4, argv);
-        }
+    if (checkpoint) {
+        sprintf(argv_str, "dromajo --ncpus=%d --memory_size=256 --load=prog prog.riscv");
+    } else {
+        sprintf(argv_str, "dromajo --ncpus=%d --memory_size=256 prog.riscv");
     }
+
+    // Tokenize the string
+    char *token = strtok(argv_str, " ");
+    while (token != NULL) {
+        argv[argc++] = token;  // Assign each token to argv
+        token = strtok(NULL, " ");
+    }
+
+    argv[argc] = NULL;
+
+    std::cout << "Running with Dromajo cosimulation" << std::endl;
+    return dromajo_cosim_init(argc, argv);
 }
 
-extern "C" int cosim_step(int      hartid,
+extern "C" int cosim_step(dromajo_cosim_state_t *dromajo_pointer,
+        int hartid,
         uint64_t pc,
         uint32_t insn,
         uint64_t wdata,
-        uint64_t mstatus) {
-    if (!dromajo_pointer) return 0;
+        uint64_t status,
+        uint64_t cause) {
+    bool check = true;
+    bool verbose = false;
 
     return dromajo_cosim_step(dromajo_pointer,
             hartid,
             pc,
             insn,
             wdata,
-            mstatus,
-            true,
-            false);
+            status,
+            check,
+            verbose);
 }
 
-extern "C" void cosim_trap(int hartid, uint64_t cause) {
-    dromajo_cosim_raise_trap(dromajo_pointer, hartid, cause, false);
+extern "C" int cosim_trap(dromajo_cosim_state_t *dromajo_pointer,
+        int hartid,
+        uint64_t pc,
+        uint32_t insn,
+        uint64_t wdata,
+        uint64_t status,
+        uint64_t cause) {
+    bool check = true;
+    bool verbose = false;
+
+    dromajo_cosim_raise_trap(dromajo_pointer, hartid, cause, verbose);
+
+    return 0;
 }
 
-extern "C" void cosim_finish() {
+extern "C" void cosim_finish(dromajo_cosim_state_t *dromajo_pointer) {
     if (dromajo_pointer) {
-        delete dromajo_pointer;
-        dromajo_pointer = NULL;
+        std::cout << "Terminating Dromajo cosimulation" << std::endl;
+        dromajo_cosim_fini(dromajo_pointer);
     }
 }
-
-#endif
 

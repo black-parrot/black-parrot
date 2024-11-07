@@ -24,7 +24,6 @@ module bp_fe_nonsynth_icache_tracer
    )
   (input                                                  clk_i
    , input                                                reset_i
-   , input                                                freeze_i
    , input [mhartid_width_lp-1:0]                         mhartid_i
 
    , input [icache_pkt_width_lp-1:0]                      icache_pkt_i
@@ -91,8 +90,7 @@ module bp_fe_nonsynth_icache_tracer
 
   integer file;
   string file_name;
-  wire delay_li = reset_i | freeze_i;
-  always_ff @(negedge delay_li)
+  always_ff @(negedge reset_i)
    begin
      file_name = $sformatf("%s_%x.trace", trace_file_p, mhartid_i);
      file      = $fopen(file_name, "w");

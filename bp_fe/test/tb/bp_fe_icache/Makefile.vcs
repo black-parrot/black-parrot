@@ -1,8 +1,0 @@
-include $(TB_PATH)/$(TB)/Makefile.collateral
-
-LINT_COLLATERAL = $(addprefix $(LINT_DIR)/, flist.vcs testbench.sv wrapper.sv)
-
-BUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.sv testbench.sv)
-
-SIM_COLLATERAL = $(addprefix $(SIM_DIR)/, simv simv.daidir test.tr prog.mem)
-

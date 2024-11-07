@@ -1,0 +1,47 @@
+
+ifeq (,$(DC_SHELL))
+$(error DC_SHELL not found)
+endif
+
+# Check if the design is synthesizable. This is not an actual synthesis run,
+# but rather runs analysis and elaboration on the design without linking any
+# specific process. This is significantly quicker than running a full synthesis
+# run and doesn't require any design constraints. Instead, this let's RTL
+# designers catch issues with the design such as non-synthesizable code. The
+# wildcard in the target.
+
+check_design.dc: $(CHECK_DIR)/check
+check_design.dc: CHK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).check_design.log
+check_design.dc: CHK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).check_design.rpt
+check_design.dc: CHK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).check_design.err
+check_design.dc: DESIGN_NAME ?= wrapper
+# Change to your own stdcell db from a PDK. We suggest the freely available FreePDK45
+%/check: %/flist.vcs %/wrapper.sv
+	@$(eval export DESIGN_NAME)
+	@$(eval export STDCELL_DB)
+	@$(MKDIR) -p $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(CHECK_DIR)
+	@$(CD) $(@D); \
+		$(DC_SHELL) -64bit -f $(BP_RTL_TCL_DIR)/dc_elab.tcl 2>&1 | $(TEE) -i $(CHK_LOG)
+	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"^Error",1)
+	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"Complex logic will not be considered",1)
+	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"*** Presto compilation terminated",1)
+	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"unresolved references.",1)
+	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"Cannot find the design",1)
+	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"undeclared symbol",1)
+	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"(OPT-150)",1)
+	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"declaration initial",1)
+
+# Does the check_design target, but also checks for timing loops
+# We accomplish this by overriding the STDCELL_DB variable
+check_loops.dc: STDCELL_DB ?= $(FREE45_NLDM_DB_TYP)
+check_loops.dc: check_design.dc
+
+# This target allows users to look up commands and message codes for
+# DesignCompiler. If there is a message with a code (e.g. LINT-1) then you can
+# replace the wildcard with the code (e.g. make LINT-1.lookup.syn) to query
+# DesignCompiler for a detailed explaination of the message code. You can also
+# use this for DesignCompiler commands and application variables.
+
+lookup.dc:
+	@$(DC_SHELL) -64bit -x "set_app_var sh_command_log_file /dev/null; man $*; exit"
+

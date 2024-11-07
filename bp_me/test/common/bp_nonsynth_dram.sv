@@ -41,33 +41,10 @@ module bp_nonsynth_dram
    , input                                                  dram_reset_i
    );
 
-  if (dram_type_p == "dmc")
-    begin : ddr
-      bp_ddr
-       #(.bp_params_p(bp_params_p), .num_dma_p(num_dma_p))
-       ddr
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
+  import "DPI-C" context function
+    void bsg_mem_dma_set(chandle handle, longint unsigned addr, byte val);
 
-         ,.dma_pkt_i(dma_pkt_i)
-         ,.dma_pkt_v_i(dma_pkt_v_i)
-         ,.dma_pkt_yumi_o(dma_pkt_yumi_o)
-
-         ,.dma_data_o(dma_data_o)
-         ,.dma_data_v_o(dma_data_v_o)
-         ,.dma_data_ready_i(dma_data_ready_and_i)
-
-         ,.dma_data_i(dma_data_i)
-         ,.dma_data_v_i(dma_data_v_i)
-         ,.dma_data_yumi_o(dma_data_yumi_o)
-         );
-
-      if (preload_mem_p)
-        begin : preload
-          $error("Preloading is not supported for DDR");
-        end
-    end
-  else if (dram_type_p == "dramsim3")
+  if (dram_type_p == "dramsim3")
     begin : dramsim3
       `dram_pkg::dram_ch_addr_s dram_read_done_ch_addr_lo;
 
@@ -174,10 +151,6 @@ module bp_nonsynth_dram
           ,.print_stat_tag_i('0)
           );
 
-
-// Preloading is not supported in Verilator due to heirarchical reference and clk
-//   delay statement.
-`ifndef VERILATOR
       // This whole segment is unoptimized because it's storing this memory even though it's
       //   only used for initialization. We could read byte-by-byte to avoid this
       logic [7:0] preload_mem [integer];
@@ -190,21 +163,17 @@ module bp_nonsynth_dram
       logic [`BSG_SAFE_CLOG2(l2_slices_p)-1:0] preload_slice_lo;
       logic [`BSG_SAFE_CLOG2(l2_banks_p)-1:0] preload_bank_lo;
       logic [`BSG_SAFE_CLOG2(l2_banks_p*l2_slices_p)-1:0] preload_dma_lo;
-      logic [dram_channel_addr_width_lp-1:0] test1, test2;
       assign ch_addr_li = {preload_dma_lo
                           ,{(dram_channel_addr_width_lp-cache_bank_addr_width_lp-lg_num_dma_lp){1'b0}}
                           ,preload_addr_li[cache_bank_addr_width_lp-1:0]
                           };
       initial
-        begin
-          $readmemh("prog.mem", preload_mem);
-          if (preload_mem_p) foreach (preload_mem[i]) begin //if (preload_mem[i]) begin
+        if (preload_mem_p) begin
+          foreach (preload_mem[i]) begin
             preload_addr_li = dram_base_addr_gp+i;
             ch_data_li = preload_mem[i];
-            test1 = dram_channel_addr_width_lp-cache_bank_addr_width_lp-lg_num_dma_lp;
-            test2 = preload_addr_li[cache_bank_addr_width_lp-1:0];
             #1;
-            dram.channels[0].channel.bsg_mem_dma_set(
+            bsg_mem_dma_set(
                 dram.channels[0].channel.memory, ch_addr_li, ch_data_li
             );
           end
@@ -222,12 +191,6 @@ module bp_nonsynth_dram
          ,.data_o()
          );
       assign preload_dma_lo = preload_slice_lo*l2_slices_p + preload_bank_lo;
-`else
-        if (preload_mem_p)
-          begin : preload
-            $error("Preloading is not supported in Verilator");
-          end
-`endif
     end
   else if (dram_type_p == "axi")
     begin : axi

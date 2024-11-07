@@ -18,7 +18,6 @@ module bp_nonsynth_watchdog
    (input                                     clk_i
     , input                                   reset_i
 
-    , input                                   freeze_i
     , input                                   wfi_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
@@ -36,7 +35,7 @@ module bp_nonsynth_watchdog
    #(.width_p(vaddr_width_p))
    npc_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i | is_halt)
+     ,.reset_i(reset_i | is_halt)
 
      ,.data_i(npc_i)
      ,.data_o(npc_r)
@@ -48,7 +47,7 @@ module bp_nonsynth_watchdog
    #(.max_val_p(stall_cycles_p), .init_val_p(0))
    stall_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i | wfi_i | is_halt)
+     ,.reset_i(reset_i | wfi_i | is_halt)
 
      ,.clear_i(npc_change)
      ,.up_i(1'b1)
@@ -60,7 +59,7 @@ module bp_nonsynth_watchdog
    #(.max_val_p(stall_cycles_p), .init_val_p(0))
    halt_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i | wfi_i | is_halt)
+     ,.reset_i(reset_i | wfi_i | is_halt)
 
      ,.clear_i(npc_change)
      ,.up_i(instret_i)
@@ -72,7 +71,7 @@ module bp_nonsynth_watchdog
    #(.max_val_p(max_instr_lp), .init_val_p(0))
    instr_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i | is_halt)
+     ,.reset_i(reset_i | is_halt)
 
      ,.clear_i(1'b0)
      ,.up_i(instret_i)
@@ -95,16 +94,16 @@ module bp_nonsynth_watchdog
     begin
       if (reset_i === '0 && is_halt && halt_cnt >= halt_cycles_p)
         begin
-          $display("Core %x halt detected!", mhartid_i);
+          $display("[BSG-INFO]: Core %x halt detected!", mhartid_i);
         end
       assert(reset_i !== '0 || (stall_cnt < stall_cycles_p)) else
         begin
-          $display("FAIL! Core %x stalled for %d cycles!", mhartid_i, stall_cnt);
+          $display("[BSG-FAIL]: Core %x stalled for %d cycles!", mhartid_i, stall_cnt);
           $finish();
         end
       assert(reset_i !== '0 || (npc_r !== 'X)) else
         begin
-          $display("FAIL! Core %x PC has become X!", mhartid_i);
+          $display("[BSG-FAIL]: Core %x PC has become X!", mhartid_i);
           $finish();
         end
     end
@@ -113,7 +112,7 @@ module bp_nonsynth_watchdog
     begin
       if (reset_i === '0 && (instr_cnt > '0) && (instr_cnt % heartbeat_instr_p == '0) & instret_i)
         begin
-          $display("BEAT: %d instructions completed (%d total)", heartbeat_instr_p, instr_cnt);
+          $display("[BSG-INFO]: %d instructions completed (%d total)", heartbeat_instr_p, instr_cnt);
         end
     end
 
