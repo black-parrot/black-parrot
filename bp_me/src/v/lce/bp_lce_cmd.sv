@@ -151,7 +151,6 @@ module bp_lce_cmd
     ,e_tr
     ,e_stat_clear
     ,e_wb
-    ,e_wb_dirty_rd
     ,e_coh_ack
   } state_n, state_r;
 
