@@ -31,7 +31,7 @@ set buf_opin         X
 read_verilog $in_v_file
 
 # blackbox memories
-if {${WITHOUT_MEMS}} {
+if {${without_mems}} {
     blackbox bsg_mem_1rw_sync*
     blackbox bsg_mem_1r1w_sync*
     blackbox bsg_mem_2r1w_sync*
