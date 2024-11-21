@@ -1,5 +1,0 @@
-exit_dc_job:
-	@$(ECHO) "Check design is not supported for cce testbench"
-	$(EXIT) 1
-
-CHK_COLLATERAL = exit_dc_job

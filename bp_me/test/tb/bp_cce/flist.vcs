@@ -7,9 +7,6 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_arb_round_robin.sv
 $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.sv
 $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.sv
 $BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_map.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.sv
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.sv
 $BASEJUMP_STL_DIR/bsg_test/bsg_trace_replay.sv
 $BP_ME_DIR/src/v/dev/bp_me_cache_controller.sv
@@ -30,4 +27,3 @@ $BP_ME_DIR/test/common/bp_nonsynth_dram.sv
 $BP_ME_DIR/test/common/bp_nonsynth_mem_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_cfg_loader.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.sv
-$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp

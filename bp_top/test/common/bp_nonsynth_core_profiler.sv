@@ -82,7 +82,6 @@ module bp_nonsynth_core_profiler
     )
    (input clk_i
     , input reset_i
-    , input freeze_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
@@ -130,7 +129,6 @@ module bp_nonsynth_core_profiler
     , input [commit_pkt_width_lp-1:0] commit_pkt_i
     );
 
-`ifndef XCELIUM
   `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
 
   localparam num_stages_p = 7;
@@ -264,26 +262,15 @@ module bp_nonsynth_core_profiler
      );
   assign bp_stall_reason_enum = bp_stall_reason_e'(stall_reason_lo);
 
-  logic freeze_r;
-  bsg_dff_chain
-   #(.width_p(1), .num_stages_p(8))
-   freeze_chain
-    (.clk_i(clk_i)
-     ,.data_i(freeze_i)
-     ,.data_o(freeze_r)
-     );
-
-  // synopsys translate_off
   int stall_hist [bp_stall_reason_e];
   always_ff @(posedge clk_i)
-    if (~reset_i & ~freeze_r & ~commit_pkt.instret) begin
+    if (~reset_i & ~commit_pkt.instret) begin
       stall_hist[bp_stall_reason_enum] <= stall_hist[bp_stall_reason_enum] + 1'b1;
     end
 
   integer file;
   string file_name;
-  wire reset_li = reset_i | freeze_r;
-  always_ff @(negedge reset_li)
+  always_ff @(negedge reset_i)
     begin
       file_name = $sformatf("%s_%x.trace", stall_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");
@@ -295,16 +282,15 @@ module bp_nonsynth_core_profiler
 
   always_ff @(negedge clk_i)
     begin
-      if (~reset_i & ~freeze_r & commit_pkt.instret)
+      if (~reset_i & commit_pkt.instret)
         $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt.pc, "instr");
-      else if (~reset_i & ~freeze_r)
+      else if (~reset_i)
         $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt.pc, bp_stall_reason_enum.name());
 
-      if (~reset_i & ~freeze_r)
+      if (~reset_i)
         $fwrite(file, "\n");
     end
 
-  `ifndef VERILATOR
   final
     begin
       $fwrite(file, "=============================\n");
@@ -312,9 +298,6 @@ module bp_nonsynth_core_profiler
       foreach (stall_hist[i])
         $fwrite(file, "%s: %0d\n", i.name(), stall_hist[i]);
     end
-  `endif
-  // synopsys translate_on
-`endif
 
 endmodule
 

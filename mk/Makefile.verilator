@@ -1,0 +1,96 @@
+
+# Max number of threads to run verilated model with
+VERILATOR_THREADS ?= 4
+## Tool options
+VV_BUILD_OPTS  = --cc                 # Output in C++
+#VV_BUILD_OPTS += --debug --gdbbt     # Debugs and produces stack trace
+VV_BUILD_OPTS += -O3
+VV_BUILD_OPTS += --x-assign fast --x-initial fast
+VV_BUILD_OPTS += -j $(VERILATOR_THREADS)
+VV_BUILD_OPTS += --verilate-jobs $(VERILATOR_THREADS)
+VV_BUILD_OPTS += --threads 1
+VV_BUILD_OPTS += --trace-threads 1
+VV_BUILD_OPTS += --top-module testbench
+VV_BUILD_OPTS += --main-top-name "TOP"
+VV_BUILD_OPTS += -f flist.vcs
+VV_BUILD_OPTS += --build --exe --timing
+VV_BUILD_OPTS += -o simsc
+VV_BUILD_OPTS += -Wno-timescalemod
+#VV_BUILD_OPTS += --assert --no-stop-fail
+VV_BUILD_OPTS += --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat
+VV_BUILD_OPTS += --stats --stats-vars
+
+VV_BUILD_OPTS += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_dma.cpp
+
+VV_BUILD_OPTS += $(TB_PATH)/$(TB)/main.cpp
+VV_BUILD_OPTS += -CFLAGS "-I$(BASEJUMP_STL_DIR)/bsg_test"
+ifeq ($(DRAM),dramsim3)
+VV_BUILD_OPTS += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3.sv
+VV_BUILD_OPTS += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_map.sv
+VV_BUILD_OPTS += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_unmap.sv
+VV_BUILD_OPTS += -CFLAGS "-I$(BP_RTL_INSTALL_DIR)/include"
+VV_BUILD_OPTS += -LDFLAGS "-Wl,-rpath,$(BP_RTL_INSTALL_DIR)/lib -ldramsim3"
+VV_BUILD_OPTS += -LDFLAGS "-L$(BP_RTL_INSTALL_DIR)/lib"
+endif
+ifeq ($(if $(SPIKE),$(COSIM_P),0),1)
+VV_BUILD_OPTS += $(BP_TOP_DIR)/test/common/spike_cosim.cpp
+VV_BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_INSTALL_DIR)/include"
+VV_BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_INSTALL_DIR)/lib -lriscv"
+else ifeq ($(if $(SPIKE),0,$(COSIM_P)),1)
+VV_BUILD_OPTS += $(BP_TOP_DIR)/test/common/dromajo_cosim.cpp
+VV_BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_INSTALL_DIR)/include"
+VV_BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_INSTALL_DIR)/lib -ldromajo_cosim"
+else
+VV_BUILD_OPTS += $(BP_TOP_DIR)/test/common/null_cosim.cpp
+endif
+
+VV_RUN_OPTS =
+
+build.verilator: $(BUILD_DIR)/obj_dir
+build.verilator: BUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).build.log
+build.verilator: BUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.rpt
+build.verilator: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.err
+%/obj_dir: | $(BUILD_COLLATERAL)
+	@$(eval MAKEFLAGS := "")
+	@$(MKDIR) -p $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
+	@$(CD) $(@D); \
+		$(VERILATOR) $(VV_BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) 2>&1 | $(TEE) -i $(BUILD_LOG)
+	@$(call bsg_fn_sentinal_search,$(BUILD_LOG),$(BUILD_ERROR),"Verilator: Built")
+
+build_dump.verilator: VV_BUILD_OPTS += --trace-fst
+build_dump.verilator: VV_BUILD_OPTS += --trace-structs
+build_dump.verilator: VV_BUILD_OPTS += --trace-depth 15
+build_dump.verilator: HDL_DEFINES += +define+TRACE_ENABLE=1
+build_dump.verilator: build.verilator
+
+sim.verilator: build.verilator
+sim.verilator: $(SIM_DIR)/run_simsc
+sim.verilator: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
+sim.verilator: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
+sim.verilator: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
+%/run_simsc: | $(RUN_COLLATERAL)
+	@$(MKDIR) -p $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
+	@$(SYMLINK) $(BUILD_DIR)/obj_dir/simsc $(SIM_DIR)/simsc
+	@$(CD) $(@D); ./simsc $(VV_RUN_OPTS) 2>&1 | $(TEE) -i $(SIM_LOG)
+	@$(call bsg_fn_fail_search,$(SIM_LOG),$(SIM_ERROR))
+	@$(call bsg_fn_pass_search,$(SIM_LOG),$(SIM_ERROR))
+	@$(call bsg_fn_sentinal_search,$(SIM_LOG),$(SIM_ERROR),"Executing final")
+	@$(call bsg_fn_stat_search,$(SIM_LOG),$(SIM_REPORT))
+	@# HACK: Recover terminal, needed after spike cosim
+	@$(STTY) $(ECHO)
+
+sim_dump.verilator: VV_RUN_OPTS += +bsg_trace=dump.fst
+sim_dump.verilator: sim.verilator
+
+ENABLE_SURFER ?= $(if $(shell which surfer),1,0)
+wave.verilator: $(SIM_DIR)/wavesc
+ifeq ($(ENABLE_SURFER),1)
+%/wavesc: %/dump.fst
+	@$(CD) $(@D); \
+		$(SURFER) -f $< &
+else 
+%/wavesc: %/dump.fst
+	@$(CD) $(@D); \
+		$(GTKWAVE) -f $< &
+endif
+

@@ -24,7 +24,6 @@ module bp_be_nonsynth_dcache_tracer
    )
   (  input                                                clk_i
    , input                                                reset_i
-   , input                                                freeze_i
    , input [mhartid_width_lp-1:0]                         mhartid_i
 
    , input [dcache_pkt_width_lp-1:0]                      dcache_pkt_i
@@ -115,8 +114,7 @@ module bp_be_nonsynth_dcache_tracer
 
   integer info_file, eng_file, mem_file, acc_file;
   string info_file_name, eng_file_name, mem_file_name, acc_file_name;
-  wire delay_li = reset_i | freeze_i;
-  always_ff @(negedge delay_li)
+  always_ff @(negedge reset_i)
    begin
      info_file_name = $sformatf("%s_%x.info.trace", trace_file_p, mhartid_i);
      info_file      = $fopen(info_file_name, "w");

@@ -17,18 +17,10 @@ module bp_nonsynth_cosim
     )
    (input                                     clk_i
     , input                                   reset_i
-    , input                                   freeze_i
-    , input                                   cosim_en_i
-    , input                                   trace_en_i
-    , input                                   amo_en_i
-    , input                                   finish_i
-
-    , input                                   checkpoint_i
-    , input [31:0]                            num_core_i
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
-    , input [63:0]                            config_file_i
-    , input [31:0]                            instr_cap_i
-    , input [31:0]                            memsize_i
+
+    , input                                   trace_en_i
+    , input                                   checkpoint_i
 
     , input [decode_width_lp-1:0]             decode_i
 
@@ -56,16 +48,24 @@ module bp_nonsynth_cosim
     , input                                   cosim_reset_i
     );
 
-  import "DPI-C" context function void cosim_init(int hartid, int ncpus, int memory_size, bit checkpoint);
-  import "DPI-C" context function int cosim_step(int hartid,
-                                                   longint pc,
-                                                   int insn,
-                                                   longint wdata,
-                                                   longint mstatus);
-  import "DPI-C" context function void cosim_trap(int hartid, longint cause);
-  import "DPI-C" context function void cosim_finish();
-
-`ifndef XCELIUM
+  import "DPI-C" context function chandle cosim_init(input int hartid, input int ncpus, input bit checkpoint);
+  import "DPI-C" context function void cosim_finish(input chandle cosim_handle);
+  import "DPI-C" context function int cosim_step(input chandle cosim_handle,
+                                                   input int hartid,
+                                                   input longint pc,
+                                                   input int insn,
+                                                   input longint wdata,
+                                                   input longint status,
+                                                   input longint cause
+                                                   );
+  import "DPI-C" context function int cosim_trap(input chandle cosim_handle,
+                                                   input int hartid,
+                                                   input longint pc,
+                                                   input int insn,
+                                                   input longint wdata,
+                                                   input longint status,
+                                                   input longint cause
+                                                   );
 
   wire posedge_clk =  clk_i;
   wire negedge_clk = ~clk_i;
@@ -115,7 +115,6 @@ module bp_nonsynth_cosim
   logic                     commit_ird_w_v_r;
   logic                     commit_frd_w_v_r;
   logic                     commit_req_v_r;
-  logic                     commit_freeze_r;
   logic [dword_width_gp-1:0] cause_r, mstatus_r;
   logic commit_fifo_v_lo, commit_fifo_yumi_li;
   wire instret_v_li = commit_pkt_r.instret;
@@ -129,18 +128,18 @@ module bp_nonsynth_cosim
   wire [dword_width_gp-1:0] mstatus_li = mstatus_i;
   wire commit_fifo_v_li = instret_v_li | trap_v_li;
   bsg_async_fifo
-   #(.width_p(4+vaddr_width_p+instr_width_gp+3+2*dword_width_gp), .lg_size_p(10))
+   #(.width_p(3+vaddr_width_p+instr_width_gp+3+2*dword_width_gp), .lg_size_p(10))
    commit_fifo
     (.w_clk_i(posedge_clk)
      ,.w_reset_i(reset_i)
      ,.w_enq_i(commit_fifo_v_li & ~commit_fifo_full_lo)
-     ,.w_data_i({freeze_i, is_debug_mode_r, instret_v_li, trap_v_li, commit_pc_li, commit_instr_li, commit_ird_w_v_li, commit_frd_w_v_li, commit_req_v_li, cause_li, mstatus_li})
+     ,.w_data_i({is_debug_mode_r, instret_v_li, trap_v_li, commit_pc_li, commit_instr_li, commit_ird_w_v_li, commit_frd_w_v_li, commit_req_v_li, cause_li, mstatus_li})
      ,.w_full_o(commit_fifo_full_lo)
 
      ,.r_clk_i(cosim_clk_i)
      ,.r_reset_i(cosim_reset_i)
      ,.r_deq_i(commit_fifo_v_lo & commit_fifo_yumi_li)
-     ,.r_data_o({commit_freeze_r, commit_debug_r, instret_v_r, trap_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, commit_req_v_r, cause_r, mstatus_r})
+     ,.r_data_o({commit_debug_r, instret_v_r, trap_v_r, commit_pc_r, commit_instr_r, commit_ird_w_v_r, commit_frd_w_v_r, commit_req_v_r, cause_r, mstatus_r})
      ,.r_valid_o(commit_fifo_v_lo)
      );
 
@@ -221,7 +220,7 @@ module bp_nonsynth_cosim
    #(.max_val_p(128), .init_val_p(0), .max_step_p(1))
    req_counter
     (.clk_i(negedge_clk)
-     ,.reset_i(reset_i | freeze_i)
+     ,.reset_i(reset_i)
 
      ,.up_i(cache_req_v_r)
      ,.down_i(cache_req_complete_r)
@@ -237,33 +236,8 @@ module bp_nonsynth_cosim
   wire commit_iwb_li = commit_fifo_v_lo & (commit_ird_w_v_r & ird_fifo_v_lo[commit_instr_r.rd_addr]);
   wire commit_fwb_li = commit_fifo_v_lo & (commit_frd_w_v_r & frd_fifo_v_lo[commit_instr_r.rd_addr]);
 
-  logic [`BSG_SAFE_CLOG2(max_instr_lp+1)-1:0] instr_cnt;
-  bsg_counter_clear_up
-   #(.max_val_p(max_instr_lp), .init_val_p(0))
-   instr_counter
-    (.clk_i(cosim_clk_i)
-     ,.reset_i(cosim_reset_i | freeze_i)
-
-     ,.clear_i(1'b0)
-     ,.up_i(instret_v_r & commit_fifo_yumi_li & ~commit_debug_r)
-     ,.count_o(instr_cnt)
-     );
-
-  logic finish_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(1))
-   finish_reg
-    (.clk_i(cosim_clk_i)
-     ,.reset_i(cosim_reset_i)
-
-     ,.set_i((instr_cap_i != 0 && instr_cnt == instr_cap_i) | finish_i)
-     ,.clear_i('0)
-     ,.data_o(finish_r)
-     );
-
-  always_ff @(negedge reset_i)
-    if (cosim_en_i)
-      cosim_init(mhartid_i, num_core_i, memsize_i, checkpoint_i);
+  chandle cosim_handle;
+  initial cosim_handle = cosim_init(mhartid_i, num_core_p, checkpoint_i);
 
   wire [dword_width_gp-1:0] cosim_pc_li     = `BSG_SIGN_EXTEND(commit_pc_r, dword_width_gp);
   wire [instr_width_gp-1:0] cosim_instr_li  = commit_instr_r;
@@ -276,44 +250,46 @@ module bp_nonsynth_cosim
   wire [dword_width_gp-1:0] cosim_status_li = mstatus_r;
   integer ret_code;
   always_ff @(posedge cosim_clk_i)
-    if (cosim_reset_i)
+    if (cosim_reset_i || commit_debug_r || !commit_pc_r)
       ret_code <= 0;
-    else if (~commit_debug_r & ~commit_freeze_r & cosim_en_i & commit_fifo_yumi_li & !finish_r & trap_v_r)
-      cosim_trap(mhartid_i, cosim_cause_li);
-    else if (~commit_debug_r & ~commit_freeze_r & cosim_en_i & commit_fifo_yumi_li & instret_v_r & commit_pc_r != '0)
-      ret_code <= cosim_step(mhartid_i, cosim_pc_li, cosim_instr_li, cosim_rd_li, cosim_status_li);
+    else if (commit_fifo_yumi_li & trap_v_r)
+      ret_code <= cosim_trap(cosim_handle, mhartid_i, cosim_pc_li, cosim_instr_li, cosim_rd_li, cosim_status_li, cosim_cause_li);
+    else if (commit_fifo_yumi_li & instret_v_r)
+      ret_code <= cosim_step(cosim_handle, mhartid_i, cosim_pc_li, cosim_instr_li, cosim_rd_li, cosim_status_li, cosim_cause_li);
 
    // ret_code: {exit_code, terminate}
    logic terminate;
    always_ff @(negedge cosim_clk_i)
-     if (ret_code >> 1)
+     if (ret_code)
        begin
-         // Successful termination
-         $display("COSIM_FAIL: exit code: %d", (ret_code >> 1));
+         $display("[BSG-FAIL] co-simulation failure: exit code: %d", (ret_code >> 1));
          $finish();
        end
-     else if (ret_code)
-       begin
-          $display("COSIM_PASS: %d", ret_code);
-          $finish();
-       end
-     else if (finish_r)
-       begin
-         cosim_finish();
-       end
+    else if (commit_fifo_v_li & commit_fifo_full_lo)
+      begin
+        $display("[BSG-FAIL] co-simulation fifo overrun, core %x", mhartid_i);
+        $finish();
+      end
 
+  // final
+  final begin
+    if (!reset_i) cosim_finish(cosim_handle);
+  end
+
+  // Commit trace
   integer file;
   string file_name;
-  wire delay_li = reset_i | freeze_i;
-  always_ff @(negedge delay_li)
+  always_ff @(negedge reset_i)
     begin
       file_name = $sformatf("%s_%x.trace", commit_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");
     end
 
+  logic [`BSG_SAFE_CLOG2(max_instr_lp+1)-1:0] instr_cnt;
   always_ff @(posedge cosim_clk_i)
     if (trace_en_i & commit_fifo_yumi_li & commit_pc_r != '0)
       begin
+        instr_cnt <= instr_cnt + 1'b1;
         $fwrite(file, "%x %x %x %x ", mhartid_i, cosim_pc_li, cosim_instr_li, instr_cnt);
         if (instret_v_r & commit_ird_w_v_r)
           $fwrite(file, "%x %x", commit_instr_r.rd_addr, cosim_ird_li);
@@ -324,14 +300,10 @@ module bp_nonsynth_cosim
         $fwrite(file, "\n");
       end
 
-  always_ff @(posedge cosim_clk_i)
-    if (commit_fifo_v_li & commit_fifo_full_lo)
-      begin
-        $display("COSIM_FAIL: commit fifo overrun, core %x", mhartid_i);
-        $finish();
-      end
-
-`endif
+  // final
+  final begin
+    $fclose(file);
+  end
 
 endmodule
 
