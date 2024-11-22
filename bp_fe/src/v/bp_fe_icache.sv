@@ -579,7 +579,7 @@ module bp_fe_icache
             tag_mem_data_li[i]   = '{state: tag_mem_pkt_cast_i.state, tag: '0};
             tag_mem_w_mask_li[i] = '{state: {$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, tag: '0};
           end
-        {1'b0, e_cache_tag_mem_set_inval}:
+        e_cache_tag_mem_set_inval:
           begin
             tag_mem_data_li[i] = '{state: bp_coh_states_e'('0), tag: '0};
             tag_mem_w_mask_li[i] = '{state: bp_coh_states_e'('1), tag: '0};
