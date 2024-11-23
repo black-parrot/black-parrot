@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: BSD-3-Clause
 #
 #   nbf.py
 #
@@ -79,14 +80,16 @@ cfg_core_offset = 24
 class NBF:
 
   # constructor
-  def __init__(self, ncpus, ucode_file, mem_file, mem_size, checkpoint_file, config, skip_zeros,
-          data_width, boot_pc, debug, verify):
+  def __init__(self, ncpus, ucode_file, mem_file, mem_size, bootrom_file, bootrom_size, checkpoint_file,
+               config, skip_zeros, data_width, boot_pc, debug, verify, start_cached):
 
     # input parameters
     self.ncpus = ncpus
     self.ucode_file = ucode_file
     self.mem_file = mem_file
     self.mem_size = mem_size
+    self.bootrom_file = bootrom_file
+    self.bootrom_size = bootrom_size
     self.config = config
     self.checkpoint_file = checkpoint_file
     self.skip_zeros = skip_zeros
@@ -95,10 +98,14 @@ class NBF:
     self.boot_pc = boot_pc
     self.debug = debug
     self.verify = verify
+    self.start_cached = start_cached
 
     # Grab various files
     if self.mem_file:
       self.dram_data = self.read_dram(self.mem_file)
+
+    if self.bootrom_file:
+      self.bootrom_data = self.read_bootrom(self.bootrom_file)
 
     if self.ucode_file:
       self.ucode = self.read_binary(self.ucode_file)
@@ -167,7 +174,8 @@ class NBF:
     addr_step = 0
     count = 0
     assembled_hex = ""
-    base_addr = 0x80000000
+    #base_addr = 0x80000000
+    base_addr = 0x0
 
     f = open(mem_file, "r")
     lines = f.readlines()
@@ -199,6 +207,49 @@ class NBF:
 
     return addr_val
 
+  # read bootrom dumped in 'verilog' format.
+  # returns [addr : data] dictionary
+  def read_bootrom(self, mem_file):
+
+    addr_val = {}
+    curr_addr = 0
+    addr_step = 0
+    count = 0
+    assembled_hex = ""
+    #base_addr = 0x00110000
+    base_addr = 0x0
+
+    f = open(mem_file, "r")
+    lines = f.readlines()
+
+    for line in lines:
+      stripped = line.strip()
+      if stripped:
+        if stripped.startswith("@"):
+          if count != 0:
+            addr_val[base_addr+curr_addr] = int(assembled_hex, 16)
+            assembled_hex = ""
+            count = 0
+          curr_addr = int(stripped.strip("@"), 16)
+          addr_step = 1 << self.get_size(curr_addr)
+        else:
+          words = stripped.split()
+          for i in range(len(words)):
+            assembled_hex = words[i] + assembled_hex
+            count += 1
+            if count == addr_step:
+              addr_val[base_addr+curr_addr] = int(assembled_hex, 16)
+              curr_addr += addr_step
+              addr_step = 1 << self.get_size(curr_addr)
+              assembled_hex = ""
+              count = 0
+
+    if count != 0:
+      addr_val[base_addr+curr_addr] = int(assembled_hex, 16)
+
+    return addr_val
+
+
   ##### END UTIL FUNCTIONS #####
 
   ##### LOADER ROUTINES #####
@@ -213,6 +264,17 @@ class NBF:
       opcode = self.get_size(addr)
       if not(self.skip_zeros and self.dram_data[k] == 0):
         self.print_nbf(opcode, addr, self.dram_data[k])
+
+  # initialize dram
+  def init_bootrom(self):
+    if not(self.skip_zeros):
+      for k in xrange(self.bootrom_size*1024/8):
+        self.print_nbf(3, 0x00110000 + k*8, 0)
+    for k in sorted(self.bootrom_data.keys()):
+      addr = k
+      opcode = self.get_size(addr)
+      if not(self.skip_zeros and self.bootrom_data[k] == 0):
+        self.print_nbf(opcode, addr, self.bootrom_data[k])
 
   # print fence
   # when loader sees this, it waits until all packets are received to proceed
@@ -239,6 +301,12 @@ class NBF:
       self.print_fence()
       self.print_nbf_allcores(2, clint_base_addr + clint_reg_debug, 0)
 
+    if self.start_cached:
+      # Write I$, D$, and CCE modes
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_cce_mode, 1)
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_icache_mode, 1)
+      self.print_nbf_allcores(2, cfg_base_addr + cfg_reg_dcache_mode, 1)
+
     # For regular execution, the CCE ucode and cache/CCE modes are loaded by the bootrom
     if self.config:
       # Write CCE ucode
@@ -263,6 +331,10 @@ class NBF:
     self.print_nbf_allcores(2, clint_base_addr + clint_reg_mtimesel, 1)
 
     self.print_fence()
+
+    # Write bootrom
+    if self.bootrom_file:
+      self.init_bootrom()
 
     # Write DRAM
     if self.mem_file:
@@ -292,7 +364,9 @@ if __name__ == "__main__":
   parser.add_argument('--ncpus', type=int, default=1, help='number of BlackParrot cores')
   parser.add_argument('--ucode', dest='ucode_file', metavar='ucode.mem', help='CCE ucode file')
   parser.add_argument("--mem", dest='mem_file', metavar='prog.mem', help='DRAM verilog file')
-  parser.add_argument("--mem_size", type=int, default=16, help='DRAM size in MiB')
+  parser.add_argument("--mem_size", type=int, default=64, help='DRAM size in MiB')
+  parser.add_argument("--bootrom", dest='bootrom_file', metavar='bootrom.mem', help='Bootrom verilog file')
+  parser.add_argument("--bootrom_size", type=int, default=64, help='DRAM size in KiB')
   parser.add_argument("--config", dest='config', action='store_true', help='Do config over nbf')
   parser.add_argument("--checkpoint", dest='checkpoint_file', metavar='sample.nbf',help='checkpoint nbf file')
   parser.add_argument('--skip_zeros', dest='skip_zeros', action='store_true', help='skip zero DRAM entries')
@@ -300,9 +374,11 @@ if __name__ == "__main__":
   parser.add_argument('--boot_pc', dest='boot_pc', help='The first PC to be fetched')
   parser.add_argument('--debug', dest='debug', action='store_true', help='Whether to start in debug mode')
   parser.add_argument("--verify", dest='verify', action='store_true', help='Read back mode registers')
+  parser.add_argument("--start_cached", dest='start_cached', action='store_true', help='Set LCE and CCE modes to cached before unfreeze')
 
   args = parser.parse_args()
 
-  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.mem_size, args.checkpoint_file, args.config,
-          args.skip_zeros, args.data_width, args.boot_pc, args.debug, args.verify)
+  converter = NBF(args.ncpus, args.ucode_file, args.mem_file, args.mem_size, args.bootrom_file, args.bootrom_size,
+                  args.checkpoint_file, args.config, args.skip_zeros, args.data_width,
+                  args.boot_pc, args.debug, args.verify, args.start_cached)
   converter.dump()

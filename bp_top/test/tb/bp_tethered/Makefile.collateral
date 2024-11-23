@@ -1,61 +1,113 @@
 
-%/flist.vcs:
-	$(MKDIR) -p $(@D)
-	$(GREP) -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
-	$(ECHO) "$(@D)/wrapper.sv"                        >> $@
 ifeq ($(SIM),1)
+%/flist.vcs:
+	$(GREP) -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
+	$(ECHO) wrapper.sv                                >> $@
 	$(GREP) -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-	$(ECHO) "$(@D)/testbench.sv"                      >> $@
+	$(ECHO) testbench.sv                              >> $@
+	$(ECHO) bsg_tag_boot_rom.sv                       >> $@
+	$(ECHO) "$(BP_ME_DIR)/test/common/bp_ddr.sv"      >> $@
 	$(ECHO) "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv" >> $@
 	$(ECHO) "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv" >> $@
+	$(ECHO) "$(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_dly_line.sv"        >> $@
+	$(ECHO) "$(BASEJUMP_STL_DIR)/bsg_dmc/bsg_dmc_clk_rst_gen.sv"     >> $@
+	$(ECHO) "$(BASEJUMP_STL_DIR)/testing/bsg_dmc/lpddr_verilog_model/mobile_ddr.sv" >> $@
+else
+%/flist.vcs:
+	$(GREP) -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
+	$(ECHO) wrapper.sv                                >> $@
 endif
 
-%/wrapper.sv:
-	$(MKDIR) -p $(@D)
-	$(CP) $(TB_PATH)/$(TB)/wrapper.sv $@
+%/wrapper.sv: $(TB_PATH)/$(TB)/wrapper.sv
+	if [ "$(SIM_SYNTH_VIVADO_P)" = "1" ]; then \
+		$(CP) $(SYN_PATH)/results/vivado/bp_tethered.$(CFG).$(TAG).build/wrapper_synth.sv $@; \
+	elif [ "$(SIM_SYNTH_YOSYS_P)" = "1" ]; then \
+		$(CP) $(SYN_PATH)/results/yosys/bp_tethered.$(CFG).$(TAG).synth/wrapper.synth.v $@; \
+	else \
+		$(CP) $< $@; \
+	fi
 	$(SED) -i "s/BP_CFG_FLOWVAR/$(CFG)/g" $@
 	$(SED) -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
-%/testbench.sv:
-	$(MKDIR) -p $(@D)
-	$(CP) $(TB_PATH)/$(TB)/testbench.sv $@
+%/testbench.sv: $(TB_PATH)/$(TB)/testbench.sv
+	$(CP) $< $@
 	$(SED) -i "s/BP_CFG_FLOWVAR/$(CFG)/g" $@
 	$(SED) -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
 
-%/prog.riscv: $(BP_RISCV_DIR)/$(SUITE)/$(PROG).riscv
-	$(MKDIR) -p $(@D)
+%/bsg_tag_boot_rom.sv: $(TB_PATH)/$(TB)/bsg_tag_boot.tr
+	$(PYTHON2) $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_tag_boot_rom > $@
+
+%/bootrom.riscv: $(BP_SDK_PROG_DIR)/bootrom/bootrom.$(COH_PROTO).riscv
+	$(CP) $< $@
+
+%/bootrom.mem: %/bootrom.riscv
+	$(RISCV_OBJCOPY) -O verilog $< $@
+	$(SED) -i "s/@0011/@0000/g" $@
+
+%/bootrom.bin: %/bootrom.riscv
+	$(RISCV_OBJCOPY) -O binary $< $@
+
+%/bootrom.dump: %/bootrom.riscv
+	$(RISCV_OBJDUMP) -D -t $< > $@
+
+%/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
 	$(CP) $^ $@
 
 %/prog.elf: %/prog.riscv
-	$(MKDIR) -p $(@D)
 	$(CP) $^ $@
 
 %/prog.mem: %/prog.riscv
-	$(MKDIR) -p $(@D)
 	$(RISCV_OBJCOPY) -O verilog $< $@
-	$(SED) -i "s/@8/@0/g" $@
+	#$(SED) -i "s/@8/@0/g" $@
 
 %/prog.bin: %/prog.riscv
-	$(MKDIR) -p $(@D)
 	$(RISCV_OBJCOPY) -O binary $< $@
 
 %/prog.dump: %/prog.riscv
-	$(MKDIR) -p $(@D)
 	$(RISCV_OBJDUMP) $< > $@
 
 MEM2NBF ?= $(BP_COMMON_DIR)/software/py/nbf.py
-CCE_UCODE_FILE ?= $(BP_RISCV_UCODE_DIR)/$(CCE_MEM)
-NBF_INPUTS ?= --ncpus=$(NCPUS)
+CCE_UCODE_FILE ?= $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
+
+NBF_MEM_SIZE ?= 256
+NBF_BOOTROM ?= $(SIM_DIR)/bootrom.mem
+NBF_BOOTROM_SIZE ?= 64
+NBF_SKIP_ZEROS ?= 1
+NBF_BOOT_PC ?=
+NBF_CONFIG_P ?= 0
+NBF_DEBUG ?= 1
+NBF_VERIFY ?= 0
+NBF_START_CACHED ?= 1
+
+NBF_INPUTS = --ncpus $(NCPUS) --data_width 64
+NBF_INPUTS += --bootrom $(NBF_BOOTROM) --bootrom_size $(NBF_BOOTROM_SIZE)
+ifeq ($(UCODE),1)
+NBF_INPUTS += --ucode cce_ucode.mem
+endif
+ifneq ($(NBF_BOOT_PC),)
+NBF_INPUTS += --boot_pc $(NBF_BOOT_PC)
+endif
+ifeq ($(NBF_SKIP_ZEROS),1)
+NBF_INPUTS += --skip_zeros
+endif
+ifeq ($(NBF_CONFIG_P),1)
 NBF_INPUTS += --config
-NBF_INPUTS += --boot_pc=0x80000000
-ifeq ($(NBF_CONFIG_P)$(UCODE),11)
-NBF_INPUTS += --ucode=cce_ucode.mem
+endif
+ifeq ($(NBF_DEBUG),1)
+NBF_INPUTS += --debug
+endif
+ifeq ($(NBF_VERIFY),1)
+NBF_INPUTS += --verify
+endif
+ifeq ($(NBF_START_CACHED),1)
+NBF_INPUTS += --start_cached
 endif
 ifeq ($(PRELOAD_MEM_P),0)
-NBF_INPUTS += --mem=prog.mem --mem_size=$(NBF_MEM_SIZE)
+NBF_INPUTS += --mem_size $(NBF_MEM_SIZE)
+NBF_INPUTS += --mem $(SIM_DIR)/prog.mem
 endif
+
 %/cce_ucode.mem: $(CCE_UCODE_FILE)
-	$(MKDIR) -p $(@D)
 	$(CP) $< $@
 
 ifeq ($(UCODE),1)
@@ -63,6 +115,25 @@ ifeq ($(UCODE),1)
 else
 %/prog.nbf: %/prog.mem
 endif
-	$(MKDIR) -p $(@D)
 	cd $(@D); $(PYTHON) $(MEM2NBF) $(NBF_INPUTS) > $@
+	echo "$(PYTHON) $(MEM2NBF) $(NBF_INPUTS)"
+
+sigcheck: $(SIM_DIR)/run_sigcheck
+sigcheck: SIGCHECK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).log
+sigcheck: SIGCHECK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).rpt
+sigcheck: SIGCHECK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sigcheck.$(SUITE).$(PROG).err
+$(SIM_DIR)/run_sigcheck:
+	-$(DIFF) <($(TAIL) -n +9 $(@D)/DUT-blackparrot.signature | head -n -0) <($(TAIL) -n +9 $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature | head -n -2) > $(SIGCHECK_LOG)
+	$(ECHO) "Mismatches: " > $(SIGCHECK_REPORT)
+	$(WCOUNT) < $(SIGCHECK_LOG) >> $(SIGCHECK_REPORT)
+	$(GREP) [1-9] $(SIGCHECK_REPORT) && $(ECHO) "FAILED" > $(SIGCHECK_ERROR) || true
+	$(WCOUNT) < $(@D)/DUT-blackparrot.signature >> $(SIGCHECK_REPORT)
+	$(ECHO) "------" >> $(SIGCHECK_REPORT)
+	$(WCOUNT) < $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).signature >> $(SIGCHECK_REPORT)
+
+# TODO: Make compatible with multi-core
+BLOODGRAPH ?= $(BP_COMMON_DIR)/software/py/blood_graph.py --generate --generate-key
+blood: $(SIM_DIR)/blood
+$(SIM_DIR)/blood: $(SIM_DIR)/stall_0.trace
+	$(CD) $(@D); $(PYTHON) $(BLOODGRAPH) --trace $<
 
