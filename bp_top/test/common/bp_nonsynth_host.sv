@@ -190,17 +190,21 @@ module bp_nonsynth_host
   bit [7:0] bootrom_mem [0:8*bootrom_els_p-1];
 
   initial $readmemh("bootrom.mem", bootrom_mem);
-  assign bootrom_addr_li = addr_lo[2+:lg_bootrom_els_lp];
+  // TODO: account for size_lo from the bedrock message? Or is it safe to just do 64b aligned?
+  // bootrom is logically 64b wide x 1024 elements
+  // assuming 64b icache data width, should return 64b-aligned data
+  //assign bootrom_addr_li = addr_lo[2+:lg_bootrom_els_lp];
+  assign bootrom_addr_li = addr_lo[3+:lg_bootrom_els_lp];
 
   assign bootrom_data_lo = {
-    bootrom_mem[4*bootrom_addr_li+7]
-    ,bootrom_mem[4*bootrom_addr_li+6]
-    ,bootrom_mem[4*bootrom_addr_li+5]
-    ,bootrom_mem[4*bootrom_addr_li+4]
-    ,bootrom_mem[4*bootrom_addr_li+3]
-    ,bootrom_mem[4*bootrom_addr_li+2]
-    ,bootrom_mem[4*bootrom_addr_li+1]
-    ,bootrom_mem[4*bootrom_addr_li+0]
+    bootrom_mem[8*bootrom_addr_li+7]
+    ,bootrom_mem[8*bootrom_addr_li+6]
+    ,bootrom_mem[8*bootrom_addr_li+5]
+    ,bootrom_mem[8*bootrom_addr_li+4]
+    ,bootrom_mem[8*bootrom_addr_li+3]
+    ,bootrom_mem[8*bootrom_addr_li+2]
+    ,bootrom_mem[8*bootrom_addr_li+1]
+    ,bootrom_mem[8*bootrom_addr_li+0]
     };
 
   localparam param_els_lp = `BSG_CDIV($bits(proc_param_lp),word_width_gp);
