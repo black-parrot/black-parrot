@@ -5,8 +5,8 @@ LINT_COLLATERAL  = $(addprefix $(LINT_DIR)/, config.vlt flist.vcs wrapper.sv tes
 BUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, config.vlt flist.vcs wrapper.sv testbench.sv bsg_tag_boot_rom.sv)
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, bootrom.riscv bootrom.mem bootrom.dump)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
 
 SAMPLE_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
 SAMPLE_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.elf prog.mem prog.dump)
