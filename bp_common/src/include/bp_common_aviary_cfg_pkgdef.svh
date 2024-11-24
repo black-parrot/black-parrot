@@ -303,7 +303,7 @@
       ,icache_sets          : 64
       ,icache_assoc         : 8
       ,icache_block_width   : 512
-      ,icache_fill_width    : 128
+      ,icache_fill_width    : 64
       ,icache_mshr          : 1
       ,icache_data_width    : 64
 
@@ -317,7 +317,7 @@
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
-      ,dcache_fill_width    : 128
+      ,dcache_fill_width    : 64
       ,dcache_mshr          : 1
       ,dcache_data_width    : 64
 
@@ -325,14 +325,14 @@
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
-      ,acache_fill_width    : 128
+      ,acache_fill_width    : 64
       ,acache_data_width    : 64
       ,acache_mshr          : 1
 
       ,cce_type             : e_cce_uce
       ,cce_pc_width         : 8
       ,bedrock_block_width  : 512
-      ,bedrock_fill_width   : 128
+      ,bedrock_fill_width   : 64
 
       ,l2_features          : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
@@ -342,11 +342,11 @@
                               | (1 << e_cfg_amo_fetch_arithmetic)
       ,l2_slices           : 2
       ,l2_banks            : 2
-      ,l2_data_width       : 128
+      ,l2_data_width       : 64
       ,l2_sets             : 128
       ,l2_assoc            : 8
       ,l2_block_width      : 512
-      ,l2_fill_width       : 128
+      ,l2_fill_width       : 64
 
       ,fe_queue_fifo_els : 8
       ,fe_cmd_fifo_els   : 4
