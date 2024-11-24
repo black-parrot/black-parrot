@@ -360,20 +360,20 @@
       ,compressed_support: 1
 
       ,async_coh_clk       : 0
-      ,coh_noc_flit_width  : 128
+      ,coh_noc_flit_width  : 64
       ,coh_noc_cid_width   : 3
       ,coh_noc_len_width   : 4
       ,coh_noc_max_credits : 32
 
       ,async_mem_clk         : 0
-      ,mem_noc_flit_width    : 128
+      ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 3
       ,mem_noc_did_width     : 3
       ,mem_noc_len_width     : 4
       ,mem_noc_max_credits   : 32
 
       ,async_dma_clk         : 0
-      ,dma_noc_flit_width    : 128
+      ,dma_noc_flit_width    : 64
       ,dma_noc_cid_width     : 3
       ,dma_noc_len_width     : 4
       ,dma_noc_max_credits   : 32
