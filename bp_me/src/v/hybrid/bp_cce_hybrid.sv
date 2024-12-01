@@ -17,9 +17,6 @@ module bp_cce_hybrid
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
 
-    // TODO: move into aviary?
-    , parameter prog_pipe_en_p             = 0
-
     , parameter req_arb_fifo_els_p         = 8
     , parameter pending_buffer_els_p       = 2
     , parameter prog_header_fifo_els_p     = 2
@@ -34,6 +31,13 @@ module bp_cce_hybrid
 
    // Config channel
    , input [cfg_bus_width_lp-1:0]                   cfg_bus_i
+
+   // ucode programming interface, synchronous read, direct connection to RAM
+   , input                                          ucode_v_i
+   , input                                          ucode_w_i
+   , input [cce_pc_width_p-1:0]                     ucode_addr_i
+   , input [cce_instr_width_gp-1:0]                 ucode_data_i
+   , output logic [cce_instr_width_gp-1:0]          ucode_data_o
 
    // LCE-CCE Interface
    // BedRock Stream protocol: ready&valid
@@ -293,35 +297,36 @@ module bp_cce_hybrid
       ,.lce_resp_pending_clear_i(lce_resp_pending_clear)
       );
 
+  // Programmable pipe
   logic prog_pipe_empty;
-  if (prog_pipe_en_p == 1) begin
-    // Programmable pipe
-    bp_cce_hybrid_prog_pipe
-      #(.bp_params_p(bp_params_p)
-        ,.header_fifo_els_p(prog_header_fifo_els_p)
-        )
-      prog_pipe
-       (.clk_i(clk_i)
-        ,.reset_i(reset_i)
-        // control
-        ,.cce_mode_i(cce_mode)
-        ,.cce_id_i(cce_id)
-        ,.empty_o(prog_pipe_empty)
-        // from coherent pipeline
-        ,.lce_req_header_i(prog_lce_req_header_li)
-        ,.lce_req_v_i(prog_lce_req_v_li)
-        ,.lce_req_ready_and_o(prog_lce_req_ready_and_lo)
-        // to coherent pipeline
-        ,.prog_v_o(prog_v_lo)
-        ,.prog_yumi_i(prog_yumi_li)
-        ,.prog_status_o(prog_status_lo)
-        );
-  end else begin
-    assign prog_pipe_empty = 1'b1;
-    assign prog_status_lo = 1'b1;
-    assign prog_v_lo = 1'b1;
-    assign prog_lce_req_ready_and_lo = 1'b1;
-  end
+  bp_cce_hybrid_prog_pipe
+    #(.bp_params_p(bp_params_p)
+      ,.header_fifo_els_p(prog_header_fifo_els_p)
+      )
+    prog_pipe
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      // config bus
+      ,.cfg_bus_i(cfg_bus_i)
+      // control
+      ,.cce_mode_i(cce_mode)
+      ,.cce_id_i(cce_id)
+      ,.empty_o(prog_pipe_empty)
+      // ucode
+      ,.ucode_v_i(ucode_v_i)
+      ,.ucode_w_i(ucode_w_i)
+      ,.ucode_addr_i(ucode_addr_i)
+      ,.ucode_data_i(ucode_data_i)
+      ,.ucode_data_o(ucode_data_o)
+      // from coherent pipeline
+      ,.lce_req_header_i(prog_lce_req_header_li)
+      ,.lce_req_v_i(prog_lce_req_v_li)
+      ,.lce_req_ready_and_o(prog_lce_req_ready_and_lo)
+      // to coherent pipeline
+      ,.prog_v_o(prog_v_lo)
+      ,.prog_yumi_i(prog_yumi_li)
+      ,.prog_status_o(prog_status_lo)
+      );
 
   // Memory Response Pipe
   bp_bedrock_lce_cmd_header_s mem_rev_lce_cmd_header_li;
