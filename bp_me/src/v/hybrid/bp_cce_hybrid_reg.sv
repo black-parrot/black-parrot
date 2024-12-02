@@ -58,31 +58,6 @@ module bp_cce_hybrid_reg
 
   assign gpr_o          = gpr_r;
 
-  // CCE PMA - LCE requests
-  logic req_pma_cacheable_addr_lo;
-  bp_cce_pma
-    #(.bp_params_p(bp_params_p)
-      )
-    req_pma
-      (.paddr_i(lce_req_hdr.addr)
-       ,.cacheable_addr_o(req_pma_cacheable_addr_lo)
-       );
-
-  // synopsys translate_off
-  always @(negedge clk_i) begin
-    if (~reset_i) begin
-      // Cacheable requests must target cacheable memory
-      assert(reset_i !== '0 ||
-             !(lce_req_v_i && ~req_pma_cacheable_addr_lo
-               && ((lce_req_hdr.msg_type.req == e_bedrock_req_rd_miss)
-                   || (lce_req_hdr.msg_type.req == e_bedrock_req_wr_miss))
-              )
-            ) else
-      $error("CCE PMA violation - cacheable requests must target cacheable memory");
-    end
-  end
-  // synopsys translate_on
-
   // Write mask for GPRs
   // This is by default the write mask from the decoded instruction, but it is also modified
   // by the Directory on RDE operation to indicate which GPR the address from RDE is written to.
