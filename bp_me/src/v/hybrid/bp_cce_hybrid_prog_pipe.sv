@@ -247,6 +247,12 @@ module bp_cce_hybrid_prog_pipe
 
     state_n = state_r;
 
+    // STUB
+    lce_req_yumi_lo = lce_req_v_li;
+    prog_v_o = gpr_lo[0][0];
+    prog_status_o = gpr_lo[0][0];
+
+    /*
     // LCE request
     lce_req_yumi_lo = '0;
 
@@ -278,6 +284,7 @@ module bp_cce_hybrid_prog_pipe
       end
 
     endcase
+    */
   end // always_comb
 
   // Sequential Logic

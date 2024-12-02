@@ -530,8 +530,8 @@ module bp_cce_hybrid_coh_pipe
 
     // TODO
     // programmable pipe interface
-    lce_req_v_o = 1'b0;
-    lce_req_header_cast_o = '0;
+    lce_req_v_o = 1'b1;
+    lce_req_header_cast_o = fsm_req_header_li;
     prog_yumi_o = 1'b0;
 
     // lce command defaults
