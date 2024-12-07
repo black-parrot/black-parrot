@@ -34,7 +34,7 @@ else
 endif
 
 e_bp_custom_cfg_ucode := 1
-$(CFG)_ucode ?= $(findstring cce_ucode,$(CFG))
+$(CFG)_ucode ?= $(findstring cce_ucode,$(CFG)) $(findstring cce_hybrid,$(CFG))
 
 _UCODE ?= $($(CFG)_ucode)
 ifeq ($(_UCODE),)
