@@ -19,7 +19,7 @@ export DEV_TRACE_P    ?= 0
 
 export PRELOAD_MEM_P  ?= 1
 export NBF_SKIP_ZEROS ?= 1
-export NBF_MEM_SIZE   ?= 16
+export NBF_MEM_SIZE   ?= 256
 
 export NO_BIND_P ?= 0
 
