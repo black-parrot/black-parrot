@@ -9,19 +9,24 @@ export ICACHE_TRACE_P ?= 0
 export DCACHE_TRACE_P ?= 0
 export VM_TRACE_P     ?= 0
 export CORE_PROFILE_P ?= 0
+export PC_GEN_TRACE_P ?= 0
 export PC_PROFILE_P   ?= 0
 export BR_PROFILE_P   ?= 0
+export CHECKPOINT_P   ?= 0
+export COSIM_P        ?= 0
+export NBF_CONFIG_P   ?= 1
 export DEV_TRACE_P    ?= 0
 
-export COSIM_P         ?= 0
-export MAX_INSTR_P     ?= 0
-export WARMUP_INSTR_P  ?= 0
-export CHECKPOINT_P    ?= 0
-
-export NBF_CONFIG_P   ?= 1
-export NBF_SKIP_ZEROS ?= 1
-export NBF_MEM_SIZE   ?= 16
 export PRELOAD_MEM_P  ?= 1
+export NBF_SKIP_ZEROS ?= 1
+export NBF_MEM_SIZE   ?= 256
+
+export NO_BIND_P ?= 0
+
+export SAMPLE_MEMSIZE   ?= 256
+export SAMPLE_START_P   ?= 0
+export SAMPLE_WARMUP_P  ?= 0
+export SAMPLE_INSTR_P   ?= 0
 
 export BP_SIM_CLK_PERIOD ?= 1000
 export BP_RT_CLK_PERIOD  ?= 1000000
@@ -36,18 +41,19 @@ export TB_PARAMS  = \
                     -pvalue+dcache_trace_p=$(DCACHE_TRACE_P) \
                     -pvalue+vm_trace_p=$(VM_TRACE_P) \
                     -pvalue+core_profile_p=$(CORE_PROFILE_P) \
+                    -pvalue+pc_gen_trace_p=$(PC_GEN_TRACE_P) \
                     -pvalue+pc_profile_p=$(PC_PROFILE_P) \
                     -pvalue+br_profile_p=$(BR_PROFILE_P) \
-                    -pvalue+dev_trace_p=$(DEV_TRACE_P) \
-					\
-                    -pvalue+cosim_p=$(COSIM_P) \
-					-pvalue+max_instr_p=$(MAX_INSTR_P) \
-					-pvalue+warmup_instr_p=$(WARMUP_INSTR_P) \
                     -pvalue+checkpoint_p=$(CHECKPOINT_P) \
-					\
+                    -pvalue+cosim_p=$(COSIM_P) \
+                    -pvalue+cosim_memsize_p=$(SAMPLE_MEMSIZE) \
+                    -pvalue+cosim_instr_p=$(SAMPLE_INSTR_P) \
+                    -pvalue+warmup_instr_p=$(SAMPLE_WARMUP_P) \
+                    -pvalue+amo_en_p=$(AMOEN) \
+                    -pvalue+dev_trace_p=$(DEV_TRACE_P) \
 					-pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
+                    -pvalue+no_bind_p=$(NO_BIND_P)
 
-export DEFINES    ?=
 export DUT_DEFINES = $(foreach def,$(DEFINES),+define+$(def))
 export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
 					 +define+BP_RT_CLK_PERIOD=$(BP_RT_CLK_PERIOD) \
