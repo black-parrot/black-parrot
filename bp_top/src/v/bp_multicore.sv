@@ -65,12 +65,25 @@ module bp_multicore
 
   bp_dma_ready_and_link_s [S:N][cc_x_dim_p-1:0] dma_link_li, dma_link_lo;
 
-  // IO and SACC complexes only use Req/Cmd networks
+  // IO complex only uses Req/Cmd networks
   assign coh_resp_ver_link_li[N] = '0;
-  assign coh_resp_hor_link_li[W] = '0;
   assign coh_fill_ver_link_li[N] = '0;
+
+  // stub accelerator complexes
+  assign coh_req_hor_link_li[W] = '0;
+  assign coh_cmd_hor_link_li[W] = '0;
+  assign coh_resp_hor_link_li[W] = '0;
   assign coh_fill_hor_link_li[W] = '0;
-  // Memory complex does not use Fill network
+
+  assign coh_req_hor_link_li[E] = '0;
+  assign coh_cmd_hor_link_li[E] = '0;
+  assign coh_resp_hor_link_li[E] = '0;
+  assign coh_fill_hor_link_li[E] = '0;
+
+  // stub memory complex
+  assign coh_req_ver_link_li[S] = '0;
+  assign coh_cmd_ver_link_li[S] = '0;
+  assign coh_resp_ver_link_li[S] = '0;
   assign coh_fill_ver_link_li[S] = '0;
 
   assign dma_link_li[N] = '0;
@@ -117,6 +130,8 @@ module bp_multicore
      ,.dma_link_i(dma_link_li)
      ,.dma_link_o(dma_link_lo)
      );
+  assign dma_link_li[S] = dma_link_i[S];
+  assign dma_link_o[S] = dma_link_lo[S];
 
   bp_io_complex
    #(.bp_params_p(bp_params_p))
@@ -144,77 +159,6 @@ module bp_multicore
 
      ,.mem_rev_link_i(mem_rev_link_i)
      ,.mem_rev_link_o(mem_rev_link_o)
-     );
-
-  bp_dma_ready_and_link_s [S:N][cc_x_dim_p-1:0] l2e_dma_link_li, l2e_dma_link_lo;
-  bp_mem_complex
-   #(.bp_params_p(bp_params_p))
-   mc
-    (.core_clk_i(core_clk_i)
-     ,.core_reset_i(core_reset_i)
-
-     ,.coh_clk_i(coh_clk_i)
-     ,.coh_reset_i(coh_reset_i)
-
-     ,.dma_clk_i(dma_clk_i)
-     ,.dma_reset_i(dma_reset_i)
-
-     ,.my_did_i(my_did_i)
-
-     ,.coh_req_link_i(coh_req_ver_link_lo[S])
-     ,.coh_req_link_o(coh_req_ver_link_li[S])
-
-     ,.coh_cmd_link_i(coh_cmd_ver_link_lo[S])
-     ,.coh_cmd_link_o(coh_cmd_ver_link_li[S])
-
-     ,.coh_resp_link_i(coh_resp_ver_link_lo[S])
-     ,.coh_resp_link_o(coh_resp_ver_link_li[S])
-
-     ,.dma_link_i(l2e_dma_link_li)
-     ,.dma_link_o(l2e_dma_link_lo)
-     );
-  assign l2e_dma_link_li[N] = dma_link_lo[S];
-  assign dma_link_li[S] = l2e_dma_link_lo[N];
-
-  assign l2e_dma_link_li[S] = dma_link_i[S];
-  assign dma_link_o[S] = l2e_dma_link_lo[S];
-
-  bp_cacc_complex
-   #(.bp_params_p(bp_params_p))
-   cac
-    (.core_clk_i(core_clk_i)
-     ,.core_reset_i(core_reset_i)
-
-     ,.coh_clk_i(coh_clk_i)
-     ,.coh_reset_i(coh_reset_i)
-
-     ,.coh_req_link_i(coh_req_hor_link_lo[E])
-     ,.coh_req_link_o(coh_req_hor_link_li[E])
-
-     ,.coh_cmd_link_i(coh_cmd_hor_link_lo[E])
-     ,.coh_cmd_link_o(coh_cmd_hor_link_li[E])
-
-     ,.coh_fill_link_i(coh_fill_hor_link_lo[E])
-     ,.coh_fill_link_o(coh_fill_hor_link_li[E])
-
-     ,.coh_resp_link_i(coh_resp_hor_link_lo[E])
-     ,.coh_resp_link_o(coh_resp_hor_link_li[E])
-     );
-
-  bp_sacc_complex
-   #(.bp_params_p(bp_params_p))
-   sac
-    (.core_clk_i(core_clk_i)
-     ,.core_reset_i(core_reset_i)
-
-     ,.coh_clk_i(coh_clk_i)
-     ,.coh_reset_i(coh_reset_i)
-
-     ,.coh_req_link_i(coh_req_hor_link_lo[W])
-     ,.coh_req_link_o(coh_req_hor_link_li[W])
-
-     ,.coh_cmd_link_i(coh_cmd_hor_link_lo[W])
-     ,.coh_cmd_link_o(coh_cmd_hor_link_li[W])
      );
 
 endmodule
