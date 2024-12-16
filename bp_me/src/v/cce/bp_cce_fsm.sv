@@ -446,7 +446,6 @@ module bp_cce_fsm
     , e_ready
 
     , e_uncached_req
-    , e_uncached_data
     , e_read_pending
     , e_coherent_req
     , e_read_mem_spec
