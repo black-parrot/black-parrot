@@ -86,6 +86,7 @@ package bp_be_pkg;
     bp_hardfloat_rec_dp_s             rec;
   }  bp_be_fp_reg_s;
 
+  localparam dword_width_gp = 64;
   typedef struct packed
   {
     logic [$bits(bp_be_int_tag_e)-1:0] tag;

@@ -1,6 +1,6 @@
 
-`ifndef BP_COMMON_AVIARY_CFG_PKGDEF_SVH
-`define BP_COMMON_AVIARY_CFG_PKGDEF_SVH
+//`ifndef BP_COMMON_AVIARY_CFG_PKGDEF_SVH
+//`define BP_COMMON_AVIARY_CFG_PKGDEF_SVH
 
   // Suitably high enough to not run out of configs.
   localparam max_cfgs    = 128;
@@ -489,5 +489,5 @@
       ,`bp_aviary_define_override(dma_noc_len_width, BP_MEM_NOC_LEN_WIDTH, `BP_CUSTOM_BASE_CFG)
       };
 
-`endif
+//`endif
 
