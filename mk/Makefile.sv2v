@@ -1,0 +1,23 @@
+
+WITHOUT_MEMS ?= 1
+
+convert.sv2v: $(CONVERT_DIR)/convert_sv2v
+convert.sv2v: CONVERT_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).convert.log
+convert.sv2v: CONVERT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.rpt
+convert.sv2v: CONVERT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.err
+%/convert_sv2v: %/flist.vcs %/wrapper.sv
+	@$(eval export FM_RELEASE=$(FM_RELEASE))
+	@$(MKDIR) -p $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(CONVERT_DIR)
+ifeq ($(WITHOUT_MEMS),1)
+	@$(SED_I) "/bsg_mem_3r1w_sync_synth.sv/d"                  $(@D)/flist.vcs
+	@$(SED_I) "/bsg_mem_2r1w_sync_synth.sv/d"                  $(@D)/flist.vcs
+	@$(SED_I) "/bsg_mem_1r1w_sync_synth.sv/d"                  $(@D)/flist.vcs
+	@$(SED_I) "/bsg_mem_1r1w_sync_mask_write_byte_synth.sv/d"  $(@D)/flist.vcs
+	@$(SED_I) "/bsg_mem_1r1w_sync_mask_write_bit_synth.sv/d"   $(@D)/flist.vcs
+	@$(SED_I) "/bsg_mem_1rw_sync_synth.sv/d"                   $(@D)/flist.vcs
+	@$(SED_I) "/bsg_mem_1rw_sync_mask_write_byte_synth.sv/d"   $(@D)/flist.vcs
+	@$(SED_I) "/bsg_mem_1rw_sync_mask_write_bit_synth.sv/d"    $(@D)/flist.vcs
+endif
+	@$(MAKE) -C $(BP_TOOLS_DIR)/bsg_sv2v convert_sv2v \
+		DESIGN_FILELIST=$(@D)/flist.vcs DESIGN_NAME=wrapper OUTPUT_DIR=$(@D) 2>&1 | $(TEE) $(CONVERT_LOG)
+

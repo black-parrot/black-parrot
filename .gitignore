@@ -10,3 +10,4 @@ regress_logs/
 stack.info.*
 *.swp
 .simvision/
+bsg_cadenv/

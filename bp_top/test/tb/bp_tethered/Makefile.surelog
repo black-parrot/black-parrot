@@ -1,4 +1,0 @@
-include $(TB_PATH)/$(TB)/Makefile.collateral
-
-PARSE_COLLATERAL = $(addprefix $(PARSE_DIR)/, flist.vcs wrapper.sv)
-

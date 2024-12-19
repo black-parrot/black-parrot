@@ -1,61 +1,194 @@
-## Set common environment variables
-SHELL:=/bin/bash
+#############################
+# Makefile functions
+#############################
+# Saves initial values so that we can filter them later
+VARS_OLD := $(.VARIABLES)
 
-## Directories to install into
-export BP_RTL_DIR         ?= $(TOP)
-export BP_RTL_INSTALL_DIR := $(BP_RTL_DIR)/install
-export BP_RTL_BIN_DIR     := $(BP_RTL_INSTALL_DIR)/bin
-export BP_RTL_LIB_DIR     := $(BP_RTL_INSTALL_DIR)/lib
-export BP_RTL_INCLUDE_DIR := $(BP_RTL_INSTALL_DIR)/include
-export BP_RTL_TOUCH_DIR   := $(BP_RTL_INSTALL_DIR)/touch
+# Global Makefile settings
+SHELL := /bin/bash
+EXTRAMAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += $(EXTRAMAKEFLAGS)
 
-ifeq ($(TOP),$(BP_RTL_DIR))
-#export BP_RTL_DIR ?= $(TOP)/../black-parrot
-#include $(BP_RTL_DIR)/Makefile.common
+# Global help target
+.DEFAULT_GOAL: help
+.PHONY: help
+help: ## prints this message
+	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m  %-30s\033[0m %s\n", $$1, $$2}'
 
-export BP_TOOLS_DIR ?= $(TOP)/../black-parrot-tools
-include $(BP_TOOLS_DIR)/Makefile.common
+# Global reset
+.PHONY: bleach_all
+bleach_all: ## wipes the whole repo clean. Use with caution
+	@cd $(TOP); git clean -ffdx; git submodule deinit -f .
 
-export BP_SDK_DIR ?= $(TOP)/../black-parrot-sdk
-include $(BP_SDK_DIR)/Makefile.common
+define bsg_fn_upper
+$(shell echo $(1) | tr a-z A-Z)
+endef
+define bsg_fn_lower
+$(shell echo $(1) | tr A-Z a-z)
+endef
+bsg_var_blank :=
+define bsg_var_newline
 
-## Setup CAD tools
-# If the machine you are working on is bsg_cadenv compliant, then you do not
-# need to setup the cad tools, simply put bsg_cadenv in the same root dir.
-BSG_CADENV_DIR ?= $(BP_EXTERNAL_DIR)/bsg_cadenv
-bsg_cadenv: $(BSG_CADENV_DIR)
-$(BSG_CADENV_DIR):
-	git clone git@github.com:bespoke-silicon-group/bsg_cadenv.git $@
--include $(BSG_CADENV_DIR)/cadenv.mk
-endif
+$(bsg_var_blank)
+endef
 
-define patch_if_new
-	$(eval $@_src_root = $(1))
-	$(eval $@_patch_root = $(2))
-	$(eval $@_patch_list = $(wildcard $($@_patch_root)/*.patch))
-	$(eval $@_patch_is_top = $(findstring patches,$(lastword $(subst /, ,$(dir $($@_patch_root))))))
-	for p in ${$@_patch_list}; \
+bsg_var_percent := %
+
+define bsg_fn_patch_if_new
+	$(eval apply_stage_patch := git apply --ignore-whitespace --ignore-space-change)
+	$(eval apply_commit_patch := git am --ignore-whitespace --ignore-space-change)
+	$(eval check_patch := $(apply_stage_patch) --check --reverse)
+	$(eval src_root := $(1))
+	$(eval patch_root := $(2))
+	$(eval patch_list := $(wildcard $(patch_root)/*.patch))
+	$(eval patch_is_top := $(findstring patches,$(lastword $(subst /, ,$(dir $(patch_root))))))
+	for p in $(patch_list); \
 	do \
-		echo "Checking if patch is applicable"; \
-		cd ${$@_src_root}; $(CHECK_PATCH) $$p && continue; \
+		echo "Checking if patch $$p is applicable"; \
+		cd $(src_root); $(check_patch) $$p && continue; \
 		echo "Patch is unapplied..."; \
-		if [ $@_patch_is_top ]; then \
-		echo "Applying patch to sub-directory ${$@_src_root}}; \
-		cd ${$@_src_root}; echo $$p; git am $$p; \
+		if [ ! -z "$$patch_is_top" ]; then \
+		echo "Applying patch to sub-directory $(src_root);" \
+		cd $(src_root); $(apply_commit_patch) $$p; \
+		echo "Patch applied!"; \
 		else \
-		echo "Applying patch to top-level ${$@_src_root}}; \
-		cd ${$@_src_root}; echo $$p; git apply $$p; \
+		echo "Applying patch to top-level $(src_root);" \
+		cd $(src_root); $(apply_stage_patch) $$p; \
+		echo "Patch applied!"; \
 		fi \
 	done
 endef
 
-## Export the variables for environment substitutions in makefile
-export BP_COMMON_DIR    := $(TOP)/bp_common
-export BP_FE_DIR        := $(TOP)/bp_fe
-export BP_BE_DIR        := $(TOP)/bp_be
-export BP_ME_DIR        := $(TOP)/bp_me
-export BP_TOP_DIR       := $(TOP)/bp_top
-export BP_EXTERNAL_DIR  := $(TOP)/external
-export BASEJUMP_STL_DIR := $(BP_EXTERNAL_DIR)/basejump_stl
-export HARDFLOAT_DIR    := $(BP_EXTERNAL_DIR)/HardFloat
+define bsg_fn_build_tag
+	$(eval name := $(1))
+	$(eval src_dir := $(2))
+	$(eval touch_dir := $(3))
+	$(eval tag := $(4))
+	$(eval internal_target := $(src_dir)/.$(name)_build)
+	$(eval external_target := build.$(name))
+	$(eval rebuild_target := rebuild.$(name))
+$(external_target): | $(tag)
+$(rebuild_target):
+	rm -f $(touch_dir)/$(name).*
+	+$(MAKE) $(tag)
+$(tag):
+	+$(MAKE) $(internal_target)
+	touch $(tag)
+endef
+
+define bsg_fn_build_if_missing
+	$(eval name := $(1))
+	$(eval src_dir := $(2))
+	$(eval touch_dir := $(3))
+	$(eval tag := $(addprefix $(touch_dir)/$(name).,any))
+	$(call bsg_fn_build_tag,$(name),$(src_dir),$(touch_dir),$(tag))
+endef
+
+define bsg_fn_build_if_new
+	$(eval name := $(1))
+	$(eval src_dir := $(2))
+	$(eval touch_dir := $(3))
+	$(eval hash := $(shell cd $(src_dir); git rev-parse HEAD))
+	$(eval tag := $(addprefix $(touch_dir)/$(name).,$(hash)))
+	$(call bsg_fn_build_tag,$(name),$(src_dir),$(touch_dir),$(tag))
+endef
+
+define bsg_fn_info
+	$(eval msg := $(1))
+	$(eval prefix := "\[BSG-INFO\]: ")
+	echo "$(prefix) $(msg)";
+endef
+
+define bsg_fn_warn
+	$(eval msg := $(1))
+	$(eval prefix := "\[BSG-WARN\]: ")
+	echo "$(prefix) $(msg)";
+endef
+
+define bsg_fn_error
+	$(eval msg := $(1))
+	$(eval prefix := "\[BSG-ERROR\]: ")
+	echo "$(prefix) $(msg)"; \
+	exit -1;
+endef
+
+define bsg_fn_fail_search
+	$(eval log := $(1))
+	$(eval rpt := $(2))
+	$(eval term := "\[BSG-FAIL\]")
+	$(eval depth := 1)
+	grep -A$(depth) -s $(term) $(log) && echo FAILED >> $(rpt) || true
+endef
+
+define bsg_fn_pass_search
+	$(eval log := $(1))
+	$(eval rpt := $(2))
+	$(eval term := "\[BSG-PASS\]")
+	$(eval depth := 1)
+	grep -A$(depth) -s $(term) $(log) || echo NOPASS >> $(rpt) || true
+endef
+
+define bsg_fn_sentinal_search
+	$(eval log := $(1))
+	$(eval rpt := $(2))
+	$(eval term := $(3))
+	$(eval depth := 1)
+	grep -A$(depth) -s $(term) $(log) || echo MISSING: $(term) >> $(rpt) || true
+endef
+
+define bsg_fn_stat_search
+	$(eval log := $(1))
+	$(eval rpt := $(2))
+	$(eval term := "\[BSG-STAT\]")
+	$(eval regex := "\[BSG-STAT\]\[(\d+)\]:")
+	N=`grep -oP $(regex) $(log) | grep -oP "\d+" | head -1`; \
+	if [ -n "$$N" ]; then \
+		grep -A$$N $(term) $(log) | tail -n +2 >> $(rpt); \
+	fi
+endef
+
+define bsg_fn_info_search
+	$(eval log := $(1))
+	$(eval rpt := $(2))
+	$(eval term := $(3))
+	$(eval depth := $(4))
+	grep -A$(depth) $(term) $(log) >> $(rpt) || true
+endef
+
+#############################
+# Paths
+#############################
+BP_RTL_DIR         ?= $(TOP)
+BP_RTL_MK_DIR      ?= $(BP_RTL_DIR)/mk
+BP_RTL_TCL_DIR     ?= $(BP_RTL_DIR)/tcl
+BP_RTL_INSTALL_DIR ?= $(BP_RTL_DIR)/install
+BP_RTL_BIN_DIR     ?= $(BP_RTL_INSTALL_DIR)/bin
+BP_RTL_LIB_DIR     ?= $(BP_RTL_INSTALL_DIR)/lib
+BP_RTL_INCLUDE_DIR ?= $(BP_RTL_INSTALL_DIR)/include
+BP_RTL_TOUCH_DIR   ?= $(BP_RTL_INSTALL_DIR)/touch
+
+BP_RTL_BASEJUMP_STL_DIR ?= $(BP_RTL_DIR)/external/basejump_stl
+
+BSG_CADENV_DIR ?= $(BP_RTL_DIR)/bsg_cadenv
+
+# TODO: exported for historical reasons, remove when possible
+export BP_COMMON_DIR    ?= $(BP_RTL_DIR)/bp_common
+export BP_FE_DIR        ?= $(BP_RTL_DIR)/bp_fe
+export BP_BE_DIR        ?= $(BP_RTL_DIR)/bp_be
+export BP_ME_DIR        ?= $(BP_RTL_DIR)/bp_me
+export BP_TOP_DIR       ?= $(BP_RTL_DIR)/bp_top
+export BP_EXTERNAL_DIR  ?= $(BP_RTL_DIR)/external
+export BASEJUMP_STL_DIR ?= $(BP_EXTERNAL_DIR)/basejump_stl
+export HARDFLOAT_DIR    ?= $(BP_EXTERNAL_DIR)/HardFloat
+
+export BP_SDK_DIR ?= $(BP_RTL_DIR)/../black-parrot-sdk
+export BP_SDK_INSTALL_DIR ?= $(BP_SDK_DIR)/install
+export BP_SDK_PROG_DIR ?= $(BP_SDK_INSTALL_DIR)/riscv/prog
+export BP_SDK_UCODE_DIR ?= $(BP_SDK_INSTALL_DIR)/riscv/ucode
+
+export BP_TOOLS_DIR ?= $(BP_RTL_DIR)/../black-parrot-tools
+export BP_TOOLS_INSTALL_DIR ?= $(BP_TOOLS_DIR)/install
+
+export PATH := $(BP_TOOLS_INSTALL_DIR)/bin:$(BP_SDK_INSTALL_DIR)/bin:$(PATH)
 

@@ -13,7 +13,6 @@ module bp_nonsynth_branch_profiler
     )
    (input                         clk_i
     , input                       reset_i
-    , input                       freeze_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
@@ -22,8 +21,6 @@ module bp_nonsynth_branch_profiler
 
     , input                       commit_v_i
     );
-
-`ifndef XCELIUM
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
@@ -57,8 +54,7 @@ module bp_nonsynth_branch_profiler
 
   integer file;
   string file_name;
-  wire reset_li = reset_i | freeze_i;
-  always_ff @(negedge reset_li)
+  always_ff @(negedge reset_i)
     begin
       file_name = $sformatf("%s_%x.stats", branch_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");
@@ -140,8 +136,6 @@ module bp_nonsynth_branch_profiler
       foreach (branch_histo[key])
         $fwrite(file, "[%x] %d %d %d\n", key, branch_histo[key], miss_histo[key], (miss_histo[key]*100)/branch_histo[key]);
     end
-
-`endif
 
 endmodule
 

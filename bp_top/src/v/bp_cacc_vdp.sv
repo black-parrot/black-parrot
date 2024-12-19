@@ -158,6 +158,8 @@ module bp_cacc_vdp
      ,.ptw_o()
      ,.ret_o()
      ,.late_o()
+     ,.tag_o()
+     ,.unsigned_o()
 
      // D$-LCE Interface
      ,.cache_req_o(acache_req_lo)

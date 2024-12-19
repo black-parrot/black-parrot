@@ -1,4 +1,3 @@
-#ifdef SPIKE_COSIM
 
 #include "svdpi.h"
 
@@ -21,14 +20,11 @@
 #include <sys/types.h>
 
 
-cfg_t* cfg = NULL;
-sim_t* sim = NULL;
+cfg_t cfg;
 std::vector<std::pair<reg_t, abstract_mem_t*>> mems;
 std::vector<device_factory_t*> plugin_device_factories;
 std::vector<std::string> args;
 debug_module_config_t dm_config;
-
-using namespace std;
 
 // https://github.com/ucb-bar/testchipip/blob/edacb214f081e5034f131af74efa0ac5f4452ee6/src/main/resources/testchipip/csrc/cospike_impl.cc#L29
 class loadmem_memif_t : public memif_t {
@@ -50,64 +46,63 @@ class loadmem_memif_t : public memif_t {
         size_t start;
 };
 
-extern "C" void cosim_init(int hartid, int ncpus, int memory_size, bool checkpoint) {
+extern "C" void* cosim_init(int hartid, int ncpus, bool checkpoint) {
+    size_t memory_size = 256;
     size_t base = 0x80000000;
     size_t size = memory_size*1024*1024;
 
-    if (cfg == NULL && hartid == 0) {
-        cfg = new cfg_t();
+    uint8_t *data = (uint8_t*) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    mems.push_back(std::make_pair(base, new mem_t(size)));
+    cfg.bootargs = nullptr;
+    cfg.isa = "rv64imafdcZifencei_Zicsr_Zba_Zbb_Zbc_Zbs";
+    cfg.priv = "msu";
+    cfg.start_pc = base;
+    cfg.pmpregions = 0;
 
-        uint8_t *data = (uint8_t*) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-        mems.push_back(std::make_pair(base, new mem_t(size)));
-        cfg->bootargs = nullptr;
-        cfg->isa = "rv64imafdcZifencei_Zicsr_Zba_Zbb_Zbc_Zbs";
-        cfg->priv = "msu";
-        cfg->start_pc = base;
-        cfg->pmpregions = 0;
+    args.push_back("prog.riscv");
 
-        args.push_back("prog.elf");
+    sim_t *sim = new sim_t(&cfg, false,
+            mems,
+            plugin_device_factories,
+            args,
+            dm_config, nullptr,
+            false, nullptr,
+            false,
+            nullptr
+            );
 
-        sim = new sim_t(cfg, false,
-                mems,
-                plugin_device_factories,
-                args,
-                dm_config, nullptr,
-                false, nullptr,
-                false,
-                nullptr
-                );
+    reg_t entry;
+    loadmem_memif_t loadmem_memif(data, base);
+    load_elf("prog.riscv", &loadmem_memif, &entry);
 
-        reg_t entry;
-        loadmem_memif_t loadmem_memif(data, base);
-        load_elf("prog.elf", &loadmem_memif, &entry);
+    bus_t temp_mem_bus;
+    for (auto& pair : mems) temp_mem_bus.add_device(pair.first, pair.second);
 
-        bus_t temp_mem_bus;
-        for (auto& pair : mems) temp_mem_bus.add_device(pair.first, pair.second);
-
-        printf("Matching spike memory initial state for region %lx-%lx\n", base, base + size);
-        if (!temp_mem_bus.store(base, size, data)) {
-            printf("Error, unable to match memory at address %lx\n", base);
-            abort();
-        }
-
-        std::shared_ptr<mem_t> host = std::make_shared<mem_t>(1 << 24);
-        sim->add_device(0, host);
-
-        sim->configure_log(true, false);
-        sim->get_core(0)->get_state()->pc = base;
-        sim->set_debug(0);
+    printf("Matching spike memory initial state for region %lx-%lx\n", base, base + size);
+    if (!temp_mem_bus.store(base, size, data)) {
+        printf("Error, unable to match memory at address %lx\n", base);
+        abort();
     }
+
+    std::shared_ptr<mem_t> host = std::make_shared<mem_t>(1 << 24);
+    sim->add_device(0, host);
+
+    sim->configure_log(true, false);
+    sim->get_core(0)->get_state()->pc = base;
+    sim->set_debug(0);
+
+    return sim;
 }
 
-extern "C" int cosim_step(int hartid,
+extern "C" int cosim_step(sim_t *sim_pointer,
+        int hartid,
         uint64_t pc,
         uint32_t insn,
         uint64_t wdata,
-        uint64_t mstatus) {
+        uint64_t status,
+        uint64_t cause) {
 
-    if (!sim) return 0;
-
-    processor_t *p = sim->get_core(0);
+    processor_t *p = sim_pointer->get_core(0);
     state_t *s = p->get_state();
     uint64_t emu_pc = s->pc;
 
@@ -137,17 +132,21 @@ extern "C" int cosim_step(int hartid,
     return 0;
 }
 
-extern "C" void cosim_trap(int hartid, uint64_t cause) {
-    processor_t *p = sim->get_core(0);
+extern "C" void cosim_trap(sim_t *sim_pointer,
+         int hartid,
+         uint64_t pc,
+         uint32_t insn,
+         uint64_t wdata,
+         uint64_t status,
+         uint64_t cause) {
+    processor_t *p = sim_pointer->get_core(0);
     p->step(1);
 }
 
-extern "C" void cosim_finish() {
-    if (sim) {
-        delete sim;
-        sim = NULL;
+extern "C" void cosim_finish(sim_t *sim_pointer) {
+    if (sim_pointer) {
+        std::cout << "Terminating Spike cosimulation" << std::endl;
+        delete sim_pointer;
     }
 }
-
-#endif
 

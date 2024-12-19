@@ -1,5 +1,0 @@
-exit_simx_job:
-	@$(ECHO) "Xcelium is not supported for this testbench"
-	$(EXIT) 1
-
-SIM_COLLATERAL = exit_simx_job

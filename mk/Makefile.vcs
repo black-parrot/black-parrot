@@ -1,0 +1,110 @@
+
+ifeq (,$(VCS))
+$(error VCS not found)
+endif
+
+## Tool specific options
+VCS_THREADS ?= 4
+VCS_BUILD_OPTS += -fgp=multisocket
+
+VCS_BUILD_OPTS += -f $(BUILD_DIR)/flist.vcs
+VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
+VCS_BUILD_OPTS += -notice
+VCS_BUILD_OPTS += -V
+VCS_BUILD_OPTS += -sverilog # Enable SystemVerilog
+VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
+VCS_BUILD_OPTS += +noportcoerce
+VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
+VCS_BUILD_OPTS += -diag timescale
+VCS_BUILD_OPTS += -top testbench
+VCS_BUILD_OPTS += +lint=TFIPC-L
+VCS_BUILD_OPTS += +define+ASSERT_ENABLE
+VCS_BUILD_OPTS += -reportstats
+
+VCS_BUILD_OPTS += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_dma.cpp
+ifeq ($(DRAM),dramsim3)
+VCS_BUILD_OPTS += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3.sv
+VCS_BUILD_OPTS += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_map.sv
+VCS_BUILD_OPTS += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_unmap.sv
+VCS_BUILD_OPTS += -CFLAGS "-I$(BP_RTL_INSTALL_DIR)/include"
+VCS_BUILD_OPTS += -LDFLAGS "-Wl,-rpath,$(BP_RTL_INSTALL_DIR)/lib -ldramsim3"
+VCS_BUILD_OPTS += -L$(BP_RTL_INSTALL_DIR)/lib -ldramsim3
+endif
+ifeq ($(if $(SPIKE),$(COSIM_P),0),1)
+VCS_BUILD_OPTS += $(BP_TOP_DIR)/test/common/spike_cosim.cpp
+VCS_BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_INSTALL_DIR)/include"
+VCS_BUILD_OPTS += -LDFLAGS "-Wl,-rpath,$(BP_TOOLS_INSTALL_DIR)/lib -lriscv"
+VCS_BUILD_OPTS += -L$(BP_TOOLS_INSTALL_DIR)/lib -lriscv
+else ifeq ($(if $(SPIKE),0,$(COSIM_P)),1)
+VCS_BUILD_OPTS += $(BP_TOP_DIR)/test/common/dromajo_cosim.cpp
+VCS_BUILD_OPTS += -CFLAGS "-I$(BP_TOOLS_INSTALL_DIR)/include"
+VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_TOOLS_INSTALL_DIR)/lib -ldromajo_cosim"
+VCS_BUILD_OPTS += -L$(BP_TOOLS_INSTALL_DIR)/lib -ldromajo_cosim
+else
+VCS_BUILD_OPTS += $(BP_TOP_DIR)/test/common/null_cosim.cpp
+endif
+
+build.vcs: $(BUILD_DIR)/simv
+build.vcs: BUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).build.log
+build.vcs: BUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.rpt
+build.vcs: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).build.err
+
+%/simv: | $(BUILD_COLLATERAL)
+	@$(eval export MAKEFLAGS := "")
+	@$(MKDIR) -p $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
+	@$(CD) $(@D); \
+		$(VCS) $(VCS_BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ 2>&1 | tee -i $(BUILD_LOG)
+	@$(call bsg_fn_sentinal_search,$(BUILD_LOG),$(BUILD_ERROR),"simv up to date")
+	@$(call bsg_fn_info_search,$(BUILD_LOG),$(BUILD_REPORT),"processes executed",100)
+
+build_dump.vcs: VCS_BUILD_OPTS += -debug_access
+build_dump.vcs: HDL_DEFINES += +define+TRACE_ENABLE=1
+ifeq ($(ENABLE_VERDI),1)
+build_dump.vcs: VCS_BUILD_OPTS += +define+FSDB_ENABLE=1
+else
+build_dump.vcs: VCS_BUILD_OPTS += +define+VPD_ENABLE=1
+endif
+build_dump.vcs: build.vcs
+
+VCS_TIMEOUT ?= 1000ms
+VCS_RUN_OPTS += +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
+VCS_RUN_OPTS += +vcs+lic+wait              # Wait for license
+VCS_RUN_OPTS += +libext+.v+.vlib+.vh       # Find library files with these extensions
+#VCS_RUN_OPTS += +vcs+loopdetect +vcs+loopreport
+VCS_RUN_OPTS += +v2k
+VCS_RUN_OPTS += -no_save
+VCS_RUN_OPTS += -fgp=num_threads:$(VCS_THREADS)
+
+sim.vcs: $(SIM_DIR)/run_simv
+sim.vcs: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
+sim.vcs: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
+sim.vcs: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
+%/run_simv: | $(RUN_COLLATERAL)
+	@$(MKDIR) -p $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
+	@$(SYMLINK) $(BUILD_DIR)/simv $(@D)/simv; $(SYMLINK) $(BUILD_DIR)/simv.daidir $(@D)/simv.daidir
+	@$(CD) $(@D); \
+		./simv $(VCS_RUN_OPTS) 2>&1 | tee -i $(SIM_LOG)
+	@$(call bsg_fn_fail_search,$(SIM_LOG),$(SIM_ERROR))
+	@$(call bsg_fn_pass_search,$(SIM_LOG),$(SIM_ERROR))
+	@$(call bsg_fn_sentinal_search,$(SIM_LOG),$(SIM_ERROR),"finish called from file")
+	@$(call bsg_fn_stat_search,$(SIM_LOG),$(SIM_REPORT))
+	@# HACK: Recover terminal, needed after spike cosim
+	@$(STTY) $(ECHO)
+
+sim_dump.vcs: VCS_RUN_OPTS += +bsg_trace=$(DUMP_FILE)
+sim_dump.vcs: sim.vcs
+
+wave.vcs: $(SIM_DIR)/wavev
+ifeq ($(ENABLE_VERDI),1)
+DUMP_FILE ?= dump.fsdb
+%/wavev:
+	@$(CD) $(@D); \
+		$(VERDI) -ssf $(DUMP_FILE) &
+else
+DUMP_FILE ?= dump.vpd
+%/wavev:
+	@$(CD) $(@D); \
+		$(_DVE) -full64 -vpd $(DUMP_FILE) &
+endif
+
+

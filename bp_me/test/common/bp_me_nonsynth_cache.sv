@@ -27,6 +27,7 @@ module bp_me_nonsynth_cache
     `declare_bp_proc_params(bp_params_p)
 
     // cache organization params
+    , parameter data_width_p = 64
     , parameter sets_p = 64
     , parameter assoc_p = 8
     , parameter block_width_p = 512
@@ -47,7 +48,7 @@ module bp_me_nonsynth_cache
 
     , localparam ctag_width_lp = caddr_width_p - (block_offset_width_lp+lg_sets_lp)
 
-    `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache)
+    `declare_bp_cache_engine_generic_if_widths(paddr_width_p, ctag_width_lp, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p, cache)
    )
    (
     input                                                   clk_i
@@ -95,7 +96,7 @@ module bp_me_nonsynth_cache
     , output logic [cache_stat_info_width_lp-1:0]           stat_mem_o
    );
 
-  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, dword_width_gp, block_width_p, fill_width_p, id_width_p, cache);
+  `declare_bp_cache_engine_generic_if(paddr_width_p, ctag_width_lp, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p, cache);
 
     localparam bp_cache_req_size_e block_req_size = bp_cache_req_size_e'(`BSG_SAFE_CLOG2(block_width_p/8));
 

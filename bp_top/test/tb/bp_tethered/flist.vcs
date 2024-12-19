@@ -1,6 +1,5 @@
 # bsg_ip_cores files
 +incdir+$BASEJUMP_STL_DIR/bsg_tag
-$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_pkg.sv
 $BASEJUMP_STL_DIR/bsg_tag/bsg_tag_pkg.sv
 $BASEJUMP_STL_DIR/bsg_test/bsg_dramsim3_pkg.sv
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_axi.sv
@@ -24,9 +23,6 @@ $BASEJUMP_STL_DIR/bsg_tag/bsg_tag_master.sv
 $BASEJUMP_STL_DIR/bsg_tag/bsg_tag_client.sv
 $BASEJUMP_STL_DIR/bsg_tag/bsg_tag_client_unsync.sv
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_axi_mem.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_map.sv
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_dramsim3_unmap.sv
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_test_rom.sv
 # me files
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.sv
@@ -38,7 +34,6 @@ $BP_ME_DIR/test/common/bp_me_nonsynth_dev_tracer.sv
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.sv
 $BP_BE_DIR/test/common/bp_be_nonsynth_dcache_tracer.sv
 $BP_FE_DIR/test/common/bp_fe_nonsynth_icache_tracer.sv
-$BP_FE_DIR/test/common/bp_fe_nonsynth_pc_gen_tracer.sv
 
 # top files
 $BP_TOP_DIR/test/common/bp_nonsynth_watchdog.sv
@@ -47,8 +42,6 @@ $BP_TOP_DIR/test/common/bp_nonsynth_cosim.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_host.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_nbf_loader.sv
-$BP_TOP_DIR/test/common/dromajo_cosim.cpp
-$BP_TOP_DIR/test/common/spike_cosim.cpp
 $BP_TOP_DIR/test/common/bp_nonsynth_core_profiler.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_pc_profiler.sv
 $BP_TOP_DIR/test/common/bp_nonsynth_branch_profiler.sv
@@ -56,10 +49,5 @@ $BP_TOP_DIR/test/common/bp_nonsynth_perf.sv
 $BP_TOP_DIR/test/common/bp_monitor.cpp
 # bsg_ip_cores files
 +incdir+$BASEJUMP_STL_DIR/bsg_clk_gen
-+incdir+$BASEJUMP_STL_DIR/testing/bsg_dmc/lpddr_verilog_model
-$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc.sv
-$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_controller.sv
-$BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_phy.sv
-$BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp
 # me files
 $BP_ME_DIR/test/common/bp_nonsynth_dram.sv

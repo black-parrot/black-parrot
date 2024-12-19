@@ -1,3 +1,0 @@
-include $(TB_PATH)/$(TB)/Makefile.collateral
-
-SYNTH_COLLATERAL = $(addprefix $(SYNTH_DIR)/, flist.vcs wrapper.sv design.xdc)

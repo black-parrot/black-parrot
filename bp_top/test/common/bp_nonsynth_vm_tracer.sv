@@ -16,13 +16,8 @@ module bp_nonsynth_vm_tracer
    )
   (input                             clk_i
    , input                           reset_i
-   , input                           freeze_i
 
    , input [core_id_width_p-1:0]     mhartid_i
-
-   //, input                           map_v
-   //, input [vtag_width_p-1:0]        vtag_i
-   //, input [ptag_width_p-1:0]        ptag_i
 
    , input                           itlb_clear_i
    , input                           itlb_fill_v_i
@@ -39,10 +34,6 @@ module bp_nonsynth_vm_tracer
    , input [vtag_width_p-1:0]        dtlb_vtag_i
    , input [dtlb_entry_width_lp-1:0] dtlb_entry_i
    , input                           dtlb_r_v_i
-
-   //, input                           sfence_i
-   //, input [rv64_priv_width_gp-1:0]  priv_i
-   //, input [rv64_priv_width_gp-1:0]  shadow_priv_i
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -55,8 +46,7 @@ module bp_nonsynth_vm_tracer
   integer file;
   string file_name;
 
-  wire delay_li = reset_i | freeze_i;
-  always_ff @(negedge delay_li)
+  always_ff @(negedge reset_i)
     begin
       file_name = $sformatf("%s_%x.trace", vm_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");
@@ -103,7 +93,7 @@ module bp_nonsynth_vm_tracer
    #(.max_val_p(2**31-1), .init_val_p(0))
    itlb_counter
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | freeze_i)
+     ,.reset_i(reset_i)
 
      ,.clear_i('0)
      ,.up_i(itlb_r_v_i)
@@ -115,7 +105,7 @@ module bp_nonsynth_vm_tracer
    #(.max_val_p(2**31-1), .init_val_p(0))
    dtlb_counter
     (.clk_i(~clk_i)
-     ,.reset_i(reset_i | freeze_i)
+     ,.reset_i(reset_i)
 
      ,.clear_i('0)
      ,.up_i(dtlb_r_v_i)
