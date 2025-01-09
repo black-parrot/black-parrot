@@ -597,8 +597,8 @@
   typedef rv64_mcounter_s rv64_mcycle_s;                                                   \
   typedef rv64_mcounter_s rv64_minstret_s;                                                 \
                                                                                            \
-  typedef bp_mcounter_s bp_mcycle_s;                                                       \
-  typedef bp_mcounter_s bp_minstret_s;                                                     \
+  typedef rv64_mcounter_s bp_mcycle_s;                                                       \
+  typedef rv64_mcounter_s bp_minstret_s;                                                     \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
@@ -981,11 +981,11 @@
   `define decompress_mcounter_s(data_comp_mp) \
     rv64_mcounter_s'(data_comp_mp)
 
-  `define compress_mcycle_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)   `compress_mcounter_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
-  `define compress_minstret_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_mcounter_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_mcycle_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)   (data_cast_mp)
+  `define compress_minstret_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) (data_cast_mp)
 
-  `define decompress_mcycle_s(data_comp_mp) `decompress_mcounter_s(data_comp_mp)
-  `define decompress_minstret_s(data_comp_mp) `decompress_mcounter_s(data_comp_mp)
+  `define decompress_mcycle_s(data_comp_mp) (data_comp_mp)
+  `define decompress_minstret_s(data_comp_mp) (data_comp_mp)
 
   `define compress_mcountinhibit_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{ir : data_cast_mp.ir \
