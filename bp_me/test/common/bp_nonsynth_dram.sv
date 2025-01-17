@@ -169,6 +169,7 @@ module bp_nonsynth_dram
                           };
       initial
         if (preload_mem_p) begin
+          $readmemh("prog.mem", preload_mem);
           foreach (preload_mem[i]) begin
             preload_addr_li = dram_base_addr_gp+i;
             ch_data_li = preload_mem[i];

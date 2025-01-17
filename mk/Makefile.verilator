@@ -13,7 +13,7 @@ VV_BUILD_OPTS += --trace-threads 1
 VV_BUILD_OPTS += --top-module testbench
 VV_BUILD_OPTS += --main-top-name "TOP"
 VV_BUILD_OPTS += -f flist.vcs
-VV_BUILD_OPTS += --build --exe --timing
+VV_BUILD_OPTS += --build --exe --timing --main
 VV_BUILD_OPTS += -o simsc
 VV_BUILD_OPTS += -Wno-timescalemod
 #VV_BUILD_OPTS += --assert --no-stop-fail
@@ -22,7 +22,6 @@ VV_BUILD_OPTS += --stats --stats-vars
 
 VV_BUILD_OPTS += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_dma.cpp
 
-VV_BUILD_OPTS += $(TB_PATH)/$(TB)/main.cpp
 VV_BUILD_OPTS += -CFLAGS "-I$(BASEJUMP_STL_DIR)/bsg_test"
 ifeq ($(DRAM),dramsim3)
 VV_BUILD_OPTS += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3.sv
@@ -82,7 +81,7 @@ sim.verilator: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PR
 sim_dump.verilator: VV_RUN_OPTS += +bsg_trace=dump.fst
 sim_dump.verilator: sim.verilator
 
-ENABLE_SURFER ?= $(if $(shell which surfer),1,0)
+ENABLE_SURFER ?= $(if $(shell which surfer 2> /dev/null),1,0)
 wave.verilator: $(SIM_DIR)/wavesc
 ifeq ($(ENABLE_SURFER),1)
 %/wavesc: %/dump.fst
