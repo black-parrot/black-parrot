@@ -70,7 +70,7 @@ VCS_TIMEOUT ?= 1000ms
 VCS_RUN_OPTS += +vcs+finish+$(VCS_TIMEOUT) # Change this to run longer / shorter
 VCS_RUN_OPTS += +vcs+lic+wait              # Wait for license
 VCS_RUN_OPTS += +libext+.v+.vlib+.vh       # Find library files with these extensions
-#VCS_RUN_OPTS += +vcs+loopdetect +vcs+loopreport
+VCS_RUN_OPTS += +vcs+loopdetect +vcs+loopreport
 VCS_RUN_OPTS += +v2k
 VCS_RUN_OPTS += -no_save
 VCS_RUN_OPTS += -fgp=num_threads:$(VCS_THREADS)

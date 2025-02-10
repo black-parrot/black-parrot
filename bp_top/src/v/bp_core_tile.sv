@@ -407,8 +407,8 @@ module bp_core_tile
   bsg_wormhole_concentrator_in
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.len_width_p(coh_noc_len_width_p)
-     ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(2)
+     ,.cid_width_p(coh_noc_cid_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.hold_on_valid_p(1)
      )
@@ -416,12 +416,19 @@ module bp_core_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.links_i(lce_req_link_lo)
-     ,.links_o(lce_req_link_li)
+     ,.links_v_i({lce_req_link_lo[1].v, lce_req_link_lo[0].v})
+     ,.links_data_i({lce_req_link_lo[1].data, lce_req_link_lo[0].data})
+     ,.links_ready_and_rev_o({lce_req_link_li[1].ready_and_rev, lce_req_link_li[0].ready_and_rev})
 
-     ,.concentrated_link_i(req_concentrated_link_li)
-     ,.concentrated_link_o(req_concentrated_link_lo)
+     ,.concentrated_link_v_o(req_concentrated_link_lo.v)
+     ,.concentrated_link_data_o(req_concentrated_link_lo.data)
+     ,.concentrated_link_ready_and_rev_i(req_concentrated_link_li.ready_and_rev)
      );
+  assign lce_req_link_li[1].v = 1'b0;
+  assign lce_req_link_li[0].v = 1'b0;
+  assign lce_req_link_li[1].data = '0;
+  assign lce_req_link_li[0].data = '0;
+  assign req_concentrated_link_lo.ready_and_rev = 1'b0;
 
   assign cmd_concentrated_link_li = lce_cmd_link_cast_i;
   assign lce_cmd_link_cast_o.ready_and_rev = cmd_concentrated_link_lo.ready_and_rev;
@@ -437,12 +444,18 @@ module bp_core_tile
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.links_i(lce_cmd_link_lo)
-     ,.links_o(lce_cmd_link_li)
+     ,.links_v_o({lce_cmd_link_li[1].v, lce_cmd_link_li[0].v})
+     ,.links_data_o({lce_cmd_link_li[1].data, lce_cmd_link_li[0].data})
+     ,.links_ready_and_rev_i({lce_cmd_link_lo[1].ready_and_rev, lce_cmd_link_lo[0].ready_and_rev})
 
-     ,.concentrated_link_i(cmd_concentrated_link_li)
-     ,.concentrated_link_o(cmd_concentrated_link_lo)
+     ,.concentrated_link_v_i(cmd_concentrated_link_li.v)
+     ,.concentrated_link_data_i(cmd_concentrated_link_li.data)
+     ,.concentrated_link_ready_and_rev_o(cmd_concentrated_link_lo.ready_and_rev)
      );
+  assign lce_cmd_link_li[1].ready_and_rev = 1'b0;
+  assign lce_cmd_link_li[0].ready_and_rev = 1'b0;
+  assign cmd_concentrated_link_lo.v = 1'b0;
+  assign cmd_concentrated_link_lo.data = '0;
 
   assign fill_concentrated_link_li = lce_fill_link_cast_i;
   assign lce_fill_link_cast_o = fill_concentrated_link_lo;
@@ -473,21 +486,28 @@ module bp_core_tile
   bsg_wormhole_concentrator_in
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.len_width_p(coh_noc_len_width_p)
-     ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(2)
      ,.cord_width_p(coh_noc_cord_width_p)
+     ,.cid_width_p(coh_noc_cid_width_p)
      ,.hold_on_valid_p(1)
      )
    resp_concentrator
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.links_i(lce_resp_link_lo)
-     ,.links_o(lce_resp_link_li)
+     ,.links_v_i({lce_resp_link_lo[1].v, lce_resp_link_lo[0].v})
+     ,.links_data_i({lce_resp_link_lo[1].data, lce_resp_link_lo[0].data})
+     ,.links_ready_and_rev_o({lce_resp_link_li[1].ready_and_rev, lce_resp_link_li[0].ready_and_rev})
 
-     ,.concentrated_link_i(resp_concentrated_link_li)
-     ,.concentrated_link_o(resp_concentrated_link_lo)
+     ,.concentrated_link_v_o(resp_concentrated_link_lo.v)
+     ,.concentrated_link_data_o(resp_concentrated_link_lo.data)
+     ,.concentrated_link_ready_and_rev_i(resp_concentrated_link_li.ready_and_rev)
      );
+  assign lce_resp_link_li[1].v = 1'b0;
+  assign lce_resp_link_li[0].v = 1'b0;
+  assign lce_resp_link_li[1].data = '0;
+  assign lce_resp_link_li[0].data = '0;
+  assign resp_concentrated_link_lo.ready_and_rev = 1'b0;
 
   // Processor
   bp_cfg_bus_s cfg_bus_lo;
