@@ -59,9 +59,9 @@ support all targets, however. These targets include:
 
 ### Supported TOOLs
 BlackParrot supports these tools for simulation and design checking. We welcome contributions for additional tool support, especially for open-source tools.
-- Verilator (.sc suffix)
-- Synopsys VCS (.v suffix)
-- Synopsys DC (.syn suffix)
+- Verilator (.verilator suffix)
+- Synopsys VCS (.vcs suffix)
+- Synopsys DC (.dc suffix)
 - Vivado (.vivado suffix)
 - BSG SV2V (.bsg_sv2v suffix)
 - SureLog (.surelog suffix)
