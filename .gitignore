@@ -11,3 +11,4 @@ stack.info.*
 *.swp
 .simvision/
 bsg_cadenv/
+obj_dir/

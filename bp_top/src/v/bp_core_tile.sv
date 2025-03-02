@@ -408,7 +408,6 @@ module bp_core_tile
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.len_width_p(coh_noc_len_width_p)
      ,.num_in_p(2)
-     ,.cid_width_p(coh_noc_cid_width_p)
      ,.cord_width_p(coh_noc_cord_width_p)
      ,.hold_on_valid_p(1)
      )
@@ -488,7 +487,6 @@ module bp_core_tile
      ,.len_width_p(coh_noc_len_width_p)
      ,.num_in_p(2)
      ,.cord_width_p(coh_noc_cord_width_p)
-     ,.cid_width_p(coh_noc_cid_width_p)
      ,.hold_on_valid_p(1)
      )
    resp_concentrator
