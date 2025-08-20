@@ -91,6 +91,7 @@ module bp_be_pipe_mem
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
+  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `declare_bp_be_dcache_engine_if(paddr_width_p, dcache_tag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_gp, dcache_block_width_p, dcache_fill_width_p, dcache_req_id_width_p);
@@ -172,6 +173,7 @@ module bp_be_pipe_mem
    dmmu
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
+     ,.cfg_bus_i(cfg_bus_i)
 
      ,.flush_i(flush_i)
      ,.fence_i(sfence_i)
@@ -219,7 +221,7 @@ module bp_be_pipe_mem
   wire dcache_pkt_v = is_req;
   assign dcache_pkt = '{rd_addr : instr.t.rtype.rd_addr
                         ,opcode : decode.fu_op.t.dcache_fu_op
-                        ,offset : eaddr
+                        ,vaddr  : eaddr
                         };
   logic frs2_r_v_r;
   bsg_dff
@@ -245,7 +247,6 @@ module bp_be_pipe_mem
    dcache
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
-
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.busy_o(dcache_busy_lo)

@@ -10,20 +10,6 @@ module bp_nonsynth_host
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-
-   , parameter icache_trace_p         = 0
-   , parameter dcache_trace_p         = 0
-   , parameter lce_trace_p            = 0
-   , parameter cce_trace_p            = 0
-   , parameter dram_trace_p           = 0
-   , parameter vm_trace_p             = 0
-   , parameter cmt_trace_p            = 0
-   , parameter core_profile_p         = 0
-   , parameter pc_gen_trace_p         = 0
-   , parameter pc_profile_p           = 0
-   , parameter br_profile_p           = 0
-   , parameter cosim_p                = 0
-   , parameter dev_trace_p            = 0
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -39,23 +25,7 @@ module bp_nonsynth_host
    , input                                          mem_rev_ready_and_i
    );
 
-  import "DPI-C" context function int getchar();
-
-  integer tmp;
-  integer stdout[num_core_p];
-  integer stdout_global;
-  integer signature;
-
-  always_ff @(negedge reset_i)
-    begin
-      for (integer j = 0; j < num_core_p; j++)
-        begin
-          tmp = $fopen($sformatf("stdout_%0x.txt", j), "w");
-          stdout[j] = tmp;
-        end
-      stdout_global = $fopen("stdout_global.txt", "w");
-      signature = $fopen("DUT-blackparrot.signature", "w");
-    end
+  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
 
   localparam bedrock_reg_els_lp = 8;
   logic putint_r_v_li, signature_r_v_li, paramrom_r_v_li, bootrom_r_v_li, finish_r_v_li, getchar_r_v_li, putchar_r_v_li, putch_core_r_v_li;
@@ -81,90 +51,7 @@ module bp_nonsynth_host
      ,.data_i(data_li)
      );
   localparam byte_offset_width_lp = 3;
-  localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
-  wire [lg_num_core_lp-1:0] addr_core_enc = addr_lo[byte_offset_width_lp+:lg_num_core_lp];
-
-  `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
-  bp_bedrock_mem_fwd_header_s mem_fwd_header_li;
-  assign mem_fwd_header_li = mem_fwd_header_i;
-  wire [hio_width_p-1:0] hio_id = mem_fwd_header_li.addr[paddr_width_p-1-:hio_width_p];
-  always_comb
-    if (mem_fwd_v_i & (hio_id != '0))
-      $display("[BSG-WARNING]: Accessing hio %0h. Sending loopback message!", hio_id);
-
-  // for some reason, VCS doesn't like finish_w_v_li << addr_core_enc
-  wire [num_core_p-1:0] finish_set = finish_w_v_li ? (1'b1 << addr_core_enc) : 1'b0;
-  logic [num_core_p-1:0] finish_r;
-  bsg_dff_reset_set_clear
-   #(.width_p(num_core_p))
-   finish_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.set_i(finish_set)
-     ,.clear_i('0)
-     ,.data_o(finish_r)
-     );
-
-  integer ret;
-  logic [7:0] ch;
-  always_ff @(negedge clk_i)
-    begin
-      if (putchar_w_v_li) begin
-        $write("%c", data_lo[0+:8]);
-        $fwrite(stdout_global, "%c", data_lo[0+:8]);
-      end
-
-      if (putch_core_w_v_li) begin
-        $write("%c", data_lo[0+:8]);
-        $fwrite(stdout[addr_core_enc], "%c", data_lo[0+:8]);
-      end
-
-      if (putint_w_v_li) begin
-        $write("%x", data_lo[0+:dword_width_gp]);
-      end
-
-      if (getchar_r_v_li) begin
-          ch <= getchar();
-      end
-
-      if (mem_fwd_ready_and_o & mem_fwd_v_i & (hio_id != '0))
-        $error("Warning: Accesing illegal hio %0h. Sending loopback message!", hio_id);
-      for (integer i = 0; i < num_core_p; i++)
-        begin
-          // PASS when returned value in finish packet is zero
-          if (finish_set[i] & (data_lo[0+:8] == 8'(0)))
-            $display("[BSG-INFO]: CORE%0x FINISH PASS", i);
-          // FAIL when returned value in finish packet is non-zero
-          if (finish_set[i] & (data_lo[0+:8] != 8'(0)))
-            begin
-              $display("[BSG-FAIL]: CORE%0x FINISH FAIL", i);
-              $finish();
-            end
-            
-        end
-
-      if (signature_w_v_li)
-        $fwrite(signature, "%8x\n", data_lo[0+:32]);
-
-      if (putint_w_v_li) begin
-        $write("%x", data_lo);
-      end
-
-      if (&finish_r)
-        begin
-          $display("[BSG-PASS]: All cores finished! Terminating...");
-          $finish();
-        end
-    end
-
-  final
-    begin
-      $fclose(signature);
-      $fclose(stdout_global);
-      for (integer j = 0; j < num_core_p; j++)
-        $fclose(stdout[j]);
-      $system("stty echo");
-    end
+  wire [core_id_width_p-1:0] addr_core_enc = addr_lo[byte_offset_width_lp+:core_id_width_p];
 
   localparam param_els_lp = `BSG_CDIV($bits(proc_param_lp),word_width_gp);
   localparam lg_param_els_lp = `BSG_SAFE_CLOG2(param_els_lp);
@@ -184,10 +71,64 @@ module bp_nonsynth_host
      );
   wire [bedrock_block_width_p-1:0] paramrom_final_lo = {bedrock_block_width_p/word_width_gp{paramrom_data_lo}};
 
+  int stdout[num_core_p];
+  int stdout_global;
+  int signature;
+
+  initial
+    begin
+      for (int j = 0; j < num_core_p; j++)
+        stdout[j] = $fopen($sformatf("stdout_%0x.txt", j), "w");
+      stdout_global = $fopen("stdout_global.txt", "w");
+      signature = $fopen("DUT-blackparrot.signature", "w");
+    end
+
+  always_ff @(negedge clk_i)
+    if (putint_w_v_li)
+      begin
+        $write("%x", data_lo[0+:dword_width_gp]);
+        $fwrite(stdout_global, "%x", data_lo[0+:dword_width_gp]);
+      end
+    else if (putchar_w_v_li)
+      begin
+        $write("%c", data_lo[0+:byte_width_gp]);
+        $fwrite(stdout_global, "%c", data_lo[0+:byte_width_gp]);
+      end
+    else if (putch_core_w_v_li)
+      begin
+        $write("%c", data_lo[0+:byte_width_gp]);
+        $fwrite(stdout[addr_core_enc], "%c", data_lo[0+:byte_width_gp]);
+      end
+    else if (signature_w_v_li)
+      begin
+        $write("%8x", data_lo[0+:word_width_gp]);
+        $fwrite(signature, "%8x\n", data_lo[0+:word_width_gp]);
+      end
+    else if (finish_w_v_li && ~|data_lo[0+:byte_width_gp])
+      begin
+        $display("[CORE FSH] PASS\n\tterminating...");
+        $display("[BSG-PASS]");
+        $finish;
+      end
+    else if (finish_w_v_li && |data_lo[0+:byte_width_gp])
+      begin
+        $display("[CORE FSH] FAIL\n\tterminating...");
+        $display("[BSG-FAIL]");
+        $finish;
+      end
+
+  final
+    begin
+      $fclose(signature);
+      $fclose(stdout_global);
+      for (int j = 0; j < num_core_p; j++)
+        $fclose(stdout[j]);
+    end
+
   assign data_li[0] = '0;
   assign data_li[1] = '0;
-  assign data_li[2] = ch;
-  assign data_li[3] = finish_r;
+  assign data_li[2] = '0;
+  assign data_li[3] = '0;
   assign data_li[4] = '0;
   assign data_li[5] = paramrom_final_lo;
 

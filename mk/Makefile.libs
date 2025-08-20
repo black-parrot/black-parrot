@@ -1,9 +1,17 @@
 
-$(eval $(call bsg_fn_build_if_new,dramsim3,$(BP_RTL_BASEJUMP_STL_DIR),$(BP_RTL_TOUCH_DIR)))
+$(eval $(call bsg_tgt_build_submodule,dramsim3,$(BASEJUMP_STL_DIR),$(BP_TOUCH_DIR),$(BP_PATCH_DIR),$(BP_WORK_DIR)))
 %/.dramsim3_build:
-	@$(MAKE) -C $(@D)/bsg_test -f libdramsim3.mk
-	@$(MV) $(@D)/bsg_test/libdramsim3.so $(BP_RTL_LIB_DIR)/
-	@$(CP) $(@D)/imports/DRAMSim3/src/*.h  $(BP_RTL_INCLUDE_DIR)/
-	@$(CP) $(@D)/imports/DRAMSim3/ext/headers/*  $(BP_RTL_INCLUDE_DIR)/
+	@$(MAKE) -C $</bsg_test -f libdramsim3.mk
+	@$(MV) $</bsg_test/libdramsim3.so $(BP_LIB_DIR)/
+	@$(CP) $</imports/DRAMSim3/src/*.h  $(BP_INCLUDE_DIR)/
+	@$(CP) $</imports/DRAMSim3/ext/headers/*  $(BP_INCLUDE_DIR)/
+	@$(call bsg_fn_strip_binaries, $(BP_INSTALL_DIR))
 
+$(eval $(call bsg_tgt_build_submodule,bedrock,$(BEDROCK_DIR),$(BP_TOUCH_DIR),$(BP_PATCH_DIR),$(BP_WORK_DIR)))
+%/.bedrock_build:
+	@$(MAKE) -C $< dirs
+	@$(MAKE) -C $< as
+	@$(MAKE) -C $< bins
+	@$(MKDIR) -p $(BP_INSTALL_DIR)/bedrock
+	@$(CP) $</roms/*.bin $</roms/*.addr $</roms/*.mem $(BP_LIB_DIR)
 

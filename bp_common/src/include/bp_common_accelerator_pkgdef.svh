@@ -3,7 +3,7 @@
 
   //vector-dot-product accelerator CSR indexes
   localparam inputa_ptr_csr_idx_gp = 20'h0_0000;
-  localparam inputb_ptr_csr_idx_gp = 20'h0_0008; 
+  localparam inputb_ptr_csr_idx_gp = 20'h0_0008;
   localparam input_len_csr_idx_gp  = 20'h0_0010;
   localparam start_cmd_csr_idx_gp  = 20'h0_0018;
   localparam res_status_csr_idx_gp = 20'h0_0020;

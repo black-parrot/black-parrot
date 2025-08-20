@@ -76,8 +76,10 @@ module bp_be_top
    );
 
   // Declare parameterized structures
+  `declare_bp_common_if(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p, fetch_ptr_p, issue_ptr_p);
+  `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Top-level interface connections
   bp_be_dispatch_pkt_s dispatch_pkt;

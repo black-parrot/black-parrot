@@ -30,7 +30,7 @@ type
   Value: 1..ValueCount; -- arbitrary values for tracking coherence
   Home: enum { HomeType };      -- need enumeration for IsMember calls
   Node: union { Home , Proc };
-  Count: 0..ProcCount; -- integer range of number of sharers
+  Count: 0..ProcCount; -- int range of number of sharers
 
   VCType: ReqNet..NumVCs-1;
 

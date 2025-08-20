@@ -4,11 +4,11 @@ reports/
 DVEfiles/
 *.tr
 *.pyc
-external/
+work/
 install/
-regress_logs/
 stack.info.*
 *.swp
 .simvision/
 bsg_cadenv/
 obj_dir/
+session.dump.vpd.tcl

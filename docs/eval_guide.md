@@ -1,136 +1,104 @@
-# Evaluation Guide (Full)
-## Build the simulation libraries
-    # Clone the latest repo (if necessary)
-    git clone https://github.com/black-parrot/black-parrot.git
-    cd black-parrot
-    # make libs is a target which will build DRAMSim simulation library
-    make libs
+# Evaluation Guide
+## Tool configuration
 
-The *master* branch contains most recent stable version. This is the recommended branch for someone wishing to try out BlackParrot.
+Tools flows are defined by makefiles in mk/Makefile.<TOOL>.
+Currently, [Synopsys VCS](https://www.synopsys.com/verification/simulation/vcs.html) and [Verilator](https://github.com/verilator/verilator) are supported for simulation.
+[Synopsys DC] is supported for "pickling", or converting into a single Verilog-2005 file for tool compatibility.
 
-The *dev* branch contains the most recent development version, being tested internally. This branch may have bugfixes or improvements not yet propagated to master.
+## Simulation testbench description
 
-Other branches are used for internal development and are not recommended for casual usage.
+Each End has testbenches in bp\_<end>/test/tb/, with configuration defined by the contained Makefiles. They can be run in bp\_end/<TOOL> and each create a set of logs, results and reports after a run.
+Each testbench supports optional CONFIGS, FLAGS, and PARAMS which should be kept consistent between builds and sims. When in doubt, use ```make clean``` to clean the working directory.
 
-## Running Tests
-The main testbenches are at the FE, BE, ME and TOP levels. The general syntax for running a testbench is:
+Simulation testbenches support CONFIG:
+- CFG: The system configuration to test e.g. e_bp_unicore_cfg
+- TAG: TAG: Unique identifier for the evaluation
 
-    cd bp_<end>/syn
-    make <ACTION>.<TOOL> [TB=] [CFG=] [SUITE=] [PROG=] [COSIM_P=] [<TRACER>_P=]
+Simulation testbenches support PARAMS:
+- TB_CLOCK_PERIOD_P: clock period for the testbench
+- TB_RESET_CYCLES_LO_P: number of initial low reset cycles
+- TB_RESET_CYCLES_HI_P: number of initial low reset cycles
+- DUT_CLOCK_PERIOD_P: clock period for the dut
+- DUT_RESET_CYCLES_LO_P: number of initial low reset cycles
+- DUT_RESET_CYCLES_HI_P: number of initial low reset cycles
 
-### Testbench structure
-The bp_tethered testbench in bp_top/test/tb is the primary testbench for BlackParrot. It can instantiate a full BlackParrot cache-coherent multicore or a minimal BlackParrot unicore, as well as the host infrastructure to bootstrap the core and manage DRAM requests.
+Simulation testbenches support FLAGS:
+- ASSERT: Enable SystemVerilog assertions
+- TRACE: Enable waveform dumping
 
-Additionally, each of bp_fe, bp_be and bp_me has a set of more targeted testbenches. These testbenches are more prone to breakage due to their tighter coupling to implementation, but they are intended to serve as a set of compliance tests for external contributors.
+## Running a simulation
 
-NOTE: pardon our dust as we update our testbenches. The main testbench bp_tethered testbench is well supported.
+Instructions for a bp\_me verilator simulation
 
-### Supported CFGs
-All configurations can be found in bp\_common/src/include/bp_common_aviary_pkgdef.svh. A description
-of the parameters in the structure can be found at
-bp\_common/src/include/bp_common_aviary_defines.svh.
-A configuration is selected by passing one of the enums found in bp_params_e. These correspond to the struct of parameters in all_cfgs_gp.
 
-In the future, BlackParrot core parameters will be separated from SoC parameters.
+    cd bp_me/verilator
+    # make build.verilator; # optional build, will also be done on-demand
+    # make lint.verilator; # optional lint
+    make sim.verilator; # optional <CONFIG>= <FLAG>= <PARAM>=
 
-### Supported ACTIONs
-Each testbench supports a set of actions which act upon that specific testbench. Not all testbenches
-support all targets, however. These targets include:
-- lint (lints the DUT of a single testbench)
-- build (builds a single testbench)
-  - build_dump (builds with waveform dump enabled)
-  - build_cov (builds with line+toggle coverage enabled)
-- sim (runs a single test)
-  - sim_dump (dumps a waveform)
-  - sim_sample (creates and runs a single checkpoint from a test)
-- blood (generates bloodgraph based on stall information; you must build and run with CORE_PROFILE_P=1)
-- wave (opens a waveform viewer for the dump file, either GTKWave or Synopsys DVE)
-- check_design (checks for DC elaborability, which is a proxy for synthesizability)
-- check_loops (Same as check_design, but also checks for timing loops in the design)
-- run_testlist (runs a suite of tests. This target may behave differently on different testbenches)
-- run_psample (runs a single long test in parallel cosimulation)
-  - SAMPLE_INSTR_P  = number instructions per sample
-  - SAMPLE_WARMUP_P = number of instructions before performance recording starts
-- report (prints a summary of reports and erroring actions)
-- convert.bsg_sv2v (Creates a "pickled" verilog-2005 file out of the top level blackparrot)
-  - NOTE: this target requires Synopsys Design Compiler to be installed. A fully open-source version of
-    sv2v is in progress at https://github.com/zachjs/sv2v
-- parse.surelog (Builds a UHDM model of BlackParrot for evaluation and integration with other tools)
 
-### Supported TOOLs
-BlackParrot supports these tools for simulation and design checking. We welcome contributions for additional tool support, especially for open-source tools.
-- Verilator (.verilator suffix)
-- Synopsys VCS (.vcs suffix)
-- Synopsys DC (.dc suffix)
-- Vivado (.vivado suffix)
-- BSG SV2V (.bsg_sv2v suffix)
-- SureLog (.surelog suffix)
+## Running RISC-V regression
 
-NOTE: Verilator is the free, open-source tool used to evaluate BlackParrot.  VCS, DC, and Vivado are used for simulation and synthesis. If you wish to use these tools, set up the appropriate environment variables in Makefile.common
+The bp_tethered testbench in bp_top is the primary testbench for BlackParrot.
+It can instantiate a full BlackParrot cache-coherent multicore or a minimal BlackParrot unicore, as well as the host infrastructure to bootstrap the core and manage DRAM requests. See [BlackParrot SDK](https:/github.com/black-parrot-sdk/black-parrot-sdk) for example programs or to compile your own.
 
-### Supported Programs
-More details about BlackParrot software can be found in the [Software Developer Guide](software_guide.md).
-Notably, BlackParrot has been tested with:
-- riscv-tests (a set of unit tests for RISC-V functionality)
-- BEEBS (Embedded core test suite)
-- Coremark (Standard benchmark for core performance)
-- bp-tests (one-off tests which are used to test various aspects of the system)
-- bp-demos (demo programs showing off special features of BlackParrot firmware)
-- spec2000, requires a copy of the proprietary spec2000 benchmark suite
-- spec2006, requires a copy of the proprietary spec2006 benchmark suite
-- spec2017, requires a copy of the proprietary spec2017 benchmark suite
-- Linux (A finite test of RISC-V Linux+BusyBox boot)
+CONFIGS:
+- SUITE: Test suite in SDK
+- PROG: Test program in SDK
+- SIM_PROG: <Optional, full path to RISCV binary, instead of SUITE/PROG methodology>
+- COH_PROTO: Bedrock coherence protocol
 
-Each program belongs to a test suite. The list of supported programs for each suite can be found in
-bp_top/test/tb/bp_tethered/Makefile.testlist. `make prog` builds the bp-tests, riscv-tests, beebs, and coremark suites alongside the lipperch firmware.
+FLAGS:
+- DROMAJO_COSIM: Whether to run [Dromajo](https://github.com/ChipsAlliance/dromajo)-based co-simulation
+- SPIKE_COSIM: Whether to run [Spike](https://github.com/riscv-isa-sim/spike)-based co-simulation
+- DISASSEMBLE: Create RISCV disassembly (requires RISCV toolchain on PATH)
+- COMMITLOG: Create RISCV commitlog during execution
+- DROMAJO_TRACE: Creates a dromajo-based golden trace
+- SPIKE_TRACE: Creates a spike-based golden trace
 
-### Other flags
-- COSIM\_P: Run with Dromajo-based cosimulation
-- *\_TRACE\_P: Enable a specific tracer (tracer list can be found in the [SW Developer Guide](software_guide.md))
+PARAMS:
+- PERF_ENABLE_P: Enable performance profiler
+    - WARMUP_INSTR_P: Number of warmup instructions for performance profiler
+    - MAX_INSTR_P: Maximum number of instructions to execute
+    - MAX_CYCLE_P: Maximum number of cycles to execute
+- WATCHDOG_ENABLE_P: Enable watchdog timer
+    - STALL_CYCLES_P: How many cycles before watchdog throws error
+    - HALT_INSTR_P: How many instructions before watchdog considers a core halted
+    - HEARTBEAT_INSTR_P: Period for heatbeat information
+- ICACHE_TRACE_P: L1 I$ tracer
+- DCACHE_TRACE_P: L1 D$ tracer
+- VM_TRACE_P: MMU tracer
+- UCE_TRACE_P: UCE tracer
+- LCE_TRACE_P: LCE tracer
+- CCE_TRACE_P: CCE tracer
+- DEV_TRACE_P: CLINT and CFG tracer
+- DRAM_TRACE_P: DRAM tracer
 
-### Example Commands
-    make build_dump.v sim_dump.v SUITE=bp-tests PROG=hello_world  # Run hello_world in VCS with dumping
-    make build_dump.sc sim_dump.sc SUITE=bp-tests PROG=hello_world  # Run hello_world in Verilator with dumping
-    make wave.v SUITE=bp-tests PROG=hello_world              # Open hello_world waveform in dve
-    make build_cov.sc sim.sc SUITE=riscv-tests PROG=rsort    # Run hello_world in Verilator with coverage
+## Running Memory End regression
 
-    make run_testlist.sc -j 10 TESTLIST=BEEBS_TESTLIST    # Run beebs suite in Verilator with 10 threads
-    make run_testlist.v -j 5   TESTLIST=RISCV_TESTLIST    # Run riscv-tests suite in VCS with 5 threads
+The Memory End Regression can be run in vcs or verilator (verilator commands shown):
 
-## Examining Results
-Running a test will generate a ton of subdirectories in bp_\<end\>/syn/
+Supported CONFIG:
+- PROG: The specific test to run <random\_test, set\_test, ld\_st, mixed>
+- COH\_PROTO: BedRock coherence protocol to use
 
-        bp_<end>/syn/results/<tool>/<tb>.<cfg>.build/sim{v,sc}
-        bp_<end>/syn/results/<tool>/<tb>.<cfg>.sim.<prog>/(symlink to sim{v,sc})
-        bp_<end>/syn/results/<tool>/<tb>.<cfg>.sim.<prog>/dump.vcd
-        bp_<end>/syn/results/<tool>/<tb>.<cfg>.sim.<prog>/testbench.v
-        bp_<end>/syn/results/<tool>/<tb>.<cfg>.sim.<prog>/etc.
-        bp_<end>/syn/results/<tool>/<tb>.<cfg>.cov/*.dat
+Supported PARAMS:
+- NUM_INSTR_P: number of instructions to run for random tests
+- CCE_MODE_P: controls whether the CCE operates in normal or uncached only mode
+- LCE_MODE_P: controls whether the LCE issues cached, uncached, or both requests
+- ME_TEST_P: which type of test to run:
+    - 0 = random loads and stores
+    - 1 = single set hammer test
+    - 2 = test from trace file input based on PROG
 
-        bp_<end>/syn/logs/<tool>/<tb>.<cfg>.build.log
-        bp_<end>/syn/logs/<tool>/<tb>.<cfg>.sim.<prog>.log
-        bp_<end>/syn/logs/<tool>/<tb>.<cfg>.cov.log
+## Synthesis smoke tests
 
-        bp_<end>/syn/reports/<tool>/<tb>.<cfg>.build.{rpt,err}
-        bp_<end>/syn/reports/<tool>/<tb>.<cfg>.sim.<prog>.{rpt,err}
-        bp_<end>/syn/reports/<tool>/<tb>.<cfg>.cov.<prog>.{rpt,err}
+BlackParrot support Verilog-2005 pickling through [bsg_sv2v](https://github.com/bespoke-silicon-group/bsg_sv2v).
+Unfortunately, this requires access to [Synopsys DC](https://www.synopsys.com/implementation-and-signoff/rtl-synthesis-test/dc-ultra.html), but we welcome help supporting an open-source alternative.
 
-### Results
-The results directory contains the run directory for a given tool. All output artifacts are generated in this directory. For instance, simv files, pickled netlists, flists, tracer files and other outputs of tools. These subdirectories is useful because each tool run is self contained. To rerun a simulation, simply enter the results directory and execute the simv. Everything needed for the simulation is contained in the directory.
 
-### Logs
-The logs directory contains the full output of tool runs, tee-d from console output. This is where you should go if you want to examine everything that happened during a tool run, for instance, if there was an unexpected error.
-
-### Reports
-The reports directory contains very brief summaries of tool runs. For example, whether tests pass or fail and some high level performance statistics. It will also contain error summary reports, where the main reason for a failure is described.
-
-# BlackParrot Repository Overview
-- **bp_fe/** contains the front-end (FE) of BlackParrot, responsible for speculative fetching of instructions.
-- **bp_be/** contains the back-end (BE) of BlackParrot, responsible for atomically executing instructions, as well as logically controlling the FE.
-- **bp_me/** contains the memory-end (ME) of BlackParrot, responsible for servicing memory/IO requests as well as maintaining cache coherence between BlackParrot cores.
-- **bp_top/** contains configurations of FE, BE, and ME components. For instance, tile components and NOC assemblies.
-- **bp_common/** contains the interface components which connect FE, BE and ME. FE, BE, ME may depend on bp\_common, but not each other.
-- **ci/** contains scripts used to run Continuous Integration jobs, mostly using the same Makefile commands but with additional data collection.
-- **docs/** contains documentation, images, guides and links to document Blackparrot.
-- **external/** contains submodules corresponding to tooling that BlackParrot depends upon, such as the Verilator.
+    cd bp_top/dc
+	make check_design.dc; # Lints for a variety of common synthesis issues
+	make check_loops.dc;  # Checks for timing loops in addition to lint (requires PDK)
+	make sv2v.dc;         # Pickles the design
 

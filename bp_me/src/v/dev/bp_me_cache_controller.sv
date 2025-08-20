@@ -113,7 +113,7 @@ module bp_me_cache_controller
          ,.yumi_i(cache_data_yumi_o[i])
          );
     end
-                                                        
+
   logic [cache_metadata_fifo_width_lp-1:0] fsm_fwd_metadata_li, fsm_rev_metadata_lo;
   bp_me_stream_pump
    #(.bp_params_p(bp_params_p)
@@ -167,9 +167,9 @@ module bp_me_cache_controller
 
   bp_local_addr_s local_addr_li;
   assign local_addr_li = fsm_fwd_addr_li;
-  localparam [paddr_width_p-1:0] l1c_l2c_base_lp = dram_base_addr_gp;
-  localparam [paddr_width_p-1:0] l1uc_l2c_base_lp = (1'b1 << caddr_width_p);
-  localparam [paddr_width_p-1:0] l1uc_l2uc_base_lp = (1'b1 << caddr_width_p) | dram_base_addr_gp;
+  localparam l1c_l2c_base_lp = paddr_width_p'(dram_base_addr_gp);
+  localparam l1uc_l2c_base_lp = paddr_width_p'(1'b1 << caddr_width_p);
+  localparam l1uc_l2uc_base_lp = l1c_l2c_base_lp | l1uc_l2c_base_lp;
   wire is_uc_op   = (local_addr_li >= l1uc_l2c_base_lp) && (local_addr_li < l1uc_l2uc_base_lp);
   wire is_word_op = (fsm_fwd_header_li.size == e_bedrock_msg_size_4);
 
@@ -448,7 +448,7 @@ module bp_me_cache_controller
         default : begin end
       endcase
 
-      for (integer i = 0; i < l2_banks_p; i++)
+      for (int i = 0; i < l2_banks_p; i++)
         if (op_v_lo[i] & op_data_lo[i] & (i == cache_rev_bank_lo))
           begin
             fsm_rev_v_lo = fsm_rev_ready_then_li & cache_data_v_i[i];

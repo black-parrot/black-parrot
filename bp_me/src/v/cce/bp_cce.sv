@@ -264,7 +264,7 @@ module bp_cce
      ,.msg_stream_mask_p(lce_req_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_req_stream_mask_gp)
      )
-   lce_req_pump_in
+   req_pump_in
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -297,7 +297,7 @@ module bp_cce
      ,.msg_stream_mask_p(lce_cmd_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_cmd_stream_mask_gp)
      )
-   lce_cmd_pump_out
+   cmd_pump_out
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -328,7 +328,7 @@ module bp_cce
      ,.msg_stream_mask_p(lce_resp_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_resp_stream_mask_gp)
      )
-   lce_resp_pump_in
+   resp_pump_in
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -361,7 +361,7 @@ module bp_cce
       ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
       ,.fsm_stream_mask_p(mem_rev_stream_mask_gp)
       )
-    mem_rev_stream_pump
+    rev_pump_in
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       // from memory response input
@@ -394,7 +394,7 @@ module bp_cce
       ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
       ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp)
       )
-    mem_fwd_stream_pump
+    fwd_pump_out
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       // to memory command output

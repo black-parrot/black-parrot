@@ -1,68 +1,50 @@
 
-%/flist.vcs:
-	$(MKDIR) -p $(@D)
-	$(GREP) -v -e "^\#" $(SYN_PATH)/flist.vcs          > $@
-	$(ECHO) "$(@D)/wrapper.sv"                        >> $@
-ifeq ($(SIM),1)
-	$(GREP) -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs    >> $@
-	$(ECHO) "$(@D)/testbench.sv"                      >> $@
-	$(ECHO) "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv" >> $@
-	$(ECHO) "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv" >> $@
-endif
+BUILD_COLLATERAL += flist.vcs
 
-%/wrapper.sv:
-	$(MKDIR) -p $(@D)
-	$(CP) $(TB_PATH)/$(TB)/wrapper.sv $@
-	$(SED) -i "s/BP_CFG_FLOWVAR/$(CFG)/g" $@
-	$(SED) -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
-
-%/testbench.sv:
-	$(MKDIR) -p $(@D)
-	$(CP) $(TB_PATH)/$(TB)/testbench.sv $@
-	$(SED) -i "s/BP_CFG_FLOWVAR/$(CFG)/g" $@
-	$(SED) -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
-
-%/prog.riscv: $(BP_SDK_PROG_DIR)/$(SUITE)/$(PROG).riscv
-	$(MKDIR) -p $(@D)
-	$(CP) $^ $@
-
-%/prog.elf: %/prog.riscv
-	$(MKDIR) -p $(@D)
-	$(CP) $^ $@
-
-%/prog.mem: %/prog.riscv
-	$(MKDIR) -p $(@D)
-	$(RISCV_OBJCOPY) -O verilog $< $@
-	$(SED) -i "s/@8/@0/g" $@
-
-%/prog.bin: %/prog.riscv
-	$(MKDIR) -p $(@D)
-	$(RISCV_OBJCOPY) -O binary $< $@
-
-%/prog.dump: %/prog.riscv
-	$(MKDIR) -p $(@D)
-	$(RISCV_OBJDUMP) $< > $@
-
-MEM2NBF ?= $(BP_COMMON_DIR)/software/py/nbf.py
-CCE_UCODE_FILE ?= $(BP_SDK_UCODE_DIR)/$(CCE_MEM)
-NBF_INPUTS ?= --ncpus=$(NCPUS)
-NBF_INPUTS += --config
-NBF_INPUTS += --boot_pc=0x80000000
-ifeq ($(NBF_CONFIG_P)$(UCODE),11)
-NBF_INPUTS += --ucode=cce_ucode.mem
-endif
-ifeq ($(PRELOAD_MEM_P),0)
-NBF_INPUTS += --mem=prog.mem --mem_size=$(NBF_MEM_SIZE)
-endif
-%/cce_ucode.mem: $(CCE_UCODE_FILE)
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
-
-ifeq ($(UCODE),1)
-%/prog.nbf: %/prog.mem %/cce_ucode.mem
+ifneq (,$(COH_PROTO))
+CCE_UCODE ?= $(BP_INSTALL_DIR)/lib/$(COH_PROTO).mem
 else
-%/prog.nbf: %/prog.mem
+CCE_UCODE ?= $(TB_PATH)/demo_ucode.mem
 endif
-	$(MKDIR) -p $(@D)
-	cd $(@D); $(PYTHON) $(MEM2NBF) $(NBF_INPUTS) > $@
+
+ifneq (,$(SUITE)$(PROG))
+SIM_PROG ?= $(BP_RISCV_DIR)/$(addsuffix /,$(SUITE))$(PROG).riscv
+else
+SIM_PROG ?= $(TB_PATH)/demo.riscv
+endif
+
+%/ucode.mem: $(CCE_UCODE)
+	@$(MKDIR) -p $(@D)
+	@$(CP) $< $@
+
+%/prog.riscv: $(SIM_PROG)
+	@$(MKDIR) -p $(@D)
+	@$(CP) $< $@
+
+ifneq (00,$(DROMAJO_COSIM)$(SPIKE_COSIM))
+RUN_COLLATERAL += prog.riscv
+PLUSARGS += +elf_file=prog.riscv
+endif
+
+ifeq (1,$(DISASSEMBLE))
+RUN_COLLATERAL += prog.dump
+endif
+
+ifeq (1,$(CFG_UCODE))
+RUN_COLLATERAL += ucode.mem
+PLUSARGS += +ucode_mem=ucode.mem
+endif
+
+RUN_COLLATERAL += prog.mem
+PLUSARGS += +init_mem=prog.mem
+
+ifeq (1,$(SPIKE_TRACE))
+RUN_COLLATERAL += spike.trace
+endif
+
+ifeq (1,$(DROMAJO_TRACE))
+RUN_COLLATERAL += dromajo.trace
+endif
+
+include $(BP_MK_DIR)/Makefile.collateral
 

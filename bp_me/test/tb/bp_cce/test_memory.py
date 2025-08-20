@@ -42,7 +42,7 @@ class TestMemory(object):
     return val
 
   def write_memory(self, addr, value, size):
-    # create an array of "bytes" (really, integer values of each byte) for addr to addr+(size-1)
+    # create an array of "bytes" (really, int values of each byte) for addr to addr+(size-1)
     # bytes of value are stored into memory in Little Endian order
     for i in range(size):
       v = (value >> (i*8)) & 0xff

@@ -20,12 +20,14 @@
     ,e_cfg_hit_under_miss       = 4'b1000
     ,e_cfg_misaligned           = 4'b1001
   } bp_cache_features_e;
+  typedef logic [(1<<$bits(bp_cache_features_e))-1:0] bp_cache_features_t;
 
   typedef enum logic
   {
     e_basic = 1'b0
     ,e_catchup = 1'b1
   } bp_integer_support_e;
+  typedef logic [(1<<$bits(bp_integer_support_e))-1:0] bp_integer_support_t;
 
   typedef enum logic [1:0]
   {
@@ -34,6 +36,7 @@
     ,e_imulh  = 2'b10
     ,e_idiv2b = 2'b11
   } bp_muldiv_support_e;
+  typedef logic [(1<<$bits(bp_muldiv_support_e))-1:0] bp_muldiv_support_t;
 
   typedef enum logic [1:0]
   {
@@ -41,6 +44,7 @@
     ,e_fdivsqrt   = 2'b01
     ,e_fdivsqrt2b = 2'b10
   } bp_fpu_support_e;
+  typedef logic [(1<<$bits(bp_fpu_support_e))-1:0] bp_fpu_support_t;
 
   typedef enum logic [1:0]
   {
@@ -49,32 +53,39 @@
     ,e_zbc        = 2'b10
     ,e_zbs        = 2'b11
   } bp_bitmanip_support_e;
+  typedef logic [(1<<$bits(bp_bitmanip_support_e))-1:0] bp_bitmanip_support_t;
+
+  typedef enum logic
+  {
+    e_compressed = 1'b0
+  } bp_compressed_support_e;
+  typedef logic [(1<<$bits(bp_compressed_support_e))-1:0] bp_compressed_support_t;
 
   typedef enum logic [15:0]
   {
-    e_sacc_none = 0
-    ,e_sacc_vdp = 1
-    ,e_sacc_scratchpad = 2
+    e_sacc_none = 16'd0
+    ,e_sacc_vdp = 16'd1
+    ,e_sacc_scratchpad = 16'd2
   } bp_sacc_type_e;
 
   typedef enum logic [15:0]
   {
-    e_cacc_none = 0
-    ,e_cacc_vdp = 1
+    e_cacc_none = 16'd0
+    ,e_cacc_vdp = 16'd1
   } bp_cacc_type_e;
 
   typedef enum logic [1:0]
   {
-    e_cce_uce = 0
-    ,e_cce_fsm = 1
-    ,e_cce_ucode = 2
-    ,e_cce_hybrid = 3
+    e_cce_uce = 2'd0
+    ,e_cce_fsm = 2'd1
+    ,e_cce_ucode = 2'd2
+    ,e_cce_hybrid = 2'd3
   } bp_cce_type_e;
 
   typedef struct packed
   {
     // Dimensions of the different complexes
-    // Core Complex may be any integer unsigned (though has only been validated up to 4x4)
+    // Core Complex may be any int (though has only been validated up to 4x4)
     // All other Complexes are 1-dimensional
     //                                    [                           ]
     //                                    [        I/O Complex        ]
@@ -88,45 +99,45 @@
     //                                    [       Memory Complex      ]
     //                                    [                           ]
     //
-    integer unsigned cc_x_dim;
-    integer unsigned cc_y_dim;
-    integer unsigned ic_y_dim;
-    integer unsigned mc_y_dim;
-    integer unsigned cac_x_dim;
-    integer unsigned sac_x_dim;
+    int cc_x_dim;
+    int cc_y_dim;
+    int ic_y_dim;
+    int mc_y_dim;
+    int cac_x_dim;
+    int sac_x_dim;
 
     // The type of accelerator in the accelerator complexes, selected out of bp_cacc_type_e/bp_sacc_type_e
     // Only supports homogeneous configurations
-    integer unsigned cacc_type;
-    integer unsigned sacc_type;
+    int cacc_type;
+    int sacc_type;
 
     // Number of CCEs/LCEs in the system. Must be consistent within complex dimensions
-    integer unsigned num_cce;
-    integer unsigned num_lce;
+    int num_cce;
+    int num_lce;
 
     // Virtual address width
     //   Only tested for SV39 (39-bit virtual address)
-    integer unsigned vaddr_width;
+    int vaddr_width;
     // Physical address width
     //   Only tested for 40-bit physical address
-    integer unsigned paddr_width;
+    int paddr_width;
     // DRAM address width
     // The max size of the connected DRAM i.e. cached address space
     //   Only tested for 32-bit cacheable address (4 GB space, with 2 GB local I/O)
-    integer unsigned daddr_width;
+    int daddr_width;
     // Cacheable address width
     // The max size cached by the L1 caches of the system
-    integer unsigned caddr_width;
+    int caddr_width;
     // Address space ID width
     //   Currently unused, so set to 1 bit
-    integer unsigned asid_width;
+    int asid_width;
 
     // Branch metadata information for the Front End
     // Must be kept consistent with FE
-    integer unsigned branch_metadata_fwd_width;
-    integer unsigned ras_idx_width;
-    integer unsigned btb_tag_width;
-    integer unsigned btb_idx_width;
+    int branch_metadata_fwd_width;
+    int ras_idx_width;
+    int btb_tag_width;
+    int btb_idx_width;
     // bht_row_els is a physically-derived parameter. It describes the number
     //   of entries in a single row of the BHT RAM.  There are 2 bits per entry.
     //   The tradeoff here is a wider RAM is most likely higher performance,
@@ -134,134 +145,135 @@
     //   maintain 1r1w throughput without a RMW.
     // Ghist is the global history width, which in our gselect
     // Thus, the true BHT dimensions are (bht_idx_width+ghist_width)x(2*bht_row_els)
-    integer unsigned bht_idx_width;
-    integer unsigned bht_row_els;
-    integer unsigned ghist_width;
+    int bht_idx_width;
+    int bht_row_els;
+    int ghist_width;
 
     // Capacity of the Instruction/Data TLBs
-    integer unsigned itlb_els_4k;
-    integer unsigned itlb_els_2m;
-    integer unsigned itlb_els_1g;
-    integer unsigned dtlb_els_4k;
-    integer unsigned dtlb_els_2m;
-    integer unsigned dtlb_els_1g;
+    int itlb_els_4k;
+    int itlb_els_2m;
+    int itlb_els_1g;
+    int dtlb_els_4k;
+    int dtlb_els_2m;
+    int dtlb_els_1g;
 
     // I$ cache features
-    integer unsigned icache_features;
+    int icache_features;
     // I$ parameterizations
-    integer unsigned icache_sets;
-    integer unsigned icache_assoc;
-    integer unsigned icache_block_width;
-    integer unsigned icache_fill_width;
-    integer unsigned icache_data_width;
-    integer unsigned icache_mshr;
+    int icache_sets;
+    int icache_assoc;
+    int icache_block_width;
+    int icache_fill_width;
+    int icache_data_width;
+    int icache_mshr;
 
     // D$ cache features
-    integer unsigned dcache_features;
+    int dcache_features;
     // D$ parameterizations
-    integer unsigned dcache_sets;
-    integer unsigned dcache_assoc;
-    integer unsigned dcache_block_width;
-    integer unsigned dcache_fill_width;
-    integer unsigned dcache_data_width;
-    integer unsigned dcache_mshr;
+    int dcache_sets;
+    int dcache_assoc;
+    int dcache_block_width;
+    int dcache_fill_width;
+    int dcache_data_width;
+    int dcache_mshr;
 
     // A$ cache features
-    integer unsigned acache_features;
+    int acache_features;
     // A$ parameterizations
-    integer unsigned acache_sets;
-    integer unsigned acache_assoc;
-    integer unsigned acache_block_width;
-    integer unsigned acache_fill_width;
-    integer unsigned acache_data_width;
-    integer unsigned acache_mshr;
+    int acache_sets;
+    int acache_assoc;
+    int acache_block_width;
+    int acache_fill_width;
+    int acache_data_width;
+    int acache_mshr;
 
     // CCE selection and parameters
     // cce_type defined by bp_cce_type_e
-    integer unsigned cce_type;
+    int cce_type;
     // Determines the size of the CCE instruction RAM
-    integer unsigned cce_pc_width;
+    int cce_pc_width;
     // The width of the coherence protocol block
-    integer unsigned bedrock_block_width;
+    int bedrock_block_width;
     // The width of the coherence protocol beats
-    integer unsigned bedrock_fill_width;
+    int bedrock_fill_width;
 
     // L2 slice parameters (per core)
     // L2 cache features
-    integer unsigned l2_features;
-    integer unsigned l2_slices;
+    int l2_features;
+    int l2_slices;
     // Number of L2 banks present in the slice
-    integer unsigned l2_banks;
-    integer unsigned l2_data_width;
-    integer unsigned l2_sets;
-    integer unsigned l2_assoc;
-    integer unsigned l2_block_width;
-    integer unsigned l2_fill_width;
+    int l2_banks;
+    int l2_data_width;
+    int l2_sets;
+    int l2_assoc;
+    int l2_block_width;
+    int l2_fill_width;
 
     // Size of the issue queue
-    integer unsigned fe_queue_fifo_els;
+    int fe_queue_fifo_els;
     // Size of the cmd queue
-    integer unsigned fe_cmd_fifo_els;
+    int fe_cmd_fifo_els;
     // Integer support in the system. It is a bitmask with:
     //   bit 0: basic alu
     //   bit 1: catchup alu
-    integer unsigned integer_support;
+    int integer_support;
     // MULDIV support in the system. It is a bitmask with:
     //   bit 0: div
     //   bit 1: mul
     //   bit 2: iterative mulh
     //   bit 3: 2b iterative div
-    integer unsigned muldiv_support;
+    int muldiv_support;
     // Whether to support FPU
     //   bit 0: fma
     //   bit 1: iterative fdivsqrt
     //   bit 2: 2b iterative fdivsqrt
-    integer unsigned fpu_support;
+    int fpu_support;
     // Whether to enable the "c" extension.
-    integer unsigned compressed_support;
+    //   bit 0: basic C
+    int compressed_support;
     // Whether to enable bitmanip extensions
-    integer unsigned bitmanip_support;
+    int bitmanip_support;
 
     // Whether the coherence network is on the core clock or on its own clock
-    integer unsigned async_coh_clk;
+    int async_coh_clk;
     // Flit width of the coherence network. Has major impact on latency / area of the network
-    integer unsigned coh_noc_flit_width;
+    int coh_noc_flit_width;
     // Concentrator ID width of the coherence network. Corresponds to how many nodes can be on a
     //   single wormhole router
-    integer unsigned coh_noc_cid_width;
+    int coh_noc_cid_width;
     // Maximum number of flits in a single wormhole message. Determined by protocol and affects
     //   buffer size
-    integer unsigned coh_noc_len_width;
+    int coh_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
-    integer unsigned coh_noc_max_credits;
+    int coh_noc_max_credits;
 
     // Whether the I/O network is on the core clock or on its own clock
-    integer unsigned async_mem_clk;
+    int async_mem_clk;
     // Flit width of the I/O network. Has major impact on latency / area of the network
-    integer unsigned mem_noc_flit_width;
+    int mem_noc_flit_width;
     // Concentrator ID width of the I/O network. Corresponds to how many nodes can be on a
     //   single wormhole router
-    integer unsigned mem_noc_cid_width;
+    int mem_noc_cid_width;
     // Domain ID width of the I/O network. Corresponds to how many chips compose a multichip chain
-    integer unsigned mem_noc_did_width;
+    int mem_noc_did_width;
     // Maximum number of flits in a single wormhole message. Determined by protocol and affects
     //   buffer size
-    integer unsigned mem_noc_len_width;
+    int mem_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
-    integer unsigned mem_noc_max_credits;
+    int mem_noc_max_credits;
 
     // Whether the memory network is on the core clock or on its own clock
-    integer unsigned async_dma_clk;
+    int async_dma_clk;
     // Flit width of the memory network. Has major impact on latency / area of the network
-    integer unsigned dma_noc_flit_width;
+    int dma_noc_flit_width;
     // Concentrator ID width of the memory network. Corresponds to how many nodes can be on a
     //   single wormhole router
-    integer unsigned dma_noc_cid_width;
+    int dma_noc_cid_width;
     // Maximum number of flits in a single wormhole message. Determined by protocol and affects
     //   buffer size
-    integer unsigned dma_noc_len_width;
+    int dma_noc_len_width;
     // Maximum credits supported by the network. Correlated to the bandwidth delay product
-    integer unsigned dma_noc_max_credits;
+    int dma_noc_max_credits;
 
   }  bp_proc_param_s;
 
@@ -336,15 +348,14 @@
 
       ,l2_features          : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
-                              | (1 << e_cfg_word_tracking)
                               | (1 << e_cfg_amo_swap)
                               | (1 << e_cfg_amo_fetch_logic)
                               | (1 << e_cfg_amo_fetch_arithmetic)
       ,l2_slices           : 2
-      ,l2_banks            : 2
+      ,l2_banks            : 1
       ,l2_data_width       : 128
-      ,l2_sets             : 128
-      ,l2_assoc            : 8
+      ,l2_sets             : 32
+      ,l2_assoc            : 2
       ,l2_block_width      : 512
       ,l2_fill_width       : 128
 
@@ -357,7 +368,7 @@
                            | (1 << e_idiv2b)
       ,fpu_support       : (1 << e_fma) | (1 << e_fdivsqrt) | (1 << e_fdivsqrt2b)
       ,bitmanip_support  : (1 << e_zba) | (1 << e_zbb) | (1 << e_zbs)
-      ,compressed_support: 1
+      ,compressed_support: (1 << e_compressed)
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 128

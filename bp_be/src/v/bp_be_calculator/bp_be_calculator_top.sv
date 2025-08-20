@@ -489,7 +489,7 @@ module bp_be_calculator_top
   wire injection = dispatch_pkt_cast_i.v & ~dispatch_pkt_cast_i.queue_v;
   always_comb
     begin
-      for (integer i = 0; i <= pipe_stage_els_lp; i++)
+      for (int i = 0; i <= pipe_stage_els_lp; i++)
         begin : comp_stage
           // Normally, shift down in the pipe
           comp_stage_n[i] = (i == 0)
@@ -551,7 +551,7 @@ module bp_be_calculator_top
   always_comb
     begin
       // Exception aggregation
-      for (integer i = 0; i <= pipe_stage_els_lp; i++)
+      for (int i = 0; i <= pipe_stage_els_lp; i++)
         begin : exc_stage
           // Normally, shift down in the pipe
           exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];

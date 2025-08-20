@@ -194,7 +194,7 @@ module bp_be_pipe_int
   assign data_o = (decode.j_v | decode.jr_v) ? ntaken_data : ird_data_lo;
   assign v_o    = en_i & reservation.v & reservation.decode.pipe_int_v;
 
-  assign instr_misaligned_v_o = en_i & btaken_o & (taken_tgt[1:0] != 2'b00) & !compressed_support_p;
+  assign instr_misaligned_v_o = en_i & btaken_o & (taken_tgt[1:0] != 2'b00) & ~|compressed_support_p;
 
   assign branch_o = decode.br_v | decode.j_v | decode.jr_v;
   assign btaken_o = (decode.br_v & comp_result) || decode.j_v || decode.jr_v;

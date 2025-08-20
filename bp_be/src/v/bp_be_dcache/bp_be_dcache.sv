@@ -81,21 +81,20 @@ module bp_be_dcache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to dcache parameters, but can override if needed
-   , parameter coherent_p            = dcache_features_p[e_cfg_coherent]
-   , parameter writeback_p           = dcache_features_p[e_cfg_writeback]
-   , parameter [31:0] amo_support_p  = (((dcache_features_p[e_cfg_lr_sc]) << e_dcache_subop_lr)
-                                        | ((dcache_features_p[e_cfg_lr_sc]) << e_dcache_subop_sc)
-                                        | ((dcache_features_p[e_cfg_amo_swap]) << e_dcache_subop_amoswap)
-                                        | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amoadd)
-                                        | ((dcache_features_p[e_cfg_amo_fetch_logic]) << e_dcache_subop_amoxor)
-                                        | ((dcache_features_p[e_cfg_amo_fetch_logic]) << e_dcache_subop_amoand)
-                                        | ((dcache_features_p[e_cfg_amo_fetch_logic]) << e_dcache_subop_amoor)
-                                        | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amomin)
-                                        | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amomax)
-                                        | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amominu)
-                                        | ((dcache_features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amomaxu)
+   , parameter bp_cache_features_t features_p = dcache_features_p
+   , parameter bp_be_amo_subop_t amo_support_p =
+       ( ((features_p[e_cfg_lr_sc]) << e_dcache_subop_lr)
+       | ((features_p[e_cfg_lr_sc]) << e_dcache_subop_sc)
+       | ((features_p[e_cfg_amo_swap]) << e_dcache_subop_amoswap)
+       | ((features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amoadd)
+       | ((features_p[e_cfg_amo_fetch_logic]) << e_dcache_subop_amoxor)
+       | ((features_p[e_cfg_amo_fetch_logic]) << e_dcache_subop_amoand)
+       | ((features_p[e_cfg_amo_fetch_logic]) << e_dcache_subop_amoor)
+       | ((features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amomin)
+       | ((features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amomax)
+       | ((features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amominu)
+       | ((features_p[e_cfg_amo_fetch_arithmetic]) << e_dcache_subop_amomaxu)
                                         )
-   , parameter hit_under_miss_p = dcache_features_p[e_cfg_hit_under_miss]
    , parameter sets_p         = dcache_sets_p
    , parameter assoc_p        = dcache_assoc_p
    , parameter block_width_p  = dcache_block_width_p
@@ -105,16 +104,16 @@ module bp_be_dcache
    , parameter mshr_p         = dcache_mshr_p
    , parameter id_width_p     = dcache_req_id_width_p
 
+   `declare_bp_common_if_widths(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p)
 
-   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
-   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    )
   (input                                             clk_i
    , input                                           reset_i
 
-   // Unused except for tracers
    , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
+
    , output logic                                    busy_o
    , output logic                                    ordered_o
 
@@ -178,6 +177,7 @@ module bp_be_dcache
    , output logic [dcache_stat_info_width_lp-1:0]    stat_mem_o
    );
 
+  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   `declare_bp_be_dcache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p);
 
   localparam lg_assoc_lp              = `BSG_SAFE_CLOG2(assoc_p);
@@ -243,9 +243,11 @@ module bp_be_dcache
      ,.decode_o(decode_lo)
      );
 
-  wire [page_offset_width_gp-1:0] offset = dcache_pkt_cast_i.offset;
-  wire [sindex_width_lp-1:0]       index = offset[block_offset_width_lp+:sindex_width_lp];
-  wire [bindex_width_lp-1:0]        bank = offset[byte_offset_width_lp+:bindex_width_lp];
+  wire [vaddr_width_p-1:0]   vaddr       = dcache_pkt_cast_i.vaddr;
+  wire [vtag_width_p-1:0]    vaddr_vtag  = vaddr[(vaddr_width_p-1)-:vtag_width_p];
+  wire [sindex_width_lp-1:0] vaddr_index = vaddr[block_offset_width_lp+:sindex_width_lp];
+  wire [bindex_width_lp-1:0] vaddr_bank  = vaddr[byte_offset_width_lp+:bindex_width_lp];
+  wire [page_offset_width_gp-1:0] offset = vaddr[0+:page_offset_width_gp];
 
   ///////////////////////////
   // Tag Mem Storage
@@ -338,11 +340,11 @@ module bp_be_dcache
 
   // Concatenate unused bits from offset if any cache way size is not 4kb
   localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
-  wire [ctag_vbits_lp-1:0] ctag_vbits = offset_tl_r[page_offset_width_gp-1-:`BSG_MAX(ctag_vbits_lp,1)];
+  wire [`BSG_MAX(ctag_vbits_lp,1)-1:0] ctag_vbits = offset_tl_r[page_offset_width_gp-1-:`BSG_MAX(ctag_vbits_lp,1)];
   // Causes segfault in Synopsys DC O-2018.06-SP4
   // wire [tag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
-  wire [tag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
-  wire [ptag_width_p-1:tag_width_p] ptag_high_li = ptag_i >> tag_width_p;
+  wire [tag_width_p-1:0] ctag_li = tag_width_p'((ctag_vbits_lp!=0) ? {ptag_i, ctag_vbits} : ptag_i);
+  wire [paddr_width_p-1:caddr_width_p] ptag_high_li = paddr_tl[paddr_width_p-1:caddr_width_p];
 
   logic [assoc_p-1:0] way_v_tl, load_hit_tl, store_hit_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
@@ -399,19 +401,29 @@ module bp_be_dcache
   logic [assoc_p-1:0] bank_sel_one_hot_tv_n;
   logic uncached_tv_n;
   bp_be_dcache_decode_s decode_tv_n;
-  bsg_mux
-   #(.width_p(3*assoc_p+block_width_p+data_width_p+paddr_width_p+assoc_p+1+$bits(bp_be_dcache_decode_s)), .els_p(2))
-   tv_snoop_mux
-    (.data_i({{snoop_hit, snoop_ld_data, snoop_st_data, snoop_paddr, snoop_bank_sel_one_hot
-               ,snoop_uncached, snoop_decode}
-              ,{way_v_tl, store_hit_tl, load_hit_tl, data_mem_data_lo, st_data_tl, paddr_tl, bank_sel_one_hot_tl
-                ,uncached_tl, decode_tl_r}
-              })
-     ,.sel_i(snoop_v)
-     ,.data_o({way_v_tv_n, store_hit_tv_n, load_hit_tv_n, ld_data_tv_n, st_data_tv_n, paddr_tv_n, bank_sel_one_hot_tv_n
-               ,uncached_tv_n, decode_tv_n
-               })
-     );
+  // workaround for verilator 5.036
+  assign {way_v_tv_n, store_hit_tv_n, load_hit_tv_n, ld_data_tv_n, st_data_tv_n, paddr_tv_n, bank_sel_one_hot_tv_n
+          ,uncached_tv_n, decode_tv_n
+          } = snoop_v
+              ? {snoop_hit, snoop_ld_data, snoop_st_data, snoop_paddr, snoop_bank_sel_one_hot
+                 ,snoop_uncached, snoop_decode
+                 }
+              : {way_v_tl, store_hit_tl, load_hit_tl, data_mem_data_lo, st_data_tl, paddr_tl, bank_sel_one_hot_tl
+                 ,uncached_tl, decode_tl_r
+                 };
+  //bsg_mux
+  // #(.width_p(3*assoc_p+block_width_p+data_width_p+paddr_width_p+assoc_p+1+$bits(bp_be_dcache_decode_s)), .els_p(2))
+  // tv_snoop_mux
+  //  (.data_i({{snoop_hit, snoop_ld_data, snoop_st_data, snoop_paddr, snoop_bank_sel_one_hot
+  //             ,snoop_uncached, snoop_decode}
+  //            ,{way_v_tl, store_hit_tl, load_hit_tl, data_mem_data_lo, st_data_tl, paddr_tl, bank_sel_one_hot_tl
+  //              ,uncached_tl, decode_tl_r}
+  //            })
+  //   ,.sel_i(snoop_v)
+  //   ,.data_o({way_v_tv_n, store_hit_tv_n, load_hit_tv_n, ld_data_tv_n, st_data_tv_n, paddr_tv_n, bank_sel_one_hot_tv_n
+  //             ,uncached_tv_n, decode_tv_n
+  //             })
+  //   );
 
   wire snoop_tv_n = snoop_v;
   bsg_dff
@@ -480,7 +492,7 @@ module bp_be_dcache
   wire [data_width_p-1:0] final_data_tv = ld_data_dword_merged >> ld_data_shift_tv;
 
   // Store no-allocate, so keep going if we have a store miss on a writethrough cache
-  wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & ~nonblocking_req & writeback_p;
+  wire store_miss_tv    = (decode_tv_r.store_op | decode_tv_r.lr_op) & ~store_hit_tv & ~sc_fail_tv & ~nonblocking_req & features_p[e_cfg_writeback];
   wire load_miss_tv     = decode_tv_r.load_op & ~load_hit_tv & ~sc_fail_tv & ~nonblocking_req;
 
   wire blocking_miss_tv    = blocking_req;
@@ -691,13 +703,13 @@ module bp_be_dcache
   wire uncached_amo_req    = v_tv_r &  uncached_tv_r & decode_tv_r.amo_op & decode_tv_r.ret_op & ~snoop_tv_r;
   wire uncached_load_req   = v_tv_r &  uncached_tv_r & ~decode_tv_r.amo_op & decode_tv_r.load_op & ~snoop_tv_r;
   wire uncached_store_req  = v_tv_r &  uncached_tv_r & decode_tv_r.store_op & ~decode_tv_r.ret_op & ~snoop_tv_r;
-  wire binval_req          = v_tv_r & ~uncached_tv_r & decode_tv_r.binval_op & ~decode_tv_r.bclean_op & coherent_p & ~snoop_tv_r;
-  wire bclean_req          = v_tv_r & ~uncached_tv_r & decode_tv_r.bclean_op & (~decode_tv_r.binval_op | !coherent_p) & (store_hit_tv | coherent_p) & ~snoop_tv_r;
-  wire bflush_req          = v_tv_r & ~uncached_tv_r & decode_tv_r.bclean_op & decode_tv_r.binval_op & coherent_p & ~snoop_tv_r;
+  wire binval_req          = v_tv_r & ~uncached_tv_r & decode_tv_r.binval_op & ~decode_tv_r.bclean_op & features_p[e_cfg_coherent] & ~snoop_tv_r;
+  wire bclean_req          = v_tv_r & ~uncached_tv_r & decode_tv_r.bclean_op & (~decode_tv_r.binval_op | !features_p[e_cfg_coherent]) & (store_hit_tv | features_p[e_cfg_coherent]) & ~snoop_tv_r;
+  wire bflush_req          = v_tv_r & ~uncached_tv_r & decode_tv_r.bclean_op & decode_tv_r.binval_op & features_p[e_cfg_coherent] & ~snoop_tv_r;
   wire inval_req           = v_tv_r & ~uncached_tv_r & decode_tv_r.inval_op & ~decode_tv_r.clean_op & ~snoop_tv_r;
   wire clean_req           = v_tv_r & ~uncached_tv_r & decode_tv_r.clean_op & ~decode_tv_r.inval_op & ~snoop_tv_r;
   wire flush_req           = v_tv_r & ~uncached_tv_r & decode_tv_r.inval_op & decode_tv_r.clean_op & ~snoop_tv_r;
-  wire wt_req              = v_tv_r & ~uncached_tv_r & decode_tv_r.store_op & ~sc_fail_tv & !writeback_p & ~snoop_tv_r;
+  wire wt_req              = v_tv_r & ~uncached_tv_r & decode_tv_r.store_op & ~sc_fail_tv & !features_p[e_cfg_writeback] & ~snoop_tv_r;
 
   // Uncached stores and writethrough requests are non-blocking
   assign nonblocking_req   = (uncached_store_req)
@@ -841,7 +853,7 @@ module bp_be_dcache
   assign tag_mem_addr_li = tag_mem_fast_write
     ? paddr_index_tv
     : tag_mem_fast_read
-      ? index
+      ? vaddr_index
       : tag_mem_pkt_cast_i.index;
   assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i
     & ~lrsc_lock
@@ -858,7 +870,7 @@ module bp_be_dcache
       );
 
   always_comb
-    for (integer i = 0; i < assoc_p; i++)
+    for (int i = 0; i < assoc_p; i++)
       casez ({tag_mem_fast_write, tag_mem_pkt_cast_i.opcode})
         {1'b1, 3'b???}:
           begin
@@ -967,7 +979,7 @@ module bp_be_dcache
       assign data_mem_addr_li[i] = data_mem_fast_write[i]
           ? {wbuf_entry_out_index, {(assoc_p > 1){wbuf_entry_out_bank_offset}}}
           : data_mem_fast_read[i]
-            ? {index, {(assoc_p > 1){bank}}}
+            ? {vaddr_index, {(assoc_p > 1){vaddr_bank}}}
             : {data_mem_pkt_cast_i.index, {(assoc_p > 1){data_mem_pkt_offset}}};
 
       assign data_mem_data_li[i] = data_mem_fast_write[i]
@@ -1037,7 +1049,7 @@ module bp_be_dcache
      );
 
   logic [assoc_p-1:0] dirty_mask_lo;
-  if (writeback_p)
+  if (features_p[e_cfg_writeback])
     begin : tdm
       wire dirty_mask_v_li = stat_mem_slow_write || (v_tv_r & decode_tv_r.store_op);
       wire [lg_assoc_lp-1:0] dirty_mask_way_li = v_tv_r ? store_hit_way_tv : stat_mem_pkt_cast_i.way_id;
@@ -1165,7 +1177,7 @@ module bp_be_dcache
     if (!is_ready & complete_recv)
       state_n = e_ready;
     else if (is_ready & blocking_sent)
-      state_n = (!hit_under_miss_p | decode_tv_r.cache_op) ? e_serial : e_primary;
+      state_n = (!features_p[e_cfg_hit_under_miss] | decode_tv_r.cache_op) ? e_serial : e_primary;
     else if (is_primary & v_tv_r & any_miss_tv)
       state_n = e_serial;
     else
@@ -1196,7 +1208,7 @@ module bp_be_dcache
      ,.data_o({fill_uncached_r, fill_st_data_r, fill_paddr_r, fill_decode_r})
      );
 
-  if (hit_under_miss_p)
+  if (features_p[e_cfg_hit_under_miss])
     begin : hum
       wire fill_v = data_mem_pkt_v_i & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write);
       wire fill_recv = fill_v
@@ -1254,17 +1266,6 @@ module bp_be_dcache
     (.i(snoop_bank)
      ,.o(snoop_bank_sel_one_hot)
      );
-
-  // synopsys translate_off
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
-  `bp_cast_i(bp_cfg_bus_s, cfg_bus);
-
-  always_ff @(negedge clk_i)
-    begin
-      assert(reset_i !== '0 || ~v_tv_r || $countones(load_hit_tl) <= 1)
-        else $error("multiple hit: %b. id = %0d. addr = %H", load_hit_tl, cfg_bus_cast_i.dcache_id, ptag_i);
-    end
-  // synopsys translate_on
 
 endmodule
 

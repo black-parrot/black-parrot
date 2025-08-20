@@ -38,8 +38,9 @@ module bp_fe_icache
    `declare_bp_proc_params(bp_params_p)
 
    // Default to icache parameters, but can override if needed
-   , parameter misaligned_p  = icache_features_p[e_cfg_misaligned]
-   , parameter coherent_p    = icache_features_p[e_cfg_coherent]
+   , parameter features_p    = icache_features_p
+   , parameter misaligned_p  = features_p[e_cfg_misaligned]
+   , parameter coherent_p    = features_p[e_cfg_coherent]
    , parameter sets_p        = icache_sets_p
    , parameter assoc_p       = icache_assoc_p
    , parameter block_width_p = icache_block_width_p
@@ -48,14 +49,13 @@ module bp_fe_icache
    , parameter tag_width_p   = icache_tag_width_p
    , parameter id_width_p    = icache_req_id_width_p
 
+   `declare_bp_common_if_widths(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    `declare_bp_fe_icache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p)
-   , localparam cfg_bus_width_lp    = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
    )
   (input                                              clk_i
    , input                                            reset_i
 
-   // Unused except for tracers
    , input [cfg_bus_width_lp-1:0]                     cfg_bus_i
 
    // Cycle 0: "Decode"
@@ -129,8 +129,6 @@ module bp_fe_icache
    );
 
   `declare_bp_fe_icache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p);
-  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
-  `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // Various localparameters
   localparam lg_assoc_lp            =`BSG_SAFE_CLOG2(assoc_p);
@@ -281,11 +279,11 @@ module bp_fe_icache
 
   // Concatenate unused bits from vaddr if any cache way size is not 4kb
   localparam ctag_vbits_lp = page_offset_width_gp - (block_offset_width_lp + sindex_width_lp);
-  wire [ctag_vbits_lp-1:0] ctag_vbits = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:`BSG_MAX(ctag_vbits_lp,1)];
+  wire [`BSG_MAX(ctag_vbits_lp,1)-1:0] ctag_vbits = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:`BSG_MAX(ctag_vbits_lp,1)];
   // Causes segfault in Synopsys DC O-2018.06-SP4
   // wire [tag_width_p-1:0] ctag_li = {ptag_i, {ctag_vbits_lp!=0{ctag_vbits}}};
-  wire [tag_width_p-1:0] ctag_li = ctag_vbits_lp ? {ptag_i, ctag_vbits} : ptag_i;
-  wire [ptag_width_p-1:tag_width_p] ptag_high_li = ptag_i >> tag_width_p;
+  wire [tag_width_p-1:0] ctag_li = tag_width_p'((ctag_vbits_lp!=0) ? {ptag_i, ctag_vbits} : ptag_i);
+  wire [paddr_width_p-1:caddr_width_p] ptag_high_li = paddr_tl[paddr_width_p-1:caddr_width_p];
 
   logic [assoc_p-1:0] way_v_tl, hit_v_tl;
   for (genvar i = 0; i < assoc_p; i++) begin: tag_comp_tl
@@ -565,7 +563,7 @@ module bp_fe_icache
      );
 
   always_comb
-    for (integer i = 0; i < assoc_p; i++)
+    for (int i = 0; i < assoc_p; i++)
       case (tag_mem_pkt_cast_i.opcode)
         e_cache_tag_mem_set_tag:
           begin

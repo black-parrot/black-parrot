@@ -26,7 +26,7 @@ class TestGenerator(object):
     print(*args, file=sys.stderr, **kwargs)
 
   # Write ops to file
-  # ops is a dictionary, indexed by thread ID (integer) as key
+  # ops is a dictionary, indexed by thread ID (int) as key
   # the values are lists of command tuples
   def generateTrace(self, ops, out_dir, out_file_base):
     for lce in ops:
@@ -124,7 +124,7 @@ class TestGenerator(object):
         # choose which cache block to access
         block = random.choice(test_blocks)
         # choose offset in cache block based on size of access ("word" size for this access)
-        words = block_size / size
+        words = block_size // size
         word = random.randint(0, words-1)
         # build the address
         addr = (block << b) + (word << size_shift) + mem_base

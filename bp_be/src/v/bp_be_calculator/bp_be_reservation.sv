@@ -117,6 +117,6 @@ module bp_be_reservation
     end
 
   assign reservation_cast_o = reservation;
- 
+
 endmodule
 

@@ -138,8 +138,9 @@ if __name__ == '__main__':
     # read test from trace file
     indir = os.path.abspath(os.path.expanduser(args.indir))
     infile = os.path.join(indir, args.infile)
-    assert (os.path.isdir(indir)), '[ME TraceGen]: Invalid input directory'
-    assert (os.path.exists(infile)), '[ME TraceGen]: Invalid input file'
+    assert (os.path.isdir(indir)), '[ME TraceGen]: Invalid input directory {}'
+    print("infile == {}".format(infile))
+    assert (os.path.exists(infile)), '[ME TraceGen]: Invalid input file {}'
     ops = testGen.readTrace(infile)
 
   # output test trace

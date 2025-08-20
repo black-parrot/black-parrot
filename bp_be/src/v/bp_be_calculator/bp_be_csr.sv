@@ -222,7 +222,7 @@ module bp_be_csr
      ,.v_o(s_interrupt_icode_v_li)
      );
 
-  wire                               csr_w_v_li = retire_pkt_cast_i.special.csrw; 
+  wire                               csr_w_v_li = retire_pkt_cast_i.special.csrw;
   wire [rv64_reg_data_width_gp-1:0] csr_data_li = retire_pkt_cast_i.data;
   wire [rv64_csr_addr_width_gp-1:0] csr_addr_li = retire_pkt_cast_i.instr.t.itype.imm12;
   wire [rv64_funct3_width_gp-1:0]   csr_func_li = retire_pkt_cast_i.instr.t.itype.funct3;
@@ -272,6 +272,8 @@ module bp_be_csr
   wire [vaddr_width_p-1:0] debug_resume_pc    = {cfg_npc_r[vaddr_width_p-1:4], 4'b0100};
   wire [vaddr_width_p-1:0] debug_exception_pc = {cfg_npc_r[vaddr_width_p-1:4], 4'b1000};
 
+  wire ret_v = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};
+
   wire [vaddr_width_p-1:0] ret_pc =
     retire_pkt_cast_i.special.sret
     ? sepc_lo
@@ -287,7 +289,7 @@ module bp_be_csr
   wire [vaddr_width_p-1:0] core_npc =
     (exception_v_lo | interrupt_v_lo)
     ? tvec_pc
-    : commit_pkt_cast_o.eret
+    : ret_v
       ? ret_pc
       : retire_pkt_cast_i.instret
         ? retire_pkt_cast_i.npc
@@ -659,7 +661,7 @@ module bp_be_csr
   assign commit_pkt_cast_o.fencei            = retire_pkt_cast_i.special.fencei;
   assign commit_pkt_cast_o.sfence            = retire_pkt_cast_i.special.sfence_vma;
   assign commit_pkt_cast_o.wfi               = retire_pkt_cast_i.special.wfi;
-  assign commit_pkt_cast_o.eret              = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};
+  assign commit_pkt_cast_o.eret              = ret_v;
   assign commit_pkt_cast_o.csrw              = retire_pkt_cast_i.special.csrw;
   assign commit_pkt_cast_o.resume            = retire_pkt_cast_i.exception.resume;
   assign commit_pkt_cast_o.itlb_miss         = retire_pkt_cast_i.exception.itlb_miss;

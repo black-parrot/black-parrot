@@ -51,8 +51,8 @@ Structures:
     For example, a two-bit saturating counter BHT implementation may store the index within the table used for a prediction and the old value from that entry in the table in the `bp_fe_branch_metadata_fwd_s` struct. In the event of an attaboy, it would use the index and old value to write a "strong" prediction of the same direction as used to be present back into the source BHT slot. In the case of a redirect (misprediction), it would overwrite that entry with a "weak" prediction, with direction flipped if the old value was already weak. In this case, the writes are performed in response to the attaboy or redirect, rather than at prediction time.
 
   - Future possible extensions (or non-features for this version.)
-    - K-bit HART ID for multithreading. For now, we hold off on this, as we generally don’t want to add interfaces we don’t support. 
-    - Process ID, Address Space ID, or thread ID (is this needed?) 
+    - K-bit HART ID for multithreading. For now, we hold off on this, as we generally don’t want to add interfaces we don’t support.
+    - Process ID, Address Space ID, or thread ID (is this needed?)
     - If any of these things are actually ISA concepts, seems like the best thing is to just say that the fetch unit must be flushed to prevent co-existence of these items, eliminating the need to disambiguate between them.
 
   Exceptions should be serviced inline with instructions. Otherwise we have no way of knowing if this exception is eclipsed by a preceding branch mispredict. Every instruction has a PC so that field can be reused. We can carry a bit-vector along inside `bp_fe_fetch_s` to indicate these exceptions and/or other status information. FE does not receive interrupts, but may raise exceptions.
@@ -63,7 +63,7 @@ Structures:
     - In order of priority:
     - Instruction Address Misaligned
       - This has priority over a TLB miss because a itlb miss can have a side-effect, and presumably a misaligned instruction is a sign of anomalous execution.
-    - itlb miss 
+    - itlb miss
       - Page table walking can not occur in front end, because it writes the A bit in the page table entries; which means the instruction cache would have to support writes. Moreover, this bit is an architectural side effect, and is not allowed to be set speculatively. Only the backend can precisely commit architectural side-effects. For these reasons, itlb misses are handled by the backend.
     - This may also occur if translation is disabled. In this case, a itlb means that the physical page is not in the itlb and we don’t have the PMP/PMA information cached. The BE will not perform a page walk in this case; it will just return the PMP/PMA information.
     - Instruction access faults (i.e. permissions) must be checked by the FE because the interpretation of the L and X bits are determined by whether the system is in M mode or S and U mode. These bits will be stored in the itlb.
@@ -93,7 +93,7 @@ Available commands and their payloads:
   - Reset PC to X
 - PC redirection
 
-  A redirection indicates an incorrect prediction ("at-fault") or an exceptional change of control flow due to interrupts or architectural state changes ("no-fault"). It requests that the frontend fetch the specified instruction and continue from there. 
+  A redirection indicates an incorrect prediction ("at-fault") or an exceptional change of control flow due to interrupts or architectural state changes ("no-fault"). It requests that the frontend fetch the specified instruction and continue from there.
 
   - Standard operands
     - PC virtual address of the _next_ instruction to be fetched
