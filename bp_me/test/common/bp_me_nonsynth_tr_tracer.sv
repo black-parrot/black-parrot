@@ -1,3 +1,5 @@
+ERROR_NOT_CURRENTLY_SUPPORTED
+
 /**
  * bp_me_nonsynth_tr_tracer.v
  *
@@ -46,7 +48,7 @@ module bp_me_nonsynth_tr_tracer
   assign tr_cmd = tr_pkt_i;
   assign tr_resp = tr_pkt_o_i;
 
-  integer file;
+  int file;
   string file_name;
 
   always_ff @(negedge reset_i) begin

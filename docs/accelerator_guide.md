@@ -1,3 +1,5 @@
+# The specific instructions here are outdated, help wanted to fix
+
 # BlackParrot Accelerator Developer's Guide
 
 ## Accelerator Complex High Level Block Diagram
@@ -6,7 +8,7 @@ In the both coherent and streaming accelerator complexes, all the accelerator ti
 
 A typical accelerator design includes the following components:
 * RTL description of the algorithm or function being accelerated
-* Logic to map AFU CSRs into MMIO space 
+* Logic to map AFU CSRs into MMIO space
 * BlackParrot Cache+LCE in the case of coherent accelerators and SPM+LCE_Link in the case of streaming accelerators
 
 ![Accelerator Complex](accelerator_complex.png)
@@ -18,16 +20,16 @@ The detailed schematic of accelerator tile node and accelerator tile can be foun
 **Commands to Run Accelerator Demos**
 
 Clone the latest repo and follow the getting started page to run the general tests. For accelerator tests, to run vector_dot_product example, run the following command in bp_top/syn:
- 
+
 ```
-make build_dump.v sim_dump.v  SUITE=bp-tests PROG=streaming_accelerator_demo CFG=e_bp_multicore_1_accelerator_cfg
+make build.v sim.v  SUITE=bp-tests PROG=streaming_accelerator_demo CFG=e_bp_multicore_1_accelerator_cfg
 ```
 
 **Accelerator API**
 
 Considering BlackParrot memory address map, defined in the [platform guide](platform_guide.md), accelerators CSRs can be mapped into MMIO space (16 MB of MMIO space for each coherent and streaming accelerator).
 
-Some basic APIs such as bp_set_mmio_csr, bp_get_mmio_csr, and dma_cpy functions are defined in the BlackParrot bare-metal library, lib_perch, located at bp_common/test/src/perch. Other required functions can be added to the library based on the accelerator functionality. The base address for each accelerator, accelerator ID, and also a list of each accelerator CSRs can be defined in the library. 
+Some basic APIs such as bp_set_mmio_csr, bp_get_mmio_csr, and dma_cpy functions are defined in the BlackParrot bare-metal library, lib_perch, located at bp_common/test/src/perch. Other required functions can be added to the library based on the accelerator functionality. The base address for each accelerator, accelerator ID, and also a list of each accelerator CSRs can be defined in the library.
 
 Example for sw program:
 
@@ -53,19 +55,19 @@ Call accelerator function sets the corresponding CSRs, sends start command to ac
 
 All the required hardware and software modifications have already been implemented for example coherent and streaming accelerators (vector dot_product). They can be used as a reference for adding new accelerators to the BlackParrot SoC.
 
- 
+
 ## Linux Environment
 
 **Commands to Run Accelerator Demos**
 
-Clone bp_accelerator_mods branch of https://github.com/bsg-external/freedom-u-sdk.git repo and run make in the top level directory to create the bbl image. Then clone the accelerator_dromajo branch of BlackParrot repo and follow the getting started page to build the tools.  
+Clone bp_accelerator_mods branch of https://github.com/bsg-external/freedom-u-sdk.git repo and run make in the top level directory to create the bbl image. Then clone the accelerator_dromajo branch of BlackParrot repo and follow the getting started page to build the tools.
 To boot up linux on dromajo, run the following command in black-parrot/external/dromajo/src/.
 
 ./dromajo  --host  bbl
 
 ![Login Prompt](login_prompt.png)
 
-Once you get the login prompt, enter "root" username and "blackparrot" password to login. Then change the directory to /usr/bin to find the accelerator test programs. Run cvdp and svdp binaries to test coherent and streaming vector_dot_product accelerators, respectively. Both programs get the vector length as the input argument, generate random input arrays, pass them to the accelerator, and print the accelerator response once it's done. 
+Once you get the login prompt, enter "root" username and "blackparrot" password to login. Then change the directory to /usr/bin to find the accelerator test programs. Run cvdp and svdp binaries to test coherent and streaming vector_dot_product accelerators, respectively. Both programs get the vector length as the input argument, generate random input arrays, pass them to the accelerator, and print the accelerator response once it's done.
 
 ![Linux](linux.png)
 

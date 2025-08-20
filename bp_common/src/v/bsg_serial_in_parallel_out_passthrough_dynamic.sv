@@ -14,7 +14,7 @@ module bsg_serial_in_parallel_out_passthrough_dynamic
    )
   (input                                  clk_i
   , input                                 reset_i
-     
+
   , input                                 v_i
   , input [lg_max_els_lp-1:0]             len_i
   , output logic                          ready_and_o
@@ -24,9 +24,9 @@ module bsg_serial_in_parallel_out_passthrough_dynamic
   , output logic                          v_o
   , input                                 ready_and_i
   );
-  
+
   localparam lg_els_lp = `BSG_SAFE_CLOG2(els_p);
-   
+
   logic [els_p-1:0] count_r;
   logic last_word;
 

@@ -198,8 +198,8 @@ module bp_unicore
 
       wire [num_dev_lp-1:0] proc_fwd_dst_sel =
         (is_cfg_fwd << cfg_dev_id_lp)
-        | (is_clint_fwd << clint_dev_id_lp) 
-        | (is_l2s_slice_fwd << l2s_dev_base_id_lp) 
+        | (is_clint_fwd << clint_dev_id_lp)
+        | (is_l2s_slice_fwd << l2s_dev_base_id_lp)
         | (is_loopback_fwd << loopback_dev_id_lp)
         | (is_io_fwd << io_dev_id_lp);
 
@@ -297,7 +297,7 @@ module bp_unicore
 
   bp_me_clint_slice
    #(.bp_params_p(bp_params_p))
-   clint
+   clints
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
      ,.reset_i(reset_r)
@@ -373,6 +373,7 @@ module bp_unicore
      ,.mem_fwd_data_i(dev_fwd_data_li[loopback_dev_id_lp])
      ,.mem_fwd_v_i(dev_fwd_v_li[loopback_dev_id_lp])
      ,.mem_fwd_ready_and_o(dev_fwd_ready_and_lo[loopback_dev_id_lp])
+
      ,.mem_rev_header_o(dev_rev_header_lo[loopback_dev_id_lp])
      ,.mem_rev_data_o(dev_rev_data_lo[loopback_dev_id_lp])
      ,.mem_rev_v_o(dev_rev_v_lo[loopback_dev_id_lp])

@@ -62,6 +62,9 @@ module bp_me_addr_to_cce_id
   always_comb
     begin
       cce_id_o = '0;
+      if (local_addr_v_li && (local_addr_li.dev inside {clint_dev_gp}))
+        // split coordinate to be more compatible with standard clint
+        cce_id_o = (num_core_p > 1) ? local_addr_li[3+:core_id_width_p] : '0;
       if (external_io_v_li || (local_addr_v_li && (local_addr_li.dev inside {host_dev_gp})))
         // Stripe by 4kiB page, start at io CCE id
         cce_id_o = (num_io_p > 1)

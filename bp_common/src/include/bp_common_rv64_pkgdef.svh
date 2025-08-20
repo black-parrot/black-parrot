@@ -33,6 +33,11 @@
   localparam rv64_csr_addr_width_gp  = 12;
   localparam rv64_priv_width_gp      = 2;
 
+  localparam [rv64_priv_width_gp-1:0] rv64_priv_mode_m = 3;
+  localparam [rv64_priv_width_gp-1:0] rv64_priv_mode_h = 2;
+  localparam [rv64_priv_width_gp-1:0] rv64_priv_mode_s = 1;
+  localparam [rv64_priv_width_gp-1:0] rv64_priv_mode_u = 0;
+
   typedef struct packed
   {
     logic [rv64_funct7_width_gp-1:0]   funct7;

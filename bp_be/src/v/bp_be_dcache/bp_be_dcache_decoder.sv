@@ -9,13 +9,14 @@ module bp_be_dcache_decoder
    `declare_bp_proc_params(bp_params_p)
    , parameter amo_support_p = 0
 
-   , localparam dcache_pkt_width_lp = $bits(bp_be_dcache_pkt_s)
+   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    , localparam dcache_decode_width_lp = $bits(bp_be_dcache_decode_s)
    )
   (input [dcache_pkt_width_lp-1:0]             pkt_i
    , output logic [dcache_decode_width_lp-1:0] decode_o
    );
 
+  `declare_bp_be_dcache_pkt_s(vaddr_width_p);
   `bp_cast_i(bp_be_dcache_pkt_s, pkt);
   `bp_cast_o(bp_be_dcache_decode_s, decode);
 
@@ -124,7 +125,7 @@ module bp_be_dcache_decoder
     else if (decode_cast_o.int_op & decode_cast_o.word_op)
       decode_cast_o.tag = e_int_word;
     else if (decode_cast_o.float_op & decode_cast_o.word_op)
-      decode_cast_o.tag = e_fp_sp;
+      decode_cast_o.tag = bp_be_int_tag_e'(e_fp_sp);
 
     // Return
     decode_cast_o.ret_op = decode_cast_o.load_op

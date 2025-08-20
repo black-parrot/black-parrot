@@ -16,7 +16,10 @@ module bp_nonsynth_if_verif
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
-  ();
+  (input clk_i
+   , input reset_i
+   , input en_i
+   );
 
   bp_proc_param_s proc_param;
   assign proc_param = all_cfgs_gp[bp_params_p];
@@ -71,11 +74,11 @@ module bp_nonsynth_if_verif
 
 
   // Core or Features
-  if (!muldiv_support_p[e_imul])
+  if (~muldiv_support_p[e_imul])
     $error("IMUL is not currently support in emulation");
-  if (!muldiv_support_p[e_idiv])
+  if (~muldiv_support_p[e_idiv])
     $error("IDIV is not currently support in emulation");
-  if (!fpu_support_p)
+  if (~|fpu_support_p)
     $error("FPU cannot currently be disabled");
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
     $error("Branch metadata width: %d != width of branch metadata struct: %d", branch_metadata_fwd_width_p, $bits(bp_fe_branch_metadata_fwd_s));

@@ -157,7 +157,7 @@ module bp_lce_req
      ,.msg_stream_mask_p(lce_req_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_req_stream_mask_gp)
      )
-   lce_req_pump_out
+   req_pump_out
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 

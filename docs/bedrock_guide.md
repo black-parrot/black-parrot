@@ -85,10 +85,10 @@ The Command network has the following message types and payload fields:
   - Target cache, state, and way ID for cache to cache transfer
 
 The Fill network is a special network which comprises a subset of the Command network messages.
-Fills can be casted safely to Cmds. 
+Fills can be casted safely to Cmds.
 - Message type
   - Data (cache to cache block transfer)
-- Payload 
+- Payload
   - Destination LCE
   - CCE sending command
   - Cache Way ID

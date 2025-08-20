@@ -1,7 +1,20 @@
 
-ifeq (,$(DC_SHELL))
-$(error DC_SHELL not found)
-endif
+%/flist.vcs:
+	@$(MKDIR) -p $(@D)
+	@$(CAT) $(END_PATH)/flist.vcs >> $@
+	@$(ECHO) $(TB_PATH)/wrapper.sv >> $@
+	@$(ECHO) +define+BP_CFG_FLOWVAR=$(CFG) >> $@
+	@$(SED) -i "/^#/d" $@
+
+DC_OPTS += -64bit
+DC_OPTS += -f $(BP_TCL_DIR)/dc_elab.tcl
+
+sv2v.dc: export SV2V_DESIGN_NAME ?= wrapper
+sv2v.dc: $(addprefix $(DUT_PATH)/,$(BUILD_COLLATERAL))
+	@$(eval export FM_RELEASE=$(FM_RELEASE))
+	@$(call bsg_fn_declare_log_rpt,$(DUT_TAG))
+	@$(CD) $(DUT_PATH); \
+		$(BSG_SV2V_BIN) $(SV2V_DESIGN_NAME) $(DUT_PATH)/flist.vcs $(DUT_PATH)/out $(BASEJUMP_STL_DIR) | $(TEE) -i $(LOG_FILE)
 
 # Check if the design is synthesizable. This is not an actual synthesis run,
 # but rather runs analysis and elaboration on the design without linking any
@@ -10,30 +23,28 @@ endif
 # designers catch issues with the design such as non-synthesizable code. The
 # wildcard in the target.
 
-check_design.dc: $(CHECK_DIR)/check
-check_design.dc: CHK_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).check_design.log
-check_design.dc: CHK_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).check_design.rpt
-check_design.dc: CHK_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).check_design.err
-check_design.dc: DESIGN_NAME ?= wrapper
-# Change to your own stdcell db from a PDK. We suggest the freely available FreePDK45
-%/check: %/flist.vcs %/wrapper.sv
-	@$(eval export DESIGN_NAME)
-	@$(eval export STDCELL_DB)
-	@$(MKDIR) -p $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(CHECK_DIR)
-	@$(CD) $(@D); \
-		$(DC_SHELL) -64bit -f $(BP_RTL_TCL_DIR)/dc_elab.tcl 2>&1 | $(TEE) -i $(CHK_LOG)
-	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"^Error",1)
-	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"Complex logic will not be considered",1)
-	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"*** Presto compilation terminated",1)
-	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"unresolved references.",1)
-	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"Cannot find the design",1)
-	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"undeclared symbol",1)
-	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"(OPT-150)",1)
-	@$(call bsg_fn_info_search,$(CHK_LOG),$(CHK_ERROR),"declaration initial",1)
+check_design.dc: ## checks for synthesizability
+check_design.dc: export DESIGN_NAME ?= wrapper
+check_design.dc: export STDCELL_DB  ?=
+check_design.dc: $(addprefix $(DUT_PATH)/,$(BUILD_COLLATERAL))
+	@$(call bsg_fn_declare_log_rpt,$(DUT_TAG))
+	@$(CD) $(DUT_PATH); \
+		$(DC_SHELL) $(DC_OPTS) 2>&1 | $(TEE) -i $(LOG_FILE)
+	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"^Error",1)
+	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"Complex logic will not be considered",1)
+	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"*** Presto compilation terminated",1)
+	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"unresolved references.",1)
+	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"Cannot find the design",1)
+	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"undeclared symbol",1)
+	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"OPT-150",1)
+	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"declaration initial",1)
 
 # Does the check_design target, but also checks for timing loops
 # We accomplish this by overriding the STDCELL_DB variable
-check_loops.dc: STDCELL_DB ?= $(FREE45_NLDM_DB_TYP)
+# Change to your own stdcell db from a PDK. We suggest the freely available sky130
+
+check_loops.dc: ## checks for timing loops in the design
+check_loops.dc: export STDCELL_DB := $(FREE45_NLDM_DB_TYP)
 check_loops.dc: check_design.dc
 
 # This target allows users to look up commands and message codes for
@@ -42,6 +53,7 @@ check_loops.dc: check_design.dc
 # DesignCompiler for a detailed explaination of the message code. You can also
 # use this for DesignCompiler commands and application variables.
 
-lookup.dc:
-	@$(DC_SHELL) -64bit -x "set_app_var sh_command_log_file /dev/null; man $*; exit"
+lookup.%.dc: ## reference for DC commands
+lookup.%.dc:
+	@$(DC_SHELL) $(DC_OPTS) -x "set_app_var sh_command_log_file /dev/null; man $*; exit"
 

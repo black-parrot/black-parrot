@@ -1,3 +1,4 @@
+ERROR_CURRENTLY_UNSUPPORTED
 
   typedef struct packed
   {
@@ -268,7 +269,7 @@ module bp_nonsynth_core_profiler
       stall_hist[bp_stall_reason_enum] <= stall_hist[bp_stall_reason_enum] + 1'b1;
     end
 
-  integer file;
+  int file;
   string file_name;
   always_ff @(negedge reset_i)
     begin

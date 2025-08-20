@@ -236,7 +236,7 @@ module bp_uce
      ,.msg_stream_mask_p(mem_fwd_stream_mask_gp)
      ,.fsm_stream_mask_p(mem_fwd_stream_mask_gp)
      )
-   uce_pump_out
+   fwd_pump_out
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -267,7 +267,7 @@ module bp_uce
      ,.msg_stream_mask_p(mem_rev_stream_mask_gp)
      ,.fsm_stream_mask_p(mem_rev_stream_mask_gp)
      )
-   uce_pump_in
+   rev_pump_in
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -591,7 +591,7 @@ module bp_uce
 
         e_ready:
           begin
-            cache_req_yumi_o = cache_req_v_i & cache_req_ready_lo & (~cache_req_v_r |  nonblocking_v_li);
+            cache_req_yumi_o = cache_req_v_i & cache_req_ready_lo & (~cache_req_v_r | nonblocking_v_li);
 
             state_n = cache_req_yumi_o
                       ? (flush_v_li | clean_v_li)

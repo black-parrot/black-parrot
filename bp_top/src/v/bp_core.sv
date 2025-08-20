@@ -282,7 +282,7 @@ module bp_core
   // Config
   bp_me_cfg_slice
    #(.bp_params_p(bp_params_p))
-   cfg
+   cfgs
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -313,7 +313,7 @@ module bp_core
   // CLINT
   bp_me_clint_slice
    #(.bp_params_p(bp_params_p))
-   clint
+   clints
     (.clk_i(clk_i)
      ,.rt_clk_i(rt_clk_i)
      ,.reset_i(reset_i)

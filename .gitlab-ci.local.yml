@@ -1,0 +1,377 @@
+
+spec:
+  inputs:
+    do_build_image:
+    do_build_libs:
+    do_check_rtl:
+    do_sim_riscv:
+---
+
+###################################################
+## image setup
+###################################################
+
+build-image:
+  extends: [.docker_mixin]
+  before_script: !reference [.docker_anchors, docker_prefetch]
+  script:
+    - docker build docker -f docker/Dockerfile.${DOCKER_PLATFORM}
+        --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from ${CONTAINER_IMAGE}
+        --build-arg USER_NAME="${BSG_CI_USER_NAME}"
+        --build-arg USER_ID="${BSG_CI_USER_ID}"
+        --build-arg GROUP_NAME="${BSG_CI_GROUP_NAME}"
+        --build-arg GROUP_ID="${BSG_CI_GROUP_ID}"
+        --build-arg OTHER_GROUPS="${BSG_CI_OTHER_GROUPS}"
+        -t ${CONTAINER_IMAGE}
+  after_script: !reference [.docker_anchors, docker_push]
+  rules:
+    - if: '"$[[ inputs.do_build_image ]]" =~ "/on_success/"'
+    - if: '"$[[ inputs.do_build_image ]]" =~ "/on_event/"'
+      changes:
+        paths:
+          - docker/Dockerfile.${DOCKER_PLATFORM}
+          - docker/entrypoint.${DOCKER_PLATFORM}.sh
+          - docker/requirements.txt
+
+###################################################
+## project definition
+###################################################
+
+.project_template:
+  extends: [.job_template]
+  image: $CONTAINER_IMAGE
+  variables:
+    LIBS_ARTIFACT: "install-${LIB}"
+    LIBS_WILDCARD: "install-*"
+    LIBS_PACKAGE: "libs-${DOCKER_PLATFORM}"
+    TOOLS_PACKAGE: "tools-${DOCKER_PLATFORM}"
+    TOOLS_PACKAGE_VER: "master"
+    TOOLS_PROJECT_ID: "66229211"
+    RISCV_PACKAGE: "riscv"
+    RISCV_PACKAGE_VER: "master"
+    RISCV_PROJECT_ID: "27392985"
+    SV2V_WILDCARD: "sv2v"
+    SV2V_ARTIFACT: "sv2v/wrapper.${CFG}.pickle.sv"
+    SV2V_PACKAGE: "sv2v-${DOCKER_PLATFORM}"
+    # exported to make sure things go in the right place
+    BP_WORK_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-rtl-work"
+    BP_INSTALL_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-rtl-install"
+    BP_TOOLS_INSTALL_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-tools-install"
+    BP_SDK_INSTALL_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-sdk-install"
+    BP_RISCV_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-riscv"
+  before_script:
+    - !reference [.job_template, before_script]
+    - COMMON_INSTALL_DIR="${JOB_COMMON_ROOT}/$(basename ${BP_INSTALL_DIR})"
+    - COMMON_TOOLS_DIR="${JOB_COMMON_ROOT}/$(basename ${BP_TOOLS_INSTALL_DIR})"
+    - COMMON_SDK_DIR="${JOB_COMMON_ROOT}/$(basename ${BP_SDK_INSTALL_DIR})"
+    - COMMON_RISCV_DIR="${JOB_COMMON_ROOT}/$(basename ${BP_RISCV_DIR})"
+    - if [ -d "${COMMON_INSTALL_DIR}" ]; then
+        ln -nsf "${COMMON_INSTALL_DIR}" "${BP_INSTALL_DIR}";
+      fi
+    - if [ -d "${COMMON_TOOLS_DIR}" ]; then
+        ln -nsf "${COMMON_TOOLS_DIR}" "${BP_TOOLS_INSTALL_DIR}";
+      fi
+    - if [ -d "${COMMON_SDK_DIR}" ]; then
+        ln -nsf "${COMMON_SDK_DIR}" "${BP_SDK_INSTALL_DIR}";
+      fi
+    - if [ -d "${COMMON_RISCV_DIR}" ]; then
+        ln -nsf "${COMMON_RISCV_DIR}" "${BP_RISCV_DIR}";
+      fi
+
+###################################################
+## job templates
+###################################################
+
+.build_libs_job:
+  extends: [.project_template]
+  variables:
+    LIB: "setme"
+  script:
+    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
+    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
+    - echo "[CI] checking out ${LIB}" | tee -a ${JOB_LOG}
+    - make -j${CORES_PER_JOB} checkout.${LIB} >> ${JOB_LOG} 2>&1
+    - echo "[CI] patching ${LIB}" | tee -a ${JOB_LOG}
+    - make -j${CORES_PER_JOB} patch.${LIB} >> ${JOB_LOG} 2>&1
+    - echo "[CI] building ${LIB}" | tee -a ${JOB_LOG}
+    - make -j${CORES_PER_JOB} build.${LIB} >> ${JOB_LOG} 2>&1
+    - echo "[CI] moving installation directory to build output" | tee -a ${JOB_LOG}
+    - mv ${BP_INSTALL_DIR} ${JOB_SUCCESS_ROOT}/${LIBS_ARTIFACT}
+  rules:
+    - if: '"$[[ inputs.do_build_libs ]]" =~ "/on_success|on_event/"'
+
+.scatter_libs_job:
+  extends: [.project_template, .api_mixin]
+  variables:
+    # template variables
+    API_PACKAGE_NAME: "${LIBS_PACKAGE}"
+    API_PACKAGE_VER: "${CI_COMMIT_REF_SLUG}"
+    API_PROJECT_ID: "${CI_PROJECT_ID}"
+  script:
+    - echo "[CI] gathering inputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - mkdir -p ${API_UPLOAD_ROOT}
+    - find ${JOB_DEPS_ROOT} -maxdepth 1 -type d -name ${LIBS_WILDCARD}
+        -exec rsync --remove-source-files -a {}/ ${API_UPLOAD_ROOT} \; >> ${JOB_LOG} 2>&1
+    - !reference [.api_anchors, api_upload]
+  rules:
+    - if: '"$[[ inputs.do_build_libs ]]" =~ "/on_success|on_event/"'
+
+.gather_libs_job:
+  extends: [.project_template, .api_mixin]
+  variables:
+    # template variables
+    API_PACKAGE_NAME: "${LIBS_PACKAGE}"
+    API_PACKAGE_VER: "${CI_COMMIT_REF_SLUG}"
+    API_PROJECT_ID: "${CI_PROJECT_ID}"
+  script:
+    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - !reference [.api_anchors, api_download]
+    - mkdir -p ${COMMON_INSTALL_DIR}
+    - mv ${API_DOWNLOAD_ROOT}/* ${COMMON_INSTALL_DIR}/
+
+.gather_tools_job:
+  extends: [.project_template, .api_mixin]
+  variables:
+    # template variables
+    API_PACKAGE_NAME: "${TOOLS_PACKAGE}"
+    API_PACKAGE_VER: "${TOOLS_PACKAGE_VER}"
+    API_PROJECT_ID: "${TOOLS_PROJECT_ID}"
+  script:
+    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - !reference [.api_anchors, api_download]
+    - mkdir -p ${COMMON_TOOLS_DIR}
+    - mv ${API_DOWNLOAD_ROOT}/* ${COMMON_TOOLS_DIR}/
+
+.gather_riscv_job:
+  extends: [.project_template, .api_mixin]
+  variables:
+    # template variables
+    API_PACKAGE_NAME: "${RISCV_PACKAGE}"
+    API_PACKAGE_VER: "${RISCV_PACKAGE_VER}"
+    API_PROJECT_ID: "${RISCV_PROJECT_ID}"
+  script:
+    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - !reference [.api_anchors, api_download]
+    - mkdir -p ${COMMON_RISCV_DIR}
+    - mv ${API_DOWNLOAD_ROOT}/* ${COMMON_RISCV_DIR}/
+
+.check_design_job:
+  extends: [.project_template]
+  variables:
+    TOOL: "dc"
+    END: "bp_top"
+    CFG: "setme"
+    RUN_SCRIPT: "./ci/common/run-ci.sh"
+    BUILD_SCRIPT: "./ci/check-design.sh"
+  script:
+    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
+    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
+    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG}
+  rules:
+    - if: '"$[[ inputs.do_check_rtl ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
+
+.check_loops_job:
+  extends: [.project_template]
+  variables:
+    TOOL: "dc"
+    END: "bp_top"
+    CFG: "setme"
+    RUN_SCRIPT: "./ci/common/run-ci.sh"
+    BUILD_SCRIPT: "./ci/check-loops.sh"
+  script:
+    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
+    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
+    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG}
+  rules:
+    - if: '"$[[ inputs.do_check_rtl ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
+
+.lint_job:
+  extends: [.project_template]
+  variables:
+    TOOL: "setme"
+    END: "bp_top"
+    CFG: "setme"
+    RUN_SCRIPT: "./ci/common/run-ci.sh"
+    BUILD_SCRIPT: "./ci/lint.sh"
+  script:
+    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
+    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
+    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG}
+  rules:
+    - if: '"$[[ inputs.do_check_rtl ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
+
+.sv2v_job:
+  extends: [.project_template]
+  variables:
+    TOOL: "dc"
+    END: "bp_top"
+    CFG: "setme"
+    RUN_SCRIPT: "./ci/common/run-ci.sh"
+    BUILD_SCRIPT: "./ci/sv2v.sh"
+  script:
+    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
+    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
+    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG}
+    - mkdir -p $(dirname ${JOB_SUCCESS_ROOT}/${SV2V_ARTIFACT})
+    - find ${END}/${TOOL} -name wrapper.pickle.sv -exec cp {} ${JOB_SUCCESS_ROOT}/${SV2V_ARTIFACT} \;
+  rules:
+    - if: '"$[[ inputs.do_check_rtl ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
+
+.scatter_sv2v_job:
+  extends: [.project_template, .api_mixin]
+  variables:
+    # template variables
+    API_PACKAGE_NAME: "${SV2V_PACKAGE}"
+    API_PACKAGE_VER: "${CI_COMMIT_REF_SLUG}"
+    API_PROJECT_ID: "${CI_PROJECT_ID}"
+  script:
+    - echo "[CI] gathering inputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - mkdir -p ${API_UPLOAD_ROOT}
+    - mv ${JOB_DEPS_ROOT}/${SV2V_WILDCARD} ${API_UPLOAD_ROOT}/
+    - !reference [.api_anchors, api_upload]
+  rules:
+    - if: '"$[[ inputs.do_check_rtl ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
+
+.gather_sv2v_job:
+  extends: [.project_template, .api_mixin]
+  variables:
+    # template variables
+    API_PACKAGE_NAME: "${SV2V_PACKAGE}"
+    API_PACKAGE_VER: "${CI_COMMIT_REF_SLUG}"
+    API_PROJECT_ID: "${CI_PROJECT_ID}"
+  script:
+    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - !reference [.api_anchors, api_download]
+    - mkdir -p ${COMMON_INSTALL_DIR}/sv2v
+    - mv ${API_DOWNLOAD_ROOT}/* ${COMMON_INSTALL_DIR}/sv2v
+  rules:
+    - if: '$DOCKER_PLATFORM == "centos7"'
+
+.me_regress_job:
+  extends: [.project_template]
+  variables:
+    TOOL: "setme"
+    END: "bp_me"
+    CFG: "setme"
+    RUN_SCRIPT: "./ci/common/run-ci.sh"
+    BUILD_SCRIPT: "./ci/me-regress.sh"
+  script:
+    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
+    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
+    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG}
+  rules:
+    - if: '"$[[ inputs.do_check_rtl ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
+
+.sim_riscv_job:
+  extends: [.project_template]
+  variables:
+    TOOL: "setme"
+    END: "bp_top"
+    CFG: "setme"
+    TESTLIST: "setme"
+    RUN_SCRIPT: "./ci/common/run-ci.sh"
+    BUILD_SCRIPT: "./ci/sim-${TESTLIST}.sh"
+  script:
+    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
+    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
+    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG} ${BSG_CI_CORES_PER_JOB}
+  rules:
+    - if: '"$[[ inputs.do_sim_riscv ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
+
+###################################################
+## Actual Jobs
+###################################################
+
+build-libs:
+  extends: [.build_libs_job]
+  parallel:
+    matrix:
+      - LIB: ["dramsim3", "bedrock"]
+  needs: [{job: build-image, optional: true}]
+
+scatter-libs:
+  extends: [.scatter_libs_job]
+  needs: [build-libs]
+
+gather-libs:
+  extends: [.gather_libs_job]
+  needs: [{job: scatter-libs, optional: true}]
+
+gather-tools:
+  extends: [.gather_tools_job]
+  needs: [{job: scatter-libs, optional: true}]
+
+gather-riscv:
+  extends: [.gather_riscv_job]
+  needs: [{job: scatter-libs, optional: true}]
+
+check-design:
+  extends: [.check_design_job]
+  parallel:
+    matrix:
+      - CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+  needs: [{job: build-image, optional: true}]
+
+check-loops:
+  extends: [.check_loops_job]
+  parallel:
+    matrix:
+      - CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+  needs: [check-design]
+
+sv2v:
+  extends: [.sv2v_job]
+  parallel:
+    matrix:
+      - CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+  needs: [check-design, gather-tools, gather-libs]
+
+scatter-sv2v:
+  extends: [.scatter_sv2v_job]
+  needs: [sv2v]
+
+gather-sv2v:
+  extends: [.gather_sv2v_job]
+  needs: [{job: scatter-sv2v, optional: true}]
+
+lint-top:
+  extends: [.lint_job]
+  parallel:
+    matrix:
+      - TOOL: ["verilator", "vcs"]
+        CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+      - TOOL: ["vcs"]
+        CFG: ["e_bp_multicore_2_cfg", "e_bp_multicore_2_cce_ucode_cfg"]
+      - TOOL: ["vcs"]
+        CFG: ["e_bp_multicore_4_cfg", "e_bp_multicore_4_cce_ucode_cfg"]
+  needs: [check-design, gather-tools, gather-libs]
+
+me-regress:
+  extends: [.me_regress_job]
+  parallel:
+    matrix:
+      - TOOL: ["vcs", "verilator"]
+        CFG: ["e_bp_test_multicore_half_cce_ucode_cfg", "e_bp_test_multicore_half_cfg"]
+  needs: [lint-top]
+
+sim-riscv:
+  extends: [.sim_riscv_job]
+  parallel:
+    matrix:
+      - TOOL: ["vcs", "verilator"]
+        CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+        TESTLIST: ["bp-tests", "bp-demos"]
+      - TOOL: ["vcs"]
+        CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+        TESTLIST: ["beebs", "nocosim", "coremark", "riscv-arch", "riscv-dv", "riscv-tests"]
+      - TOOL: ["vcs"]
+        CFG: ["e_bp_multicore_1_cfg", "e_bp_multicore_2_cfg", "e_bp_multicore_4_cfg", "e_bp_multicore_8_cfg", "e_bp_multicore_16_cfg"]
+        TESTLIST: ["mc-tests"]
+  needs: [{job: lint-top, optional: true}, gather-tools, gather-libs, gather-riscv]
+

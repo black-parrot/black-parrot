@@ -73,7 +73,7 @@ module bp_me_cfg_slice
                     ,cfg_reg_npc_gp, cfg_reg_freeze_gp
                     })
      )
-   register
+   cfgs_register
     (.*
      ,.r_v_o({cord_r_v_li, did_r_v_li, host_did_r_v_li, hio_mask_r_v_li
               ,cce_mode_r_v_li, dcache_mode_r_v_li, icache_mode_r_v_li
@@ -117,13 +117,11 @@ module bp_me_cfg_slice
         hio_mask_r    <= hio_mask_w_v_li                   ? data_lo : hio_mask_r;
       end
 
-  // Access to CCE ucode memory must be aligned
-  localparam cce_pc_offset_width_lp = `BSG_SAFE_CLOG2(`BSG_CDIV(cce_instr_width_gp,8));
   // Prevent writing CCE ucode if we're already out of uncached mode.
   //   We could also handle this by software, but seems dangerous to allow in hardware
   assign cce_ucode_v_o    = (cce_mode_r == e_cce_mode_uncached) & (cce_ucode_r_v_li | cce_ucode_w_v_li);
   assign cce_ucode_w_o    = (cce_mode_r == e_cce_mode_uncached) & cce_ucode_w_v_li;
-  assign cce_ucode_addr_o = addr_lo[cce_pc_offset_width_lp+:cce_pc_width_p];
+  assign cce_ucode_addr_o = addr_lo[3+:cce_pc_width_p];
   assign cce_ucode_data_o = data_lo[0+:cce_instr_width_gp];
 
   logic [core_id_width_p-1:0] core_id_li;

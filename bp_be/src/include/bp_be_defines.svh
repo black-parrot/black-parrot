@@ -229,7 +229,6 @@
       logic                          instret_en;                                                   \
     }  bp_be_decode_info_s
 
-
   /* Declare width macros so that clients can use structs in ports before struct declaration
    * Each of these macros needs to be kept in sync with the struct definition. The computation
    *   comes from literally counting bits in the struct definition, which is ugly, error-prone,
@@ -246,7 +245,8 @@
   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp, fetch_ptr_mp, issue_ptr_mp) \
   , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_mp) \
   , localparam trans_info_width_lp = `bp_be_trans_info_width(paddr_width_mp) \
-  , localparam decode_info_width_lp = `bp_be_decode_info_width
+  , localparam decode_info_width_lp = `bp_be_decode_info_width \
+  , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_mp)
 
   `define bp_be_preissue_pkt_width(issue_ptr_mp) \
     (5+rv64_instr_width_gp+issue_ptr_mp)

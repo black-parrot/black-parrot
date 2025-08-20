@@ -182,7 +182,7 @@ module bp_lce_cmd
      ,.msg_stream_mask_p(lce_fill_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_fill_stream_mask_gp)
      )
-   lce_fill_pump_out
+   fill_pump_out
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -213,7 +213,7 @@ module bp_lce_cmd
      ,.msg_stream_mask_p(lce_resp_stream_mask_gp)
      ,.fsm_stream_mask_p(lce_resp_stream_mask_gp)
      )
-   lce_resp_pump_out
+   resp_pump_out
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 

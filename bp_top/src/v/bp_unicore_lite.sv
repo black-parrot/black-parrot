@@ -271,30 +271,34 @@ module bp_unicore_lite
      ,.mem_rev_ready_and_o(_mem_rev_ready_and_o[1])
      );
 
-  // Synchronize back to posedge clk
-  bsg_dlatch
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bedrock_fill_width_p+2), .i_know_this_is_a_bad_idea_p(1))
-   posedge_latch
-    (.clk_i(posedge_clk)
-     ,.data_i({_mem_fwd_header_o[1], _mem_fwd_data_o[1], _mem_fwd_v_o[1]
-               ,mem_fwd_ready_and_i[1]
-               })
-     ,.data_o({mem_fwd_header_o[1], mem_fwd_data_o[1], mem_fwd_v_o[1]
-               ,_mem_fwd_ready_and_i[1]
-               })
+  bsg_fifo_1r1w_edge
+   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bedrock_fill_width_p))
+   mem_fwd
+    (.clk_i(negedge_clk)
+     ,.reset_i(reset_i)
+
+     ,.data_i({_mem_fwd_header_o[1], _mem_fwd_data_o[1]})
+     ,.v_i(_mem_fwd_v_o[1])
+     ,.ready_and_o(_mem_fwd_ready_and_i[1])
+
+     ,.data_o({mem_fwd_header_o[1], mem_fwd_data_o[1]})
+     ,.v_o(mem_fwd_v_o[1])
+     ,.ready_and_i(mem_fwd_ready_and_i[1])
      );
 
-  // Synchronize back to negedge clk
-  bsg_dlatch
-   #(.width_p($bits(bp_bedrock_mem_fwd_header_s)+bedrock_fill_width_p+2), .i_know_this_is_a_bad_idea_p(1))
-   negedge_latch
-    (.clk_i(negedge_clk)
-     ,.data_i({mem_rev_header_i[1], mem_rev_data_i[1], mem_rev_v_i[1]
-               ,_mem_rev_ready_and_o[1]
-               })
-     ,.data_o({_mem_rev_header_i[1], _mem_rev_data_i[1], _mem_rev_v_i[1]
-               ,mem_rev_ready_and_o[1]
-               })
+  bsg_fifo_1r1w_edge
+   #(.width_p($bits(bp_bedrock_mem_rev_header_s)+bedrock_fill_width_p))
+   mem_rev
+    (.clk_i(posedge_clk)
+     ,.reset_i(reset_i)
+
+     ,.data_i({mem_rev_header_i[1], mem_rev_data_i[1]})
+     ,.v_i(mem_rev_v_i[1])
+     ,.ready_and_o(mem_rev_ready_and_o[1])
+
+     ,.data_o({_mem_rev_header_i[1], _mem_rev_data_i[1]})
+     ,.v_o(_mem_rev_v_i[1])
+     ,.ready_and_i(_mem_rev_ready_and_o[1])
      );
 
 endmodule

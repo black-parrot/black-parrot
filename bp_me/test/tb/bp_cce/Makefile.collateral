@@ -1,35 +1,62 @@
 
-%/flist.vcs:
-	$(MKDIR) -p $(@D)
-	$(GREP) -v -e "^\#" $(SYN_PATH)/flist.vcs		   > $@
-	$(ECHO) "$(@D)/wrapper.sv"						  >> $@
-	$(GREP) -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs	  >> $@
-	$(ECHO) "$(@D)/testbench.sv"					  >> $@
-	$(ECHO) "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv" >> $@
-	$(ECHO) "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv" >> $@
-	$(SED) -i "s#.*bp_common_pkg.sv#$(BP_COMMON_DIR)/test/common/bp_common_test_pkg.sv#g" $@
+# number of ways and sets to test with, starting with set 0 and way 0
+# can be used with the random test
+# value of 0 uses default values of cache assoc and sets
+TEST_WAYS ?= 0
+TEST_SETS ?= 0
 
-%/wrapper.sv:
-	$(MKDIR) -p $(@D)
-	$(CP) $(TB_PATH)/$(TB)/wrapper.sv $@
-	$(SED) -i "s/BP_CFG_FLOWVAR/$(CFG)/g" $@
-	$(SED) -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
+TRACE_FILE ?= $(PROG).trace
 
-%/testbench.sv:
-	$(MKDIR) -p $(@D)
-	$(CP) $(TB_PATH)/$(TB)/testbench.sv $@
-	$(SED) -i "s/BP_CFG_FLOWVAR/$(CFG)/g" $@
-	$(SED) -i 's/BP_DRAM_FLOWVAR/"$(DRAM)"/g' $@
+BUILD_COLLATERAL += flist.vcs
 
-%/cce_ucode.mem:
-	$(MKDIR) -p $(@D)
-	$(CP) $(BP_SDK_UCODE_DIR)/$(CCE_MEM) $@
+ifneq (,$(COH_PROTO))
+CCE_UCODE ?= $(BP_INSTALL_DIR)/lib/$(COH_PROTO).mem
+else
+CCE_UCODE ?= $(TB_PATH)/demo_ucode.mem
+endif
+
+SIM_PROG ?= $(PROG)
+
+AXE_TRACE_P ?= 0
+ifeq ($(AXE_TRACE_P),1)
+AXE_FLAG ?= --axe
+else
+AXE_FLAG ?=
+endif
+
+ME_DEBUG_P ?= 0
+ifeq ($(ME_DEBUG_P),1)
+ME_DEBUG_FLAG = --debug
+else
+ME_DEBUG_FLAG =
+endif
+
+SEED ?= 1
+
+ifneq (,$(COH_PROTO))
+CCE_UCODE ?= $(BP_INSTALL_DIR)/lib/$(COH_PROTO).mem
+else
+CCE_UCODE ?= $(TB_PATH)/demo_ucode.mem
+endif
+
+%/ucode.mem: $(CCE_UCODE)
+	@$(MKDIR) -p $(@D)
+	@$(CP) $< $@
 
 %/test.tr:
-	$(MKDIR) -p $(@D)
-	$(PYTHON) $(TB_PATH)/$(TB)/me_test.py --out-dir $(@D) --out-file test -n $(NUM_INSTR_P) \
-		-l $(NUM_LCE_P) --seed $(SEED_P) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) \
-		--test $(ME_TEST_P) --test-ways $(TEST_WAYS_P) --test-sets $(TEST_SETS_P) $(ME_DEBUG_FLAG) \
-		--in-dir $(TB_PATH)/$(TB) --in-file $(TRACE_FILE_P) $(AXE_FLAG)
-	$(TOUCH) $(@D)/$(ME_TEST_P)_s$(SEED_P)_l$(NUM_LCE_P)_n$(NUM_INSTR_P)_m$(LCE_MODE_P)$(CCE_MODE_P).touch
+	@$(MKDIR) -p $(@D)
+	$(PYTHON) $(TB_PATH)/me_test.py --out-dir $(@D) --out-file test -n $(NUM_INSTR_P) \
+		-l $(CFG_NUM_LCE) --seed $(SEED) --lce-mode $(LCE_MODE_P) --cce-mode $(CCE_MODE_P) \
+		--test $(ME_TEST_P) --test-ways $(TEST_WAYS) --test-sets $(TEST_SETS) $(ME_DEBUG_FLAG) \
+		--in-dir $(TB_PATH) --in-file $(TRACE_FILE) $(AXE_FLAG)
+	@$(TOUCH) $(@D)/$(ME_TEST_P)_s$(SEED)_l$(NUM_LCE)_n$(NUM_INSTR_P)_m$(LCE_MODE_P)$(CCE_MODE_P).touch
+
+ifeq (1,$(CFG_UCODE))
+RUN_COLLATERAL += ucode.mem
+PLUSARGS += +ucode_mem=ucode.mem
+endif
+
+RUN_COLLATERAL += test.tr
+
+include $(BP_MK_DIR)/Makefile.collateral
 

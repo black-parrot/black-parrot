@@ -1,3 +1,5 @@
+ERROR_NOT_CURRENTLY_SUPPORTED
+
 /**
  *
  * Name:
@@ -42,7 +44,7 @@ module bp_me_nonsynth_cce_perf
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   bp_bedrock_lce_req_header_s  lce_req;
 
-  integer file;
+  int file;
   string file_name;
 
   always_ff @(negedge reset_i) begin

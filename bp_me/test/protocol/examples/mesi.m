@@ -23,7 +23,7 @@ type
   Value: scalarset(ValueCount); -- arbitrary values for tracking coherence
   Home: enum { HomeType };      -- need enumeration for IsMember calls
   Node: union { Home , Proc };
-    Count: (1-ProcCount)..(ProcCount-1); -- integer range of number of sharers
+    Count: (1-ProcCount)..(ProcCount-1); -- int range of number of sharers
 
   VCType: VC0..NumVCs-1;
 

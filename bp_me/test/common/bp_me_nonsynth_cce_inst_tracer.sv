@@ -1,3 +1,5 @@
+ERROR_NOT_CURRENTLY_SUPPORTED
+
 /**
  *
  * Name:
@@ -29,7 +31,7 @@ module bp_me_nonsynth_cce_inst_tracer
    , input                      stall_i
   );
 
-  integer file;
+  int file;
   string file_name;
 
   always_ff @(negedge reset_i) begin

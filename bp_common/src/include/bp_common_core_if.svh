@@ -42,7 +42,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [vaddr_width_mp-1:0]                pc;                                                \
-      logic [fetch_width_p-1:0]                instr;                                             \
+      logic [fetch_width_p-1:0]                 instr;                                             \
       logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                               \
       logic [fetch_ptr_p-1:0]                   count;                                             \
       bp_fe_queue_type_e                        msg_type;                                          \

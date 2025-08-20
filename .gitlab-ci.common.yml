@@ -1,0 +1,202 @@
+
+spec:
+  inputs:
+    do_clean_run:
+---
+
+###################################################
+## anchors
+###################################################
+
+.bsg_anchors:
+  variables: &bsg_variables
+    COMMONDIR: "/common"
+    CADDIR: "/cad"
+
+.feature_anchors:
+  variables: &feature_variables
+    # https://docs.gitlab.com/ci/runners/configure_runners/#ignore-errors-in-after_script
+    AFTER_SCRIPT_IGNORE_ERRORS: false
+    FF_ENABLE_BASH_EXIT_CODE_CHECK: true
+    # workaround for https://gitlab.com/gitlab-org/gitlab/-/issues/386967
+    GIT_CONFIG_COUNT: 1
+    GIT_CONFIG_KEY_0: "safe.directory"
+    GIT_CONFIG_VALUE_0: "*"
+    # Performance flags https://docs.gitlab.com/runner/configuration/feature-flags/
+    FF_USE_FASTZIP: "true"
+    FF_ENABLE_JOB_CLEANUP: "true"
+    FF_SET_PERMISSIONS_BEFORE_CLEANUP: "true"
+    ARTIFACT_COMPRESSION_LEVEL: "slowest"
+    CACHE_COMPRESSION_LEVEL: "slowest"
+    # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/1736#note_107983504
+    FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR: "true"
+    FF_LOG_IMAGES_CONFIGURED_FOR_JOB: "true"
+    FF_SCRIPT_SECTIONS: "true"
+
+.docker_anchors:
+  variables: &docker_variables
+    # Enable docker caching
+    DOCKER_BUILDKIT: "1"
+    DOCKER_DRIVER: "overlay2"
+  docker_prefetch: &docker_prefetch_script
+    - echo "[CI] logging into docker registry"
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - echo "[CI] checking for previous docker image ${CONTAINER_IMAGE}"
+    - |
+      if docker manifest inspect ${CONTAINER_IMAGE} > /dev/null 2>&1; then
+        echo "[CI] ${CONTAINER_IMAGE} exists, pulling..."
+        docker pull ${CONTAINER_IMAGE}
+      else
+        echo "[CI] ${CONTAINER_IMAGE} does not exist, starting from scratch"
+      fi
+  docker_push: &docker_push_script
+    - echo "[CI] logging into docker registry"
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - echo "[CI] publishing docker images"
+    - docker push ${CONTAINER_IMAGE}
+
+.git_anchors:
+  variables: &git_variables
+    GIT_DEPTH: "5"
+    GET_SOURCES_ATTEMPTS: 1
+    GIT_CLEAN_FLAGS: "-ffdx"
+    GIT_SUBMODULE_STRATEGY: "none"
+    GIT_SUBMODULE_UPDATE_FLAGS: ""
+    GIT_SUBMODULE_DEPTH: "0"
+    GIT_FETCH_EXTRA_FLAGS: "--prune --jobs=${BSG_CI_CORES_PER_JOB}"
+
+# https://docs.gitlab.com/user/packages/package_registry/
+.api_anchors:
+  variables: &api_variables
+    API_PACKAGE_NAME: "setme"
+    API_PACKAGE_VER: "setme"
+    API_PROJECT_ID: "setme"
+    # generated variables
+    API_WORK_ROOT: "${JOB_WORK_ROOT}/${API_PACKAGE_NAME}"
+    API_UPLOAD_ROOT: "${JOB_WORK_ROOT}/upload/${API_PACKAGE_NAME}"
+    API_DOWNLOAD_ROOT: "${JOB_WORK_ROOT}/download/${API_PACKAGE_NAME}"
+    API_PACKAGE_TGZ: "${API_PACKAGE_NAME}.tar.gz"
+    API_PROJECT_URL: "${CI_API_V4_URL}/projects/${API_PROJECT_ID}"
+    API_PACKAGE_URL: "${API_PROJECT_URL}/packages/generic/${API_PACKAGE_NAME}"
+    API_CURL_URL: "${API_PACKAGE_URL}/${API_PACKAGE_VER}/${API_PACKAGE_TGZ}"
+  api_upload: &api_upload_script
+    - echo "[CI] found $(ls ${API_UPLOAD_ROOT})"
+    - mkdir -p ${API_UPLOAD_ROOT}
+    - echo "[CI] uploading to ${API_CURL_URL}"
+    - >
+      tar -C $(dirname ${API_UPLOAD_ROOT}) -czf - $(basename ${API_UPLOAD_ROOT})
+      | curl --location --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file - ${API_CURL_URL}
+  api_download: &api_download_script
+    - echo "[CI] downloading from ${API_CURL_URL}"
+    - mkdir -p ${API_DOWNLOAD_ROOT}
+    - >
+      curl --location --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${API_CURL_URL}
+      | tar --totals --warning=no-file-changed -xzf - -C ${API_DOWNLOAD_ROOT} --strip-components=1
+    - echo "[CI] found $(ls ${API_DOWNLOAD_ROOT})"
+
+.job_anchors:
+  variables: &job_variables
+    # uploaded directories
+    JOB_LOG_ROOT: "logs"
+    JOB_RPT_ROOT: "reports"
+    JOB_SUCCESS_ROOT: "artifacts/success"
+    JOB_FAILURE_ROOT: "artifacts/failure"
+    # working directories
+    JOB_WORK_ROOT: "work"
+    JOB_DEPS_ROOT: "deps"
+    # mounted directories
+    JOB_CAD_ROOT: "${CADDIR}"
+    JOB_COMMON_ROOT: "${COMMONDIR}/${CI_PROJECT_NAME}/${CI_PIPELINE_ID}"
+    # don't touch variables
+    JOB_LOG: "${JOB_LOG_ROOT}/${CI_JOB_NAME_SLUG}.log"
+    JOB_OUT: "${JOB_LOG_ROOT}/${CI_JOB_NAME_SLUG}.out"
+    JOB_RPT: "${JOB_RPT_ROOT}/${CI_JOB_NAME_SLUG}.rpt"
+    JOB_LOGLEVEL: "3"
+
+###################################################
+## mixins
+###################################################
+
+.docker_mixin:
+  tags: [saas-linux-small-amd64]
+  image: docker:24.0.5
+  services: [docker:24.0.5-dind]
+  variables:
+    <<: *docker_variables
+    GIT_STRATEGY: "clone"
+
+.api_mixin:
+  variables:
+    <<: *api_variables
+    GIT_STRATEGY: "none"
+
+###################################################
+## job templates
+###################################################
+
+.job_template:
+  variables:
+    <<: *feature_variables
+    <<: *git_variables
+    <<: *job_variables
+    <<: *bsg_variables
+    GIT_STRATEGY: "fetch"
+    # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/3688
+    CI_BUILDS_DIR: "/builds/$CI_PROJECT_NAME"
+    GIT_CLONE_PATH: "$CI_BUILDS_DIR/$CI_PIPELINE_ID/$CI_CONCURRENT_ID"
+  tags: [bsg]
+  interruptible: true
+  hooks:
+    pre_get_sources_script:
+      - echo "[CI] configuring git to fetch with HTTP 1.1"
+      - git config --global http.version HTTP/1.1
+      - git config --global http.postBuffer 157286400
+      - |
+        if [[ "$[[ inputs.do_clean_run ]]" == "true" ]]; then
+          ls $GIT_CLONE_PATH || :;
+          rm -rf $GIT_CLONE_PATH;
+        fi
+  before_script:
+    - echo "[CI] cleaning up from previous job"
+    - rm -rf ${JOB_FAILURE_ROOT}/* ${JOB_LOG_ROOT}/* ${JOB_RPT_ROOT}/* ${JOB_DEPS_ROOT}/*
+    - echo "[CI] initializing job directories"
+    - |
+      for d in "${JOB_LOG_ROOT} ${JOB_RPT_ROOT}" \
+               "${JOB_WORK_ROOT} ${JOB_DEPS_ROOT}" \
+               "${JOB_SUCCESS_ROOT} ${JOB_FAILURE_ROOT}" \
+      ; do
+        mkdir -p $d
+        touch $d/.keep
+      done
+    - echo "[CI] initializing ${CI_PROJECT_NAME} common @ ${JOB_COMMON_ROOT}"
+    - mkdir -p ${JOB_COMMON_ROOT} && ls ${JOB_COMMON_ROOT}
+    - echo "[CI] moving artifacts from previous job"
+    - |
+      for f in $(ls ${JOB_SUCCESS_ROOT}); do
+        echo "[CI] artifact: $f"
+        mv ${JOB_SUCCESS_ROOT}/$f ${JOB_DEPS_ROOT}/$f
+      done
+    - echo "[CI] starting job ${JOB_GROUP_NAME}" | tee -a ${JOB_LOG}
+    - touch ${JOB_LOG} ${JOB_RPT} ${JOB_OUT}
+  after_script:
+    - echo "[CI] unset variables" >> ${JOB_RPT}
+    - (export | grep -s "setme" || true) >> ${JOB_RPT}
+    - |
+      if [ $CI_JOB_STATUS == 'success' ]; then
+        echo "[CI] job passed with status $CI_JOB_STATUS" | tee -a ${JOB_RPT}
+        rm -rf ${JOB_FAILURE_ROOT}/*
+      else
+        echo "[CI] job failed with status $CI_JOB_STATUS" | tee -a ${JOB_RPT}
+        rm -rf ${JOB_SUCCESS_ROOT}/*
+      fi
+    - echo "[CI] finishing job ${JOB_GROUP_NAME}" | tee -a ${JOB_LOG}
+  artifacts:
+    access: "developer"
+    expire_in: "1 week"
+    when: always
+    paths:
+      - $JOB_LOG_ROOT/
+      - $JOB_RPT_ROOT/
+      - $JOB_SUCCESS_ROOT/
+      - $JOB_FAILURE_ROOT/
+

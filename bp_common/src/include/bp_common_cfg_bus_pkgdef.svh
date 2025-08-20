@@ -22,6 +22,15 @@
     ,e_cce_mode_normal  = 1
   } bp_cce_mode_e;
 
+  // Core Operating Mode
+  // e_core_status_run: execute normally
+  // e_core_status_freeze: do not issue further instructions
+  typedef enum logic
+  {
+    e_core_status_run     = 0
+    ,e_core_status_freeze = 1
+  } bp_core_status_e;
+
   // The overall memory map of the config link is:
   //   16'h0000 - 16'h01ff: chip level config
   //   16'h0200 - 16'h03ff: fe config

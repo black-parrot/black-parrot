@@ -41,6 +41,7 @@ module bp_tlb
   // Signals must be 1 width
   localparam els_1g_lp = `BSG_MAX(els_1g_p, 1);
   localparam els_2m_lp = `BSG_MAX(els_2m_p, 1);
+  localparam entry_size_lp = `BSG_SAFE_CLOG2(entry_width_lp);
 
   localparam r_entry_low_bits_lp  = 1*sv39_page_idx_width_gp;
   localparam r_entry_med_bits_lp  = 1*sv39_page_idx_width_gp;
@@ -51,7 +52,7 @@ module bp_tlb
 
   // We shift so that ppn bits are LSB
   bp_pte_leaf_s entry_shifted;
-  localparam [`BSG_SAFE_CLOG2(entry_width_lp)-1:0] entry_shamt_lp = ptag_width_p;
+  wire [entry_size_lp-1:0] entry_shamt_lp = entry_size_lp'(ptag_width_p);
   bsg_rotate_left
    #(.width_p($bits(bp_pte_leaf_s)))
    entry_shift
@@ -262,8 +263,8 @@ module bp_tlb
     (.i({any_match_1g_lo, any_match_2m_lo, any_match_4k_lo})
      ,.o(match_cnt)
      );
-  wire single_match = (match_cnt == 1'b1);
-  wire multi_match  = (match_cnt > 1'b1);
+  wire single_match = (match_cnt == 2'b1);
+  wire multi_match  = (match_cnt > 2'b1);
 
   assign flush_4k_li = fence_i | (any_match_1g_lo & any_match_4k_lo) | (any_match_2m_lo & any_match_4k_lo);
   assign flush_2m_li = fence_i | (any_match_1g_lo & any_match_2m_lo);

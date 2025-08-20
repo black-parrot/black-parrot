@@ -1,0 +1,21 @@
+
+DUT_CLOCK_PERIOD_P    ?= 10
+DUT_RESET_CYCLES_LO_P ?= 0
+DUT_RESET_CYCLES_HI_P ?= 20
+
+TB_CLOCK_PERIOD_P     ?= 2
+TB_RESET_CYCLES_LO_P  ?= 0
+TB_RESET_CYCLES_HI_P  ?= 50
+
+HDL_PARAMS += \
+	-pvalue+sim_clock_period_p=$(DUT_CLOCK_PERIOD_P) \
+        -pvalue+sim_reset_cycles_lo_p=$(DUT_RESET_CYCLES_LO_P) \
+        -pvalue+sim_reset_cycles_hi_p=$(DUT_RESET_CYCLES_HI_P) \
+	\
+        -pvalue+tb_clock_period_p=$(TB_CLOCK_PERIOD_P) \
+        -pvalue+tb_reset_cycles_lo_p=$(TB_RESET_CYCLES_LO_P) \
+        -pvalue+tb_reset_cycles_hi_p=$(TB_RESET_CYCLES_HI_P)
+
+HDL_DEFINES += \
+	+define+BSG_NO_TIMESCALE
+

@@ -148,7 +148,7 @@ module bp_be_detector
       // Generate matches for rs1, rs2, rs3
       // 3 stages because we only care about ex1, ex2, and iwb dependencies. fwb dependencies
       //   can be handled through forwarding
-      for (integer i = 0; i < 3; i++)
+      for (int i = 0; i < 3; i++)
         begin
           rs1_match_vector[i] = (issue_pkt_cast_i.instr.t.fmatype.rs1_addr == dep_status_r[i].rd_addr);
           rs2_match_vector[i] = (issue_pkt_cast_i.instr.t.fmatype.rs2_addr == dep_status_r[i].rd_addr);

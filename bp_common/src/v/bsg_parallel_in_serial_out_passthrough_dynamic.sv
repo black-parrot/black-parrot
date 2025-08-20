@@ -30,7 +30,7 @@ module bsg_parallel_in_serial_out_passthrough_dynamic #( parameter `BSG_INV_PARA
     , output [width_p-1:0] data_o
     , input                ready_and_i
     );
- 
+
   logic [els_p-1:0] count_r;
   // For single word piso, we're just passing through the signals
   if (els_p == 1)
@@ -59,14 +59,14 @@ module bsg_parallel_in_serial_out_passthrough_dynamic #( parameter `BSG_INV_PARA
 
   // If send hi_to_lo, reverse the input data array
   logic [els_p-1:0][width_p-1:0] data_li;
-  
+
   if (hi_to_lo_p == 0)
     begin: lo2hi
       assign data_li = data_i;
     end
   else
     begin: hi2lo
-      bsg_array_reverse 
+      bsg_array_reverse
        #(.width_p(width_p), .els_p(els_p))
        bar
        (.i(data_i)
