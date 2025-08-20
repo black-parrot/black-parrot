@@ -56,8 +56,6 @@ module bp_fe_icache
   (input                                              clk_i
    , input                                            reset_i
 
-   , input [cfg_bus_width_lp-1:0]                     cfg_bus_i
-
    // Cycle 0: "Decode"
    // New I$ packet comes in for a fetch, fence or fill request
    // v_i is raised when there is a new request

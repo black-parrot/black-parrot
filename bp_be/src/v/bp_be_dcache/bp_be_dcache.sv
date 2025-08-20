@@ -104,15 +104,12 @@ module bp_be_dcache
    , parameter mshr_p         = dcache_mshr_p
    , parameter id_width_p     = dcache_req_id_width_p
 
-   `declare_bp_common_if_widths(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    `declare_bp_be_dcache_engine_if_widths(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p)
 
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_p)
    )
   (input                                             clk_i
    , input                                           reset_i
-
-   , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
 
    , output logic                                    busy_o
    , output logic                                    ordered_o

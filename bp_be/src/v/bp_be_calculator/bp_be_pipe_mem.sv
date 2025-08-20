@@ -247,7 +247,6 @@ module bp_be_pipe_mem
    dcache
     (.clk_i(negedge_clk)
      ,.reset_i(reset_i)
-     ,.cfg_bus_i(cfg_bus_i)
 
      ,.busy_o(dcache_busy_lo)
      ,.ordered_o(dcache_ordered_lo)
