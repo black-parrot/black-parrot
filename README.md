@@ -1,68 +1,100 @@
 ![BlackParrot Logo](docs/bp_logo.png)
+# BlackParrot: A Linux-Capable Accelerator Host RISC-V Multicore [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Gitlab CI](https://gitlab.com/bespoke-silicon-group/black-parrot/black-parrot/badges/master/pipeline.svg)](https://gitlab.com/bespoke-silicon-group/black-parrot/black-parrot/pipelines) [![Contributers](https://img.shields.io/github/contributors/black-parrot/black-parrot.svg?style=flat)]()
 
-# BlackParrot: A Linux-Capable Accelerator Host RISC-V Multicore [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Gitlab CI](https://gitlab.com/black-parrot/black-parrot/badges/master/pipeline.svg)](https://gitlab.com/black-parrot/black-parrot/pipelines) [![Contributers](https://img.shields.io/github/contributors/black-parrot/black-parrot.svg?style=flat)]() [![Twitter Follow](https://img.shields.io/twitter/follow/BlackParrotCore.svg?style=social)](https://twitter.com/BlackParrotCore)
+BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, RV64GC+ multicore used by the world.
+Although originally developed by the University of Washington and Boston University, BlackParrot strives to be community-driven and infrastructure agnostic, a core which is Pareto optimal in terms of power, performance, area and complexity.
+In order to ensure BlackParrot is easy to use, integrate, modify and trust, development is guided by three core principles: Be Tiny, Be Modular, and Be Friendly.
+Development efforts have prioritized ease of use and silicon validation as first order design metrics, so that users can quickly get started and trust that their results will be representative of state-of-the-art ASIC designs.
+BlackParrot is ideal as the basis for a lightweight accelerator host, a standalone Linux core, or as a hardware research platform.
 
-BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, RV64GC multicore used by the world. Although originally developed by the University of Washington and Boston University, BlackParrot strives to be community-driven and infrastructure agnostic, a core which is Pareto optimal in terms of power, performance, area and complexity. In order to ensure BlackParrot is easy to use, integrate, modify and trust, development is guided by three core principles: Be Tiny, Be Modular, and Be Friendly. Development efforts have prioritized ease of use and silicon validation as first order design metrics, so that users can quickly get started and trust that their results will be representative of state-of-the-art ASIC designs. BlackParrot is ideal as the basis for a lightweight accelerator host, a standalone Linux core, or as a hardware research platform.
+## The BlackParrot manifesto
 
-## The BlackParrot Manifesto
 - Be TINY
-    - When deliberating between two options, consider the one with least hardware cost/complexity.
+    - When deliberating between two options, consider the one with least hardware cost/complexity
 - Be Modular
-    - Prevent tight coupling between modules by designing latency insenstive interfaces.
+    - Prevent tight coupling between modules by designing latency insenstive interfaces
 - Be Friendly
-    - Combat NIH, welcome external contributions and strive for infrastructure agnosticism.
+    - Combat NIH, welcome external contributions and strive for infrastructure agnosticism
 
-## Project Status
-BlackParrot v1.0 was released in March 2020 and has been up and quad core silicon has been running in the lab since April 2020. It supports configurations scaling up to a 16-core+ cache coherent multicore, including the baseline user and privilege mode functionality to run Linux. An optimized single core variant of BlackParrot (also Linux-capable) is also available. Currently, the core supports RV64IMAFDCBSU_Zfencei_Zicsr_Zcbo.
+## Project status
+
+BlackParrot v1.0 was released in March 2020 and has been up and quad core silicon has been running in the lab since April 2020.
+BlackParrot v2.0 was released in January 2024 and has been up and running in the lab since then.
+BlackParrot v2.1 was released in 
+
+Currently supported:
+- RV64IMAFDCSU\_Zfencei\_Zicsr\_Zcbo\_Zba\_Zbb\_Zbs ISA extensions
+- Baseline user and privilege mode functionality to run Linux, SPEC and other standard workloads
+- Configuration scaling up to a 16-core+ cache coherent multicore with distributed LLC
+- Configuration scaling down to an size-optimized single core with < 16 KiB total SRAM
 
 Development of BlackParrot continues, and we are very excited about what we are releasing next!
 
-A 12nm quad-core BlackParrot multicore chip was taped out in July 2019.
+## News
 
-A 12nm BlackParrot dual-core accelerator host was taped out in July 2020.
-
-A 28nm heterogeneous dual-core BlackParrot was taped out in August 2022.
-
-## Press
 We presented BlackParrot at the December 2020 RISC-V Summit! [slides](https://drive.google.com/file/d/1JPIidbk4pTuCgfV8uXorm-SdgOlQ0gTM/view?usp=sharing)
 
 We presented BlackParrot at the ICS 2020 Workshop on RISC-V and OpenPOWER! [slides](https://ics2020.bsc.es/sites/default/files/uploaded/DAN%20PETRISKO%20BlackParrot%20ISC%202020.pdf)
 
 We first announced BlackParrot at FOSDEM 2020! [slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) [video](https://video.fosdem.org/2020/K.3.401/riscv_blackparrot.mp4) [pdf](https://drive.google.com/file/d/16BXCT1kK3gQ0XKfZPR-K8Zs2E648qFp9/view?usp=sharing)
 
-## Getting Started
-This RTL repo is intended to be used with a specific [SDK](https://github.com/black-parrot-sdk/) and [HDK](https://github.com/black-parrot-hdk/) depending on the simulation / FPGA /
-ASIC environment desired. For first-time users of BlackParrot, we recommend starting from the [BlackParrot
-Simulation Environment](https://github.com/black-parrot/black-parrot-sim), which packages the
-BlackParrot RTL and SDK in a compatible manner. We intend to release several examples of BlackParrot
-environments which package the RTL, SDK and HDK together for evaluation.
+- A 12nm quad-core BlackParrot multicore chip was taped out in July 2019.
+- A 12nm BlackParrot dual-core accelerator host was taped out in July 2020.
+- A 28nm heterogeneous dual-core BlackParrot was taped out in August 2022
+- A 28nm heterogeneous dual-core BlackParrot was taped out in January 2025.
 
-To set up your own BlackParrot environment, cloning a version of the [BlackParrot SDK](https://github.com/black-parrot-sdk/black-parrot-sdk) and a version of the [BlackParrot Tools](https://github.com/black-parrot/black-parrot-tools) in the same directory as this repository is all that is strictly required, although the repositories are not guaranteed to be in sync after pulling from master of each.
+## Environments
+
+This RTL repo is intended to be used with a specific [SDK](https://github.com/black-parrot-sdk/) and [HDK](https://github.com/black-parrot-hdk/) depending on the simulation / FPGA / ASIC environment desired.
+For first-time users of BlackParrot, we recommend starting from the [BlackParrot Simulation Environment](https://github.com/black-parrot/black-parrot-sim), which packages the BlackParrot RTL and SDK in a compatible manner.
+We intend to release several examples of BlackParrot environments which package the RTL, SDK and HDK together for evaluation.
+Currently, [BlackParrot Simulation](https://github.com/black-parrot/black-parrot-sim) and [ZynqParrot](https://github.com/black-parrot-hdk/zynq-parrot) are supported.
+Users can of course set up their own environments based on these examples.
+
+## Getting started
+
+Generally, this repo is included as part of a complete simulation environment.
+However, the libraries can be build directly here as well.
+For most users, the following makefile targets will be the most useful:
+
+    make libs_lite;     # minimal set of simulation libraries
+    make libs;          # standard libraries
+    make libs_bsg;      # additional libs for BSG users
+
+There are also common Makefile targets to maintain the repository:
+
+    make checkout;      # checkout submodules. Should be done before building libs
+    make help;          # prints information about documented targets
+    make bleach_all;    # wipes the whole repo clean. Use with caution
+
+And some lesser tested, maintenance operations
+
+    make clean;          # cleans up submodule working directory
+    make tidy;           # unpatches submodules
+    make bleach;         # deinitializes submodules
 
 Once you have a BlackParrot environment set up, you can follow the RTL evaluation guide here to
 test the core RTL: [Evaluation Guide](docs/eval_guide.md)
 
-## How to Contribute
-Although the information in collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
+## How to contribute
 
-We welcome external contributions! Please join our mailing list at [Google Groups](https://groups.google.com/forum/#!forum/black-parrot) and follow us on [Twitter](https://twitter.com/BlackParrotCore) to discuss, ask questions or just tell us how you're using BlackParrot! For a smooth contribution experience, take a look at our [Contribution Guide](CONTRIBUTING.md).
+Although information in collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
 
-## Coding Style
-BlackParrot is written in standard SystemVerilog, using a subset of the language known to be both synthesizable and compatible with a wide variety of vendor tools. Details of these style choices both functional and aesthetic can be found in our [Style Guide](docs/style_guide.md)
+We welcome external contributions!
+Please join our mailing list at [Google Groups](https://groups.google.com/forum/#!forum/black-parrot), ask questions or just tell us how you're using BlackParrot!
+For a smooth contribution experience, take a look at our [Contribution Guide](CONTRIBUTING.md).
 
-## Software Development Kit
+## Software development kit
 BlackParrot is Linux-capable, so it is possible to run all programs which run on BusyBox. However,
 for more targeted benchmarks which don't want O/S management overheads (or the overheads of a long
 Linux boot time in simulation!), it is preferable to write for bare-metal. Additionally, some
 platform-specific features are only available at the firmware level. Developers looking to write
 low-level BlackParrot code, or optimize for the BlackParrot platform should look at our [SDK](https://github.com/black-parrot-sdk/black-parrot-sdk).
 
-## Software Developer Guide
-Once you've built and validate your BlackParrot program and are ready to run on RTL, look at our
-[TestBench Guide](docs/testbench_guide.md)
-
 ## Accelerator Developer Guide
-[Accelerator Guide](docs/accelerator_guide.md)
+
+The specific instructions here are outdated; help wanted to resurrect examples and re-document!
+~[Accelerator Guide](docs/accelerator_guide.md)~
 
 ## Hardware Development Kit
 [BlackParrot Subsystems](https://github.com/black-parrot-hdk/black-parrot-subsystems)
@@ -100,7 +132,7 @@ Our goal with BlackParrot is to bootstrap a community-maintained RISC-V core, an
 - Our integer divider could be parameterized to iterate faster on smaller numbers. (Note: Currently somebody is working on this.)
 - We could use a stream buffer (prefetcher) implementation for our L2 cache.
 - Add a parameter to enable / disable FPU logic (including register file, bypass paths, FP divider and FMAC, etc.)
-- Improve the mapping to FPGA 
+- Improve the mapping to FPGA
   - We use a [portability layer for FPGA](https://github.com/bespoke-silicon-group/basejump_stl/blob/master/hard/ultrascale_plus) that can be optimized, e.g.,
   - Other mappings, such the multiplier to DSP48, could be improved.
   - We have not looked at frequency tuning BP for FPGA at all. The ideal changes would not result in much ASIC/FPGA code bifurcation.

@@ -25,7 +25,7 @@ module bp_me_nonsynth_cfg_loader
     , parameter `BSG_INV_PARAM(inst_width_p)
     , parameter `BSG_INV_PARAM(inst_ram_addr_width_p)
     , parameter `BSG_INV_PARAM(inst_ram_els_p)
-    , parameter cce_ucode_filename_p  = "cce_ucode.mem"
+    , parameter ucode_str_p = "ucode_mem"
     , parameter skip_init_p           = 0
     , parameter clear_freeze_p        = 0
     // Change the last 8 bits of the data below to indicate the hios
@@ -73,7 +73,14 @@ module bp_me_nonsynth_cfg_loader
   // To prevent x-prop
   bit [dword_width_gp-1:0]    cce_inst_boot_rom_data;
 
-  initial $readmemb(cce_ucode_filename_p, cce_inst_boot_rom);
+  string ucode_file;
+  initial
+    if ($value$plusargs({ucode_str_p,"=%s"}, ucode_file))
+      begin
+        $display("BSG-INFO: Initalizing boot_rom with ucode_str_p=%s", ucode_file);
+        $readmemb(ucode_file, cce_inst_boot_rom);
+      end
+
 
   logic                        cfg_w_v_lo, cfg_r_v_lo;
   bp_local_addr_s              local_addr_lo;

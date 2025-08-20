@@ -17,6 +17,7 @@
     ,e_dcache_subop_amominu
     ,e_dcache_subop_amomaxu
   } bp_be_amo_subop_e;
+  typedef logic [(1<<$bits(bp_be_amo_subop_e))-1:0] bp_be_amo_subop_t;
 
   typedef struct packed
   {
@@ -52,13 +53,6 @@
     bp_be_dcache_decode_s decode;
     logic                 uncached;
   }  bp_be_dcache_req_payload_s;
-
-  typedef struct packed
-  {
-    logic [reg_addr_width_gp-1:0]    rd_addr;
-    bp_be_dcache_fu_op_e             opcode;
-    logic [page_offset_width_gp-1:0] offset;
-  }  bp_be_dcache_pkt_s;
 
 `endif
 

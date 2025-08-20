@@ -9,10 +9,18 @@
 * Rv64FD instructions have a 4-cycle latency, exception for fdiv/fsqrt, which are iterative
 * BlackParrot has a load-to-use time of 2 cycles for dwords, 3 cycles for words, halfs, and bytes
 * BlackParrot has a 2-cycle L1 hit latency for integer loads
-* BlackParrot has a 3-cycle L1 hit latency for floating point loads 
+* BlackParrot has a 3-cycle L1 hit latency for floating point loads
 * BlackParrot has a 2-cycle L2 hit latency, plus network interaction
 
 BlackParrot has full forwarding for integer instructions
+
+### Supported CFGs
+All configurations can be found in bp\_common/src/include/bp_common_aviary_pkgdef.svh.
+A description of the parameters in the structure can be found at bp\_common/src/include/bp_common_aviary_defines.svh.
+A configuration is selected by passing one of the enums found in bp_params_e.
+These correspond to the struct of parameters in all_cfgs_gp.
+
+In the future, BlackParrot core parameters will be separated from SoC parameters.
 
 ## CSRs
 BlackParrot supports the following CSRs:

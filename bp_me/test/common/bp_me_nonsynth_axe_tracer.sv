@@ -1,3 +1,5 @@
+ERROR_NOT_CURRENTLY_SUPPORTED
+
 /**
  * Name:
  *   bp_me_nonsynth_axe_tracer.v

@@ -15,7 +15,7 @@ It is often very tempting to try to bring up your system on FPGA by trying to wr
 - Debug the Software
     1. Start with the smallest subset of your software. Consider using Panic Room to start with instead of Linux, since it boots much faster in simulation. As you get things working, include more and more of the software.
     2. Make sure the software you are trying to get running works on Dromajo. This ensures that it is RISC-V compatible, and runs very quickly.
-    3. Make sure the same software then runs on BlackParrot RTL, using co-simulation. Use cosimulation to localize any points of divergence.   
+    3. Make sure the same software then runs on BlackParrot RTL, using co-simulation. Use cosimulation to localize any points of divergence.
     4. Make sure that the same software runs on BlackParrot, after using the FPGA synthesis tool, i.e. post-synth simulation.
 
 - Debugging the FPGA Hardware
@@ -24,7 +24,7 @@ It is often very tempting to try to bring up your system on FPGA by trying to wr
         1. Build a testbench, which include models of the I/O devices in questions. Not all I/O devices have models, but many of them do. This feels tedious, but we have found that once you have this, convergence is very fast, and without it, you can spend literally months.
         2. Simulate in RTL. Use bind statements or waveform viewer to monitor the key signals that show what BlackParrot is doing, and see if it is hanging somewhere. Almost every packet that BlackParrot sends out has a response. Did the response come back?
         3. Carefully examine all synthesis warnings.
-        4. Simulate post FPGA synthesis. This ensures that there is not a Vivado synthesis issue. We have found that Vivado frequently diverges from tools like Design Compiler.  
+        4. Simulate post FPGA synthesis. This ensures that there is not a Vivado synthesis issue. We have found that Vivado frequently diverges from tools like Design Compiler.
         5. Do place and route, and examine all timing warnings. Failure to meet timing on Xilinx-provided IP blocks is a major source of intermittant issues.
         6. Run on the FPGA.
         7. If does not work, use Chipscope to monitor the I/O signals going into and out of BlackParrot, and to monitor critical resources like the Program Counter.

@@ -13,10 +13,13 @@ module bp_mmu
    , parameter `BSG_INV_PARAM(tlb_els_1g_p)
    , parameter latch_last_read_p = 0
 
+   `declare_bp_common_if_widths(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    , localparam entry_width_lp = `bp_pte_leaf_width(paddr_width_p)
    )
   (input                                              clk_i
    , input                                            reset_i
+
+   , input [cfg_bus_width_lp-1:0]                     cfg_bus_i
 
    , input                                            flush_i
    , input                                            fence_i
@@ -103,7 +106,7 @@ module bp_mmu
   wire tlb_r_v_li = r_v_i | flush_i;
   wire tlb_w_v_li = w_v_i;
   wire tlb_v_li = tlb_r_v_li | tlb_w_v_li;
-  wire [vtag_width_p-1:0] tlb_vtag_li = w_v_i ? w_vtag_i : r_etag_li;
+  wire [vtag_width_p-1:0] tlb_vtag_li = w_v_i ? w_vtag_i : vtag_width_p'(r_etag_li);
   bp_tlb
    #(.bp_params_p(bp_params_p), .els_4k_p(tlb_els_4k_p), .els_2m_p(tlb_els_2m_p), .els_1g_p(tlb_els_1g_p))
    tlb

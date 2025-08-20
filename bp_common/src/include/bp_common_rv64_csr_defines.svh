@@ -748,7 +748,7 @@
 
   `define decompress_sepc_s(data_comp_mp) \
     '{word_addr: `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 62) \
-      ,align   : compressed_support_p && data_comp_mp.align   \
+      ,align   : compressed_support_p[e_compressed] && data_comp_mp.align   \
       ,zero    : 1'b0                                         \
       }
 
@@ -932,7 +932,7 @@
 
   `define decompress_mepc_s(data_comp_mp) \
     '{word_addr: `BSG_SIGN_EXTEND(data_comp_mp.word_addr, 62) \
-      ,align   : compressed_support_p && data_comp_mp.align   \
+      ,align   : compressed_support_p[e_compressed] && data_comp_mp.align   \
       ,zero    : 1'b0                                         \
       }
 

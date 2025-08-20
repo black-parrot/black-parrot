@@ -58,39 +58,20 @@ set DESIGN_NAME   $::env(DESIGN_NAME)
 # Directories defined in environment variables. These should be set by the
 # makefile infrastructure invoking the DC script.
 
-set BP_TOP_DIR       $::env(BP_TOP_DIR)
-set BP_FE_DIR        $::env(BP_FE_DIR)
-set BP_BE_DIR        $::env(BP_BE_DIR)
-set BP_ME_DIR        $::env(BP_ME_DIR)
-set BP_COMMON_DIR    $::env(BP_COMMON_DIR)
+set BP_DIR           $::env(BP_DIR)
+set BP_TOP_DIR       $::env(BP_DIR)/bp_top
+set BP_FE_DIR        $::env(BP_DIR)/bp_fe
+set BP_BE_DIR        $::env(BP_DIR)/bp_be
+set BP_ME_DIR        $::env(BP_DIR)/bp_me
+set BP_COMMON_DIR    $::env(BP_DIR)/bp_common
 
-set BASEJUMP_STL_DIR $::env(BASEJUMP_STL_DIR)
-set HARDFLOAT_DIR    $::env(HARDFLOAT_DIR)
-
-set SYN_PATH $::env(SYN_PATH)
-set TB_PATH  $::env(TB_PATH)
+set BASEJUMP_STL_DIR $::env(BP_DIR)/external/basejump_stl
+set HARDFLOAT_DIR    $::env(BP_DIR)/external/HardFloat
 
 set STDCELL_DB $::env(STDCELL_DB)
 
-#========================
-# TOP-LEVEL PARAMETERS
-#========================
-
-# We grab the top-level parameters from the Makefile.frag flie for the
-# specified testbench. This fragment has the HDL_PARAMS envvar which uses vcs
-# pvalues to parameterize the top-level module. Here we string manipulate that
-# variable to create the proper parameter list for the elaborate command. Each
-# parameter in HDL_PARAMS is in the form -pvalue+<name>=<value> and is space
-# delimited. We want the parameter to be just <name>=<value> and for the list
-# to be comma delimited.
-
-set param_list [list]
-foreach param [join "$::env(DUT_PARAMS)"] {
-    set idx_1 [string first "-" ${param}]
-    set idx_2 [string first "+" ${param}]
-    lappend param_list [string replace ${param} ${idx_1} ${idx_2} ""]
-}
-set param_str [join ${param_list} ","]
+exec echo "${BP_DIR}"
+exec ls "${BP_DIR}"
 
 #========================
 # LIBRARY SETUP
@@ -117,6 +98,23 @@ if { ![analyze -format sverilog -vcs "-f flist.vcs"] } {
   exit_failed
 }
 
+set_app_var hdlin_sv_interface_only_modules {
+	bsg_mem_1r1w_sync_mask_write_bit_synth
+	bsg_mem_1r1w_sync_mask_write_byte_synth
+	bsg_mem_1r1w_sync_synth
+	bsg_mem_1r1w_synth
+	bsg_mem_1rw_sync_mask_write_bit_synth
+	bsg_mem_1rw_sync_mask_write_byte_synth
+	bsg_mem_1rw_sync_synth
+	bsg_mem_2r1w_sync_synth
+	bsg_mem_2r1w_synth
+	bsg_mem_2rw_sync_mask_write_bit_synth
+	bsg_mem_2rw_sync_mask_write_byte_synth
+	bsg_mem_2rw_sync_synth
+	bsg_mem_3r1w_sync_synth
+	bsg_mem_3r1w_synth
+}
+
 #========================
 # ELABORATE
 #========================
@@ -124,7 +122,7 @@ if { ![analyze -format sverilog -vcs "-f flist.vcs"] } {
 # Add a warning ELAB-395 if memory devices are inferred as latches.
 #set_app_var hdlin_check_no_latch true
 
-if { ![elaborate ${DESIGN_NAME} -param ${param_str}] } {
+if { ![elaborate ${DESIGN_NAME}] } {
   exit_failed
 }
 

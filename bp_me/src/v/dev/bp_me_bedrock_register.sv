@@ -28,18 +28,18 @@ module bp_me_bedrock_register
    // The address width of the registers. For addresses less than paddr_width_p,
    //   the upper bits of the paddr are ignored for matching purposes
    , parameter reg_addr_width_p = paddr_width_p
+   // The size of the register
+   , parameter reg_size_width_p = `BSG_WIDTH(`BSG_SAFE_CLOG2(reg_data_width_p/8))
    // The number of registers to control
    , parameter els_p = 1
 
    // We would like to use unpacked here, but Verilator 4.202 does not support it
    // Unsupported tristate construct: INITITEM
-   //// An unpacked array of integer register base addresses
-   ////   e.g. localparam integer base_addr_lp [1:0] = '{0xf00bad, 0x00cafe}
+   //// An unpacked array of int register base addresses
+   ////   e.g. localparam int base_addr_lp [1:0] = '{0xf00bad, 0x00cafe}
    //// Can also accept pattern matches such as 0x8???
-   //, parameter integer base_addr_p [els_p-1:0] = '{0}
+   //, parameter int base_addr_p [els_p-1:0] = '{0}
    , parameter [els_p-1:0][reg_addr_width_p-1:0] base_addr_p = '0
-
-   , localparam lg_reg_data_width_lp = `BSG_WIDTH(`BSG_SAFE_CLOG2(reg_data_width_p/8))
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -64,12 +64,12 @@ module bp_me_bedrock_register
    , output logic [els_p-1:0]                       r_v_o
    , output logic [els_p-1:0]                       w_v_o
    , output logic [reg_addr_width_p-1:0]            addr_o
-   , output logic [lg_reg_data_width_lp-1:0]        size_o
+   , output logic [reg_size_width_p-1:0]            size_o
    , output logic [reg_data_width_p-1:0]            data_o
    , input [els_p-1:0][reg_data_width_p-1:0]        data_i
    );
 
-  if (dword_width_gp != 64) $error("BedRock interface data width must be 64-bits");
+  if (reg_data_width_p != 64) $error("BedRock interface data width must be 64-bits");
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `bp_cast_i(bp_bedrock_mem_fwd_header_s, mem_fwd_header);
   `bp_cast_o(bp_bedrock_mem_rev_header_s, mem_rev_header);
@@ -117,25 +117,31 @@ module bp_me_bedrock_register
      ,.data_o(rdata_lo)
      );
 
+  logic [els_p-1:0] addr_match;
+  wire reg_write = mem_fwd_v_li & ~v_r &  wr_not_rd;
+  wire reg_read  = mem_fwd_v_li & ~v_r & ~wr_not_rd;
+  wire [reg_data_width_p-1:0] reg_data = mem_fwd_data_li;
+  wire [reg_addr_width_p-1:0] reg_addr = mem_fwd_header_li.addr;
+  wire [reg_size_width_p-1:0] reg_size = mem_fwd_header_li.size;
   for (genvar i = 0; i < els_p; i++)
-    begin : dec
-      wire addr_match = mem_fwd_v_li & (mem_fwd_header_li.addr[0+:reg_addr_width_p] inside {base_addr_p[i]});
-      assign r_v_o[i] = ~v_r & addr_match & ~wr_not_rd;
-      assign w_v_o[i] = ~v_r & addr_match &  wr_not_rd;
+    begin : abcd
+        assign addr_match[i] = (reg_addr inside {base_addr_p[i]});
     end
 
-  assign addr_o = mem_fwd_header_li.addr[0+:reg_addr_width_p];
-  assign size_o = mem_fwd_header_li.size;
-  assign data_o = mem_fwd_data_li;
+  assign r_v_o = {els_p{reg_read}} & addr_match;
+  assign w_v_o = {els_p{reg_write}} & addr_match;
+  assign addr_o = reg_addr;
+  assign size_o = reg_size;
+  assign data_o = reg_data;
 
   assign mem_rev_header_cast_o = mem_fwd_header_li;
   assign mem_rev_v_o = v_r;
   assign mem_fwd_yumi_li = mem_rev_ready_and_i & mem_rev_v_o;
 
-  localparam sel_width_lp = `BSG_SAFE_CLOG2(dword_width_gp>>3);
+  localparam sel_width_lp = `BSG_SAFE_CLOG2(reg_data_width_p>>3);
   localparam size_width_lp = `BSG_SAFE_CLOG2(sel_width_lp);
   bsg_bus_pack
-   #(.in_width_p(dword_width_gp), .out_width_p(bedrock_fill_width_p))
+   #(.in_width_p(reg_data_width_p), .out_width_p(bedrock_fill_width_p))
    fwd_bus_pack
     (.data_i(rdata_lo)
      ,.sel_i('0) // We are aligned

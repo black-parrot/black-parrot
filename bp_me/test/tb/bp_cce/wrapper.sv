@@ -4,18 +4,17 @@
  *
  */
 
-`include "bsg_noc_links.svh"
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
 
 module wrapper
  import bp_common_pkg::*;
- import bp_be_pkg::*;
  import bp_me_pkg::*;
- #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
+ #(parameter bp_params_e bp_params_p = `BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
 
-   // interface width
+   `declare_bp_common_if_widths(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    `declare_bp_bedrock_if_widths(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p)
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
   (input                                            clk_i
    , input                                          reset_i

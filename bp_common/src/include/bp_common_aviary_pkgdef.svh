@@ -73,7 +73,6 @@
       ,bedrock_fill_width : 64
 
       ,l2_features   : (1 << e_cfg_writeback)
-                       | (1 << e_cfg_word_tracking)
                        | (1 << e_cfg_amo_swap)
                        | (1 << e_cfg_amo_fetch_logic)
                        | (1 << e_cfg_amo_fetch_arithmetic)
@@ -119,7 +118,6 @@
       // We use L2 for the write buffer support
       ,l2_features   : (1 << e_cfg_enabled)
                        | (1 << e_cfg_writeback)
-                       | (1 << e_cfg_word_tracking)
                        | (1 << e_cfg_amo_swap)
                        | (1 << e_cfg_amo_fetch_logic)
                        | (1 << e_cfg_amo_fetch_arithmetic)

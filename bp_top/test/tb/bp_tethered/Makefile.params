@@ -1,58 +1,51 @@
-export COH_PROTO   ?= moesif
-export CCE_MEM      = $(COH_PROTO).mem
 
-export CCE_TRACE_P    ?= 0
-export LCE_TRACE_P    ?= 0
-export CMT_TRACE_P    ?= 0
-export DRAM_TRACE_P   ?= 0
-export ICACHE_TRACE_P ?= 0
-export DCACHE_TRACE_P ?= 0
-export VM_TRACE_P     ?= 0
-export CORE_PROFILE_P ?= 0
-export PC_PROFILE_P   ?= 0
-export BR_PROFILE_P   ?= 0
-export DEV_TRACE_P    ?= 0
+PERF_ENABLE_P         ?= 1
+WARMUP_INSTR_P        ?= 0
+MAX_INSTR_P           ?= 10000000
+MAX_CYCLE_P           ?= 10000000
 
-export COSIM_P         ?= 0
-export MAX_INSTR_P     ?= 0
-export WARMUP_INSTR_P  ?= 0
-export CHECKPOINT_P    ?= 0
+WATCHDOG_ENABLE_P     ?= 1
+STALL_CYCLES_P        ?= 100000
+HALT_INSTR_P          ?= 1000
+HEARTBEAT_INSTR_P     ?= 10000
 
-export NBF_CONFIG_P   ?= 1
-export NBF_SKIP_ZEROS ?= 1
-export NBF_MEM_SIZE   ?= 16
-export PRELOAD_MEM_P  ?= 1
+ICACHE_TRACE_P        ?= 0
+DCACHE_TRACE_P        ?= 0
+VM_TRACE_P            ?= 0
+UCE_TRACE_P           ?= 0
+LCE_TRACE_P           ?= 0
+CCE_TRACE_P           ?= 0
+DEV_TRACE_P           ?= 0
+DRAM_TRACE_P          ?= 0
 
-export BP_SIM_CLK_PERIOD ?= 1000
-export BP_RT_CLK_PERIOD  ?= 1000000
+COSIM_TRACE_P         ?= $(COMMITLOG)
+COSIM_CHECK_P         ?= $(if $(or $(filter 1,$(DROMAJO_COSIM)),$(filter 1,$(SPIKE_COSIM))),1,0)
 
-export DUT_PARAMS =
-export TB_PARAMS  = \
-                    -pvalue+cce_trace_p=$(CCE_TRACE_P)   \
-                    -pvalue+lce_trace_p=$(LCE_TRACE_P)   \
-                    -pvalue+cmt_trace_p=$(CMT_TRACE_P)   \
-                    -pvalue+dram_trace_p=$(DRAM_TRACE_P) \
-                    -pvalue+icache_trace_p=$(ICACHE_TRACE_P) \
-                    -pvalue+dcache_trace_p=$(DCACHE_TRACE_P) \
-                    -pvalue+vm_trace_p=$(VM_TRACE_P) \
-                    -pvalue+core_profile_p=$(CORE_PROFILE_P) \
-                    -pvalue+pc_profile_p=$(PC_PROFILE_P) \
-                    -pvalue+br_profile_p=$(BR_PROFILE_P) \
-                    -pvalue+dev_trace_p=$(DEV_TRACE_P) \
-					\
-                    -pvalue+cosim_p=$(COSIM_P) \
-					-pvalue+max_instr_p=$(MAX_INSTR_P) \
-					-pvalue+warmup_instr_p=$(WARMUP_INSTR_P) \
-                    -pvalue+checkpoint_p=$(CHECKPOINT_P) \
-					\
-					-pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
+HDL_DEFINES += \
+	+define+BP_CFG_FLOWVAR=$(CFG)
 
-export DEFINES    ?=
-export DUT_DEFINES = $(foreach def,$(DEFINES),+define+$(def))
-export TB_DEFINES  = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD) \
-					 +define+BP_RT_CLK_PERIOD=$(BP_RT_CLK_PERIOD) \
-                     +define+den2048Mb+sg5+x16+FULL_MEM
+HDL_PARAMS += \
+	-pvalue+perf_enable_p=$(PERF_ENABLE_P) \
+	-pvalue+warmup_instr_p=$(WARMUP_INSTR_P) \
+	-pvalue+max_instr_p=$(MAX_INSTR_P) \
+	-pvalue+max_cycle_p=$(MAX_CYCLE_P) \
+	\
+	-pvalue+watchdog_enable_p=$(WATCHDOG_ENABLE_P) \
+	-pvalue+stall_cycles_p=$(STALL_CYCLES_P) \
+	-pvalue+halt_instr_p=$(HALT_INSTR_P) \
+	-pvalue+heartbeat_instr_p=$(HEARTBEAT_INSTR_P) \
+	\
+	-pvalue+cosim_trace_p=$(COSIM_TRACE_P) \
+	-pvalue+cosim_check_p=$(COSIM_CHECK_P) \
+	\
+	-pvalue+icache_trace_p=$(ICACHE_TRACE_P) \
+	-pvalue+dcache_trace_p=$(DCACHE_TRACE_P) \
+	-pvalue+vm_trace_p=$(VM_TRACE_P) \
+	-pvalue+uce_trace_p=$(UCE_TRACE_P) \
+	-pvalue+lce_trace_p=$(LCE_TRACE_P) \
+	-pvalue+cce_trace_p=$(CCE_TRACE_P) \
+	-pvalue+dev_trace_p=$(DEV_TRACE_P) \
+	-pvalue+dram_trace_p=$(DRAM_TRACE_P)
 
-export HDL_DEFINES = $(DUT_DEFINES) $(TB_DEFINES)
-export HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)
+include $(BP_MK_DIR)/Makefile.params
 

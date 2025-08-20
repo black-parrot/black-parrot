@@ -1,0 +1,21 @@
+
+%/prog.bin: %/prog.riscv
+	@$(MKDIR) -p $(@D)
+	@$(OBJCOPY) -I elf64-little $< -O binary $@
+
+%/prog.mem: %/prog.bin
+	@$(MKDIR) -p $(@D)
+	@$(OBJCOPY) -I binary $< -O verilog $@
+
+%/prog.dump: %/prog.riscv
+	@$(MKDIR) -p $(@D)
+	@$(RISCV_OBJDUMP) -DS --visualize-jumps $< > $@
+
+%/dromajo.trace: %/prog.riscv
+	@$(MKDIR) -p $(@D)
+	@$(CD) $(@D); $(DROMAJO) --trace 0 $< &> $@
+
+%/spike.trace: %/prog.riscv
+	@$(MKDIR) -p $(@D)
+	@$(CD) $(@D); $(SPIKE) -l --log-commits $< &> $@
+

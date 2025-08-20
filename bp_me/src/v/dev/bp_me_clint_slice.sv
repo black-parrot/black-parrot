@@ -67,7 +67,7 @@ module bp_me_clint_slice
      ,.els_p(reg_els_lp)
      ,.base_addr_p({debug_reg_match_addr_gp, plic_reg_match_addr_gp, mtime_reg_addr_gp, mtimesel_reg_match_addr_gp, mtimecmp_reg_match_addr_gp, mipi_reg_match_addr_gp})
      )
-   register
+   clints_register
     (.*
      // We ignore reads because these are all asynchronous registers
      ,.r_v_o()
@@ -105,7 +105,7 @@ module bp_me_clint_slice
 
   logic rt_clk_lo;
   bsg_mux
-   #(.width_p(1), .els_p(4), .balanced_p(1), .harden_p(1))
+   #(.width_p(1), .els_p(4), .harden_p(1))
    rtc_mux
     (.data_i({1'b0, rt_clk_i, clk_ds_lo, clk_i})
      ,.sel_i(mtimesel_r)
@@ -170,7 +170,7 @@ module bp_me_clint_slice
   localparam plic_els_lp = 2;
   localparam lg_plic_els_lp = `BSG_SAFE_CLOG2(plic_els_lp);
   logic [plic_els_lp-1:0] plic_n, plic_r;
-  wire [lg_plic_els_lp-1:0] plic_addr_li = addr_lo[2+:lg_plic_els_lp];
+  wire [lg_plic_els_lp-1:0] plic_addr_li = addr_lo[3+:lg_plic_els_lp];
 
   always_comb
     begin

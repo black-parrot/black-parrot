@@ -1,0 +1,3 @@
+
+CFG_UCODE := $(if $(findstring cce_ucode,$(CFG)),1,0)
+

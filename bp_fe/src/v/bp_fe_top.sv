@@ -198,6 +198,7 @@ module bp_fe_top
    immu
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.cfg_bus_i(cfg_bus_i)
 
      ,.flush_i(tv_flush_lo)
      ,.fence_i(itlb_fence_v_li)
@@ -248,8 +249,6 @@ module bp_fe_top
    icache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
-     ,.cfg_bus_i(cfg_bus_i)
 
      ,.icache_pkt_i(icache_pkt_li)
      ,.v_i(icache_v_li)
