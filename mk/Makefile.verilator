@@ -39,6 +39,7 @@ VV_BUILD_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_FST
 endif
 
 %/flist.vcs:
+	@$(eval export BP_DIR)
 	@$(MKDIR) -p $(@D)
 	@$(CAT) $(END_PATH)/flist.vcs >> $@
 	@$(CAT) $(TB_PATH)/flist.vcs >> $@

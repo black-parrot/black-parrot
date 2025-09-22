@@ -43,6 +43,7 @@ VCS_BUILD_OPTS += $(BP_DIR)/bp_be/test/common/spike_cosim.cpp
 endif
 
 %/flist.vcs:
+	@$(eval export BP_DIR)
 	@$(MKDIR) -p $(@D)
 	@$(CAT) $(END_PATH)/flist.vcs >> $@
 	@$(CAT) $(TB_PATH)/flist.vcs >> $@

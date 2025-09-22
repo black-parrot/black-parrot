@@ -127,7 +127,7 @@ build-image:
     - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
     - !reference [.api_anchors, api_download]
     - mkdir -p ${COMMON_INSTALL_DIR}
-    - mv ${API_DOWNLOAD_ROOT}/* ${COMMON_INSTALL_DIR}/
+    - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_INSTALL_DIR}
 
 .gather_tools_job:
   extends: [.project_template, .api_mixin]
@@ -140,7 +140,7 @@ build-image:
     - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
     - !reference [.api_anchors, api_download]
     - mkdir -p ${COMMON_TOOLS_DIR}
-    - mv ${API_DOWNLOAD_ROOT}/* ${COMMON_TOOLS_DIR}/
+    - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_INSTALL_DIR}
 
 .gather_riscv_job:
   extends: [.project_template, .api_mixin]
@@ -153,7 +153,7 @@ build-image:
     - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
     - !reference [.api_anchors, api_download]
     - mkdir -p ${COMMON_RISCV_DIR}
-    - mv ${API_DOWNLOAD_ROOT}/* ${COMMON_RISCV_DIR}/
+    - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_RISCV_DIR}
 
 .check_design_job:
   extends: [.project_template]
@@ -247,7 +247,7 @@ build-image:
     - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
     - !reference [.api_anchors, api_download]
     - mkdir -p ${COMMON_INSTALL_DIR}/sv2v
-    - mv ${API_DOWNLOAD_ROOT}/* ${COMMON_INSTALL_DIR}/sv2v
+    - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_INSTALL_DIR}/sv2v
   rules:
     - if: '$DOCKER_PLATFORM == "centos7"'
 
