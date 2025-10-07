@@ -1,4 +1,6 @@
 
+include $(BP_MK_DIR)/Makefile.paths
+
 ## Tool specific options
 VCS_THREADS ?= 4
 #VCS_BUILD_OPTS += -fgp=multisocket
