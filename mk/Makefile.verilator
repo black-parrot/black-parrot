@@ -1,4 +1,6 @@
 
+include $(BP_MK_DIR)/Makefile.paths
+
 # Max number of threads to run verilated model with
 VERILATOR_THREADS ?= 4
 ## Tool options

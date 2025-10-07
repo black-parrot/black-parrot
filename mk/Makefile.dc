@@ -1,4 +1,6 @@
 
+include $(BP_MK_DIR)/Makefile.paths
+
 %/flist.vcs:
 	@$(eval export BP_DIR)
 	@$(MKDIR) -p $(@D)

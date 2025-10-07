@@ -1,0 +1,20 @@
+
+# Add installation to paths
+export PATH := $(BP_INSTALL_DIR)/bin:$(PATH)
+export LD_LIBRARY_PATH := $(BP_INSTALL_DIR)/lib:$(LD_LIBRARY_PATH)
+export LIBRARY_PATH := $(BP_INSTALL_DIR)/lib:$(LIBRARY_PATH)
+export CPATH := $(BP_INSTALL_DIR)/include:$(CPATH)
+
+# Legacy support for repos-next-to-top scheme
+export PATH := $(BP_SDK_INSTALL_DIR)/bin:$(PATH)
+export PATH := $(BP_TOOLS_INSTALL_DIR)/bin:$(PATH)
+
+export LD_LIBRARY_PATH := $(BP_SDK_INSTALL_DIR)/lib:$(LD_LIBRARY_PATH)
+export LD_LIBRARY_PATH := $(BP_TOOLS_INSTALL_DIR)/lib:$(LD_LIBRARY_PATH)
+
+export LIBRARY_PATH := $(BP_SDK_INSTALL_DIR)/lib:$(LIBRARY_PATH)
+export LIBRARY_PATH := $(BP_TOOLS_INSTALL_DIR)/lib:$(LIBRARY_PATH)
+
+export CPATH := $(BP_SDK_INSTALL_DIR)/include:$(CPATH)
+export CPATH := $(BP_TOOLS_INSTALL_DIR)/include:$(CPATH)
+
