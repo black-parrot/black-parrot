@@ -7,7 +7,7 @@
  *   L1 Instruction Cache. Features:
  *   - Virtually-indexed, physically-tagged
  *   - 1-8 way set-associative
- *   - 64-512 bit block size (minimum 64-bit data mem bank size)
+ *   - 64-512 bit block size (minimum 32-bit data mem bank size)
  *   - Separate speculative and non-speculative fetch commands
  *
  *   An address is broken down as follows:
@@ -24,7 +24,9 @@
  * Notes:
  *    Supports multi-cycle fill/eviction with the UCE in unicore configuration
  *    Uses fill_index in data_mem_pkt to generate a write_mask for the data banks
- *      bank_width = block_width / assoc >= dword_width
+ *    Each logical bank (one per way) may consist of multiple physical subbanks:
+ *      bank_width (physical) >= 32 (configurable, power-of-2)
+ *      subbanks_per_bank = (block_width / assoc) / bank_width
  *      fill_width = N*bank_width <= block_width
  */
 
@@ -46,6 +48,7 @@ module bp_fe_icache
    , parameter block_width_p = icache_block_width_p
    , parameter fill_width_p  = icache_fill_width_p
    , parameter data_width_p  = icache_data_width_p
+   , parameter bank_width_p  = icache_bank_width_p
    , parameter tag_width_p   = icache_tag_width_p
    , parameter id_width_p    = icache_req_id_width_p
 
@@ -129,18 +132,22 @@ module bp_fe_icache
   `declare_bp_fe_icache_engine_if(paddr_width_p, tag_width_p, sets_p, assoc_p, data_width_p, block_width_p, fill_width_p, id_width_p);
 
   // Various localparameters
-  localparam lg_assoc_lp            =`BSG_SAFE_CLOG2(assoc_p);
-  localparam bank_width_lp          = block_width_p / assoc_p;
-  localparam num_data_per_bank_lp   = bank_width_lp / data_width_p;
-  localparam data_mem_mask_width_lp = (bank_width_lp >> 3);
-  localparam byte_offset_width_lp   = `BSG_SAFE_CLOG2(bank_width_lp >> 3);
+  localparam lg_assoc_lp            = `BSG_SAFE_CLOG2(assoc_p);
+  // Bank parameters: logical banks (one per way) may consist of multiple physical subbanks
+  localparam logical_bank_width_lp  = block_width_p / assoc_p;
+  localparam physical_bank_width_lp = bank_width_p;
+  localparam subbanks_per_bank_lp   = logical_bank_width_lp / physical_bank_width_lp;
+  // Derived parameters use logical bank width
+  localparam num_data_per_bank_lp   = logical_bank_width_lp / data_width_p;
+  localparam data_mem_mask_width_lp = (logical_bank_width_lp >> 3);
+  localparam byte_offset_width_lp   = `BSG_SAFE_CLOG2(logical_bank_width_lp >> 3);
   localparam bindex_width_lp        = `BSG_SAFE_CLOG2(assoc_p);
   localparam sindex_width_lp        = `BSG_SAFE_CLOG2(sets_p);
   localparam block_offset_width_lp  = (assoc_p > 1)
     ? (bindex_width_lp+byte_offset_width_lp)
     : byte_offset_width_lp;
   localparam block_size_in_fill_lp  = block_width_p / fill_width_p;
-  localparam fill_size_in_bank_lp   = fill_width_p / bank_width_lp;
+  localparam fill_size_in_bank_lp   = fill_width_p / logical_bank_width_lp;
 
   // State machine declaration
   enum logic [1:0] {e_ready, e_miss, e_recover} state_n, state_r;
@@ -224,21 +231,33 @@ module bp_fe_icache
   logic [assoc_p-1:0]                             data_mem_v_li;
   logic [assoc_p-1:0]                             data_mem_w_li;
   logic [assoc_p-1:0][data_mem_addr_width_lp-1:0] data_mem_addr_li;
-  logic [assoc_p-1:0][bank_width_lp-1:0]          data_mem_data_li;
-  logic [assoc_p-1:0][bank_width_lp-1:0]          data_mem_data_lo;
+  logic [assoc_p-1:0][logical_bank_width_lp-1:0]  data_mem_data_li;
+  logic [assoc_p-1:0][logical_bank_width_lp-1:0]  data_mem_data_lo;
 
   for (genvar bank = 0; bank < assoc_p; bank++)
     begin: data_mems
-      bsg_mem_1rw_sync #(.width_p(bank_width_lp), .els_p(sets_p*assoc_p), .latch_last_read_p(1))
-       data_mem
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-         ,.data_i(data_mem_data_li[bank])
-         ,.addr_i(data_mem_addr_li[bank])
-         ,.v_i(data_mem_v_li[bank])
-         ,.w_i(data_mem_w_li[bank])
-         ,.data_o(data_mem_data_lo[bank])
-         );
+      // Each logical bank consists of subbanks_per_bank_lp physical SRAMs
+      logic [subbanks_per_bank_lp-1:0][physical_bank_width_lp-1:0] subbank_data_li;
+      logic [subbanks_per_bank_lp-1:0][physical_bank_width_lp-1:0] subbank_data_lo;
+
+      // Split/combine logical bank data into/from physical subbanks
+      assign subbank_data_li = data_mem_data_li[bank];
+      assign data_mem_data_lo[bank] = subbank_data_lo;
+
+      for (genvar sub = 0; sub < subbanks_per_bank_lp; sub++)
+        begin: subbanks
+          bsg_mem_1rw_sync
+           #(.width_p(physical_bank_width_lp), .els_p(sets_p*assoc_p), .latch_last_read_p(1))
+           data_mem
+            (.clk_i(clk_i)
+             ,.reset_i(reset_i)
+             ,.data_i(subbank_data_li[sub])
+             ,.addr_i(data_mem_addr_li[bank])
+             ,.v_i(data_mem_v_li[bank])
+             ,.w_i(data_mem_w_li[bank])
+             ,.data_o(subbank_data_lo[sub])
+             );
+        end
     end
 
   /////////////////////////////////////////////////////////////////////////////
@@ -311,7 +330,7 @@ module bp_fe_icache
   logic                                  spec_tv_r, uncached_tv_r;
   bp_fe_icache_decode_s                  decode_tv_r;
   logic                                  snoop_tv_r;
-  logic [assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
+  logic [assoc_p-1:0][logical_bank_width_lp-1:0] ld_data_tv_r;
 
   assign tv_we = v_tv_r ? yumi_i : is_ready;
   bsg_dff_reset_en
@@ -400,9 +419,9 @@ module bp_fe_icache
      ,.o(ld_data_way_select_tv)
      );
 
-  logic [bank_width_lp-1:0] ld_data_way_picked;
+  logic [logical_bank_width_lp-1:0] ld_data_way_picked;
   bsg_mux_one_hot
-   #(.width_p(bank_width_lp), .els_p(assoc_p))
+   #(.width_p(logical_bank_width_lp), .els_p(assoc_p))
    data_set_select_mux
     (.data_i(ld_data_tv_r)
      ,.sel_one_hot_i(ld_data_way_select_tv)
@@ -619,7 +638,7 @@ module bp_fe_icache
      ,.o(data_mem_bypass_select)
      );
 
-  wire [`BSG_SAFE_CLOG2(fill_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
+  wire [`BSG_SAFE_CLOG2(fill_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*logical_bank_width_lp;
   // Expand the bank write mask to bank width
   logic [fill_width_p-1:0] data_mem_pkt_fill_data_li;
   bsg_rotate_left
@@ -629,7 +648,7 @@ module bp_fe_icache
      ,.rot_i(write_data_rot_li)
      ,.o(data_mem_pkt_fill_data_li)
      );
-  wire [assoc_p-1:0][bank_width_lp-1:0] data_mem_pkt_data_li = {block_size_in_fill_lp{data_mem_pkt_fill_data_li}};
+  wire [assoc_p-1:0][logical_bank_width_lp-1:0] data_mem_pkt_data_li = {block_size_in_fill_lp{data_mem_pkt_fill_data_li}};
 
   logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
   bsg_expand_bitmask
@@ -678,7 +697,7 @@ module bp_fe_icache
      ,.data_o(data_mem_pkt_way_r)
      );
 
-  wire [`BSG_SAFE_CLOG2(block_width_p)-1:0] read_data_rot_li = data_mem_pkt_way_r*bank_width_lp;
+  wire [`BSG_SAFE_CLOG2(block_width_p)-1:0] read_data_rot_li = data_mem_pkt_way_r*logical_bank_width_lp;
   bsg_rotate_right
    #(.width_p(block_width_p))
    read_data_rotate
