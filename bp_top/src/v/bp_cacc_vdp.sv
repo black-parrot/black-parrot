@@ -352,7 +352,7 @@ module bp_cacc_vdp
                                            : (input_a_ptr+len_a_cnt*8)
                                          : res_ptr;
   assign acache_pkt_li = '{opcode: load ? e_dcache_op_ld : e_dcache_op_sd
-                           ,offset: vaddr[0+:page_offset_width_gp]
+                           ,vaddr: vaddr
                            ,default: '0
                            };
 
