@@ -59,7 +59,7 @@ module bp_fe_top
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
-  `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
+  `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p, thread_id_width_p);
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
@@ -96,6 +96,7 @@ module bp_fe_top
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd_li;
 
   logic pc_gen_init_done_lo;
+  logic state_reset_v_lo;
   logic [vaddr_width_p-1:0] next_pc_lo;
   logic ovr_lo;
 
@@ -126,6 +127,7 @@ module bp_fe_top
      ,.reset_i(reset_i)
 
      ,.init_done_o(pc_gen_init_done_lo)
+     ,.state_reset_v_i(state_reset_v_lo)
 
      ,.attaboy_v_i(attaboy_v_li)
      ,.attaboy_force_i(attaboy_force_li)
@@ -433,6 +435,8 @@ module bp_fe_top
 
      ,.shadow_translation_en_o(shadow_translation_en_n)
      ,.shadow_translation_en_w_o(shadow_translation_en_w)
+
+     ,.state_reset_v_o(state_reset_v_lo)
      );
 
 endmodule

@@ -48,7 +48,7 @@ module bp_fe_realigner
    , input                                                  assembled_yumi_i
    );
 
-  `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
+  `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p, thread_id_width_p);
 
   logic partial_w_v, partial_v_n, partial_v_r;
   logic [vaddr_width_p-1:0] partial_pc_n, partial_pc_r;

@@ -23,6 +23,8 @@ module bp_fe_pc_gen
 
    , output logic                                    init_done_o
 
+   , input                                           state_reset_v_i
+
    , input                                           attaboy_v_i
    , input                                           attaboy_force_i
    , input [vaddr_width_p-1:0]                       attaboy_pc_i
@@ -70,7 +72,7 @@ module bp_fe_pc_gen
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
+  `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p, thread_id_width_p);
   `bp_cast_i(bp_fe_branch_metadata_fwd_s, redirect_br_metadata_fwd);
   `bp_cast_i(bp_fe_branch_metadata_fwd_s, attaboy_br_metadata_fwd);
 
@@ -79,11 +81,16 @@ module bp_fe_pc_gen
   /////////////////////////////////////////////////////////////////////////////////////
   logic [ghist_width_p-1:0] ghistory_n, ghistory_r;
 
+  // Per-thread BTB/BHT select register
+  logic [thread_id_width_p-1:0] thread_id_r;
+  always_ff @(posedge clk_i) begin
+    if (reset_i)
+      thread_id_r <= '0;
+    else if (state_reset_v_i)
+      thread_id_r <= redirect_br_metadata_fwd_cast_i.thread_id;
+  end
+
   logic [vaddr_width_p-1:0] next_pc;
-  logic [bht_row_width_p-1:0] bht_row_lo;
-  logic bht_pred_lo;
-  logic [vaddr_width_p-1:0] btb_br_tgt_lo;
-  logic btb_br_tgt_v_lo, btb_br_tgt_jmp_lo;
 
   ///////////////////////////
   // Next PC calculation
@@ -94,10 +101,6 @@ module bp_fe_pc_gen
   logic [vaddr_width_p-1:0] pc_plus;
   logic [vaddr_width_p-1:0] ras_tgt_lo, taken_tgt_lo, ntaken_tgt_lo, linear_tgt_lo;
   logic [ras_idx_width_p-1:0] ras_next, ras_tos;
-  logic [btb_tag_width_p-1:0] btb_tag;
-  logic [btb_idx_width_p-1:0] btb_idx;
-  logic [bht_idx_width_p-1:0] bht_idx;
-  logic [bht_offset_width_p-1:0] bht_offset;
 
   // Note: "if" chain duplicated in in bp_fe_nonsynth_pc_gen_tracer.sv
   always_comb begin
@@ -125,21 +128,21 @@ module bp_fe_pc_gen
         next_pc    = btb_taken ? btb_br_tgt_lo : pc_plus;
 
         next_metadata = '0;
-        next_metadata.src_btb = btb_br_tgt_v_lo;
-        next_metadata.bht_row = bht_row_lo;
-        next_metadata.ghist   = ghistory_r;
-        next_metadata.btb_tag = btb_tag;
-        next_metadata.btb_idx = btb_idx;
-        next_metadata.bht_idx = bht_idx;
+        next_metadata.thread_id  = thread_id_r;
+        next_metadata.src_btb    = btb_br_tgt_v_lo;
+        next_metadata.bht_row    = bht_row_lo;
+        next_metadata.ghist      = ghistory_r;
+        next_metadata.btb_tag    = btb_tag;
+        next_metadata.btb_idx    = btb_idx;
+        next_metadata.bht_idx    = bht_idx;
         next_metadata.bht_offset = bht_offset;
       end
   end
   assign next_pc_o = next_pc;
 
   ///////////////////////////
-  // BTB
+  // BTB (N per-thread instances)
   ///////////////////////////
-  logic btb_w_yumi_lo, btb_init_done_lo;
   wire btb_r_v_li = icache_yumi_i;
   wire btb_w_v_li = (redirect_br_v_i & redirect_br_taken_i & ~redirect_br_metadata_fwd_cast_i.src_btb & ~redirect_br_metadata_fwd_cast_i.src_ras)
     | (redirect_br_v_i & redirect_br_taken_i & redirect_br_metadata_fwd_cast_i.src_btb & ~redirect_br_metadata_fwd_cast_i.src_ras)
@@ -154,35 +157,56 @@ module bp_fe_pc_gen
   wire [btb_idx_width_p-1:0]  btb_idx_li = redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.btb_idx : attaboy_br_metadata_fwd_cast_i.btb_idx;
   wire [vaddr_width_p-1:0]    btb_tgt_li = redirect_br_v_i ? redirect_pc_i : attaboy_pc_i;
   wire [vaddr_width_p-1:0] btb_r_addr_li = next_pc;
+  wire [thread_id_width_p-1:0] btb_w_thread_id_li =
+    redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.thread_id
+                    : attaboy_br_metadata_fwd_cast_i.thread_id;
 
-  bp_fe_btb
-   #(.bp_params_p(bp_params_p))
-   btb
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  logic [num_threads_p-1:0][vaddr_width_p-1:0]   btb_br_tgt_arr_lo;
+  logic [num_threads_p-1:0]                       btb_br_tgt_v_arr_lo;
+  logic [num_threads_p-1:0]                       btb_br_tgt_jmp_arr_lo;
+  logic [num_threads_p-1:0][btb_tag_width_p-1:0]  btb_r_tag_arr_lo;
+  logic [num_threads_p-1:0][btb_idx_width_p-1:0]  btb_r_idx_arr_lo;
+  logic [num_threads_p-1:0]                       btb_w_yumi_arr_lo;
+  logic [num_threads_p-1:0]                       btb_init_done_arr_lo;
 
-     ,.r_addr_i(btb_r_addr_li)
-     ,.r_v_i(btb_r_v_li)
-     ,.r_idx_o(btb_idx)
-     ,.r_tag_o(btb_tag)
-     ,.r_tgt_o(btb_br_tgt_lo)
-     ,.r_tgt_v_o(btb_br_tgt_v_lo)
-     ,.r_tgt_jmp_o(btb_br_tgt_jmp_lo)
+  for (genvar i = 0; i < num_threads_p; i++) begin : btb_gen
+    bp_fe_btb
+     #(.bp_params_p(bp_params_p))
+     btb_inst
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
 
-     ,.w_v_i(btb_w_v_li)
-     ,.w_force_i(btb_w_force_li)
-     ,.w_clr_i(btb_clr_li)
-     ,.w_jmp_i(btb_jmp_li)
-     ,.w_tag_i(btb_tag_li)
-     ,.w_idx_i(btb_idx_li)
-     ,.w_tgt_i(btb_tgt_li)
-     ,.w_yumi_o(btb_w_yumi_lo)
+       ,.r_addr_i(btb_r_addr_li)
+       ,.r_v_i(btb_r_v_li & (thread_id_r == thread_id_width_p'(i)))
+       ,.r_idx_o(btb_r_idx_arr_lo[i])
+       ,.r_tag_o(btb_r_tag_arr_lo[i])
+       ,.r_tgt_o(btb_br_tgt_arr_lo[i])
+       ,.r_tgt_v_o(btb_br_tgt_v_arr_lo[i])
+       ,.r_tgt_jmp_o(btb_br_tgt_jmp_arr_lo[i])
 
-     ,.init_done_o(btb_init_done_lo)
-     );
+       ,.w_v_i(btb_w_v_li & (btb_w_thread_id_li == thread_id_width_p'(i)))
+       ,.w_force_i(btb_w_force_li)
+       ,.w_clr_i(btb_clr_li)
+       ,.w_jmp_i(btb_jmp_li)
+       ,.w_tag_i(btb_tag_li)
+       ,.w_idx_i(btb_idx_li)
+       ,.w_tgt_i(btb_tgt_li)
+       ,.w_yumi_o(btb_w_yumi_arr_lo[i])
+
+       ,.init_done_o(btb_init_done_arr_lo[i])
+       );
+  end
+
+  wire [vaddr_width_p-1:0]   btb_br_tgt_lo      = btb_br_tgt_arr_lo[thread_id_r];
+  wire                        btb_br_tgt_v_lo     = btb_br_tgt_v_arr_lo[thread_id_r];
+  wire                        btb_br_tgt_jmp_lo   = btb_br_tgt_jmp_arr_lo[thread_id_r];
+  wire [btb_tag_width_p-1:0]  btb_tag             = btb_r_tag_arr_lo[thread_id_r];
+  wire [btb_idx_width_p-1:0]  btb_idx             = btb_r_idx_arr_lo[thread_id_r];
+  wire                        btb_w_yumi_lo       = btb_w_yumi_arr_lo[btb_w_thread_id_li];
+  wire                        btb_init_done_lo    = &btb_init_done_arr_lo;
 
   ///////////////////////////
-  // BHT
+  // BHT (N per-thread instances)
   ///////////////////////////
   wire bht_r_v_li = icache_yumi_i;
   wire [vaddr_width_p-1:0] bht_r_addr_li = next_pc;
@@ -198,32 +222,51 @@ module bp_fe_pc_gen
     redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.ghist : attaboy_br_metadata_fwd_cast_i.ghist;
   wire [bht_row_width_p-1:0] bht_row_li =
     redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.bht_row : attaboy_br_metadata_fwd_cast_i.bht_row;
-  logic bht_w_yumi_lo, bht_init_done_lo;
-  bp_fe_bht
-   #(.bp_params_p(bp_params_p))
-   bht
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  wire [thread_id_width_p-1:0] bht_w_thread_id_li =
+    redirect_br_v_i ? redirect_br_metadata_fwd_cast_i.thread_id
+                    : attaboy_br_metadata_fwd_cast_i.thread_id;
 
-     ,.r_v_i(bht_r_v_li)
-     ,.r_addr_i(bht_r_addr_li)
-     ,.r_ghist_i(bht_r_ghist_li)
-     ,.r_val_o(bht_row_lo)
-     ,.r_pred_o(bht_pred_lo)
-     ,.r_idx_o(bht_idx)
-     ,.r_offset_o(bht_offset)
+  logic [num_threads_p-1:0][bht_row_width_p-1:0]     bht_row_arr_lo;
+  logic [num_threads_p-1:0]                           bht_pred_arr_lo;
+  logic [num_threads_p-1:0][bht_idx_width_p-1:0]      bht_idx_arr_lo;
+  logic [num_threads_p-1:0][bht_offset_width_p-1:0]   bht_offset_arr_lo;
+  logic [num_threads_p-1:0]                           bht_w_yumi_arr_lo;
+  logic [num_threads_p-1:0]                           bht_init_done_arr_lo;
 
-     ,.w_v_i(bht_w_v_li)
-     ,.w_force_i(bht_w_force_li)
-     ,.w_idx_i(bht_w_idx_li)
-     ,.w_offset_i(bht_w_offset_li)
-     ,.w_ghist_i(bht_w_ghist_li)
-     ,.w_correct_i(attaboy_yumi_o)
-     ,.w_val_i(bht_row_li)
-     ,.w_yumi_o(bht_w_yumi_lo)
+  for (genvar i = 0; i < num_threads_p; i++) begin : bht_gen
+    bp_fe_bht
+     #(.bp_params_p(bp_params_p))
+     bht_inst
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
 
-     ,.init_done_o(bht_init_done_lo)
-     );
+       ,.r_v_i(bht_r_v_li & (thread_id_r == thread_id_width_p'(i)))
+       ,.r_addr_i(bht_r_addr_li)
+       ,.r_ghist_i(bht_r_ghist_li)
+       ,.r_val_o(bht_row_arr_lo[i])
+       ,.r_pred_o(bht_pred_arr_lo[i])
+       ,.r_idx_o(bht_idx_arr_lo[i])
+       ,.r_offset_o(bht_offset_arr_lo[i])
+
+       ,.w_v_i(bht_w_v_li & (bht_w_thread_id_li == thread_id_width_p'(i)))
+       ,.w_force_i(bht_w_force_li)
+       ,.w_idx_i(bht_w_idx_li)
+       ,.w_offset_i(bht_w_offset_li)
+       ,.w_ghist_i(bht_w_ghist_li)
+       ,.w_correct_i(attaboy_yumi_o)
+       ,.w_val_i(bht_row_li)
+       ,.w_yumi_o(bht_w_yumi_arr_lo[i])
+
+       ,.init_done_o(bht_init_done_arr_lo[i])
+       );
+  end
+
+  wire [bht_row_width_p-1:0]    bht_row_lo      = bht_row_arr_lo[thread_id_r];
+  wire                           bht_pred_lo     = bht_pred_arr_lo[thread_id_r];
+  wire [bht_idx_width_p-1:0]    bht_idx         = bht_idx_arr_lo[thread_id_r];
+  wire [bht_offset_width_p-1:0] bht_offset      = bht_offset_arr_lo[thread_id_r];
+  wire                           bht_w_yumi_lo   = bht_w_yumi_arr_lo[bht_w_thread_id_li];
+  wire                           bht_init_done_lo = &bht_init_done_arr_lo;
 
   /////////////////////////////////////////////////////////////////////////////////////
   // IF1

@@ -183,6 +183,7 @@ module bp_be_top
      ,.reset_i(reset_i)
      ,.cfg_bus_i(cfg_bus_i)
      ,.context_npc_i(context_npc_lo)
+     ,.current_thread_id_i(current_thread_id_lo)
 
      ,.issue_pkt_i(issue_pkt)
      ,.expected_npc_o(expected_npc_lo)
