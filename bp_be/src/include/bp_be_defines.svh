@@ -215,6 +215,7 @@
       logic                                           translation_en;                              \
       logic                                           mstatus_sum;                                 \
       logic                                           mstatus_mxr;                                 \
+      logic [asid_width_mp-1:0]                       asid;                                        \
     }  bp_be_trans_info_s;                                                                         \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -249,7 +250,7 @@
   , localparam pte_leaf_width_lp = `bp_be_pte_leaf_width(paddr_width_mp) \
   , localparam commit_pkt_width_lp = `bp_be_commit_pkt_width(vaddr_width_mp, paddr_width_mp, fetch_ptr_mp, issue_ptr_mp) \
   , localparam wb_pkt_width_lp = `bp_be_wb_pkt_width(vaddr_width_mp) \
-  , localparam trans_info_width_lp = `bp_be_trans_info_width(paddr_width_mp) \
+  , localparam trans_info_width_lp = `bp_be_trans_info_width(paddr_width_mp, asid_width_mp) \
   , localparam decode_info_width_lp = `bp_be_decode_info_width \
   , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(vaddr_width_mp)
 
@@ -280,8 +281,8 @@
   `define bp_be_wb_pkt_width(vaddr_width_mp) \
     (3+reg_addr_width_gp+dpath_width_gp+$bits(rv64_fflags_s)+thread_id_width_p)
 
-  `define bp_be_trans_info_width(paddr_width_mp) \
-    (rv64_priv_width_gp+paddr_width_mp-page_offset_width_gp+3)
+  `define bp_be_trans_info_width(paddr_width_mp, asid_width_mp) \
+    (rv64_priv_width_gp+paddr_width_mp-page_offset_width_gp+3+asid_width_mp)
 
   `define bp_be_decode_info_width \
     (rv64_priv_width_gp+11)

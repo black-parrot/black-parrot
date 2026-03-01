@@ -30,6 +30,7 @@ module bp_tlb
    , input                             v_i
    , input                             w_i
    , input [vtag_width_p-1:0]          vtag_i
+   , input [asid_width_p-1:0]          asid_i
    , input [entry_width_lp-1:0]        entry_i
 
    , output logic                      v_o
@@ -62,13 +63,14 @@ module bp_tlb
      );
 
   logic [vtag_width_p-1:0] vtag_r;
+  logic [asid_width_p-1:0] asid_r;
   bsg_dff_en
-   #(.width_p(vtag_width_p))
+   #(.width_p(vtag_width_p + asid_width_p))
    vtag_reg
     (.clk_i(clk_i)
      ,.en_i(v_i)
-     ,.data_i(vtag_i)
-     ,.data_o(vtag_r)
+     ,.data_i({asid_i, vtag_i})
+     ,.data_o({asid_r, vtag_r})
      );
   wire [r_entry_low_bits_lp-1:0] passthrough_low_bits = vtag_r[0+:r_entry_low_bits_lp];
   wire [r_entry_med_bits_lp-1:0] passthrough_med_bits = vtag_r[r_entry_low_bits_lp+:r_entry_med_bits_lp];
@@ -83,18 +85,18 @@ module bp_tlb
   logic [els_4k_p-1:0] repl_way_4k_lo;
   wire [els_4k_p-1:0] tag_4k_w_v_li = ({els_4k_p{fill_kilopage}} & repl_way_4k_lo) | {els_4k_p{flush_4k_li}};
   bsg_cam_1r1w_tag_array
-   #(.width_p(vtag_width_p), .els_p(els_4k_p))
+   #(.width_p(vtag_width_p + asid_width_p), .els_p(els_4k_p))
    tag_array_4k
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.w_v_i(tag_4k_w_v_li)
      ,.w_set_not_clear_i(~flush_4k_li)
-     ,.w_tag_i(vtag_i)
+     ,.w_tag_i({asid_i, vtag_i})
      ,.w_empty_o(tag_empty_4k_lo)
 
      ,.r_v_i(1'b1)
-     ,.r_tag_i(vtag_r)
+     ,.r_tag_i({asid_r, vtag_r})
      ,.r_match_o(tag_r_match_4k_lo)
      );
   wire any_match_4k_lo = |tag_r_match_4k_lo;
@@ -118,18 +120,18 @@ module bp_tlb
   logic [els_2m_lp-1:0] repl_way_2m_lo;
   wire [els_2m_lp-1:0] tag_2m_w_v_li = ({els_2m_lp{fill_megapage}} & repl_way_2m_lo) | {els_2m_lp{flush_2m_li}};
   bsg_cam_1r1w_tag_array
-   #(.width_p(vtag_width_p), .els_p(els_2m_p))
+   #(.width_p(vtag_width_p + asid_width_p), .els_p(els_2m_p))
    tag_array_2m
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.w_v_i(tag_2m_w_v_li)
      ,.w_set_not_clear_i(~flush_2m_li)
-     ,.w_tag_i(vtag_i)
+     ,.w_tag_i({asid_i, vtag_i})
      ,.w_empty_o(tag_empty_2m_lo)
 
      ,.r_v_i(1'b1)
-     ,.r_tag_i(vtag_r)
+     ,.r_tag_i({asid_r, vtag_r})
      ,.r_match_o(tag_r_match_2m_lo)
      );
   wire any_match_2m_lo = |tag_r_match_2m_lo;
@@ -153,18 +155,18 @@ module bp_tlb
   logic [els_1g_lp-1:0] repl_way_1g_lo;
   wire [els_1g_lp-1:0] tag_1g_w_v_li = ({els_1g_lp{fill_gigapage}} & repl_way_1g_lo) | {els_1g_lp{flush_1g_li}};
   bsg_cam_1r1w_tag_array
-   #(.width_p(vtag_width_p), .els_p(els_1g_p))
+   #(.width_p(vtag_width_p + asid_width_p), .els_p(els_1g_p))
    tag_array_1g
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
      ,.w_v_i(tag_1g_w_v_li)
      ,.w_set_not_clear_i(~flush_1g_li)
-     ,.w_tag_i(vtag_i)
+     ,.w_tag_i({asid_i, vtag_i})
      ,.w_empty_o(tag_empty_1g_lo)
 
      ,.r_v_i(1'b1)
-     ,.r_tag_i(vtag_r)
+     ,.r_tag_i({asid_r, vtag_r})
      ,.r_match_o(tag_r_match_1g_lo)
      );
   wire any_match_1g_lo = |tag_r_match_1g_lo;

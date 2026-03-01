@@ -62,6 +62,7 @@
       bp_fe_misprediction_reason_e             misprediction_reason;                               \
       logic                                    translation_en;                                     \
       logic [1:0]                              priv;                                               \
+      logic [asid_width_mp-1:0]               asid;                                               \
                                                                                                    \
       logic [`bp_fe_cmd_pc_redirect_operands_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                                padding;                                            \
@@ -204,9 +205,9 @@
   `define bp_fe_exception_width_no_padding(vaddr_width_mp) \
     (vaddr_width_mp + instr_width_gp + $bits(bp_fe_exception_code_e) + 1)
 
-  `define bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp) \
+  `define bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp, asid_width_mp) \
     ($bits(bp_fe_command_queue_subopcodes_e)                                            \
-     + branch_metadata_fwd_width_mp + $bits(bp_fe_misprediction_reason_e) + 3)
+     + branch_metadata_fwd_width_mp + $bits(bp_fe_misprediction_reason_e) + 3 + asid_width_mp)
 
   `define bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp) \
     (        1+branch_metadata_fwd_width_mp)
@@ -221,7 +222,7 @@
     (asid_width_mp + 2)
 
   `define bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-    (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)     \
+    (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp, asid_width_mp)     \
                 ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)        \
                           ,`BSG_MAX(`bp_fe_cmd_itlb_fill_width_no_padding(vaddr_width_mp, paddr_width_mp) \
                                     ,`BSG_MAX(`bp_fe_cmd_itlb_fence_width_no_padding(asid_width_mp)\
@@ -234,7 +235,7 @@
 
   `define bp_fe_cmd_pc_redirect_operands_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
     (`bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-     - `bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)                         \
+     - `bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp, asid_width_mp)          \
      )
 
   `define bp_fe_cmd_attaboy_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \

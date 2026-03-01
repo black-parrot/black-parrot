@@ -85,6 +85,9 @@ module bp_fe_controller
    , output logic                                     shadow_translation_en_w_o
    , output logic                                     shadow_translation_en_o
 
+   , output logic                                     shadow_asid_w_o
+   , output logic [asid_width_p-1:0]                  shadow_asid_o
+
    , output logic                                     state_reset_v_o
    );
 
@@ -155,6 +158,9 @@ module bp_fe_controller
 
   assign shadow_translation_en_w_o = state_reset_v | trap_v | interrupt_v | eret_v | translation_v;
   assign shadow_translation_en_o = fe_cmd_cast_i.operands.pc_redirect_operands.translation_en;
+
+  assign shadow_asid_w_o = state_reset_v | trap_v | interrupt_v | eret_v | translation_v;
+  assign shadow_asid_o   = fe_cmd_cast_i.operands.pc_redirect_operands.asid;
 
   assign itlb_w_vtag_o = fe_cmd_cast_i.npc[vaddr_width_p-1-:vtag_width_p];
   assign itlb_w_entry_o = fe_cmd_cast_i.operands.itlb_fill_response.pte_leaf;

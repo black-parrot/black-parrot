@@ -55,6 +55,9 @@ module bp_be_director
 
    // Current thread ID for embedding in ctxtsw fe_cmd
    , input [thread_id_width_p-1:0]       current_thread_id_i
+
+   // Current thread ASID for embedding in ctxtsw fe_cmd (for FE shadow_asid)
+   , input [asid_width_p-1:0]            context_asid_i
    );
 
   // Declare parameterized structures
@@ -209,6 +212,7 @@ module bp_be_director
           fe_cmd_li.npc                               = context_npc_i;
           fe_cmd_pc_redirect_operands.subopcode       = e_subop_translation_switch;
           fe_cmd_pc_redirect_operands.translation_en  = commit_pkt_cast_i.translation_en_n;
+          fe_cmd_pc_redirect_operands.asid            = context_asid_i;
           // Embed new thread_id in MSB of branch_metadata_fwd so pc_gen can update thread_id_r
           fe_cmd_pc_redirect_operands.branch_metadata_fwd =
             {current_thread_id_i, {(branch_metadata_fwd_width_p - thread_id_width_p){1'b0}}};

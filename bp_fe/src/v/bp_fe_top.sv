@@ -86,6 +86,18 @@ module bp_fe_top
      ,.data_o(shadow_translation_en_r)
      );
 
+  logic [asid_width_p-1:0] shadow_asid_n, shadow_asid_r;
+  logic shadow_asid_w;
+  bsg_dff_reset_en_bypass
+   #(.width_p(asid_width_p))
+   shadow_asid_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(shadow_asid_w)
+     ,.data_i(shadow_asid_n)
+     ,.data_o(shadow_asid_r)
+     );
+
   logic attaboy_v_li, attaboy_force_li, attaboy_yumi_lo, attaboy_taken_li, attaboy_ntaken_li;
   logic [vaddr_width_p-1:0] attaboy_pc_li;
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_fwd_li;
@@ -205,6 +217,7 @@ module bp_fe_top
      ,.flush_i(tv_flush_lo)
      ,.fence_i(itlb_fence_v_li)
      ,.priv_mode_i(shadow_priv_r)
+     ,.asid_i(shadow_asid_r)
      ,.trans_en_i(shadow_translation_en_r)
      // Supervisor use of user memory is always disabled for immu
      ,.sum_i('0)
@@ -435,6 +448,9 @@ module bp_fe_top
 
      ,.shadow_translation_en_o(shadow_translation_en_n)
      ,.shadow_translation_en_w_o(shadow_translation_en_w)
+
+     ,.shadow_asid_o(shadow_asid_n)
+     ,.shadow_asid_w_o(shadow_asid_w)
 
      ,.state_reset_v_o(state_reset_v_lo)
      );

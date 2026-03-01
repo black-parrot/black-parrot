@@ -24,6 +24,7 @@ module bp_mmu
    , input                                            flush_i
    , input                                            fence_i
    , input [1:0]                                      priv_mode_i
+   , input [asid_width_p-1:0]                         asid_i
    , input                                            trans_en_i
    , input                                            sum_i
    , input                                            mxr_i
@@ -117,6 +118,7 @@ module bp_mmu
      ,.v_i(tlb_v_li)
      ,.w_i(tlb_w_v_li)
      ,.vtag_i(tlb_vtag_li)
+     ,.asid_i(asid_i)
      ,.entry_i(w_entry_i)
 
      ,.v_o(tlb_r_v_lo)

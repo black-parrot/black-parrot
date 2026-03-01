@@ -184,6 +184,7 @@ module bp_be_top
      ,.cfg_bus_i(cfg_bus_i)
      ,.context_npc_i(context_npc_lo)
      ,.current_thread_id_i(current_thread_id_lo)
+     ,.context_asid_i(context_asid_lo)
 
      ,.issue_pkt_i(issue_pkt)
      ,.expected_npc_o(expected_npc_lo)
