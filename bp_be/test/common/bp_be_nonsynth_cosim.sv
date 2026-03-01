@@ -44,17 +44,19 @@ module bp_be_nonsynth_cosim
   localparam lg_queue_size_lp = 10;
 
   // snoop
-  wire [core_id_width_p-1:0] mhartid = calculator.pipe_sys.csr.mhartid_lo;
+  // After Phase 2A, csr is bp_be_csr_wrapper_mt; thread 0's instance is at gen_csr[0].csr_inst.
+  // Cosim only does single-thread verification so probing thread 0 is correct.
+  wire [core_id_width_p-1:0] mhartid = calculator.pipe_sys.csr.gen_csr[0].csr_inst.mhartid_lo;
   wire bp_be_commit_pkt_s commit_pkt = calculator.commit_pkt_o;
   wire bp_be_trans_info_s trans_info = calculator.trans_info_o;
   wire bp_be_decode_info_s decode_info = calculator.decode_info_o;
   wire bp_be_wb_pkt_s comp_pkt = calculator.comp_stage_r[2];
   wire bp_be_wb_pkt_s iwb_pkt = calculator.iwb_pkt_o;
   wire bp_be_wb_pkt_s fwb_pkt = calculator.fwb_pkt_o;
-  wire [dword_width_gp-1:0] priv = calculator.pipe_sys.csr.priv_mode_r;
-  wire [dword_width_gp-1:0] mstatus = calculator.pipe_sys.csr.mstatus_li;
-  wire [dword_width_gp-1:0] mcause = calculator.pipe_sys.csr.mcause_li;
-  wire [dword_width_gp-1:0] scause = calculator.pipe_sys.csr.scause_li;
+  wire [dword_width_gp-1:0] priv = calculator.pipe_sys.csr.gen_csr[0].csr_inst.priv_mode_r;
+  wire [dword_width_gp-1:0] mstatus = calculator.pipe_sys.csr.gen_csr[0].csr_inst.mstatus_li;
+  wire [dword_width_gp-1:0] mcause = calculator.pipe_sys.csr.gen_csr[0].csr_inst.mcause_li;
+  wire [dword_width_gp-1:0] scause = calculator.pipe_sys.csr.gen_csr[0].csr_inst.scause_li;
   wire [dword_width_gp-1:0] cause = (priv == `PRIV_MODE_M) ? mcause : scause;
   wire [dword_width_gp-1:0] status = mstatus;
 

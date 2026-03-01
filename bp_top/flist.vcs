@@ -205,6 +205,7 @@ $BP_DIR/bp_be/src/v/bp_be_context_storage.sv
 # Calculator
 $BP_DIR/bp_be/src/v/bp_be_calculator/bp_be_calculator_top.sv
 $BP_DIR/bp_be/src/v/bp_be_calculator/bp_be_csr.sv
+$BP_DIR/bp_be/src/v/bp_be_csr_wrapper_mt.sv
 $BP_DIR/bp_be/src/v/bp_be_calculator/bp_be_fp_box.sv
 $BP_DIR/bp_be/src/v/bp_be_calculator/bp_be_fp_rebox.sv
 $BP_DIR/bp_be/src/v/bp_be_calculator/bp_be_fp_unbox.sv
