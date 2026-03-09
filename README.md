@@ -1,5 +1,5 @@
 ![BlackParrot Logo](docs/bp_logo.png)
-# BlackParrot: A Linux-Capable Accelerator Host RISC-V Multicore [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Gitlab CI](https://gitlab.com/bespoke-silicon-group/black-parrot/black-parrot/badges/master/pipeline.svg)](https://gitlab.com/bespoke-silicon-group/black-parrot/black-parrot/pipelines) [![Contributers](https://img.shields.io/github/contributors/black-parrot/black-parrot.svg?style=flat)]()
+# BlackParrot: A Linux-Capable Accelerator Host RISC-V Multicore [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Gitlab CI](https://gitlab.com/bespoke-silicon-group/black-parrot/badges/master/pipeline.svg)](https://gitlab.com/bespoke-silicon-group/black-parrot/pipelines) [![Contributers](https://img.shields.io/github/contributors/black-parrot/black-parrot.svg?style=flat)]()
 
 BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, RV64GC+ multicore used by the world.
 Although originally developed by the University of Washington and Boston University, BlackParrot strives to be community-driven and infrastructure agnostic, a core which is Pareto optimal in terms of power, performance, area and complexity.
