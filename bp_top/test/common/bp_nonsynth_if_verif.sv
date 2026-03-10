@@ -90,9 +90,9 @@ module bp_nonsynth_if_verif
 
   // Core or Features
   if (~muldiv_support_p[e_imul])
-    $error("IMUL is not currently support in emulation");
+    $error("IMUL is not currently supported in emulation");
   if (~muldiv_support_p[e_idiv])
-    $error("IDIV is not currently support in emulation");
+    $error("IDIV is not currently supported in emulation");
   if (~|fpu_support_p)
     $error("FPU cannot currently be disabled");
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
@@ -117,7 +117,7 @@ module bp_nonsynth_if_verif
     $error("Error: L1 I$ requires fill width greater than bank width (block width / assoc)");
   if (dcache_fill_width_p < (dcache_block_width_p / dcache_assoc_p))
     $error("Error: L1 D$ requires fill width greater than bank width (block width / assoc)");
-  if (icache_mshr_p != 1 && dcache_mshr_p !=1 || acache_mshr_p != 1)
+  if (icache_mshr_p != 1 || dcache_mshr_p != 1 || acache_mshr_p != 1)
     $error("MSHR must be 1 for all caches");
 
   // Address Widths
