@@ -54,16 +54,17 @@ RUN chown ${USER_NAME} ${WORKDIR}
 # Set the default workdir
 WORKDIR $WORKDIR
 
-# Set the current user
-USER $USER_NAME
-
-# Create a python virtualenv
+# Create python virtualenv as root
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 COPY requirements.txt /opt/venv/
 RUN /opt/venv/bin/pip install -r /opt/venv/requirements.txt
 
+# Give ownership to the user
+RUN chown -R $USER_NAME:$GROUP_NAME /opt/venv
+
+# Set the current user
+USER $USER_NAME
 # Kick off with bash
 ENTRYPOINT [ "/usr/bin/entrypoint.sh" ]
 CMD ["/bin/bash"]
-
