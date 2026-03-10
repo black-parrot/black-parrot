@@ -53,7 +53,22 @@ module bp_nonsynth_if_verif
       $display("########### CCE-MEM IF ##############");
       $display("bp_bedrock_mem_fwd_header_s           bits: struct %d width %d", $bits(bp_bedrock_mem_fwd_header_s), mem_fwd_header_width_lp);
       $display("bp_bedrock_mem_rev_header_s           bits: struct %d width %d", $bits(bp_bedrock_mem_rev_header_s), mem_rev_header_width_lp);
-
+      $display("########### DERIVED STATISTICS ##############");
+      // Total Cache Sizes in Kilobytes (KB)
+      // (Sets * Associativity * Block Width in bits) / 8192 (to get KB)
+      $display("L1 I-Cache Total Size:   %0d KB", (icache_sets_p * icache_assoc_p * icache_block_width_p) / 8192);
+      $display("L1 D-Cache Total Size:   %0d KB", (dcache_sets_p * dcache_assoc_p * dcache_block_width_p) / 8192);
+      
+      // Flits per message header (Header Size / NoC Flit Width)
+      // We add (flit_width - 1) before dividing to round up to the nearest whole flit
+      $display("LCE REQ Header Flits:    %0d", ($bits(bp_bedrock_lce_req_header_s) + coh_noc_flit_width_p - 1) / coh_noc_flit_width_p);
+      $display("LCE CMD Header Flits:    %0d", ($bits(bp_bedrock_lce_cmd_header_s) + coh_noc_flit_width_p - 1) / coh_noc_flit_width_p);
+      $display("LCE FILL Header Flits:   %0d", ($bits(bp_bedrock_lce_fill_header_s) + coh_noc_flit_width_p - 1) / coh_noc_flit_width_p);
+      $display("LCE RESP Header Flits:   %0d", ($bits(bp_bedrock_lce_resp_header_s) + coh_noc_flit_width_p - 1) / coh_noc_flit_width_p);
+      
+      $display("MEM FWD Header Flits:    %0d", ($bits(bp_bedrock_mem_fwd_header_s) + mem_noc_flit_width_p - 1) / mem_noc_flit_width_p);
+      $display("MEM REV Header Flits:    %0d", ($bits(bp_bedrock_mem_rev_header_s) + mem_noc_flit_width_p - 1) / mem_noc_flit_width_p);
+      $display("#############################################");
       if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32})) begin
         $error("Error: unsupported number of CCE's");
       end
