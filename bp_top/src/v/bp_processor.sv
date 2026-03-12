@@ -63,6 +63,13 @@ module bp_processor
    , output logic [num_cce_p-1:0][l2_dmas_p-1:0]                        dma_data_v_o
    , input [num_cce_p-1:0][l2_dmas_p-1:0]                               dma_data_ready_and_i
    );
+  // Prevent memory NoC aliasing (Fixes Issue #391)
+  // Ensure CID width is large enough to address all local DMAs
+  initial begin
+    if ((1 << mem_noc_cid_width_p) < l2_dmas_p) begin
+      $error("BP Fatal: mem_noc_cid_width_p (%0d) is too small for l2_dmas_p (%0d).", mem_noc_cid_width_p, l2_dmas_p);
+    end
+  end
 
   if (cce_type_p != e_cce_uce)
     begin : m

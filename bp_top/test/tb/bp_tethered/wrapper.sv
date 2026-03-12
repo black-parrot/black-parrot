@@ -84,10 +84,6 @@ module wrapper
      ,.*
      );
 
-  initial begin
-    if (mem_noc_cord_width_p > mem_noc_cid_width_p) begin
-      $error("Error: mem_noc_cid_width_p (%0d) must be >= mem_noc_cord_width_p (%0d) to prevent NoC aliasing!", mem_noc_cid_width_p, mem_noc_cord_width_p);
-    end
-  end
+  
 endmodule
 
