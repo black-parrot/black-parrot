@@ -180,6 +180,19 @@ module testbench
 
      ,.done_o(loader_done_lo)
      );
+  // ==========================================
+  // Issue #792: DRAM Size Assertion
+  // Ensures DRAM is >= 4GB and leaves room in the physical address map for MMIO.
+  // ==========================================
+  initial begin
+    if (daddr_width_p < 32) begin
+      $error("BP Fatal: DRAM address width (%0d) is too small. Must be >= 32 (4GB).", daddr_width_p);
+    end
+    if (daddr_width_p >= paddr_width_p) begin
+      $error("BP Fatal: DRAM address width (%0d) must be < paddr_width_p (%0d) to leave room for MMIO.", 
+             daddr_width_p, paddr_width_p);
+    end
+  end
 
   bp_nonsynth_dram
    #(.num_dma_p(num_cce_p*l2_dmas_p)
