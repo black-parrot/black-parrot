@@ -29,6 +29,9 @@ module bp_nonsynth_if_verif
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
 
+  if ((1 << mem_noc_cid_width_p) < l2_dmas_p)
+    $error("BP Fatal: mem_noc_cid_width_p (%0d) is too small for l2_dmas_p (%0d).", mem_noc_cid_width_p, l2_dmas_p);
+
   initial
     begin
       $display("########### BP Parameters ##############");
