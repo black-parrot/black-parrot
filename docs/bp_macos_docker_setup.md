@@ -390,5 +390,5 @@ docker rm bp-verilator
 
 To remove the image:
 ```bash
-docker rmi blackparrot-ubuntu24
+docker rmi black-parrot
 ```
