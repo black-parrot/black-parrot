@@ -180,7 +180,7 @@ module testbench
 
      ,.done_o(loader_done_lo)
      );
-  
+
   bp_nonsynth_dram
    #(.num_dma_p(num_cce_p*l2_dmas_p)
      ,.dma_addr_width_p(daddr_width_p)
