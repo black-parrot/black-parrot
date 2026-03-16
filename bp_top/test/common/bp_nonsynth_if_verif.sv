@@ -182,6 +182,8 @@ module bp_nonsynth_if_verif
 
   if (num_cce_p/mc_x_dim_p*l2_dmas_p > 16)
     $error("Round robin arbiter currently only supports 16 entries");
+  if ((1 << mem_noc_cid_width_p) < l2_dmas_p)
+    $error("BP Fatal: mem_noc_cid_width_p (%0d) cannot concentrate l2_dmas_p (%0d).", mem_noc_cid_width_p, l2_dmas_p);
 
 endmodule
 
