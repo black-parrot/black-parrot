@@ -28,13 +28,6 @@ module bp_nonsynth_if_verif
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_fe_branch_metadata_fwd_s(ras_idx_width_p, btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_els_p);
-  
-  if (caddr_width_p < 32)
-    $error("BP Fatal: caddr_width_p (%0d) must be >= 32 to support standard RISC-V DRAM base (0x8000_0000).", caddr_width_p);
-  if (daddr_width_p <= caddr_width_p)
-    $error("BP Fatal: daddr_width_p (%0d) must be > caddr_width_p (%0d).", daddr_width_p, caddr_width_p);
-  if (daddr_width_p >= paddr_width_p)
-    $error("BP Fatal: DRAM address width (%0d) must be < paddr_width_p (%0d) to leave room for MMIO.", daddr_width_p, paddr_width_p);
 
   initial
     begin
@@ -134,14 +127,16 @@ module bp_nonsynth_if_verif
     $warning("Warning: paddr > 56 has not been tested");
   if (paddr_width_p < 33)
     $warning("Warning: paddr < 33 has not been tested");
-  if (daddr_width_p < 32)
+  if (daddr_width_p < 33)
     $warning("Warning: daddr < 32 has not been tested");
-  if (caddr_width_p < 31)
+  // caddr_width_p must be >= 32 to support standard RISC-V DRAM base (0x8000_0000) and leave room for low MMIO
+  if (caddr_width_p < 32)
     $warning("Warning: caddr < 31 has not been tested");
   if (caddr_width_p >= daddr_width_p)
-    $warning("Warning: caddr must <= daddr");
+    $error("Error: caddr must <= daddr");
+  // daddr_width_p must be less than paddr_width_p to leave room for high MMIO
   if (daddr_width_p >= paddr_width_p)
-    $error("Error: caddr cannot exceed paddr_width_p-1");
+    $error("Error: daddr cannot exceed paddr");
 
   // L2 Cache
   if (l2_fill_width_p < l2_data_width_p)
