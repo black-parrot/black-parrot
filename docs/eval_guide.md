@@ -74,6 +74,20 @@ PARAMS:
 - DEV_TRACE_P: CLINT and CFG tracer
 - DRAM_TRACE_P: DRAM tracer
 
+## bp_top Simulation Examples
+**Hello World**
+```bash
+make -C bp_top/verilator build.verilator sim.verilator
+```
+- Validates: Basic boot flow, UART output, and core-to-memory communication.
+- Expected Output: "Hello World!" appearing in the simulation log.
+
+**RISC-V ISA Simple Test**
+```bash
+make -C bp_top/verilator build.verilator sim.verilator PROG=rv64ui-p-simple CFG=e_bp_unicore_cfg
+```
+- Validates: Correctness of basic integer instructions (RV64I).
+
 ## Running Memory End regression
 
 The Memory End Regression can be run in vcs or verilator (verilator commands shown):
@@ -90,6 +104,33 @@ Supported PARAMS:
     - 0 = random loads and stores
     - 1 = single set hammer test
     - 2 = test from trace file input based on PROG
+
+## bp_me Simulation Examples
+
+**Clean Build with Waveform Support**
+```bash
+make -C bp_me/verilator clean build.verilator sim.verilator TRACE=1 -j2
+```
+- Validates: `TRACE=1`  enables `--trace-fst` for high-performance waveform generation.
+
+**Random Coherence Stress**
+```bash
+make -C bp_me/verilator build.verilator sim.verilator TRACE=1 PROG=random_test NUM_INSTR_P=5000
+```
+- Validates: LCE/CCE protocol transitions and randomized memory access patterns.
+
+**Set Hammer Test**
+```bash
+make -C bp_me/verilator build.verilator sim.verilator TRACE=1 PROG=set_test ME_TEST_P=1
+```
+- Validates: Cache eviction behavior and replacement logic under single-set stress.
+
+**Trace-Based Deterministic Test**
+```bash
+make -C bp_me/verilator build.verilator sim.verilator TRACE=1 PROG=mixed ME_TEST_P=2
+```
+- Validates: Trace replay correctness and reproducibility of specific scenarios.
+
 
 ## Synthesis smoke tests
 
