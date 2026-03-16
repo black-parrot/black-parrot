@@ -127,14 +127,16 @@ module bp_nonsynth_if_verif
     $warning("Warning: paddr > 56 has not been tested");
   if (paddr_width_p < 33)
     $warning("Warning: paddr < 33 has not been tested");
-  if (daddr_width_p < 32)
+  if (daddr_width_p < 33)
     $warning("Warning: daddr < 32 has not been tested");
-  if (caddr_width_p < 31)
+  // caddr_width_p must be >= 32 to support standard RISC-V DRAM base (0x8000_0000) and leave room for low MMIO
+  if (caddr_width_p < 32)
     $warning("Warning: caddr < 31 has not been tested");
   if (caddr_width_p >= daddr_width_p)
-    $warning("Warning: caddr must <= daddr");
+    $error("Error: caddr must <= daddr");
+  // daddr_width_p must be less than paddr_width_p to leave room for high MMIO
   if (daddr_width_p >= paddr_width_p)
-    $error("Error: caddr cannot exceed paddr_width_p-1");
+    $error("Error: daddr cannot exceed paddr");
 
   // L2 Cache
   if (l2_fill_width_p < l2_data_width_p)
