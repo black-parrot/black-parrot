@@ -163,13 +163,13 @@
     {                                                                                              \
       logic                           npc_w_v;                                                     \
       logic                           queue_v;                                                     \
-      logic                           instret;                                                     \
+      logic                           instret;     /* High if instruction successfully retired */  \
       logic [fetch_ptr_mp-1:0]        count;                                                       \
       logic [issue_ptr_mp-1:0]        size;                                                        \
-      logic [vaddr_width_mp-1:0]      pc;                                                          \
-      logic [vaddr_width_mp-1:0]      npc;                                                         \
-      logic [vaddr_width_mp-1:0]      vaddr;                                                       \
-      rv64_instr_s                    instr;                                                       \
+      logic [vaddr_width_mp-1:0]      pc;          /* PC of the committing instruction */          \
+      logic [vaddr_width_mp-1:0]      npc;         /* Next Program Counter */                      \
+      logic [vaddr_width_mp-1:0]      vaddr;       /* Virtual address or faulting addr */          \
+      rv64_instr_s                    instr;       /* 32-bit RISC-V instruction payload */         \
       bp_be_pte_leaf_s                pte_leaf;                                                    \
       logic [rv64_priv_width_gp-1:0]  priv_n;                                                      \
       logic                           translation_en_n;                                            \

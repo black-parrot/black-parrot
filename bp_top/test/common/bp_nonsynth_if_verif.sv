@@ -53,7 +53,22 @@ module bp_nonsynth_if_verif
       $display("########### CCE-MEM IF ##############");
       $display("bp_bedrock_mem_fwd_header_s           bits: struct %d width %d", $bits(bp_bedrock_mem_fwd_header_s), mem_fwd_header_width_lp);
       $display("bp_bedrock_mem_rev_header_s           bits: struct %d width %d", $bits(bp_bedrock_mem_rev_header_s), mem_rev_header_width_lp);
-
+      $display("########### DERIVED STATISTICS ##############");
+      // Total Cache Sizes in Kilobytes (KB)
+      // (Sets * Associativity * Block Width in bits) / 8192 (to get KB)
+      $display("L1 I-Cache Total Size:   %0d KB", (icache_sets_p * icache_assoc_p * icache_block_width_p) / 8192);
+      $display("L1 D-Cache Total Size:   %0d KB", (dcache_sets_p * dcache_assoc_p * dcache_block_width_p) / 8192);
+      
+      // Flits per message header (Header Size / NoC Flit Width)
+      // We add (flit_width - 1) before dividing to round up to the nearest whole flit
+      $display("LCE REQ Header Flits:    %0d", ($bits(bp_bedrock_lce_req_header_s) + coh_noc_flit_width_p - 1) / coh_noc_flit_width_p);
+      $display("LCE CMD Header Flits:    %0d", ($bits(bp_bedrock_lce_cmd_header_s) + coh_noc_flit_width_p - 1) / coh_noc_flit_width_p);
+      $display("LCE FILL Header Flits:   %0d", ($bits(bp_bedrock_lce_fill_header_s) + coh_noc_flit_width_p - 1) / coh_noc_flit_width_p);
+      $display("LCE RESP Header Flits:   %0d", ($bits(bp_bedrock_lce_resp_header_s) + coh_noc_flit_width_p - 1) / coh_noc_flit_width_p);
+      
+      $display("MEM FWD Header Flits:    %0d", ($bits(bp_bedrock_mem_fwd_header_s) + mem_noc_flit_width_p - 1) / mem_noc_flit_width_p);
+      $display("MEM REV Header Flits:    %0d", ($bits(bp_bedrock_mem_rev_header_s) + mem_noc_flit_width_p - 1) / mem_noc_flit_width_p);
+      $display("#############################################");
       if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32})) begin
         $error("Error: unsupported number of CCE's");
       end
@@ -75,9 +90,9 @@ module bp_nonsynth_if_verif
 
   // Core or Features
   if (~muldiv_support_p[e_imul])
-    $error("IMUL is not currently support in emulation");
+    $error("IMUL is not currently supported in emulation");
   if (~muldiv_support_p[e_idiv])
-    $error("IDIV is not currently support in emulation");
+    $error("IDIV is not currently supported in emulation");
   if (~|fpu_support_p)
     $error("FPU cannot currently be disabled");
   if (branch_metadata_fwd_width_p != $bits(bp_fe_branch_metadata_fwd_s))
@@ -102,7 +117,7 @@ module bp_nonsynth_if_verif
     $error("Error: L1 I$ requires fill width greater than bank width (block width / assoc)");
   if (dcache_fill_width_p < (dcache_block_width_p / dcache_assoc_p))
     $error("Error: L1 D$ requires fill width greater than bank width (block width / assoc)");
-  if (icache_mshr_p != 1 && dcache_mshr_p !=1 || acache_mshr_p != 1)
+  if (icache_mshr_p != 1 || dcache_mshr_p != 1 || acache_mshr_p != 1)
     $error("MSHR must be 1 for all caches");
 
   // Address Widths
@@ -112,14 +127,16 @@ module bp_nonsynth_if_verif
     $warning("Warning: paddr > 56 has not been tested");
   if (paddr_width_p < 33)
     $warning("Warning: paddr < 33 has not been tested");
-  if (daddr_width_p < 32)
+  if (daddr_width_p < 33)
     $warning("Warning: daddr < 32 has not been tested");
-  if (caddr_width_p < 31)
+  // caddr_width_p must be >= 32 to support standard RISC-V DRAM base (0x8000_0000) and leave room for low MMIO
+  if (caddr_width_p < 32)
     $warning("Warning: caddr < 31 has not been tested");
   if (caddr_width_p >= daddr_width_p)
-    $warning("Warning: caddr must <= daddr");
+    $error("Error: caddr must <= daddr");
+  // daddr_width_p must be less than paddr_width_p to leave room for high MMIO
   if (daddr_width_p >= paddr_width_p)
-    $error("Error: caddr cannot exceed paddr_width_p-1");
+    $error("Error: daddr cannot exceed paddr");
 
   // L2 Cache
   if (l2_fill_width_p < l2_data_width_p)
@@ -165,6 +182,8 @@ module bp_nonsynth_if_verif
 
   if (num_cce_p/mc_x_dim_p*l2_dmas_p > 16)
     $error("Round robin arbiter currently only supports 16 entries");
+  if ((1 << mem_noc_cid_width_p) < l2_dmas_p)
+    $error("BP Fatal: mem_noc_cid_width_p (%0d) cannot concentrate l2_dmas_p (%0d).", mem_noc_cid_width_p, l2_dmas_p);
 
 endmodule
 
