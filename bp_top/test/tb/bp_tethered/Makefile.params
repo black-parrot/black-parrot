@@ -9,7 +9,7 @@ STALL_CYCLES_P        ?= 100000
 HALT_INSTR_P          ?= 1000
 HEARTBEAT_INSTR_P     ?= 10000
 
-ICACHE_TRACE_P        ?= 0
+USER_PLUSARGS         ?= 0
 DCACHE_TRACE_P        ?= 0
 VM_TRACE_P            ?= 0
 UCE_TRACE_P           ?= 0
@@ -38,7 +38,6 @@ HDL_PARAMS += \
 	-pvalue+cosim_trace_p=$(COSIM_TRACE_P) \
 	-pvalue+cosim_check_p=$(COSIM_CHECK_P) \
 	\
-	-pvalue+icache_trace_p=$(ICACHE_TRACE_P) \
 	-pvalue+dcache_trace_p=$(DCACHE_TRACE_P) \
 	-pvalue+vm_trace_p=$(VM_TRACE_P) \
 	-pvalue+uce_trace_p=$(UCE_TRACE_P) \
