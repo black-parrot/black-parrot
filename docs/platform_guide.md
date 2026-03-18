@@ -130,7 +130,7 @@ graph TD
     %% =========================
     %% LAYER 3: GLOBAL SPACE
     %% =========================
-    subgraph GLOBAL["Global Address Space"]
+    subgraph GLOBAL["Global Address Space (simplified view)"]
 
         GB --> L2["Shared L2 Coherence"]
 
