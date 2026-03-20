@@ -20,7 +20,7 @@ BlackParrot is ideal as the basis for a lightweight accelerator host, a standalo
 
 BlackParrot v1.0 was released in March 2020 and has been up and quad core silicon has been running in the lab since April 2020.
 BlackParrot v2.0 was released in January 2024 and has been up and running in the lab since then.
-BlackParrot v2.1 was released in 
+BlackParrot v2.1 was released in November 2025
 
 Currently supported:
 - RV64IMAFDCSU\_Zfencei\_Zicsr\_Zcbo\_Zba\_Zbb\_Zbs ISA extensions
@@ -54,7 +54,7 @@ Users can of course set up their own environments based on these examples.
 ## Getting started
 
 Generally, this repo is included as part of a complete simulation environment.
-However, the libraries can be build directly here as well.
+However, the libraries can be built directly here as well.
 For most users, the following makefile targets will be the most useful:
 
     make libs_lite;     # minimal set of simulation libraries
@@ -78,7 +78,7 @@ test the core RTL: [Evaluation Guide](docs/eval_guide.md)
 
 ## How to contribute
 
-Although information in collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
+Although information is collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
 
 We welcome external contributions!
 Please join our mailing list at [Google Groups](https://groups.google.com/forum/#!forum/black-parrot), ask questions or just tell us how you're using BlackParrot!
