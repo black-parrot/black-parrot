@@ -13,9 +13,11 @@
       initial                                                              \
         begin                                                              \
           wait (!reset_mp);                                                \
-          $display("BSG-INFO: %m initializing...");                        \
-          file = $fopen($sformatf("%s_%d.trace", str_mp, n_mp), "w");      \
-          inited = 1;                                                      \
+          if (en_mp) begin                                                 \
+            $display("BSG-INFO: %m initializing...");                      \
+            file = $fopen($sformatf("%s_%d.trace", str_mp, n_mp), "w");    \
+            inited = 1;                                                    \
+          end                                                              \
         end                                                                \
                                                                            \
       always_comb                                                          \
