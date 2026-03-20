@@ -10,6 +10,7 @@ module bp_fe_nonsynth_icache_tracer
    `declare_bp_proc_params(bp_params_p)
 
    , parameter string trace_str_p = ""
+   , parameter string plusargs_str_p = ""
 
    // Default to icache parameters, but can override if needed
    , parameter features_p    = icache_features_p
@@ -88,7 +89,14 @@ module bp_fe_nonsynth_icache_tracer
     end
 
   // record
-  `declare_bp_tracer_control(clk_i, reset_i, en_i, trace_str_p, mhartid);
+  logic plusargs_en_li;
+  initial begin
+    plusargs_en_li = 1'b0;
+    $value$plusargs({plusargs_str_p,"=%d"}, plusargs_en_li);
+  end
+
+  wire tracer_en_li = en_i | plusargs_en_li;
+  `declare_bp_tracer_control(clk_i, reset_i, tracer_en_li, trace_str_p, mhartid);
   always_ff @(posedge clk_i)
     if (do_init)
       begin

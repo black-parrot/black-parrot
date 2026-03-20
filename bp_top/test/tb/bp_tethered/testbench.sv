@@ -51,7 +51,6 @@ module testbench
    , parameter max_cycle_p                 = 0
 
    // trace parameters
-   , parameter icache_trace_p              = 0
    , parameter dcache_trace_p              = 0
    , parameter vm_trace_p                  = 0
    , parameter uce_trace_p                 = 0
@@ -248,14 +247,13 @@ module testbench
        ,.heartbeat_instr_pi(testbench.heartbeat_instr_p)
        );
 
-  wire icache_tracer_en_li = testbench.icache_trace_p;
   bind bp_fe_icache
     bp_fe_nonsynth_icache_tracer
-     #(.bp_params_p(bp_params_p), .trace_str_p("icache"))
+     #(.bp_params_p(bp_params_p), .trace_str_p("icache"), .plusargs_str_p("icache_trace_p"))
      icache_tracer
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
-       ,.en_i(testbench.icache_tracer_en_li)
+       ,.en_i(1'b0)
        ,.cfg_bus_i(bp_fe_top.cfg_bus_i)
        );
 
