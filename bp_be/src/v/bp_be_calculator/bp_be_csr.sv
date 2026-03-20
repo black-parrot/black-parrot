@@ -703,7 +703,7 @@ module bp_be_csr
   assign decode_info_cast_o.ebreaku    = dcsr_lo.ebreaku;
   assign decode_info_cast_o.fpu_en     = (mstatus_lo.fs != 2'b00);
   assign decode_info_cast_o.cycle_en   = is_m_mode | (is_s_mode & mcounteren_lo.cy) | (is_u_mode & scounteren_lo.cy);
-  assign decode_info_cast_o.instret_en = is_m_mode | (is_m_mode & mcounteren_lo.ir) | (is_u_mode & mcounteren_lo.ir);
+  assign decode_info_cast_o.instret_en = is_m_mode | (is_s_mode & mcounteren_lo.ir) | (is_u_mode & mcounteren_lo.ir);
 
   assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
 
