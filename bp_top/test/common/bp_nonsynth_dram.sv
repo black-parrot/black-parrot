@@ -113,7 +113,7 @@ module bp_nonsynth_dram
 
   always_ff @(posedge clk_i)
     for (int i = 0; i < dma_data_width_p/8; i++)
-        if (mem_write) mem[mem_waddr+i] = mem_wdata[i];
+        if (mem_write) mem[mem_waddr+i] <= mem_wdata[i];
 
   always_ff @(posedge clk_i)
     for (int i = 0; i < dma_data_width_p/8; i++)
