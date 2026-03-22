@@ -97,6 +97,14 @@ VV_WAVE_BIN ?= $(GTKWAVE)
 VV_WAVE_OPTS ?= -f
 endif
 
+# Warn user if neither surfer nor gtkwave is installed
+ifeq ($(ENABLE_SURFER),0)
+GTKWAVE_EXISTS := $(shell command -v gtkwave 2> /dev/null)
+ifeq ($(GTKWAVE_EXISTS),)
+$(warning GTKWAVE not found. Please install it using: sudo apt install gtkwave)
+endif
+endif
+
 wave.verilator: ## opens a waveform
 wave.verilator: $(SIM_PATH)/$(DUMP_FILE)
 	@$(VV_WAVE_BIN) $(VV_WAVE_OPTS) $<
