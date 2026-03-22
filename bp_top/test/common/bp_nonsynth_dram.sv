@@ -107,7 +107,7 @@ module bp_nonsynth_dram
   initial
     if ($value$plusargs({mem_str_p,"=%s"}, mem_file))
       begin
-        $display("BSG-INFO: Initalizing mem with mem_str_p=%s", mem_file);
+        $display("BSG-INFO: Initializing mem with mem_str_p=%s", mem_file);
         $readmemh(mem_file, mem);
       end
 

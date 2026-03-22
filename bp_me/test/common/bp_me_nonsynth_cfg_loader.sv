@@ -77,7 +77,7 @@ module bp_me_nonsynth_cfg_loader
   initial
     if ($value$plusargs({ucode_str_p,"=%s"}, ucode_file))
       begin
-        $display("BSG-INFO: Initalizing boot_rom with ucode_str_p=%s", ucode_file);
+        $display("BSG-INFO: Initializing boot_rom with ucode_str_p=%s", ucode_file);
         $readmemb(ucode_file, cce_inst_boot_rom);
       end
 
