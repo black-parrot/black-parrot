@@ -37,7 +37,7 @@ module bp_fe_nonsynth_icache_tracer
 
   // snoop
   wire bp_cfg_bus_s cfg_bus = cfg_bus_i;
-  logic bp_fe_icache_pkt_s icache_pkt = bp_fe_icache.icache_pkt_i;
+  wire bp_fe_icache_pkt_s icache_pkt = bp_fe_icache.icache_pkt_i;
   wire bp_fe_icache_req_s cache_req = bp_fe_icache.cache_req_o;
   wire bp_fe_icache_req_metadata_s cache_req_metadata = bp_fe_icache.cache_req_metadata_o;
   wire bp_fe_icache_data_mem_pkt_s data_mem_pkt = bp_fe_icache.data_mem_pkt_i;
