@@ -20,6 +20,10 @@ progs=(
 	fp_precision
 	hello_world
 	jalr_illegal
+	instr_fault_mtval
+	instr_fault_stval
+	instret_smode
+	instret_smode_deny
 	l2_cache_ops
 	loop
 	mapping
