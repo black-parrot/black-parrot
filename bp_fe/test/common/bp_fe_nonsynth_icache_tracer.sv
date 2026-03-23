@@ -89,14 +89,8 @@ module bp_fe_nonsynth_icache_tracer
     end
 
   // record
-  logic plusargs_en_li;
-  initial begin
-    plusargs_en_li = 1'b0;
-    $value$plusargs({plusargs_str_p,"=%d"}, plusargs_en_li);
-  end
-
-  wire tracer_en_li = en_i | plusargs_en_li;
-  `declare_bp_tracer_control(clk_i, reset_i, tracer_en_li, trace_str_p, mhartid);
+  // record
+  `declare_bp_tracer_control_plusargs(clk_i, reset_i, en_i, trace_str_p, mhartid, plusargs_str_p);
   always_ff @(posedge clk_i)
     if (do_init)
       begin

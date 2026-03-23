@@ -32,7 +32,16 @@
       final                                                                \
         begin                                                              \
           $display("BSG-INFO: %m terminating...");                         \
-        end
+        end                                                                \
+                                                                           \                   
+      `define declare_bp_tracer_control_plusargs(clk_mp, reset_mp, en_mp, str_mp, n_mp, plusarg_str_mp) \
+      	logic plusargs_en_li;                                                                           \
+  	initial begin                                                                                   \
+    	  plusargs_en_li = 1'b0;                                                                        \
+    	  $value$plusargs({plusarg_str_mp,"=%d"}, plusargs_en_li);                                      \
+  	end                                                                                             \
+  	wire tracer_en_li = en_mp & plusargs_en_li;                                                     \
+  	`declare_bp_tracer_control(clk_mp, reset_mp, tracer_en_li, str_mp, n_mp)                        \ 
 
 `endif
 

@@ -246,14 +246,15 @@ module testbench
        ,.halt_instr_pi(testbench.halt_instr_p)
        ,.heartbeat_instr_pi(testbench.heartbeat_instr_p)
        );
-
+  
+  wire icache_tracer_en_li = 1'b1;
   bind bp_fe_icache
     bp_fe_nonsynth_icache_tracer
      #(.bp_params_p(bp_params_p), .trace_str_p("icache"), .plusargs_str_p("icache_trace_p"))
      icache_tracer
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
-       ,.en_i(1'b0)
+       ,.en_i(testbench.icache_tracer_en_li)
        ,.cfg_bus_i(bp_fe_top.cfg_bus_i)
        );
 

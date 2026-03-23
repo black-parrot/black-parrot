@@ -9,7 +9,6 @@ STALL_CYCLES_P        ?= 100000
 HALT_INSTR_P          ?= 1000
 HEARTBEAT_INSTR_P     ?= 10000
 
-USER_PLUSARGS         ?= 
 DCACHE_TRACE_P        ?= 0
 VM_TRACE_P            ?= 0
 UCE_TRACE_P           ?= 0
@@ -18,7 +17,6 @@ CCE_TRACE_P           ?= 0
 DEV_TRACE_P           ?= 0
 DRAM_TRACE_P          ?= 0
 
-PLUSARGS += $(USER_PLUSARGS)
 COSIM_TRACE_P         ?= $(COMMITLOG)
 COSIM_CHECK_P         ?= $(if $(or $(filter 1,$(DROMAJO_COSIM)),$(filter 1,$(SPIKE_COSIM))),1,0)
 
