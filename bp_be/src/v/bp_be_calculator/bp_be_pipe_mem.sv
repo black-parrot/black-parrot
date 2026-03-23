@@ -310,8 +310,9 @@ module bp_be_pipe_mem
      ,.data_o(early_v_o)
      );
 
-  assign cache_miss_v_o   = early_v_r & ~(dcache_v |  dcache_late) &  cache_req_yumi_i;
-  assign cache_replay_v_o = early_v_r & ~(dcache_v & ~dcache_late) & ~cache_req_yumi_i;
+  wire fault_v = |{load_misaligned_v_o, store_misaligned_v_o, load_access_fault_v_o, store_access_fault_v_o, load_page_fault_v_o, store_page_fault_v_o};
+  assign cache_miss_v_o   = early_v_r & ~(dcache_v |  dcache_late) &  cache_req_yumi_i & ~fault_v;
+  assign cache_replay_v_o = early_v_r & ~(dcache_v & ~dcache_late) & ~cache_req_yumi_i & ~fault_v;
 
   bp_be_int_reg_s dcache_idata;
   bp_be_int_box
