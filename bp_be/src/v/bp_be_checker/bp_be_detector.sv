@@ -165,10 +165,13 @@ module bp_be_detector
       irs2_sb_raw_haz_v = (decode.irs2_r_v & irs_match_lo[1]);
       ird_sb_waw_haz_v  = (decode.irf_w_v  & ird_match_lo);
 
-      frs1_sb_raw_haz_v = (decode.frs1_r_v & frs_match_lo[0]);
-      frs2_sb_raw_haz_v = (decode.frs2_r_v & frs_match_lo[1]);
-      frs3_sb_raw_haz_v = (decode.frs3_r_v & frs_match_lo[2]);
-      frd_sb_waw_haz_v  = (decode.frf_w_v  & frd_match_lo);
+      if (fpu_support_p != 0)
+        begin
+          frs1_sb_raw_haz_v = (decode.frs1_r_v & frs_match_lo[0]);
+          frs2_sb_raw_haz_v = (decode.frs2_r_v & frs_match_lo[1]);
+          frs3_sb_raw_haz_v = (decode.frs3_r_v & frs_match_lo[2]);
+          frd_sb_waw_haz_v  = (decode.frf_w_v  & frd_match_lo);
+        end
 
       iscore_haz_v       = (decode.irf_w_v & dep_status_r[0].long_iwb_v & rd_match_vector[0])
                            | (decode.irf_w_v & dep_status_r[1].long_iwb_v & rd_match_vector[1])
@@ -188,14 +191,17 @@ module bp_be_detector
                            & ~irs2_ispec_v
                            & ~irs2_store_v;
 
-      frs1_data_haz_v[0] = (decode.frs1_r_v & rs1_match_vector[0])
-                           & (dep_status_r[0].fint_fwb_v | dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v | dep_status_r[0].long_fwb_v);
+      if (fpu_support_p != 0)
+        begin
+          frs1_data_haz_v[0] = (decode.frs1_r_v & rs1_match_vector[0])
+                               & (dep_status_r[0].fint_fwb_v | dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v | dep_status_r[0].long_fwb_v);
 
-      frs2_data_haz_v[0] = (decode.frs2_r_v & rs2_match_vector[0])
-                           & (dep_status_r[0].fint_fwb_v | dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v | dep_status_r[0].long_fwb_v);
+          frs2_data_haz_v[0] = (decode.frs2_r_v & rs2_match_vector[0])
+                               & (dep_status_r[0].fint_fwb_v | dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v | dep_status_r[0].long_fwb_v);
 
-      frs3_data_haz_v[0] = (decode.frs3_r_v & rs3_match_vector[0])
-                           & (dep_status_r[0].fint_fwb_v | dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v | dep_status_r[0].long_fwb_v);
+          frs3_data_haz_v[0] = (decode.frs3_r_v & rs3_match_vector[0])
+                               & (dep_status_r[0].fint_fwb_v | dep_status_r[0].aux_fwb_v | dep_status_r[0].emem_fwb_v | dep_status_r[0].fmem_fwb_v | dep_status_r[0].fma_fwb_v | dep_status_r[0].long_fwb_v);
+        end
 
       // Detect integer and float data hazards for EX2
       irs1_data_haz_v[1] = (decode.irs1_r_v & rs1_match_vector[1])
@@ -204,14 +210,17 @@ module bp_be_detector
       irs2_data_haz_v[1] = (decode.irs2_r_v & rs2_match_vector[1])
                            & (dep_status_r[1].fmem_iwb_v | dep_status_r[1].mul_iwb_v | dep_status_r[1].long_iwb_v);
 
-      frs1_data_haz_v[1] = (decode.frs1_r_v & rs1_match_vector[1])
-                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v | dep_status_r[1].long_fwb_v);
+      if (fpu_support_p != 0)
+        begin
+          frs1_data_haz_v[1] = (decode.frs1_r_v & rs1_match_vector[1])
+                               & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v | dep_status_r[1].long_fwb_v);
 
-      frs2_data_haz_v[1] = (decode.frs2_r_v & rs2_match_vector[1])
-                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v | dep_status_r[1].long_fwb_v);
+          frs2_data_haz_v[1] = (decode.frs2_r_v & rs2_match_vector[1])
+                               & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v | dep_status_r[1].long_fwb_v);
 
-      frs3_data_haz_v[1] = (decode.frs3_r_v & rs3_match_vector[1])
-                           & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v | dep_status_r[1].long_fwb_v);
+          frs3_data_haz_v[1] = (decode.frs3_r_v & rs3_match_vector[1])
+                               & (dep_status_r[1].fmem_fwb_v | dep_status_r[1].fma_fwb_v | dep_status_r[1].long_fwb_v);
+        end
 
       irs1_data_haz_v[2] = (decode.irs1_r_v & rs1_match_vector[2])
                            & (dep_status_r[2].long_iwb_v);
@@ -219,14 +228,17 @@ module bp_be_detector
       irs2_data_haz_v[2] = (decode.irs2_r_v & rs2_match_vector[2])
                            & (dep_status_r[2].long_iwb_v);
 
-      frs1_data_haz_v[2] = (decode.frs1_r_v & rs1_match_vector[2])
-                           & (dep_status_r[2].fma_fwb_v | dep_status_r[2].long_fwb_v);
+      if (fpu_support_p != 0)
+        begin
+          frs1_data_haz_v[2] = (decode.frs1_r_v & rs1_match_vector[2])
+                               & (dep_status_r[2].fma_fwb_v | dep_status_r[2].long_fwb_v);
 
-      frs2_data_haz_v[2] = (decode.frs2_r_v & rs2_match_vector[2])
-                           & (dep_status_r[2].fma_fwb_v | dep_status_r[2].long_fwb_v);
+          frs2_data_haz_v[2] = (decode.frs2_r_v & rs2_match_vector[2])
+                               & (dep_status_r[2].fma_fwb_v | dep_status_r[2].long_fwb_v);
 
-      frs3_data_haz_v[2] = (decode.frs3_r_v & rs3_match_vector[2])
-                           & (dep_status_r[2].fma_fwb_v | dep_status_r[2].long_fwb_v);
+          frs3_data_haz_v[2] = (decode.frs3_r_v & rs3_match_vector[2])
+                               & (dep_status_r[2].fma_fwb_v | dep_status_r[2].long_fwb_v);
+        end
 
       fence_haz_v        = decode.fence_v & ~mem_ordered_i;
       cmd_haz_v          = cmd_full_i;
