@@ -15,7 +15,7 @@
    * e_op_itlb_fill_response happens when itlb populates translation and restarts fetching
    * e_op_itlb_fence issues a fence operation to itlb.
    */
-  typedef enum logic [2:0]
+  typedef enum logic [3:0]
   {
     e_op_state_reset           = 0
     ,e_op_pc_redirection       = 1
@@ -25,6 +25,7 @@
     ,e_op_itlb_fill_response   = 5
     ,e_op_itlb_fence           = 6
     ,e_op_wait                 = 7
+    ,e_op_context_switch       = 8
   } bp_fe_command_queue_opcodes_e;
 
   /*

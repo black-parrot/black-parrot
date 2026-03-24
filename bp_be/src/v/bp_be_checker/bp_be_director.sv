@@ -58,6 +58,9 @@ module bp_be_director
 
    // Current thread ASID for embedding in ctxtsw fe_cmd (for FE shadow_asid)
    , input [asid_width_p-1:0]            context_asid_i
+
+   // Target thread privilege mode for embedding in ctxtsw fe_cmd
+   , input [1:0]                         context_priv_i
    );
 
   // Declare parameterized structures
@@ -208,9 +211,9 @@ module bp_be_director
         end
       else if (commit_pkt_cast_i.ctxtsw)
         begin
-          fe_cmd_li.opcode                            = e_op_state_reset;
+          fe_cmd_li.opcode                            = e_op_context_switch;
           fe_cmd_li.npc                               = context_npc_i;
-          fe_cmd_pc_redirect_operands.subopcode       = e_subop_translation_switch;
+          fe_cmd_pc_redirect_operands.priv            = context_priv_i;
           fe_cmd_pc_redirect_operands.translation_en  = commit_pkt_cast_i.translation_en_n;
           fe_cmd_pc_redirect_operands.asid            = context_asid_i;
           // Embed new thread_id in MSB of branch_metadata_fwd so pc_gen can update thread_id_r

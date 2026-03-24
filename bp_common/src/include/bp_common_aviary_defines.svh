@@ -50,12 +50,6 @@
     , localparam asid_width_p    = proc_param_lp.asid_width                                        \
     , localparam hio_width_p     = paddr_width_p - daddr_width_p                                   \
                                                                                                    \
-    , localparam num_threads_p = proc_param_lp.num_threads                                         \
-    , localparam thread_id_width_p = `BSG_SAFE_CLOG2(num_threads_p)                                \
-    , localparam thread_context_bytes_p = proc_param_lp.thread_context_bytes                       \
-    , localparam thread_scheduler_enable_p = proc_param_lp.thread_scheduler_enable                 \
-    , localparam monitor_enable_p = proc_param_lp.monitor_enable                                   \
-                                                                                                   \
     , localparam branch_metadata_fwd_width_p = proc_param_lp.branch_metadata_fwd_width             \
     , localparam ras_idx_width_p             = proc_param_lp.ras_idx_width                         \
     , localparam btb_tag_width_p             = proc_param_lp.btb_tag_width                         \
@@ -324,11 +318,7 @@
           ,`bp_aviary_parameter_override(dma_noc_flit_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(dma_noc_cid_width, override_cfg_mp, default_cfg_mp)       \
           ,`bp_aviary_parameter_override(dma_noc_len_width, override_cfg_mp, default_cfg_mp)       \
-                                                                                                   \
-          ,`bp_aviary_parameter_override(num_threads, override_cfg_mp, default_cfg_mp)             \
-          ,`bp_aviary_parameter_override(thread_context_bytes, override_cfg_mp, default_cfg_mp)    \
-          ,`bp_aviary_parameter_override(thread_scheduler_enable, override_cfg_mp, default_cfg_mp) \
-          ,`bp_aviary_parameter_override(monitor_enable, override_cfg_mp, default_cfg_mp)          \
           }
 
 `endif
+
