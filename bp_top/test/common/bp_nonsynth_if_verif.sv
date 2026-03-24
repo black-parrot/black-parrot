@@ -68,6 +68,32 @@ module bp_nonsynth_if_verif
       
       $display("MEM FWD Header Flits:    %0d", ($bits(bp_bedrock_mem_fwd_header_s) + mem_noc_flit_width_p - 1) / mem_noc_flit_width_p);
       $display("MEM REV Header Flits:    %0d", ($bits(bp_bedrock_mem_rev_header_s) + mem_noc_flit_width_p - 1) / mem_noc_flit_width_p);
+	  
+	 // L2 Cache Total Size (if L2 exists)
+	if (l2_features_p[e_cfg_enabled])
+		begin
+		$display("L2 Cache Total Size: %0d KB",
+		  (l2_sets_p * l2_assoc_p * l2_block_width_p * num_cce_p) / 8192);
+		$display("L2 Cache: %0d sets, %0d-way, %0d B/line, %0d banks (one per CCE), data width %0d B",
+		  l2_sets_p,
+		  l2_assoc_p,
+		  l2_block_width_p / 8,
+		  num_cce_p,
+		  l2_data_width_p / 8);
+		end
+	else
+		$display("L2 Cache: not present (UCE unicore config)");
+		
+	  // Front End Fetch Throughput Logic
+    begin
+        real instr_width_bytes = 4.0; 
+        real icache_cap_bytes = real'(icache_sets_p * icache_assoc_p * icache_block_width_p) / 8.0;
+        real total_instr_slots = icache_cap_bytes / instr_width_bytes;
+        
+        $display("Fetch Throughput Stats:-");
+        $display("I-Cache Capacity:      %0.0f Bytes", icache_cap_bytes);
+        $display("Instruction Slots:     %0.0f units", total_instr_slots);
+    end
       $display("#############################################");
       if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32})) begin
         $error("Error: unsupported number of CCE's");
@@ -186,4 +212,3 @@ module bp_nonsynth_if_verif
     $error("BP Fatal: mem_noc_cid_width_p (%0d) cannot concentrate l2_dmas_p (%0d).", mem_noc_cid_width_p, l2_dmas_p);
 
 endmodule
-
