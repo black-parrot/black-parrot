@@ -54,13 +54,13 @@ module bp_me_nonsynth_cce_tracer
 
   wire lce_req_ack = `REQ.fsm_yumi_i & `REQ.fsm_v_o;
   wire lce_cmd_ack = `CMD.fsm_ready_then_o & `CMD.fsm_v_i;
-  wire lce_resp_ack = `REQ.fsm_yumi_i & `REQ.fsm_v_o;
+  wire lce_resp_ack = `RESP.fsm_yumi_i & `RESP.fsm_v_o;
   wire mem_fwd_ack = `FWD.fsm_ready_then_o & `FWD.fsm_v_i;
   wire mem_rev_ack = `REV.fsm_yumi_i & `REV.fsm_v_o;
 
   wire lce_req_first = `REQ.fsm_new_o;
   wire lce_cmd_first = `CMD.fsm_new_o;
-  wire lce_resp_first = `REQ.fsm_new_o;
+  wire lce_resp_first = `RESP.fsm_new_o;
   wire mem_fwd_first = `FWD.fsm_new_o;
   wire mem_rev_first = `REV.fsm_new_o;
 
@@ -154,7 +154,7 @@ module bp_me_nonsynth_cce_tracer
                     , mem_rev_header.payload.state
                     , mem_rev_header.payload.speculative
                     );
-        if (mem_rev_ack & mem_fwd_first & mem_fwd_wr)
+        if (mem_rev_ack & mem_rev_first & mem_rev_wr)
           $fdisplay(file, "%12t |: CCE[%0d] MEM REV wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d]"
                     , $time, cce_id, 1
                     , mem_rev_header.addr
