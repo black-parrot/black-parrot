@@ -1,7 +1,7 @@
 # Evaluation Guide
 ## Tool configuration
 
-Tools flows are defined by makefiles in mk/Makefile.<TOOL>.
+Tools flows are defined by makefiles in mk/Makefile<TOOL>.
 Currently, [Synopsys VCS](https://www.synopsys.com/verification/simulation/vcs.html) and [Verilator](https://github.com/verilator/verilator) are supported for simulation.
 [Synopsys DC] is supported for "pickling", or converting into a single Verilog-2005 file for tool compatibility.
 
@@ -17,10 +17,10 @@ Simulation testbenches support CONFIG:
 Simulation testbenches support PARAMS:
 - TB_CLOCK_PERIOD_P: clock period for the testbench
 - TB_RESET_CYCLES_LO_P: number of initial low reset cycles
-- TB_RESET_CYCLES_HI_P: number of initial low reset cycles
+- TB_RESET_CYCLES_HI_P: number of initial high reset cycles
 - DUT_CLOCK_PERIOD_P: clock period for the dut
 - DUT_RESET_CYCLES_LO_P: number of initial low reset cycles
-- DUT_RESET_CYCLES_HI_P: number of initial low reset cycles
+- DUT_RESET_CYCLES_HI_P: number of initial high reset cycles
 
 Simulation testbenches support FLAGS:
 - ASSERT: Enable SystemVerilog assertions
@@ -28,7 +28,7 @@ Simulation testbenches support FLAGS:
 
 ## Running a simulation
 
-Instructions for a bp\_me verilator simulation
+Instructions for a bp\_me verilator simulation:
 
 
     cd bp_me/verilator
