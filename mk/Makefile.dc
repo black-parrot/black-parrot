@@ -17,7 +17,7 @@ sv2v.dc: $(addprefix $(DUT_PATH)/,$(BUILD_COLLATERAL))
 	@$(eval export FM_RELEASE=$(FM_RELEASE))
 	@$(call bsg_fn_declare_log_rpt,$(DUT_TAG))
 	@$(CD) $(DUT_PATH); \
-		$(BSG_SV2V_BIN) $(SV2V_DESIGN_NAME) $(DUT_PATH)/flist.vcs $(DUT_PATH)/out $(BASEJUMP_STL_DIR) | $(TEE) -i $(LOG_FILE)
+		$(BSG_SV2V_BIN) $(SV2V_DESIGN_NAME) $(DUT_PATH)/flist.vcs $(DUT_PATH)/out $(BASEJUMP_STL_DIR) > $(LOG_FILE) 2>&1
 
 # Check if the design is synthesizable. This is not an actual synthesis run,
 # but rather runs analysis and elaboration on the design without linking any
@@ -32,7 +32,7 @@ check_design.dc: export STDCELL_DB  ?=
 check_design.dc: $(addprefix $(DUT_PATH)/,$(BUILD_COLLATERAL))
 	@$(call bsg_fn_declare_log_rpt,$(DUT_TAG))
 	@$(CD) $(DUT_PATH); \
-		$(DC_SHELL) $(DC_OPTS) 2>&1 | $(TEE) -i $(LOG_FILE)
+		$(DC_SHELL) $(DC_OPTS) > $(LOG_FILE) 2>&1
 	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"^Error",1)
 	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"Complex logic will not be considered",1)
 	@$(call bsg_fn_info_search,$(LOG_FILE),$(ERR_FILE),"*** Presto compilation terminated",1)
