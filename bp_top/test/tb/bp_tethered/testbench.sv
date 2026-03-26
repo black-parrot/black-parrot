@@ -250,7 +250,7 @@ module testbench
   wire icache_tracer_en_li = 1'b1;
   bind bp_fe_icache
     bp_fe_nonsynth_icache_tracer
-     #(.bp_params_p(bp_params_p), .trace_str_p("icache"), .plusargs_str_p("icache_trace_p"))
+     #(.bp_params_p(bp_params_p), .trace_str_p("icache"), .plusargs_str_p("icache_trace"))
      icache_tracer
       (.clk_i(clk_i)
        ,.reset_i(reset_i)

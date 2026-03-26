@@ -97,7 +97,7 @@ $(SIM_FILE): $(addprefix $(SIM_PATH)/,$(RUN_COLLATERAL))
 $(SIM_FILE): $(BUILD_FILE)
 	@$(call bsg_fn_declare_log_rpt,$(SIM_TAG))
 	@$(CD) $(SIM_PATH); \
-		$< $(VCS_RUN_OPTS) $(PLUSARGS) 2>&1 | $(TEE) -i $(LOG_FILE)
+		$< $(VCS_RUN_OPTS) $(HDL_PLUSARGS) 2>&1 | $(TEE) -i $(LOG_FILE)
 	@$(call bsg_fn_fail_search,$(LOG_FILE),$(ERR_FILE))
 	@$(call bsg_fn_pass_search,$(LOG_FILE),$(ERR_FILE))
 	@$(call bsg_fn_sentinal_search,$(LOG_FILE),$(ERR_FILE),"finish called from file")

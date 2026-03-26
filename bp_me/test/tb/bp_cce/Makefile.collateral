@@ -53,7 +53,7 @@ endif
 
 ifeq (1,$(CFG_UCODE))
 RUN_COLLATERAL += ucode.mem
-PLUSARGS += +ucode_mem=ucode.mem
+RUN_PLUSARGS += +ucode_mem=ucode.mem
 endif
 
 RUN_COLLATERAL += test.tr
