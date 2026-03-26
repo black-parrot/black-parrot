@@ -2,8 +2,6 @@
 $(eval $(call bsg_tgt_build_submodule,dramsim3,$(BASEJUMP_STL_DIR),$(BP_TOUCH_DIR),$(BP_PATCH_DIR),$(BP_WORK_DIR)))
 %/.dramsim3_build:
 	@$(MAKE) -C $</bsg_test -f libdramsim3.mk
-	@$(MKDIR) -p $(BP_LIB_DIR)
-	@$(MKDIR) -p $(BP_INCLUDE_DIR)
 	@$(MV) $</bsg_test/libdramsim3.so $(BP_LIB_DIR)/
 	@$(CP) $</imports/DRAMSim3/src/*.h  $(BP_INCLUDE_DIR)/
 	@$(CP) $</imports/DRAMSim3/ext/headers/*  $(BP_INCLUDE_DIR)/

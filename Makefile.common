@@ -279,6 +279,14 @@ $(error checkout must be called as a single target)
 endif
 endif
 
+# If the user is trying to build (not running checkout, clean, help, etc.),
+# ensure the install/ directory exists to prevent cascading failures.
+ifeq (,$(filter checkout bleach_all help clean bleach tidy,$(MAKECMDGOALS)))
+ifeq ($(wildcard $(TOP)/install/),)
+$(error "install/ directory does not exist. Did you forget to run 'make checkout'?")
+endif
+endif
+
 ##########################################################
 ## Cad environment
 ##########################################################
