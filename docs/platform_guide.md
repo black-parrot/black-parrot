@@ -8,8 +8,8 @@ BlackParrot has a configurable physical address width as well as maximum DRAM si
 | Field              | Bits / Condition        | Description                                  |
 |--------------------|------------------------|----------------------------------------------|
 | Physical Address   | Addr[39:0]             | 40-bit physical address space                |
-| Local Region       | Addr < 0x8000_0000     | Routed to per-tile local address space       |
-| Global Region      | Addr ≥ 0x8000_0000     | Routed to global memory and I/O space        |
+| Local Region       | Addr < 0x00_8000_0000  | Routed to per-tile local address space       |
+| Global Region      | Addr ≥ 0x00_8000_0000  | Routed to global memory and I/O space        |
 
 
 
