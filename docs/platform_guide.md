@@ -1,5 +1,5 @@
 # BlackParrot Platform Guide
-## Platform Address Maps
+## Platform Address Maps Overview
 
 BlackParrot has a configurable physical address width as well as maximum DRAM size. The below configuration is shown for the default value with a 40-bit physical address width and a 4GB DRAM size.
 
