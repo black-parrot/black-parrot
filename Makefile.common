@@ -131,6 +131,10 @@ $(recheckout_target): $(uncheckout_target)
 	@rm -f $(touch_dir)/$(name).checkout.*
 	@+$(MAKE) $(checkout_tag)
 $(checkout_tag):
+  @if [ ! -d $(touch_dir) ]; then \
+		echo "$(touch_dir) does not exist, did you run 'make checkout'?"; \
+		exit -1; \
+  fi
 	@git submodule update $(src_dir)
 	@if [ -f $(src_dir)/.git ]; then \
 		git -C $(src_dir) submodule foreach --quiet "git submodule init"; \
@@ -276,14 +280,6 @@ $(error bleach_all must be called as a single target)
 endif
 ifneq (,$(filter checkout,$(MAKECMDGOALS)))
 $(error checkout must be called as a single target)
-endif
-endif
-
-# If the user is trying to build (not running checkout, clean, help, etc.),
-# ensure the install/ directory exists to prevent cascading failures.
-ifeq (,$(filter checkout bleach_all help clean bleach tidy,$(MAKECMDGOALS)))
-ifeq ($(wildcard $(TOP)/install/),)
-$(error "install/ directory does not exist. Did you forget to run 'make checkout'?")
 endif
 endif
 
