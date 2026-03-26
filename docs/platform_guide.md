@@ -44,11 +44,11 @@ BlackParrot has a configurable physical address width as well as maximum DRAM si
 
 | Region                     | Address Range              | Description                                      |
 |----------------------------|----------------------------|--------------------------------------------------|
-| Cached DRAM               | 0x00_8000_0000 – 0x00_FFFF_FFFF | Cached global memory (via L2)               |
-| Uncached DRAM (L2 Cached) | 0x01_0000_0000 – 0x01_7FFF_FFFF | L1 uncached, L2 cached                      |
-| Uncached DRAM (Fully UC)  | 0x01_8000_0000 – 0x01_FFFF_FFFF | L1 + L2 uncached                           |
-| Accelerator Region        | 0x02_0000_0000 – 0x03_FFFF_FFFF | Streaming / accelerator space              |
-| Off-chip I/O              | 0x04_0000_0000 – 0xFF_FFFF_FFFF | External devices / I/O                     |
+| Cached DRAM               | 0x00_8000_0000 - 0x00_FFFF_FFFF | Cached global memory (via L2)               |
+| Uncached DRAM (L2 Cached) | 0x01_0000_0000 - 0x01_7FFF_FFFF | L1 uncached, L2 cached                      |
+| Uncached DRAM (Fully UC)  | 0x01_8000_0000 - 0x01_FFFF_FFFF | L1 + L2 uncached                           |
+| Accelerator Region        | 0x02_0000_0000 - 0x03_FFFF_FFFF | Streaming / accelerator space              |
+| Off-chip I/O              | 0x04_0000_0000 - 0xFF_FFFF_FFFF | External devices / I/O                     |
 
 
 
