@@ -17,6 +17,12 @@ VCS_BUILD_OPTS += -reportstats
 VCS_BUILD_OPTS += -ignore initializer_driver_checks
 VCS_BUILD_OPTS += -suppress=UNGB
 
+ifeq ($(COVERAGE),1)
+VCS_BUILD_OPTS += -cm line+tgl
+VCS_BUILD_OPTS += -cm_dir $(DUT_PATH)/design
+VCS_BUILD_OPTS += -cm_hier $(TB_PATH)/cm_hier.txt
+endif
+
 ifeq ($(ASSERT),1)
 VCS_BUILD_OPTS += +define+BSG_NONSYNTH_ASSERT_ENABLE
 VCS_BUILD_OPTS += -assert svaext # Enable elaboration system tasks
@@ -90,6 +96,12 @@ ifeq ($(TRACE),1)
 VCS_RUN_OPTS += +bsg_trace=$(DUMP_FILE)
 endif
 
+ifeq ($(COVERAGE),1)
+VCS_RUN_OPTS += -cm line+tgl
+VCS_RUN_OPTS += -cm_dir $(basename $(notdir $(SIM_TAG)))
+VCS_RUN_OPTS += -cm_hier $(TB_PATH)/cm_hier.txt
+endif
+
 SIM_FILE ?= $(SIM_PATH)/$(SIM_PROG)
 sim.vcs: ## runs a simulation
 sim.vcs: $(SIM_FILE)
@@ -116,4 +128,14 @@ WAVE_COLLATERAL += $(DUMP_FILE)
 wave.vcs: ## opens a waveform
 wave.vcs: $(SIM_PATH)/$(DUMP_FILE)
 	@$(VCS_WAVE_BIN) $(VCS_WAVE_OPTS) $<
+
+URG_OPTS += -full64
+URG_OPTS += -report $(DUT_PATH)/coverage
+
+ALL_COVDBS := design.vdb $(wildcard $(DUT_PATH)/*/*.vdb)
+merge.vcs: ## merges VCS coverage
+	@$(CD) $(DUT_PATH); \
+		$(URG) $(URG_OPTS) $(addprefix -dir ,$(ALL_COVDBS))
+	@$(ECHO) "Coverage report generated in $(DUT_PATH)/coverage"
+	@$(ECHO) "View with web browser such as Firefox"
 
