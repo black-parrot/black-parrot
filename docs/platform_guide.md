@@ -34,9 +34,9 @@ BlackParrot has a configurable physical address width as well as maximum DRAM si
 
 ### Special Local Region
 
-| Component | Address Range     | Description                                      |
-|-----------|-------------------|--------------------------------------------------|
-| Boot ROM  | 0x0011_0000       | Boot ROM (globally accessible via local space)   |
+| Component | Address Range                           | Description                                      |
+|-----------|-----------------------------------------|--------------------------------------------------|
+| Boot ROM  | 0x00_0011_0000 – 0x00_0011_FFFF         | Boot ROM (globally accessible via local space)   |
 
 
 
