@@ -1,63 +1,4 @@
 # BlackParrot Platform Guide
-## Platform Address Maps Overview
-
-BlackParrot has a configurable physical address width as well as maximum DRAM size. The below configuration is shown for the default value with a 40-bit physical address width and a 4GB DRAM size.
-
-### Address Routing Overview
-
-| Field              | Bits / Condition        | Description                                  |
-|--------------------|------------------------|----------------------------------------------|
-| Physical Address   | Addr[39:0]             | 40-bit physical address space                |
-| Local Region       | Addr < 0x00_8000_0000  | Routed to per-tile local address space       |
-| Global Region      | Addr ≥ 0x00_8000_0000  | Routed to global memory and I/O space        |
-
-
-
-### Local Address Space (Per-Tile)
-
-| Field        | Bits         | Description                                  |
-|--------------|--------------|----------------------------------------------|
-| Tile Select  | Addr[30:24]  | Selects tile (up to 128 tiles)               |
-| Device ID    | Addr[23:20]  | Selects device within tile (up to 16)        |
-| Offset       | Addr[19:0]   | Offset within device (1 MB per device)       |
-
-#### Per-Tile Devices
-
-| DevID | Device Description                |
-|-------|----------------------------------|
-| 1     | Host Interface                   |
-| 2     | Configuration (CFG)              |
-| 3     | CLINT                            |
-| 4     | L1 Cache + Coherence Agent       |
-
-
-
-### Special Local Region
-
-| Component | Address Range                           | Description                                      |
-|-----------|-----------------------------------------|--------------------------------------------------|
-| Boot ROM  | 0x00_0011_0000 – 0x00_0011_FFFF         | Boot ROM (globally accessible via local space)   |
-
-
-
-### Global Address Space (Simplified)
-
-| Region                     | Address Range              | Description                                      |
-|----------------------------|----------------------------|--------------------------------------------------|
-| Cached DRAM               | 0x00_8000_0000 - 0x00_FFFF_FFFF | Cached global memory (via L2)               |
-| Uncached DRAM (L2 Cached) | 0x01_0000_0000 - 0x01_7FFF_FFFF | L1 uncached, L2 cached                      |
-| Uncached DRAM (Fully UC)  | 0x01_8000_0000 - 0x01_FFFF_FFFF | L1 + L2 uncached                           |
-| Accelerator Region        | 0x02_0000_0000 - 0x03_FFFF_FFFF | Streaming / accelerator space              |
-| Off-chip I/O              | 0x04_0000_0000 - 0xFF_FFFF_FFFF | External devices / I/O                     |
-
-
-
-### Global Routing Components
-
-| Component              | Description                                      |
-|------------------------|--------------------------------------------------|
-| Global Bus             | Handles all global address traffic               |
-| L2 Coherence Engine    | Routes cached memory accesses to DRAM            |
 
 ## Tile Taxonomy
 ![Tile Taxonomy](tile_taxonomy.png)
@@ -140,37 +81,33 @@ A typical execution for an atomic instruction is therefore:
 * execute emulation routine
 * return from M-mode emulation
 
-Similarly, BlackParrot emulates MULH, MULHSU, MULHU using hardware supported MUL instructions.
+Similarly, BlackParrot can emulate MULH, MULHSU, MULHU using hardware supported MUL instructions.
 
-## Platform Address Maps
-
+## Sample Platform Address Maps
 BlackParrot has a configurable physical address width as well as maximum DRAM size. The below configuration is shown for the default value with a 40-bit physical address with and a 4GB DRAM size.
 
-### Global Address Memory Map
-* 0x00_0000_0000 - 0x00_7FFF_FFFF
-  * Uncached, local memory
-  * (See local address map for further breakdown)
-* 0x00_8000_0000 - 0x00_FFFF_FFFF
-  * Cached, global memory
-  * Striped by cache line
-  * Cached DRAM region
-* 0x01_0000_0000 - 0x01_7FFF_FFFF
-  * Uncached, global memory
-  * Striped by cache line
-  * L1-Uncached/L2-Cached DRAM region
-* 0x01_8000_0000 - 0x01_FFFF_FFFF
-  * Uncached, global memory
-  * Striped by cache line
-  * L1-Uncached/L2-Uncached DRAM region
-* 0x02_0000_0000 - 0x03_FFFF_FFFF
-  * Uncached, global memory
-  * Striped by tile
-  * Streaming accelerator region
-* 0x04_0000_0000 - 0xFF_FFFF_FFFF
-  * Uncached, ASIC-global memory
-  * Striped by tile
-  * Off-chip region
+| Field        | Range                  | Description               |
+|--------------|------------------------|---------------------------|
+| Local        | Addr < 0x00_8000_0000  | On-chip and local devices |
+| Global       | Addr ≥ 0x00_8000_0000  | Global memory and I/O     |
 
+### Local Address Map
+A multicore BlackParrot's local address space is sliced among the tiles as:
+
+* 0x00_0000_0000 - 0x00_0(nnnN)(D)(A_AAAA)
+  * nnnN -> 7 bits = 128 max tiles
+  * D -> 4 bits = 16 max devices
+  * A_AAAA -> 20 bits = 1 MB address space per device
+* Examples
+  * Devices: Configuration Link, CLINT
+  * 0x00_0420_0002 -> tile 2, device 2, address 0008 -> Freeze register
+  * 0x00_0030_bff8 -> tile 0, device 3, address bff8 -> CLINT mtime
+
+For a BlackParrot unicore, all addresses outside of N=k in this scheme are considered as I/O. This
+local space is useful for address-space constrained systems where this local space can be reused for
+accelerators, co-processors, etc.
+
+### Off-Chip Access
 For a BlackParrot Unicore, an "off-chip" address goes out the io_cmd/io_resp ports. An "on-chip"
 address goes to a local device if below the DRAM base address, and to the L2 if in DRAM space.
 
@@ -187,22 +124,67 @@ addresses as they see fit. For instance, aliasing some of the DRAM space between
 (and manually handling the coherence issues). Another scheme is to relocate some of the memory such
 that both cached and uncached are physically contiguous on the same DRAM.
 
-### Local Address Map
-For a BlackParrots in a multicore, the local address space is sliced among all the tiles as shown
-below.
+### Sample Unicore Address Map
 
-* 0x00_0000_0000 - 0x00_0(nnnN)(D)(A_AAAA)
-  * nnnN -> 7 bits = 128 max tiles
-  * D -> 4 bits = 16 max devices
-  * A_AAAA -> 20 bits = 1 MB address space per device
-* Examples
-  * Devices: Configuration Link, CLINT
-  * 0x00_0420_0002 -> tile 2, device 2, address 0008 -> Freeze register
-  * 0x00_0030_bff8 -> tile 0, device 3, address bff8 -> CLINT mtime
+#### Global Address Map
 
-For a BlackParrot unicore, all addresses outside of N=k in this scheme are considered as I/O. This
-local space is useful for address-space constrained systems where this local space can be reused for
-accelerators, co-processors, etc.
+| Region                     | Address Range                   | Description                     | Striping                | 
+|----------------------------|---------------------------------|---------------------------------|-------------------------|
+| Reserved                   | 0x00_0000_0000 - 0x00_000F_FFFF | N/A                             | N/A                     |
+| Low Off-Chip I/O           | 0x00_0010_0000 - 0x00_001F_FFFF | External devices and I/O        | Global                  |
+| Local Memory               | 0x00_0020_0000 - 0x00_7FFF_FFFF | Uncached, local memory          | (See Local Address Map) |
+| Cached DRAM                | 0x00_8000_0000 - 0x00_FFFF_FFFF | Cached, global memory           | Cacheline               |
+| L1UC DRAM (L2 Cached)      | 0x01_0000_0000 - 0x01_7FFF_FFFF | L1 uncached, L2 cached          | Cacheline               |
+| L2UC DRAM                  | 0x01_8000_0000 - 0x01_FFFF_FFFF | L1 + L2 uncached                | Cacheline               |
+| Streaming Accelerator      | 0x02_0000_0000 - 0x03_FFFF_FFFF | Large on-chip MMIO              | Tile                    |
+| High Off-Chip I/O          | 0x04_0000_0000 - 0xFF_FFFF_FFFF | External devices and I/O        | Global                  |
+
+#### Local Address Map
+| Field        | Bits         | Description                                  |
+|--------------|--------------|----------------------------------------------|
+| Global       | Addr[30:24]  | 0 for local unicore, >0 for remote address   |
+| Device ID    | Addr[23:20]  | Selects device within tile (up to 16)        |
+| Offset       | Addr[19:0]   | Offset within device (1 MB per device)       |
+
+#### Unicore Devices
+| DevID | Device Description               |
+|-------|----------------------------------|
+| 1     | Host Interface                   |
+| 2     | CFG                              |
+| 3     | CLINT                            |
+| 4+    | L2 Configuration Slices          |
+| Other | Loopback Device                  |
+
+### Sample Multicore Address Map
+
+#### Global Address Map
+
+| Region                     | Address Range                   | Description                     | Striping                | 
+|----------------------------|---------------------------------|---------------------------------|-------------------------|
+| Reserved                   | 0x00_0000_0000 - 0x00_000F_FFFF | N/A                             | N/A                     |
+| Low Off-Chip I/O           | 0x00_0010_0000 - 0x00_001F_FFFF | External devices and I/O        | Global                  |
+| Local Memory               | 0x00_0020_0000 - 0x00_7FFF_FFFF | Uncached, local memory          | (See Local Address Map) |
+| Cached DRAM                | 0x00_8000_0000 - 0x00_FFFF_FFFF | Cached, global memory           | Cacheline               |
+| L1UC DRAM (L2 Cached)      | 0x01_0000_0000 - 0x01_7FFF_FFFF | L1 uncached, L2 cached          | Cacheline               |
+| L2UC DRAM                  | 0x01_8000_0000 - 0x01_FFFF_FFFF | L1 + L2 uncached                | Cacheline               |
+| Streaming Accelerator      | 0x02_0000_0000 - 0x03_FFFF_FFFF | Large on-chip MMIO              | Tile                    |
+| High Off-Chip I/O          | 0x04_0000_0000 - 0xFF_FFFF_FFFF | External devices and I/O        | Global                  |
+ 
+#### Local Address Map
+| Field        | Bits         | Description                                  |
+|--------------|--------------|----------------------------------------------|
+| Tile         | Addr[30:24]  | Selects tile (up to 128 tiles)               |
+| Device ID    | Addr[23:20]  | Selects device within tile (up to 16)        |
+| Offset       | Addr[19:0]   | Offset within device (1 MB per device)       |
+
+#### Per-Tile Devices
+| DevID | Device Description               |
+|-------|----------------------------------|
+| 1     | Host Interface                   |
+| 2     | CFG                              |
+| 3     | CLINT                            |
+| 4+    | L2 Configuration Slices          |
+| Other | Loopback Device                  |
 
 ### Full Listing of BlackParrot Configuration Registers
 Following is a list of the memory-mapped registers contained within a BlackParrot Unicore or BlackParrot Multicore Tile.
