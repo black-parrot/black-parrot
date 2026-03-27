@@ -69,11 +69,11 @@ PARAMS:
 PLUSARGS:
   - +icache_trace: L1 I$ tracer
   - +dcache_trace: L1 D$ tracer
-  - +vm_trace: MMU tracer
+  - +vm_trace: ITLB / DTLB tracers
   - +cce_trace: CCE tracer
   - +lce_trace: LCE tracer
   - +uce_trace: UCE tracer
-  - +dev_trace: CLINT and CFG tracer
+  - +dev_trace: CLINT / CFG tracers
   - +dram_trace: DRAM tracer
 ## bp\_top Simulation Examples
 **Hello World**

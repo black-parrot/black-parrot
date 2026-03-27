@@ -33,10 +33,6 @@ module testbench
    , parameter lce_mode_p = 0
    , parameter me_test_p = 0
 
-   , parameter lce_trace_p = 0
-   , parameter cce_trace_p = 0
-   , parameter dram_trace_p = 0
-
    // size of CCE-Memory buffers for cmd/resp messages
    // for this testbench (one LCE, one CCE, one memory) only need enough space to hold as many
    // cmds/responses can be generated for a single LCE request
@@ -646,7 +642,7 @@ module testbench
   wire lce_trace_en_li = testbench.lce_trace_p;
   bind bp_lce
     bp_me_nonsynth_lce_tracer
-      #(.bp_params_p(bp_params_p), .trace_str_p("lce")
+      #(.bp_params_p(bp_params_p), .trace_str_p("lce"), .plusargs_str_p("lce_trace")
         ,.sets_p(sets_p)
         ,.assoc_p(assoc_p)
         ,.block_width_p(block_width_p)
@@ -662,7 +658,7 @@ module testbench
   wire cce_trace_en_li = testbench.cce_trace_p;
   bind bp_cce_wrapper
     bp_me_nonsynth_cce_tracer
-      #(.bp_params_p(bp_params_p), .trace_str_p("cce"))
+      #(.bp_params_p(bp_params_p), .trace_str_p("cce"), .plusargs_str_p("cce_trace"))
       cce_tracer
        (.clk_i(clk_i)
         ,.reset_i(reset_i)
@@ -678,6 +674,7 @@ module testbench
        ,.dma_burst_len_p(dma_burst_len_p)
        ,.dma_mask_width_p(dma_mask_width_p)
        ,.trace_str_p("dram")
+       ,.plusargs_str_p("dram_trace")
        )
      dram_tracer
       (.clk_i(clk_i)

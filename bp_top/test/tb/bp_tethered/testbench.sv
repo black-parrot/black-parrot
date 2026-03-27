@@ -351,7 +351,7 @@ module testbench
   wire clint_trace_en_li = 1'b1;
   bind bp_me_bedrock_register:clints_register
     bp_me_nonsynth_dev_tracer
-     #(.bp_params_p(bp_params_p), .trace_str_p("clint"), .plusargs_str_p("clint_trace")
+     #(.bp_params_p(bp_params_p), .trace_str_p("clint"), .plusargs_str_p("dev_trace")
        ,.els_p(els_p)
        ,.reg_data_width_p(reg_data_width_p)
        ,.reg_addr_width_p(reg_addr_width_p)
@@ -366,7 +366,7 @@ module testbench
   wire cfg_trace_en_li = 1'b1;
   bind bp_me_bedrock_register:cfgs_register
     bp_me_nonsynth_dev_tracer
-     #(.bp_params_p(bp_params_p), .trace_str_p("cfg"), .plusargs_str_p("cfg_trace")
+     #(.bp_params_p(bp_params_p), .trace_str_p("cfg"), .plusargs_str_p("dev_trace")
        ,.els_p(els_p)
        ,.reg_data_width_p(reg_data_width_p)
        ,.reg_addr_width_p(reg_addr_width_p)
