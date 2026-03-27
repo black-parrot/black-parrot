@@ -6,6 +6,14 @@
 
   // Default configuration is unicore
   localparam bp_proc_param_s bp_unicore_cfg_p = bp_default_cfg_p;
+  localparam bp_proc_param_s bp_unicore_no_c_override_p =
+    '{compressed_support: 0
+      ,default: "inv"
+      };
+  `bp_aviary_derive_cfg(bp_unicore_no_c_cfg_p
+                        ,bp_unicore_no_c_override_p
+                        ,bp_unicore_cfg_p
+                        );
 
   localparam bp_proc_param_s bp_unicore_megaparrot_override_p =
     '{paddr_width : 56
@@ -500,8 +508,11 @@
   /* verilator lint_off WIDTH */
   parameter bp_proc_param_s [max_cfgs-1:0] all_cfgs_gp =
   {
+    // Custom unicore configurations
+    bp_unicore_no_c_cfg_p
+
     // L2 extension configurations
-    bp_multicore_4_l2e_cfg_p
+    ,bp_multicore_4_l2e_cfg_p
     ,bp_multicore_2_l2e_cfg_p
     ,bp_multicore_1_l2e_cfg_p
 
@@ -543,6 +554,7 @@
 
     // A custom BP configuration generated from Makefile
     ,bp_custom_cfg_p
+    ,bp_unicore_no_c_cfg_p
     // The default BP
     ,bp_default_cfg_p
   };
@@ -551,6 +563,9 @@
   // This enum MUST be kept up to date with the parameter array above
   typedef enum bit [lg_max_cfgs-1:0]
   {
+    // Custom unicore configurations
+    e_bp_unicore_no_c_cfg                          = 33
+
     // L2 extension configurations
     e_bp_multicore_4_l2e_cfg                        = 32
     ,e_bp_multicore_2_l2e_cfg                       = 31
@@ -599,4 +614,3 @@
   } bp_params_e;
 
 `endif
-
