@@ -34,7 +34,7 @@ Instructions for a bp\_me verilator simulation:
     cd bp_me/verilator
     # make build.verilator; # optional build, will also be done on-demand
     # make lint.verilator; # optional lint
-    make sim.verilator; # optional <CONFIG>= <FLAG>= <PARAM>=
+    make sim.verilator; # optional <CONFIG>= <FLAG>= <PARAM>= <PLUSARGS>=
 
 
 ## Running RISC-V regression
@@ -65,16 +65,17 @@ PARAMS:
     - STALL_CYCLES_P: How many cycles before watchdog throws error
     - HALT_INSTR_P: How many instructions before watchdog considers a core halted
     - HEARTBEAT_INSTR_P: Period for heatbeat information
-- ICACHE_TRACE_P: L1 I$ tracer
-- DCACHE_TRACE_P: L1 D$ tracer
-- VM_TRACE_P: MMU tracer
-- UCE_TRACE_P: UCE tracer
-- LCE_TRACE_P: LCE tracer
-- CCE_TRACE_P: CCE tracer
-- DEV_TRACE_P: CLINT and CFG tracer
-- DRAM_TRACE_P: DRAM tracer
 
-## bp_top Simulation Examples
+PLUSARGS:
+  - +icache_trace: L1 I$ tracer
+  - +dcache_trace: L1 D$ tracer
+  - +vm_trace: ITLB / DTLB tracers
+  - +cce_trace: CCE tracer
+  - +lce_trace: LCE tracer
+  - +uce_trace: UCE tracer
+  - +dev_trace: CLINT / CFG tracers
+  - +dram_trace: DRAM tracer
+## bp\_top Simulation Examples
 **Hello World**
 ```bash
 make -C bp_top/verilator build.verilator sim.verilator
@@ -105,7 +106,7 @@ Supported PARAMS:
     - 1 = single set hammer test
     - 2 = test from trace file input based on PROG
 
-## bp_me Simulation Examples
+## bp\_me Simulation Examples
 
 **Clean Build with Waveform Support**
 ```bash

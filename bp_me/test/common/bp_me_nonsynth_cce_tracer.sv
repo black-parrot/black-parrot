@@ -18,6 +18,7 @@ module bp_me_nonsynth_cce_tracer
    `declare_bp_proc_params(bp_params_p)
 
    , parameter string trace_str_p = ""
+   , parameter string plusargs_str_p = ""
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -94,8 +95,7 @@ module bp_me_nonsynth_cce_tracer
   wire mem_rev_has_data = mem_rev_stream_mask_gp[mem_rev_header.msg_type];
 
   // record
-  `declare_bp_tracer_control(clk_i, reset_i, en_i, trace_str_p, cce_id);
-
+  `declare_bp_tracer_control_plusargs(clk_i, reset_i, en_i, trace_str_p, cce_id, plusargs_str_p);
   always_ff @(posedge clk_i)
     if (is_go)
       begin
