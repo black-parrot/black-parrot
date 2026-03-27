@@ -65,16 +65,16 @@ PARAMS:
     - STALL_CYCLES_P: How many cycles before watchdog throws error
     - HALT_INSTR_P: How many instructions before watchdog considers a core halted
     - HEARTBEAT_INSTR_P: Period for heatbeat information
-- DCACHE_TRACE_P: L1 D$ tracer
-- VM_TRACE_P: MMU tracer
-- UCE_TRACE_P: UCE tracer
-- LCE_TRACE_P: LCE tracer
-- CCE_TRACE_P: CCE tracer
-- DEV_TRACE_P: CLINT and CFG tracer
-- DRAM_TRACE_P: DRAM tracer
 
 PLUSARGS:
-- +icache_trace: L1 I$ tracer
+  - +icache_trace: L1 I$ tracer
+  - +dcache_trace: L1 D$ tracer
+  - +vm_trace: MMU tracer
+  - +cce_trace: CCE tracer
+  - +lce_trace: LCE tracer
+  - +uce_trace: UCE tracer
+  - +dev_trace: CLINT and CFG tracer
+  - +dram_trace: DRAM tracer
 ## bp_top Simulation Examples
 **Hello World**
 ```bash
