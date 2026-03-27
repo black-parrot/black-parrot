@@ -89,7 +89,6 @@ module bp_fe_nonsynth_icache_tracer
     end
 
   // record
-  // record
   `declare_bp_tracer_control_plusargs(clk_i, reset_i, en_i, trace_str_p, mhartid, plusargs_str_p);
   always_ff @(posedge clk_i)
     if (do_init)

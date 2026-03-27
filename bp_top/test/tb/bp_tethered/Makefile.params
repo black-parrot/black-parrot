@@ -9,14 +9,6 @@ STALL_CYCLES_P        ?= 100000
 HALT_INSTR_P          ?= 1000
 HEARTBEAT_INSTR_P     ?= 10000
 
-DCACHE_TRACE_P        ?= 0
-VM_TRACE_P            ?= 0
-UCE_TRACE_P           ?= 0
-LCE_TRACE_P           ?= 0
-CCE_TRACE_P           ?= 0
-DEV_TRACE_P           ?= 0
-DRAM_TRACE_P          ?= 0
-
 COSIM_TRACE_P         ?= $(COMMITLOG)
 COSIM_CHECK_P         ?= $(if $(or $(filter 1,$(DROMAJO_COSIM)),$(filter 1,$(SPIKE_COSIM))),1,0)
 
@@ -35,15 +27,7 @@ HDL_PARAMS += \
 	-pvalue+heartbeat_instr_p=$(HEARTBEAT_INSTR_P) \
 	\
 	-pvalue+cosim_trace_p=$(COSIM_TRACE_P) \
-	-pvalue+cosim_check_p=$(COSIM_CHECK_P) \
-	\
-	-pvalue+dcache_trace_p=$(DCACHE_TRACE_P) \
-	-pvalue+vm_trace_p=$(VM_TRACE_P) \
-	-pvalue+uce_trace_p=$(UCE_TRACE_P) \
-	-pvalue+lce_trace_p=$(LCE_TRACE_P) \
-	-pvalue+cce_trace_p=$(CCE_TRACE_P) \
-	-pvalue+dev_trace_p=$(DEV_TRACE_P) \
-	-pvalue+dram_trace_p=$(DRAM_TRACE_P)
+	-pvalue+cosim_check_p=$(COSIM_CHECK_P)
 
 include $(BP_MK_DIR)/Makefile.params
 

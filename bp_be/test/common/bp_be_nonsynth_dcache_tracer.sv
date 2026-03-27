@@ -10,6 +10,7 @@ module bp_be_nonsynth_dcache_tracer
   `declare_bp_proc_params(bp_params_p)
 
   , parameter string trace_str_p = ""
+  , parameter string plusargs_str_p = ""
 
   // Default to dcache parameters, but can override if needed
   , parameter features_p    = dcache_features_p
@@ -91,7 +92,7 @@ module bp_be_nonsynth_dcache_tracer
     end
 
   // record
-  `declare_bp_tracer_control(clk_i, reset_i, en_i, trace_str_p, mhartid);
+  `declare_bp_tracer_control_plusargs(clk_i, reset_i, en_i, trace_str_p, mhartid, plusargs_str_p);
   always_ff @(posedge clk_i)
     if (do_init)
       begin

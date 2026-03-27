@@ -49,15 +49,6 @@ module testbench
    , parameter warmup_instr_p              = 0
    , parameter max_instr_p                 = 0
    , parameter max_cycle_p                 = 0
-
-   // trace parameters
-   , parameter dcache_trace_p              = 0
-   , parameter vm_trace_p                  = 0
-   , parameter uce_trace_p                 = 0
-   , parameter lce_trace_p                 = 0
-   , parameter cce_trace_p                 = 0
-   , parameter dev_trace_p                 = 0
-   , parameter dram_trace_p                = 0
    );
 
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
@@ -258,10 +249,10 @@ module testbench
        ,.cfg_bus_i(bp_fe_top.cfg_bus_i)
        );
 
-  wire dcache_tracer_en_li = testbench.dcache_trace_p;
+  wire dcache_tracer_en_li = 1'b1;
   bind bp_be_dcache
     bp_be_nonsynth_dcache_tracer
-     #(.bp_params_p(bp_params_p), .trace_str_p("dcache"))
+     #(.bp_params_p(bp_params_p), .trace_str_p("dcache"), .plusargs_str_p("dcache_trace"))
      dcache_tracer
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
@@ -271,18 +262,18 @@ module testbench
 
 // v5.036: Unsupported: Bind with instance list
 `ifndef VERILATOR
-  wire immu_tracer_en_li = testbench.vm_trace_p;
+  wire immu_tracer_en_li = 1'b1;
   bind bp_mmu:immu bp_nonsynth_vm_tracer
-   #(.bp_params_p(bp_params_p), .trace_str_p("immu"))
+   #(.bp_params_p(bp_params_p), .trace_str_p("immu"), .plusargs_str_p("vm_trace"))
    immu_tracer
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(testbench.immu_tracer_en_li)
      );
 
-  wire dmmu_tracer_en_li = testbench.vm_trace_p;
+  wire dmmu_tracer_en_li = 1'b1;
   bind bp_mmu:dmmu bp_nonsynth_vm_tracer
-   #(.bp_params_p(bp_params_p), .trace_str_p("dmmu"))
+   #(.bp_params_p(bp_params_p), .trace_str_p("dmmu"), .plusargs_str_p("vm_trace"))
    dmmu_tracer
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -291,25 +282,29 @@ module testbench
 `endif
 
   wire cosim_en_li = 1'b1;
+  localparam cosim_trace_en_li = 1;
+  localparam cosim_check_en_li = 1;
   bind bp_be_top
     bp_be_nonsynth_cosim
-     #(.bp_params_p(bp_params_p), .trace_str_p("commit"))
+     #(.bp_params_p(bp_params_p)
+       ,.trace_str_p("commit")
+       )
      cosim
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
        ,.en_i(testbench.cosim_en_li)
 
-       ,.trace_en_pi(testbench.cosim_trace_p)
-       ,.check_en_pi(testbench.cosim_check_p)
+       ,.trace_en_pi(testbench.cosim_trace_en_li)
+       ,.check_en_pi(testbench.cosim_check_en_li)
 
        ,.cosim_clk_i(testbench.tb_clk)
        ,.cosim_reset_i(testbench.tb_reset)
        );
 
-  wire uce_trace_en_li = testbench.uce_trace_p;
+  wire uce_trace_en_li = 1'b1;
   bind bp_uce
     bp_me_nonsynth_uce_tracer
-     #(.bp_params_p(bp_params_p), .trace_str_p("uce")
+     #(.bp_params_p(bp_params_p), .trace_str_p("uce"), .plusargs_str_p("uce_trace")
        ,.writeback_p(writeback_p)
        ,.assoc_p(assoc_p)
        ,.sets_p(sets_p)
@@ -325,10 +320,10 @@ module testbench
        ,.en_i(testbench.uce_trace_en_li)
        );
 
-  wire lce_trace_en_li = testbench.lce_trace_p;
+  wire lce_trace_en_li = 1'b1;
   bind bp_lce
     bp_me_nonsynth_lce_tracer
-     #(.bp_params_p(bp_params_p), .trace_str_p("lce")
+     #(.bp_params_p(bp_params_p), .trace_str_p("lce"), .plusargs_str_p("lce_trace")
        ,.sets_p(sets_p)
        ,.assoc_p(assoc_p)
        ,.block_width_p(block_width_p)
@@ -341,10 +336,10 @@ module testbench
        ,.en_i(testbench.lce_trace_en_li)
        );
 
-  wire cce_trace_en_li = testbench.cce_trace_p;
+  wire cce_trace_en_li = 1'b1;
   bind bp_cce_wrapper
     bp_me_nonsynth_cce_tracer
-     #(.bp_params_p(bp_params_p), .trace_str_p("cce"))
+     #(.bp_params_p(bp_params_p), .trace_str_p("cce"), .plusargs_str_p("cce_trace"))
      cce_tracer
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
@@ -353,10 +348,10 @@ module testbench
 
 // v5.036: Unsupported: Bind with instance list
 `ifndef VERILATOR
-  wire clint_trace_en_li = testbench.dev_trace_p;
+  wire clint_trace_en_li = 1'b1;
   bind bp_me_bedrock_register:clints_register
     bp_me_nonsynth_dev_tracer
-     #(.bp_params_p(bp_params_p), .trace_str_p("clint")
+     #(.bp_params_p(bp_params_p), .trace_str_p("clint"), .plusargs_str_p("clint_trace")
        ,.els_p(els_p)
        ,.reg_data_width_p(reg_data_width_p)
        ,.reg_addr_width_p(reg_addr_width_p)
@@ -368,10 +363,10 @@ module testbench
        ,.cfg_bus_i(bp_me_clint_slice.cfg_bus_i)
        );
 
-  wire cfg_trace_en_li = testbench.dev_trace_p;
+  wire cfg_trace_en_li = 1'b1;
   bind bp_me_bedrock_register:cfgs_register
     bp_me_nonsynth_dev_tracer
-     #(.bp_params_p(bp_params_p), .trace_str_p("cfg")
+     #(.bp_params_p(bp_params_p), .trace_str_p("cfg"), .plusargs_str_p("cfg_trace")
        ,.els_p(els_p)
        ,.reg_data_width_p(reg_data_width_p)
        ,.reg_addr_width_p(reg_addr_width_p)
@@ -384,7 +379,7 @@ module testbench
        );
 `endif
 
-  wire dram_trace_en_li = testbench.dram_trace_p;
+  wire dram_trace_en_li = 1'b1;
   bind bp_nonsynth_dram
     bp_nonsynth_dram_tracer
      #(.num_dma_p(num_dma_p)
@@ -393,6 +388,7 @@ module testbench
        ,.dma_burst_len_p(dma_burst_len_p)
        ,.dma_mask_width_p(dma_mask_width_p)
        ,.trace_str_p("dram")
+       ,.plusargs_str_p("dram_trace")
        )
      dram_tracer
       (.clk_i(clk_i)

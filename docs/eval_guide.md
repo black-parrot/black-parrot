@@ -75,7 +75,7 @@ PLUSARGS:
   - +uce_trace: UCE tracer
   - +dev_trace: CLINT and CFG tracer
   - +dram_trace: DRAM tracer
-## bp_top Simulation Examples
+## bp\_top Simulation Examples
 **Hello World**
 ```bash
 make -C bp_top/verilator build.verilator sim.verilator
@@ -106,7 +106,7 @@ Supported PARAMS:
     - 1 = single set hammer test
     - 2 = test from trace file input based on PROG
 
-## bp_me Simulation Examples
+## bp\_me Simulation Examples
 
 **Clean Build with Waveform Support**
 ```bash

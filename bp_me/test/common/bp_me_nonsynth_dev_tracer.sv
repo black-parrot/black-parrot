@@ -21,6 +21,7 @@ module bp_me_nonsynth_dev_tracer
    , parameter `BSG_INV_PARAM(reg_addr_width_p)
 
    , parameter string trace_str_p = ""
+   , parameter string plusargs_str_p = ""
    `declare_bp_common_if_widths(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p)
    )
   (input                                              clk_i
@@ -56,7 +57,7 @@ module bp_me_nonsynth_dev_tracer
   wire [reg_data_width_p-1:0] rdata_r = rdata[r_sel_r];
 
   // record
-  `declare_bp_tracer_control(clk_i, reset_i, en_i, trace_str_p, mhartid);
+  `declare_bp_tracer_control_plusargs(clk_i, reset_i, en_i, trace_str_p, mhartid, plusargs_str_p);
   always_ff @(posedge clk_i)
     if (is_go)
       begin

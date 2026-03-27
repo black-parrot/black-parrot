@@ -6,6 +6,7 @@ module bp_nonsynth_vm_tracer
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
    , parameter string trace_str_p = ""
+   , parameter string plusargs_str_p = ""
    )
   (input                             clk_i
    , input                           reset_i
@@ -37,7 +38,7 @@ module bp_nonsynth_vm_tracer
   logic [vtag_width_p-1:0] vtag_r; always_ff @(posedge clk_i) if (req_v) vtag_r <= vtag;
 
   // record
-  `declare_bp_tracer_control(clk_i, reset_i, en_i, trace_str_p, mhartid);
+  `declare_bp_tracer_control_plusargs(clk_i, reset_i, en_i, trace_str_p, mhartid, plusargs_str_p);
 
   always_ff @(posedge clk_i)
     if (do_init)
