@@ -62,7 +62,7 @@ module bp_nonsynth_cfg_loader
   initial
     if ($value$plusargs({ucode_str_p,"=%s"}, ucode_file))
       begin
-        $display("BSG-INFO: Initalizing ucode with ucode_str=%s", ucode_file);
+        $display("BSG-INFO: Initializing ucode with ucode_str=%s", ucode_file);
         $readmemb(ucode_file, ucode_mem);
       end
 
