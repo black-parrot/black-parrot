@@ -29,6 +29,7 @@ module bp_me_cache_controller
    , localparam cache_pkt_width_lp = `bsg_cache_pkt_width(daddr_width_p, l2_data_width_p)
    )
   (input                                                   clk_i
+   , input [cfg_bus_width_lp-1:0]                           cfg_bus_i
    , input                                                 reset_i
 
    // BedRock Stream interface
@@ -65,6 +66,10 @@ module bp_me_cache_controller
   localparam data_byte_offset_width_lp = `BSG_SAFE_CLOG2(data_bytes_lp);
 
   `declare_bsg_cache_pkt_s(daddr_width_p, l2_data_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
+
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
@@ -167,7 +172,7 @@ module bp_me_cache_controller
 
   bp_local_addr_s local_addr_li;
   assign local_addr_li = fsm_fwd_addr_li;
-  localparam l1c_l2c_base_lp = paddr_width_p'(dram_base_addr_gp);
+  wire [paddr_width_p-1:0] l1c_l2c_base_lp = cfg_bus_cast_i.dram_base;
   localparam l1uc_l2c_base_lp = paddr_width_p'(1'b1 << caddr_width_p);
   localparam l1uc_l2uc_base_lp = l1c_l2c_base_lp | l1uc_l2c_base_lp;
   wire is_uc_op   = (local_addr_li >= l1uc_l2c_base_lp) && (local_addr_li < l1uc_l2uc_base_lp);
@@ -257,7 +262,8 @@ module bp_me_cache_controller
   bp_me_dram_hash_encode
    #(.bp_params_p(bp_params_p))
    bank_select
-    (.paddr_i(fsm_fwd_addr_li)
+    (.dram_base_i(cfg_bus_cast_i.dram_base)
+         ,.paddr_i(fsm_fwd_addr_li)
      ,.data_i(fsm_fwd_data_li)
 
      ,.dram_o(fwd_pkt_dram_lo)

@@ -111,6 +111,7 @@ module bp_cce_reg
       )
     req_pma
       (.paddr_i(lce_req_hdr.addr)
+       ,.dram_base_i(cfg_bus_cast_i.dram_base)
        ,.cacheable_addr_o(req_pma_cacheable_addr_lo)
        );
 

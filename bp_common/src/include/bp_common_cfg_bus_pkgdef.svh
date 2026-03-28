@@ -57,6 +57,7 @@
   localparam cfg_reg_dcache_mode_gp     = (dev_addr_width_gp)'('h0_0408);
   localparam cfg_reg_cce_id_gp          = (dev_addr_width_gp)'('h0_0600);
   localparam cfg_reg_cce_mode_gp        = (dev_addr_width_gp)'('h0_0608);
+  localparam cfg_reg_dram_base_gp       = (dev_addr_width_gp)'('h0_0610);
   localparam cfg_mem_cce_ucode_base_gp  = (dev_addr_width_gp)'('h0_8000);
   localparam cfg_mem_cce_ucode_match_gp = (dev_addr_width_gp)'('h0_8???);
 

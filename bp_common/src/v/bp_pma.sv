@@ -12,13 +12,14 @@ module bp_pma
    , input [ptag_width_p-1:0]     ptag_i
    , input                        uncached_mode_i
    , input                        nonspec_mode_i
+   , input [39:0]                 dram_base_i
 
    , output logic                 uncached_o
    , output logic                 nonidem_o
    , output logic                 dram_o
    );
 
-  wire is_local_addr = (ptag_i < ptag_width_p'(dram_base_addr_gp >> page_offset_width_gp));
+  wire is_local_addr = (ptag_i < ptag_width_p'(dram_base_i >> page_offset_width_gp));
   wire is_io_addr    = (ptag_i[ptag_width_p-1:dtag_width_p] != '0);
   wire is_uc_addr    = (ptag_i[ptag_width_p-1:(caddr_width_p - page_offset_width_gp)] != '0);
 

@@ -34,6 +34,7 @@ module bp_me_dram_hash_encode
    , localparam lg_l2_sets_lp   = `BSG_SAFE_CLOG2(l2_sets_p)
    )
   (input [paddr_width_p-1:0]            paddr_i
+   , input [39:0]                       dram_base_i
    , input [bedrock_fill_width_p-1:0]   data_i
 
    , output logic                       dram_o
@@ -46,8 +47,8 @@ module bp_me_dram_hash_encode
   bp_me_l2_csr_addr_s tag_addr_li;
   assign tag_addr_li = paddr_i;
 
-  wire is_dram_addr = paddr_i >= dram_base_addr_gp;
-  wire is_csr_addr  = paddr_i  < dram_base_addr_gp;
+  wire is_dram_addr = paddr_i >= dram_base_i;
+  wire is_csr_addr  = paddr_i  < dram_base_i;
   wire is_tag_op  = is_csr_addr & paddr_i[0+:dev_addr_width_gp] inside {cache_tagop_match_addr_gp};
   wire is_lock_op = is_csr_addr & paddr_i[0+:dev_addr_width_gp] inside {cache_alock_match_addr_gp};
   wire is_addr_op = is_csr_addr & paddr_i[0+:dev_addr_width_gp] inside {cache_addrop_match_addr_gp};

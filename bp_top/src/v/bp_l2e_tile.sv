@@ -255,7 +255,7 @@ module bp_l2e_tile
   bp_local_addr_s local_addr;
   assign local_addr = mem_fwd_header_lo.addr;
   wire [dev_id_width_gp-1:0] device_fwd_li = local_addr.dev;
-  wire local_fwd_li    = (mem_fwd_header_lo.addr < dram_base_addr_gp);
+  wire local_fwd_li    = (mem_fwd_header_lo.addr < cfg_bus_lo.dram_base);
 
   wire is_cfg_fwd      = local_fwd_li & (device_fwd_li == cfg_dev_gp);
   wire is_mem_fwd      = ~local_fwd_li || (local_fwd_li & (device_fwd_li == cache_dev_gp));
@@ -376,6 +376,7 @@ module bp_l2e_tile
    l2s
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
+     ,.cfg_bus_i(cfg_bus_lo)
 
      ,.mem_fwd_header_i(dev_fwd_header_li[0])
      ,.mem_fwd_data_i(dev_fwd_data_li[0])

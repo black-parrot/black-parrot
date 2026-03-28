@@ -27,10 +27,11 @@ module bp_cce_pma
     `declare_bp_proc_params(bp_params_p)
   )
   (input [paddr_width_p-1:0]                           paddr_i
+   , input [39:0]                                      dram_base_i
    , output logic                                      cacheable_addr_o
   );
 
-  assign cacheable_addr_o = (paddr_i >= dram_base_addr_gp) && ~|paddr_i[paddr_width_p-1:caddr_width_p];
+  assign cacheable_addr_o = (paddr_i >= dram_base_i) && ~|paddr_i[paddr_width_p-1:caddr_width_p];
 
 endmodule
 

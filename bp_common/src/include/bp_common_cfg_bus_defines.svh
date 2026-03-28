@@ -15,6 +15,7 @@
       bp_cce_mode_e                cce_mode;          \
       logic [hio_width_mp-1:0]     hio_mask;          \
       logic [did_width_mp-1:0]     did;               \
+      logic [39:0]                 dram_base;         \
     }  bp_cfg_bus_s
 
   `define bp_cfg_bus_width(vaddr_width_mp, hio_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, did_width_mp) \
@@ -29,6 +30,7 @@
      + $bits(bp_cce_mode_e)           \
      + hio_width_mp                   \
      + did_width_mp                   \
+     + 40                             \
      )
 
 `endif

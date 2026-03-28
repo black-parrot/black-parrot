@@ -404,6 +404,7 @@ module bp_cce_fsm
     #(.bp_params_p(bp_params_p))
     req_pma
       (.paddr_i(fsm_req_header_li.addr)
+       ,.dram_base_i(cfg_bus_cast_i.dram_base)
        ,.cacheable_addr_o(req_pma_cacheable_addr_lo)
        );
 
@@ -428,6 +429,7 @@ module bp_cce_fsm
     #(.bp_params_p(bp_params_p))
     fwd_pma
       (.paddr_i(fsm_fwd_header_lo.addr)
+       ,.dram_base_i(cfg_bus_cast_i.dram_base)
        ,.cacheable_addr_o(fwd_pma_cacheable_addr_lo)
        );
 
@@ -436,6 +438,7 @@ module bp_cce_fsm
     #(.bp_params_p(bp_params_p))
     rev_pma
       (.paddr_i(fsm_rev_header_li.addr)
+       ,.dram_base_i(cfg_bus_cast_i.dram_base)
        ,.cacheable_addr_o(rev_pma_cacheable_addr_lo)
        );
 

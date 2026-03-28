@@ -244,6 +244,7 @@ module bp_cce_msg
     #(.bp_params_p(bp_params_p))
     fwd_pma
       (.paddr_i(mem_fwd_header_cast_o.addr)
+       ,.dram_base_i(cfg_bus_cast_i.dram_base)
        ,.cacheable_addr_o(fwd_pma_cacheable_addr_lo)
        );
 
@@ -252,6 +253,7 @@ module bp_cce_msg
     #(.bp_params_p(bp_params_p))
     rev_pma
       (.paddr_i(mem_rev_header_cast_i.addr)
+       ,.dram_base_i(cfg_bus_cast_i.dram_base)
        ,.cacheable_addr_o(rev_pma_cacheable_addr_lo)
        );
 

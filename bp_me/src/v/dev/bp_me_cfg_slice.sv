@@ -51,14 +51,14 @@ module bp_me_cfg_slice
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `bp_cast_o(bp_cfg_bus_s, cfg_bus);
 
-  localparam reg_els_lp = 10;
+  localparam reg_els_lp = 11;
 
   logic cord_r_v_li, did_r_v_li, host_did_r_v_li, hio_mask_r_v_li;
   logic cord_w_v_li, did_w_v_li, host_did_w_v_li, hio_mask_w_v_li;
   logic cce_ucode_r_v_li, cce_mode_r_v_li, dcache_mode_r_v_li, icache_mode_r_v_li;
-  logic npc_r_v_li, freeze_r_v_li;
+  logic npc_r_v_li, freeze_r_v_li, dram_base_r_v_li;
   logic cce_ucode_w_v_li, cce_mode_w_v_li, dcache_mode_w_v_li, icache_mode_w_v_li;
-  logic npc_w_v_li, freeze_w_v_li;
+  logic npc_w_v_li, freeze_w_v_li, dram_base_w_v_li;
   logic [dev_addr_width_gp-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_lo;
   logic [reg_els_lp-1:0][dword_width_gp-1:0] data_li;
@@ -70,7 +70,7 @@ module bp_me_cfg_slice
      ,.base_addr_p({cfg_reg_cord_gp, cfg_reg_did_gp, cfg_reg_host_did_gp, cfg_reg_hio_mask_gp
                     ,cfg_reg_cce_mode_gp, cfg_reg_dcache_mode_gp, cfg_reg_icache_mode_gp
                     ,cfg_mem_cce_ucode_match_gp
-                    ,cfg_reg_npc_gp, cfg_reg_freeze_gp
+                    ,cfg_reg_npc_gp, cfg_reg_freeze_gp, cfg_reg_dram_base_gp
                     })
      )
    cfgs_register
@@ -78,12 +78,12 @@ module bp_me_cfg_slice
      ,.r_v_o({cord_r_v_li, did_r_v_li, host_did_r_v_li, hio_mask_r_v_li
               ,cce_mode_r_v_li, dcache_mode_r_v_li, icache_mode_r_v_li
               ,cce_ucode_r_v_li
-              ,npc_r_v_li, freeze_r_v_li
+              ,npc_r_v_li, freeze_r_v_li, dram_base_r_v_li
               })
      ,.w_v_o({cord_w_v_li, did_w_v_li, host_did_w_v_li, hio_mask_w_v_li
               ,cce_mode_w_v_li, dcache_mode_w_v_li, icache_mode_w_v_li
               ,cce_ucode_w_v_li
-              ,npc_w_v_li, freeze_w_v_li
+              ,npc_w_v_li, freeze_w_v_li, dram_base_w_v_li
               })
      ,.addr_o(addr_lo)
      ,.size_o()
@@ -97,6 +97,7 @@ module bp_me_cfg_slice
   bp_lce_mode_e dcache_mode_r;
   bp_cce_mode_e cce_mode_r;
   logic [hio_width_p-1:0] hio_mask_r;
+  logic [39:0] dram_base_r;
   always_ff @(posedge clk_i)
     if (reset_i)
       begin
@@ -106,6 +107,7 @@ module bp_me_cfg_slice
         dcache_mode_r       <= e_lce_mode_uncached;
         cce_mode_r          <= e_cce_mode_uncached;
         hio_mask_r          <= '0;
+        dram_base_r         <= 40'(dram_base_addr_gp);
       end
     else
       begin
@@ -115,6 +117,7 @@ module bp_me_cfg_slice
         dcache_mode_r <= bp_lce_mode_e'(dcache_mode_w_v_li ? data_lo : dcache_mode_r);
         cce_mode_r    <= bp_cce_mode_e'(cce_mode_w_v_li    ? data_lo : cce_mode_r);
         hio_mask_r    <= hio_mask_w_v_li                   ? data_lo : hio_mask_r;
+        dram_base_r   <= dram_base_w_v_li                  ? data_lo : dram_base_r;
       end
 
   // Prevent writing CCE ucode if we're already out of uncached mode.
@@ -148,6 +151,7 @@ module bp_me_cfg_slice
                             ,cce_mode: cce_mode_r
                             ,hio_mask: hio_mask_r
                             ,did: did_i
+                            ,dram_base: dram_base_r
                             };
 
   assign data_li[0] = freeze_r;
@@ -160,6 +164,7 @@ module bp_me_cfg_slice
   assign data_li[7] = host_did_i;
   assign data_li[8] = did_i;
   assign data_li[9] = cord_i;
+  assign data_li[10] = dram_base_r;
 
 endmodule
 

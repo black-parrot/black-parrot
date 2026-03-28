@@ -159,7 +159,7 @@ module bp_unicore
       bp_local_addr_s local_addr;
       assign local_addr = proc_fwd_header_lo[i].addr;
       wire [dev_id_width_gp-1:0] device_fwd_li = local_addr.dev;
-      wire is_local        = (proc_fwd_header_lo[i].addr < dram_base_addr_gp);
+      wire is_local        = (proc_fwd_header_lo[i].addr < cfg_bus_lo.dram_base);
       wire is_my_core      = is_local & (local_addr.tile == cfg_bus_lo.core_id);
       wire is_other_core   = is_local & (local_addr.tile != cfg_bus_lo.core_id);
       wire is_other_hio    = (local_addr[paddr_width_p-1-:hio_width_p] != 0);
@@ -177,7 +177,8 @@ module bp_unicore
       bp_me_dram_hash_encode
        #(.bp_params_p(bp_params_p))
        slice_select
-        (.paddr_i(local_addr)
+        (.dram_base_i(cfg_bus_lo.dram_base)
+         ,.paddr_i(local_addr)
          ,.data_i()
 
          ,.dram_o()
@@ -327,6 +328,7 @@ module bp_unicore
        l2s
         (.clk_i(clk_i)
          ,.reset_i(reset_r)
+         ,.cfg_bus_i(cfg_bus_lo)
 
          ,.mem_fwd_header_i(dev_fwd_header_li[l2s_dev_base_id_lp+i])
          ,.mem_fwd_data_i(dev_fwd_data_li[l2s_dev_base_id_lp+i])

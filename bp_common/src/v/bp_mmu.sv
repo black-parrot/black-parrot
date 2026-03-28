@@ -140,6 +140,10 @@ module bp_mmu
   assign tlb_entry_lo      = trans_r ? tlb_r_entry_r : passthrough_entry;
   wire tlb_v_lo            = trans_r ? tlb_r_v_r : r_v_r;
 
+  `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
+
   wire ptag_v_lo                  = tlb_v_lo;
   wire [ptag_width_p-1:0] ptag_lo = tlb_entry_lo.ptag;
   logic ptag_uncached_lo, ptag_nonidem_lo, ptag_dram_lo;
@@ -153,6 +157,7 @@ module bp_mmu
      ,.uncached_mode_i(uncached_mode_i)
      ,.nonspec_mode_i(nonspec_mode_i)
 
+     ,.dram_base_i(cfg_bus_cast_i.dram_base)
      ,.uncached_o(ptag_uncached_lo)
      ,.nonidem_o(ptag_nonidem_lo)
      ,.dram_o(ptag_dram_lo)
