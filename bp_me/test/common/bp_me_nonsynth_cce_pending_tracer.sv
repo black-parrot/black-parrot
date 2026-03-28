@@ -1,4 +1,4 @@
-ERROR_NOT_CURRENTLY_SUPPORTED
+// ERROR_NOT_CURRENTLY_SUPPORTED
 
 /**
  *
@@ -41,10 +41,14 @@ module bp_me_nonsynth_cce_pending_tracer
   int file;
   string file_name;
 
-  always_ff @(negedge reset_i) begin
-    file_name = $sformatf("%s_%x.trace", cce_pending_trace_file_p, cce_id_i);
-    file      = $fopen(file_name, "w");
+initial begin
+  file_name = $sformatf("%s_%x.trace", cce_pending_trace_file_p, cce_id_i);
+  file = $fopen(file_name, "w");
+
+  if (file == 0) begin
+    $error("Failed to open trace file: %s", file_name);
   end
+end
 
   // Tracer
   always_ff @(negedge clk_i) begin
@@ -68,5 +72,10 @@ module bp_me_nonsynth_cce_pending_tracer
       end
     end // reset
   end // always_ff
+
+final begin 
+  if (file)
+    $fclose(file);
+end     
 
 endmodule
