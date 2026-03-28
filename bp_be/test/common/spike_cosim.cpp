@@ -50,7 +50,7 @@ class loadmem_memif_t : public memif_t {
         size_t start;
 };
 
-extern "C" void* cosim_init(int ncpus, int memsize) {
+extern "C" void* cosim_init(int ncpus, int memsize, const char* prog_name) {
     size_t memory_size = memsize;
     size_t base = 0x80000000;
     size_t size = memory_size*1024*1024;
@@ -64,7 +64,7 @@ extern "C" void* cosim_init(int ncpus, int memsize) {
         cfg.start_pc = base;
         cfg.pmpregions = 0;
 
-        args.push_back("prog.riscv");
+        args.push_back(prog_name);
 
         handle = new sim_t(&cfg, false,
                 mems,
@@ -79,7 +79,7 @@ extern "C" void* cosim_init(int ncpus, int memsize) {
 
         reg_t entry;
         loadmem_memif_t loadmem_memif(data, base);
-        load_elf("prog.riscv", &loadmem_memif, &entry, 0);
+        load_elf(prog_name, &loadmem_memif, &entry, 0);
 
         bus_t temp_mem_bus;
         for (auto& pair : mems) temp_mem_bus.add_device(pair.first, pair.second);
