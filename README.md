@@ -1,5 +1,5 @@
 ![BlackParrot Logo](docs/bp_logo.png)
-# BlackParrot: A Linux-Capable Accelerator Host RISC-V Multicore [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Gitlab CI](https://gitlab.com/bespoke-silicon-group/black-parrot/badges/master/pipeline.svg)](https://gitlab.com/bespoke-silicon-group/black-parrot/pipelines) [![Contributers](https://img.shields.io/github/contributors/black-parrot/black-parrot.svg?style=flat)]()
+# BlackParrot: A Linux-Capable Accelerator Host RISC-V Multicore [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Gitlab CI](https://gitlab.com/bespoke-silicon-group/black-parrot/badges/master/pipeline.svg)](https://gitlab.com/bespoke-silicon-group/black-parrot/pipelines) [![Contributors](https://img.shields.io/github/contributors/black-parrot/black-parrot.svg?style=flat)]()
 
 BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, RV64GC+ multicore used by the world.
 Although originally developed by the University of Washington and Boston University, BlackParrot strives to be community-driven and infrastructure agnostic, a core which is Pareto optimal in terms of power, performance, area and complexity.
@@ -12,7 +12,7 @@ BlackParrot is ideal as the basis for a lightweight accelerator host, a standalo
 - Be TINY
     - When deliberating between two options, consider the one with least hardware cost/complexity
 - Be Modular
-    - Prevent tight coupling between modules by designing latency insenstive interfaces
+    - Prevent tight coupling between modules by designing latency insensitive interfaces
 - Be Friendly
     - Combat NIH, welcome external contributions and strive for infrastructure agnosticism
 
@@ -20,7 +20,7 @@ BlackParrot is ideal as the basis for a lightweight accelerator host, a standalo
 
 BlackParrot v1.0 was released in March 2020 and has been up and quad core silicon has been running in the lab since April 2020.
 BlackParrot v2.0 was released in January 2024 and has been up and running in the lab since then.
-BlackParrot v2.1 was released in 
+BlackParrot v2.1 was released in November 2025
 
 Currently supported:
 - RV64IMAFDCSU\_Zfencei\_Zicsr\_Zcbo\_Zba\_Zbb\_Zbs ISA extensions
@@ -54,7 +54,7 @@ Users can of course set up their own environments based on these examples.
 ## Getting started
 
 Generally, this repo is included as part of a complete simulation environment.
-However, the libraries can be build directly here as well.
+However, the libraries can be built directly here as well.
 For most users, the following makefile targets will be the most useful:
 
     make libs_lite;     # minimal set of simulation libraries
@@ -78,7 +78,7 @@ test the core RTL: [Evaluation Guide](docs/eval_guide.md)
 
 ## How to contribute
 
-Although information in collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
+Although information is collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
 
 We welcome external contributions!
 Please join our mailing list at [Google Groups](https://groups.google.com/forum/#!forum/black-parrot), ask questions or just tell us how you're using BlackParrot!
@@ -143,7 +143,7 @@ Our goal with BlackParrot is to bootstrap a community-maintained RISC-V core, an
 ## Have us help you out
 
 We're happy to help advise BlackParrot projects, but have limited bandwidth for technical support.
-Please read all documentation carefully and follow all user guides. We only offically support Centos 7 and Ubuntu 20.04 so
+Please read all documentation carefully and follow all user guides. We only officially support Centos 7 and Ubuntu 20.04 so
 we cannot troubleshoot environment issues on other OSes. We appreciate PRs to clarify and correct documentation!
 
 Upon finding an issue, the procedure should be:

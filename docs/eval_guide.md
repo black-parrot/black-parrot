@@ -1,7 +1,7 @@
 # Evaluation Guide
 ## Tool configuration
 
-Tools flows are defined by makefiles in mk/Makefile.<TOOL>.
+Tools flows are defined by makefiles in mk/Makefile<TOOL>.
 Currently, [Synopsys VCS](https://www.synopsys.com/verification/simulation/vcs.html) and [Verilator](https://github.com/verilator/verilator) are supported for simulation.
 [Synopsys DC] is supported for "pickling", or converting into a single Verilog-2005 file for tool compatibility.
 
@@ -17,10 +17,10 @@ Simulation testbenches support CONFIG:
 Simulation testbenches support PARAMS:
 - TB_CLOCK_PERIOD_P: clock period for the testbench
 - TB_RESET_CYCLES_LO_P: number of initial low reset cycles
-- TB_RESET_CYCLES_HI_P: number of initial low reset cycles
+- TB_RESET_CYCLES_HI_P: number of initial high reset cycles
 - DUT_CLOCK_PERIOD_P: clock period for the dut
 - DUT_RESET_CYCLES_LO_P: number of initial low reset cycles
-- DUT_RESET_CYCLES_HI_P: number of initial low reset cycles
+- DUT_RESET_CYCLES_HI_P: number of initial high reset cycles
 
 Simulation testbenches support FLAGS:
 - ASSERT: Enable SystemVerilog assertions
@@ -28,13 +28,13 @@ Simulation testbenches support FLAGS:
 
 ## Running a simulation
 
-Instructions for a bp\_me verilator simulation
+Instructions for a bp\_me verilator simulation:
 
 
     cd bp_me/verilator
     # make build.verilator; # optional build, will also be done on-demand
     # make lint.verilator; # optional lint
-    make sim.verilator; # optional <CONFIG>= <FLAG>= <PARAM>=
+    make sim.verilator; # optional <CONFIG>= <FLAG>= <PARAM>= <PLUSARGS>=
 
 
 ## Running RISC-V regression
@@ -65,14 +65,29 @@ PARAMS:
     - STALL_CYCLES_P: How many cycles before watchdog throws error
     - HALT_INSTR_P: How many instructions before watchdog considers a core halted
     - HEARTBEAT_INSTR_P: Period for heatbeat information
-- ICACHE_TRACE_P: L1 I$ tracer
-- DCACHE_TRACE_P: L1 D$ tracer
-- VM_TRACE_P: MMU tracer
-- UCE_TRACE_P: UCE tracer
-- LCE_TRACE_P: LCE tracer
-- CCE_TRACE_P: CCE tracer
-- DEV_TRACE_P: CLINT and CFG tracer
-- DRAM_TRACE_P: DRAM tracer
+
+PLUSARGS:
+  - +icache_trace: L1 I$ tracer
+  - +dcache_trace: L1 D$ tracer
+  - +vm_trace: ITLB / DTLB tracers
+  - +cce_trace: CCE tracer
+  - +lce_trace: LCE tracer
+  - +uce_trace: UCE tracer
+  - +dev_trace: CLINT / CFG tracers
+  - +dram_trace: DRAM tracer
+## bp\_top Simulation Examples
+**Hello World**
+```bash
+make -C bp_top/verilator build.verilator sim.verilator
+```
+- Validates: Basic boot flow, UART output, and core-to-memory communication.
+- Expected Output: "Hello World!" appearing in the simulation log.
+
+**RISC-V ISA Simple Test**
+```bash
+make -C bp_top/verilator build.verilator sim.verilator PROG=rv64ui-p-simple CFG=e_bp_unicore_cfg
+```
+- Validates: Correctness of basic integer instructions (RV64I).
 
 ## Running Memory End regression
 
@@ -90,6 +105,33 @@ Supported PARAMS:
     - 0 = random loads and stores
     - 1 = single set hammer test
     - 2 = test from trace file input based on PROG
+
+## bp\_me Simulation Examples
+
+**Clean Build with Waveform Support**
+```bash
+make -C bp_me/verilator clean build.verilator sim.verilator TRACE=1 -j2
+```
+- Validates: `TRACE=1`  enables `--trace-fst` for high-performance waveform generation.
+
+**Random Coherence Stress**
+```bash
+make -C bp_me/verilator build.verilator sim.verilator TRACE=1 PROG=random_test NUM_INSTR_P=5000
+```
+- Validates: LCE/CCE protocol transitions and randomized memory access patterns.
+
+**Set Hammer Test**
+```bash
+make -C bp_me/verilator build.verilator sim.verilator TRACE=1 PROG=set_test ME_TEST_P=1
+```
+- Validates: Cache eviction behavior and replacement logic under single-set stress.
+
+**Trace-Based Deterministic Test**
+```bash
+make -C bp_me/verilator build.verilator sim.verilator TRACE=1 PROG=mixed ME_TEST_P=2
+```
+- Validates: Trace replay correctness and reproducibility of specific scenarios.
+
 
 ## Synthesis smoke tests
 

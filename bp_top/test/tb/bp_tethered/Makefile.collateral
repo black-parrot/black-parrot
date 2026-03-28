@@ -23,7 +23,7 @@ endif
 
 ifneq (00,$(DROMAJO_COSIM)$(SPIKE_COSIM))
 RUN_COLLATERAL += prog.riscv
-PLUSARGS += +elf_file=prog.riscv
+RUN_PLUSARGS += +elf_file=prog.riscv
 endif
 
 ifeq (1,$(DISASSEMBLE))
@@ -32,11 +32,11 @@ endif
 
 ifeq (1,$(CFG_UCODE))
 RUN_COLLATERAL += ucode.mem
-PLUSARGS += +ucode_mem=ucode.mem
+RUN_PLUSARGS += +ucode_mem=ucode.mem
 endif
 
 RUN_COLLATERAL += prog.mem
-PLUSARGS += +init_mem=prog.mem
+RUN_PLUSARGS += +init_mem=prog.mem
 
 ifeq (1,$(SPIKE_TRACE))
 RUN_COLLATERAL += spike.trace
