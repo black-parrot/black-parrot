@@ -81,7 +81,7 @@ An ideal collaboration looks like the following:
 
 ## Tips for having your PR approved
 
-- Follow the [BlackParrot style guide](STYLE_GUIDE.md).
+- Follow the [BlackParrot style guide](#code-aesthetics).
 - Make separate commits for moving files, cleaning files and functional changes.
 - Rebase away 'temporary' or 'broken' commits.
 - Code should lint in both Verilator and VCS (if you have access to it).
