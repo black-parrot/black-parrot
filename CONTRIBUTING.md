@@ -81,7 +81,7 @@ An ideal collaboration looks like the following:
 
 ## Tips for having your PR approved
 
-- Follow the [BlackParrot style guide](STYLE_GUIDE.md).
+- Follow the [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md).
 - Make separate commits for moving files, cleaning files and functional changes.
 - Rebase away 'temporary' or 'broken' commits.
 - Code should lint in both Verilator and VCS (if you have access to it).
