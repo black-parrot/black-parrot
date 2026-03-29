@@ -55,8 +55,9 @@ module bp_be_csr
    , output logic [vaddr_width_p-1:0]        ctx_npc_write_npc_o
 
    // rpush: write an arbitrary register of a disabled thread's register file (CSR 0x083)
-   // Write format: bits[38:0]=value, bits[40:39]=thread_id, bits[45:41]=reg_addr
+   // Write format: bits[38:0]=value, bits[40:39]=thread_id, bits[45:41]=reg_addr, bit[46]=fp_sel
    , output logic                            ctx_rpush_v_o
+   , output logic                            ctx_rpush_fp_v_o
    , output logic [thread_id_width_p-1:0]    ctx_rpush_tid_o
    , output logic [reg_addr_width_gp-1:0]    ctx_rpush_reg_o
    , output logic [dpath_width_gp-1:0]       ctx_rpush_data_o
@@ -747,7 +748,11 @@ module bp_be_csr
   // Write format: bits[38:0]                                    = value (39-bit vaddr width)
   //               bits[38+thread_id_width_p : 39]               = thread_id
   //               bits[38+thread_id_width_p+reg_addr_width_gp : 39+thread_id_width_p] = reg_addr
-  assign ctx_rpush_v_o    = csr_w_v_li & (csr_addr_li == 12'h083);
+  //               bit[46]                                        = fp_sel (1=FP regfile, 0=INT regfile)
+  localparam fp_sel_bit_lp = vaddr_width_p + thread_id_width_p + reg_addr_width_gp;
+  wire rpush_v = csr_w_v_li & (csr_addr_li == 12'h083);
+  assign ctx_rpush_v_o    = rpush_v & ~csr_data_li[fp_sel_bit_lp];
+  assign ctx_rpush_fp_v_o = rpush_v &  csr_data_li[fp_sel_bit_lp];
   assign ctx_rpush_tid_o  = csr_data_li[vaddr_width_p +: thread_id_width_p];
   assign ctx_rpush_reg_o  = csr_data_li[vaddr_width_p + thread_id_width_p +: reg_addr_width_gp];
   assign ctx_rpush_data_o = {{(dpath_width_gp - vaddr_width_p){1'b0}}, csr_data_li[0 +: vaddr_width_p]};

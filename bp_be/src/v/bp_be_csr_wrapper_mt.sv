@@ -70,6 +70,7 @@ module bp_be_csr_wrapper_mt
 
    // rpush: write arbitrary register of a disabled thread (CSR 0x083)
    , output logic                            ctx_rpush_v_o
+   , output logic                            ctx_rpush_fp_v_o
    , output logic [thread_id_width_p-1:0]    ctx_rpush_tid_o
    , output logic [reg_addr_width_gp-1:0]    ctx_rpush_reg_o
    , output logic [dpath_width_gp-1:0]       ctx_rpush_data_o
@@ -90,6 +91,7 @@ module bp_be_csr_wrapper_mt
   logic [num_threads_p-1:0][thread_id_width_p-1:0]    ctx_npc_write_tid_co;
   logic [num_threads_p-1:0][vaddr_width_p-1:0]        ctx_npc_write_npc_co;
   logic [num_threads_p-1:0]                            ctx_rpush_v_co;
+  logic [num_threads_p-1:0]                            ctx_rpush_fp_v_co;
   logic [num_threads_p-1:0][thread_id_width_p-1:0]    ctx_rpush_tid_co;
   logic [num_threads_p-1:0][reg_addr_width_gp-1:0]    ctx_rpush_reg_co;
   logic [num_threads_p-1:0][dpath_width_gp-1:0]       ctx_rpush_data_co;
@@ -147,6 +149,7 @@ module bp_be_csr_wrapper_mt
        ,.ctx_npc_write_npc_o(ctx_npc_write_npc_co[i])
 
        ,.ctx_rpush_v_o(ctx_rpush_v_co[i])
+       ,.ctx_rpush_fp_v_o(ctx_rpush_fp_v_co[i])
        ,.ctx_rpush_tid_o(ctx_rpush_tid_co[i])
        ,.ctx_rpush_reg_o(ctx_rpush_reg_co[i])
        ,.ctx_rpush_data_o(ctx_rpush_data_co[i])
@@ -195,6 +198,7 @@ module bp_be_csr_wrapper_mt
   assign ctx_npc_write_tid_o   = ctx_npc_write_tid_co[current_thread_id_i];
   assign ctx_npc_write_npc_o   = ctx_npc_write_npc_co[current_thread_id_i];
   assign ctx_rpush_v_o         = ctx_rpush_v_co[current_thread_id_i];
+  assign ctx_rpush_fp_v_o      = ctx_rpush_fp_v_co[current_thread_id_i];
   assign ctx_rpush_tid_o       = ctx_rpush_tid_co[current_thread_id_i];
   assign ctx_rpush_reg_o       = ctx_rpush_reg_co[current_thread_id_i];
   assign ctx_rpush_data_o      = ctx_rpush_data_co[current_thread_id_i];

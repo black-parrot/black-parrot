@@ -121,6 +121,7 @@ module bp_be_top
 
   // rpush: write arbitrary register of a disabled thread's register file (CSR 0x083)
   logic ctx_rpush_v_lo;
+  logic ctx_rpush_fp_v_lo;
   logic [thread_id_width_p-1:0] ctx_rpush_tid_lo;
   logic [reg_addr_width_gp-1:0] ctx_rpush_reg_lo;
   logic [dpath_width_gp-1:0] ctx_rpush_data_lo;
@@ -267,6 +268,7 @@ module bp_be_top
      ,.current_thread_id_i(current_thread_id_lo)
 
      ,.rpush_w_v_i(ctx_rpush_v_lo)
+     ,.rpush_fp_w_v_i(ctx_rpush_fp_v_lo)
      ,.rpush_tid_i(ctx_rpush_tid_lo)
      ,.rpush_reg_i(ctx_rpush_reg_lo)
      ,.rpush_data_i(ctx_rpush_data_lo)
@@ -340,6 +342,7 @@ module bp_be_top
      ,.ctx_npc_write_tid_o(ctx_npc_write_tid_lo)
      ,.ctx_npc_write_npc_o(ctx_npc_write_npc_lo)
      ,.ctx_rpush_v_o(ctx_rpush_v_lo)
+     ,.ctx_rpush_fp_v_o(ctx_rpush_fp_v_lo)
      ,.ctx_rpush_tid_o(ctx_rpush_tid_lo)
      ,.ctx_rpush_reg_o(ctx_rpush_reg_lo)
      ,.ctx_rpush_data_o(ctx_rpush_data_lo)

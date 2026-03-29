@@ -59,6 +59,7 @@ module bp_be_scheduler
 
    // rpush: write arbitrary register of a disabled thread (CSR 0x083)
    , input                                    rpush_w_v_i
+   , input                                    rpush_fp_w_v_i
    , input [thread_id_width_p-1:0]            rpush_tid_i
    , input [reg_addr_width_gp-1:0]            rpush_reg_i
    , input [dpath_width_gp-1:0]               rpush_data_i
@@ -205,10 +206,10 @@ module bp_be_scheduler
      ,.rd_addr_i(fwb_pkt_cast_i.rd_addr)
      ,.rd_data_i(fwb_pkt_cast_i.rd_data)
 
-     ,.rpush_w_v_i(1'b0)
-     ,.rpush_thread_id_i('0)
-     ,.rpush_addr_i('0)
-     ,.rpush_data_i('0)
+     ,.rpush_w_v_i(rpush_fp_w_v_i)
+     ,.rpush_thread_id_i(rpush_tid_i)
+     ,.rpush_addr_i(rpush_reg_i)
+     ,.rpush_data_i(rpush_data_i)
 
      ,.rs_r_v_i({preissue_pkt.frs3_v, preissue_pkt.frs2_v, preissue_pkt.frs1_v})
      ,.rs_thread_id_i({current_thread_id_i, current_thread_id_i, current_thread_id_i})
