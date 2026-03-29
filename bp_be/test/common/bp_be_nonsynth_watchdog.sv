@@ -35,6 +35,13 @@ module bp_be_nonsynth_watchdog
   int stall_cnt;
   int halt_cnt;
   int halted;
+  initial begin
+    cycle_cnt = 0;
+    instr_cnt = 0;
+    stall_cnt = 0;
+    halt_cnt  = 0;
+    halted    = 0;  
+  end
 
   `declare_bp_tracer_control(clk_i, reset_i, en_i, trace_str_p, mhartid);
   always_ff @(posedge clk_i)
@@ -66,11 +73,21 @@ module bp_be_nonsynth_watchdog
             $finish;
           end
          if (!halted && instr_cnt && !(instr_cnt % heartbeat_instr_pi) && instret)
-           begin
-             instr_cnt <= 0;
-             cycle_cnt <= 0;
-             $display("[BSG-INFO]: Core %x (%d/%d) instructions completed in %d cycles (mIPC == %d)", mhartid, heartbeat_instr_pi, instr_cnt, cycle_cnt, instr_cnt * 1000 / cycle_cnt);
-           end
+          begin
+            //Capture snapshot before resetting counters to ensure correct logging
+            int instr_snapshot;
+            int cycle_snapshot;
+
+            instr_snapshot = instr_cnt;
+            cycle_snapshot = cycle_cnt;
+
+            instr_cnt <= 0;
+            cycle_cnt <= 0;
+
+            $display("[BSG-INFO]: Core %x (%d/%d) instructions completed in %d cycles (mIPC == %d)",
+             mhartid, heartbeat_instr_pi, instr_snapshot, cycle_snapshot,
+             (cycle_snapshot != 0) ? (instr_snapshot * 1000 / cycle_snapshot) : 0);
+          end
       end
 
   always_ff @(negedge clk_i)
