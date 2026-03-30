@@ -13,6 +13,9 @@ else
 SIM_PROG ?= $(TB_PATH)/demo.riscv
 endif
 
+RUN_COLLATERAL += prog.riscv
+RUN_PLUSARGS += +elf_file=prog.riscv
+
 %/ucode.mem: $(CCE_UCODE)
 	@$(MKDIR) -p $(@D)
 	@$(CP) $< $@
@@ -20,11 +23,6 @@ endif
 %/prog.riscv: $(SIM_PROG)
 	@$(MKDIR) -p $(@D)
 	@$(CP) $< $@
-
-ifneq (00,$(DROMAJO_COSIM)$(SPIKE_COSIM))
-RUN_COLLATERAL += prog.riscv
-RUN_PLUSARGS += +elf_file=prog.riscv
-endif
 
 ifeq (1,$(DISASSEMBLE))
 RUN_COLLATERAL += prog.dump
