@@ -1,5 +1,5 @@
 ![BlackParrot Logo](docs/bp_logo.png)
-# BlackParrot: A Linux-Capable Accelerator Host RISC-V Multicore [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Gitlab CI](https://gitlab.com/bespoke-silicon-group/black-parrot/badges/master/pipeline.svg)](https://gitlab.com/bespoke-silicon-group/black-parrot/pipelines) [![Contributers](https://img.shields.io/github/contributors/black-parrot/black-parrot.svg?style=flat)]()
+# BlackParrot: A Linux-Capable Accelerator Host RISC-V Multicore [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Gitlab CI](https://gitlab.com/bespoke-silicon-group/black-parrot/badges/master/pipeline.svg)](https://gitlab.com/bespoke-silicon-group/black-parrot/pipelines) [![Contributors](https://img.shields.io/github/contributors/black-parrot/black-parrot.svg?style=flat)]()
 
 BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, RV64GC+ multicore used by the world.
 Although originally developed by the University of Washington and Boston University, BlackParrot strives to be community-driven and infrastructure agnostic, a core which is Pareto optimal in terms of power, performance, area and complexity.
@@ -12,7 +12,7 @@ BlackParrot is ideal as the basis for a lightweight accelerator host, a standalo
 - Be TINY
     - When deliberating between two options, consider the one with least hardware cost/complexity
 - Be Modular
-    - Prevent tight coupling between modules by designing latency insenstive interfaces
+    - Prevent tight coupling between modules by designing latency insensitive interfaces
 - Be Friendly
     - Combat NIH, welcome external contributions and strive for infrastructure agnosticism
 
@@ -143,7 +143,7 @@ Our goal with BlackParrot is to bootstrap a community-maintained RISC-V core, an
 ## Have us help you out
 
 We're happy to help advise BlackParrot projects, but have limited bandwidth for technical support.
-Please read all documentation carefully and follow all user guides. We only offically support Centos 7 and Ubuntu 20.04 so
+Please read all documentation carefully and follow all user guides. We only officially support Centos 7 and Ubuntu 20.04 so
 we cannot troubleshoot environment issues on other OSes. We appreciate PRs to clarify and correct documentation!
 
 Upon finding an issue, the procedure should be:
