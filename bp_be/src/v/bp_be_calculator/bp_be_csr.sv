@@ -151,7 +151,7 @@ module bp_be_csr
   wire ssi_v = mie_r.ssie & mip_r.ssip;
   wire sei_v = mie_r.seie & (mip_r.seip | s_external_irq_i);
 
-  // Interrupt priority follows the RISC-V Privileged Spec ordering.
+  // Swizzled interrupt decode vectors preserve priority-encoder structure while enforcing spec priority ordering.
   wire m_mei_v = mei_v & ~mideleg_lo[11];
   wire m_msi_v = msi_v & ~mideleg_lo[3];
   wire m_mti_v = mti_v & ~mideleg_lo[7];
@@ -159,12 +159,28 @@ module bp_be_csr
   wire m_ssi_v = ssi_v & ~mideleg_lo[1];
   wire m_sti_v = sti_v & ~mideleg_lo[5];
 
-  wire s_sei_v = sei_v &  mideleg_lo[9];
-  wire s_ssi_v = ssi_v &  mideleg_lo[1];
-  wire s_sti_v = sti_v &  mideleg_lo[5];
+  wire s_sei_v = sei_v & mideleg_lo[9];
+  wire s_ssi_v = ssi_v & mideleg_lo[1];
+  wire s_sti_v = sti_v & mideleg_lo[5];
 
-  assign irq_waiting_o = m_mei_v | m_msi_v | m_mti_v | m_sei_v | m_ssi_v | m_sti_v
-                       | s_sei_v | s_ssi_v | s_sti_v;
+  wire [15:0] m_interrupt_pri_dec_li =
+    {10'b0
+     ,m_sti_v
+     ,m_ssi_v
+     ,m_sei_v
+     ,m_mti_v
+     ,m_msi_v
+     ,m_mei_v
+     };
+
+  wire [15:0] s_interrupt_pri_dec_li =
+    {13'b0
+     ,s_sti_v
+     ,s_ssi_v
+     ,s_sei_v
+     };
+
+  assign irq_waiting_o = |m_interrupt_pri_dec_li | |s_interrupt_pri_dec_li;
 
   rv64_exception_dec_s exception_dec_li;
   assign exception_dec_li =
@@ -198,40 +214,42 @@ module bp_be_csr
   wire d_interrupt_icode_v_li = debug_irq_i;
 
   logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
+  logic [3:0] m_interrupt_pri_li, s_interrupt_pri_li;
   logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
-  always_comb
-    begin
-      m_interrupt_icode_li   = '0;
-      m_interrupt_icode_v_li = 1'b1;
-      if (m_mei_v)
-        m_interrupt_icode_li = 4'd11;
-      else if (m_msi_v)
-        m_interrupt_icode_li = 4'd3;
-      else if (m_mti_v)
-        m_interrupt_icode_li = 4'd7;
-      else if (m_sei_v)
-        m_interrupt_icode_li = 4'd9;
-      else if (m_ssi_v)
-        m_interrupt_icode_li = 4'd1;
-      else if (m_sti_v)
-        m_interrupt_icode_li = 4'd5;
-      else
-        m_interrupt_icode_v_li = 1'b0;
-    end
+  bsg_priority_encode
+   #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
+   m_interrupt_enc
+    (.i(m_interrupt_pri_dec_li)
+     ,.addr_o(m_interrupt_pri_li)
+     ,.v_o(m_interrupt_icode_v_li)
+     );
+
+  bsg_priority_encode
+   #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
+   s_interrupt_enc
+    (.i(s_interrupt_pri_dec_li)
+     ,.addr_o(s_interrupt_pri_li)
+     ,.v_o(s_interrupt_icode_v_li)
+     );
 
   always_comb
-    begin
-      s_interrupt_icode_li   = '0;
-      s_interrupt_icode_v_li = 1'b1;
-      if (s_sei_v)
-        s_interrupt_icode_li = 4'd9;
-      else if (s_ssi_v)
-        s_interrupt_icode_li = 4'd1;
-      else if (s_sti_v)
-        s_interrupt_icode_li = 4'd5;
-      else
-        s_interrupt_icode_v_li = 1'b0;
-    end
+    unique case (m_interrupt_pri_li)
+      4'd0: m_interrupt_icode_li = 4'd11;
+      4'd1: m_interrupt_icode_li = 4'd3;
+      4'd2: m_interrupt_icode_li = 4'd7;
+      4'd3: m_interrupt_icode_li = 4'd9;
+      4'd4: m_interrupt_icode_li = 4'd1;
+      4'd5: m_interrupt_icode_li = 4'd5;
+      default: m_interrupt_icode_li = '0;
+    endcase
+
+  always_comb
+    unique case (s_interrupt_pri_li)
+      4'd0: s_interrupt_icode_li = 4'd9;
+      4'd1: s_interrupt_icode_li = 4'd1;
+      4'd2: s_interrupt_icode_li = 4'd5;
+      default: s_interrupt_icode_li = '0;
+    endcase
 
   wire                               csr_w_v_li = retire_pkt_cast_i.special.csrw;
   wire [rv64_reg_data_width_gp-1:0] csr_data_li = retire_pkt_cast_i.data;
