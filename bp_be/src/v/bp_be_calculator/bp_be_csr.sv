@@ -151,27 +151,20 @@ module bp_be_csr
   wire ssi_v = mie_r.ssie & mip_r.ssip;
   wire sei_v = mie_r.seie & (mip_r.seip | s_external_irq_i);
 
-  // TODO: interrupt priority is non-compliant with the spec.
-  wire [15:0] interrupt_icode_dec_li =
-    {4'b0
+  // Interrupt priority follows the RISC-V Privileged Spec ordering.
+  wire m_mei_v = mei_v & ~mideleg_lo[11];
+  wire m_msi_v = msi_v & ~mideleg_lo[3];
+  wire m_mti_v = mti_v & ~mideleg_lo[7];
+  wire m_sei_v = sei_v & ~mideleg_lo[9];
+  wire m_ssi_v = ssi_v & ~mideleg_lo[1];
+  wire m_sti_v = sti_v & ~mideleg_lo[5];
 
-     ,mei_v
-     ,1'b0
-     ,sei_v
-     ,1'b0
+  wire s_sei_v = sei_v &  mideleg_lo[9];
+  wire s_ssi_v = ssi_v &  mideleg_lo[1];
+  wire s_sti_v = sti_v &  mideleg_lo[5];
 
-     ,mti_v
-     ,1'b0 // Reserved
-     ,sti_v
-     ,1'b0
-
-     ,msi_v
-     ,1'b0 // Reserved
-     ,ssi_v
-     ,1'b0
-     };
-
-  assign irq_waiting_o = |interrupt_icode_dec_li;
+  assign irq_waiting_o = m_mei_v | m_msi_v | m_mti_v | m_sei_v | m_ssi_v | m_sti_v
+                       | s_sei_v | s_ssi_v | s_sti_v;
 
   rv64_exception_dec_s exception_dec_li;
   assign exception_dec_li =
@@ -206,21 +199,39 @@ module bp_be_csr
 
   logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
   logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
-  bsg_priority_encode
-   #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
-   m_interrupt_enc
-    (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:$bits(exception_dec_li)])
-     ,.addr_o(m_interrupt_icode_li)
-     ,.v_o(m_interrupt_icode_v_li)
-     );
+  always_comb
+    begin
+      m_interrupt_icode_li   = '0;
+      m_interrupt_icode_v_li = 1'b1;
+      if (m_mei_v)
+        m_interrupt_icode_li = 4'd11;
+      else if (m_msi_v)
+        m_interrupt_icode_li = 4'd3;
+      else if (m_mti_v)
+        m_interrupt_icode_li = 4'd7;
+      else if (m_sei_v)
+        m_interrupt_icode_li = 4'd9;
+      else if (m_ssi_v)
+        m_interrupt_icode_li = 4'd1;
+      else if (m_sti_v)
+        m_interrupt_icode_li = 4'd5;
+      else
+        m_interrupt_icode_v_li = 1'b0;
+    end
 
-  bsg_priority_encode
-   #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
-   s_interrupt_enc
-    (.i(interrupt_icode_dec_li & mideleg_lo[0+:$bits(exception_dec_li)])
-     ,.addr_o(s_interrupt_icode_li)
-     ,.v_o(s_interrupt_icode_v_li)
-     );
+  always_comb
+    begin
+      s_interrupt_icode_li   = '0;
+      s_interrupt_icode_v_li = 1'b1;
+      if (s_sei_v)
+        s_interrupt_icode_li = 4'd9;
+      else if (s_ssi_v)
+        s_interrupt_icode_li = 4'd1;
+      else if (s_sti_v)
+        s_interrupt_icode_li = 4'd5;
+      else
+        s_interrupt_icode_v_li = 1'b0;
+    end
 
   wire                               csr_w_v_li = retire_pkt_cast_i.special.csrw;
   wire [rv64_reg_data_width_gp-1:0] csr_data_li = retire_pkt_cast_i.data;
@@ -703,4 +714,3 @@ module bp_be_csr
   assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
 
 endmodule
-
