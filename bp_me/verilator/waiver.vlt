@@ -1,0 +1,5 @@
+`verilator_config
+// Waiver: bp_nonsynth_dram uses associative array (mem [int]) in nonblocking
+// assignments. Verilator 5.045 rejects this per IEEE 1800-2023 6.21.
+// Safe to waive: this is a non-synthesizable testbench model.
+lint_off -rule ASSIGNDLY -file "*/bp_nonsynth_dram.sv"
