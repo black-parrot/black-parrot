@@ -497,7 +497,7 @@ module bp_cce_inst_decode
         // Directory Operations
         e_op_dir: begin
 
-          unique case (minor_op_u.flag_minor_op)
+          unique case (minor_op_u.dir_minor_op)
             e_rdp_op: begin
               decoded_inst_o.pending_r_v = 1'b1;
               decoded_inst_o.addr_sel = op_type_u.dptype.addr_sel;
