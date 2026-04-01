@@ -1,7 +1,7 @@
 `ifndef BP_FE_ICACHE_PKGDEF_SVH
 `define BP_FE_ICACHE_PKGDEF_SVH
 
-  typedef enum
+  typedef enum logic
   {
     e_icache_fetch
     ,e_icache_inval
