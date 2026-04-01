@@ -111,10 +111,9 @@ module bp_nonsynth_dram
         $readmemh(mem_file, mem);
       end
 
-  // [PATCH] assoc arrays cannot use nonblocking assignments in newer tools (IEEE 1800-2023 6.21)
-  // Using blocking assignment for mem[] (non-synth testbench model, functionally equivalent)
   always_ff @(posedge clk_i)
     for (int i = 0; i < dma_data_width_p/8; i++)
+        // assoc arrays cannot use nonblocking assignments (IEEE 1800-2023 6.21)
         if (mem_write) mem[mem_waddr+i] = mem_wdata[i];
 
   always_ff @(posedge clk_i)
