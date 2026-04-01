@@ -11,7 +11,7 @@ progs=(dhrystone median memcpy mm mt-matmul mt-memcpy mt-vvadd multiply pmp qsor
 
 export DROMAJO_COSIM=1
 export CFG=${cfg}
-bsg_run_task "building ${cfg}" make -C ${bsg_top}/${end}/${tool} build.${tool}
+bsg_run_task build "building ${cfg}" make -C ${bsg_top}/${end}/${tool} build.${tool}
 parallel -j${cores} do_single_sim ${tool} ${cfg} ${suite} {} ::: "${progs[@]}"
 
 bsg_pass $(basename $0)
