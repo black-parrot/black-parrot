@@ -552,7 +552,7 @@
   typedef enum bit [lg_max_cfgs-1:0]
   {
     // L2 extension configurations
-    ,e_bp_multicore_4_l2e_cfg                       = 32
+    e_bp_multicore_4_l2e_cfg                        = 32
     ,e_bp_multicore_2_l2e_cfg                       = 31
     ,e_bp_multicore_1_l2e_cfg                       = 30
 

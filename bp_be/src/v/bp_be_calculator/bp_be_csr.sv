@@ -143,44 +143,82 @@ module bp_be_csr
   wire mgie = ~is_debug_mode & (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
   wire sgie = ~is_debug_mode & (mstatus_r.sie & is_s_mode) | is_u_mode;
 
-  wire mti_v = mie_r.mtie & mip_r.mtip;
-  wire msi_v = mie_r.msie & mip_r.msip;
-  wire mei_v = mie_r.meie & mip_r.meip;
+  wire mti = mie_r.mtie & mip_r.mtip;
+  wire msi = mie_r.msie & mip_r.msip;
+  wire mei = mie_r.meie & mip_r.meip;
 
-  wire sti_v = mie_r.stie & mip_r.stip;
-  wire ssi_v = mie_r.ssie & mip_r.ssip;
-  wire sei_v = mie_r.seie & (mip_r.seip | s_external_irq_i);
+  wire sti = mie_r.stie & mip_r.stip;
+  wire ssi = mie_r.ssie & mip_r.ssip;
+  wire sei = mie_r.seie & (mip_r.seip | s_external_irq_i);
 
-  // Swizzled interrupt decode vectors preserve priority-encoder structure while enforcing spec priority ordering.
-  wire m_mei_v = mei_v & ~mideleg_lo[11];
-  wire m_msi_v = msi_v & ~mideleg_lo[3];
-  wire m_mti_v = mti_v & ~mideleg_lo[7];
-  wire m_sei_v = sei_v & ~mideleg_lo[9];
-  wire m_ssi_v = ssi_v & ~mideleg_lo[1];
-  wire m_sti_v = sti_v & ~mideleg_lo[5];
+  // interrupt priority is mei > msi > mti > sei > ssi > sti
+  // M-mode interrupts cannot be delegated
+  wire m_mei = mei;
+  wire m_msi = msi;
+  wire m_mti = mti;
 
-  wire s_sei_v = sei_v & mideleg_lo[9];
-  wire s_ssi_v = ssi_v & mideleg_lo[1];
-  wire s_sti_v = sti_v & mideleg_lo[5];
+  // S-mode interrupts are in m-mode if not-delegated
+  wire m_sei = ~mideleg_lo.sei & sei;
+  wire m_ssi = ~mideleg_lo.ssi & ssi;
+  wire m_sti = ~mideleg_lo.sti & sti;
 
-  wire [15:0] m_interrupt_pri_dec_li =
-    {10'b0
-     ,m_sti_v
-     ,m_ssi_v
-     ,m_sei_v
-     ,m_mti_v
-     ,m_msi_v
+  // M-mode arbiter
+  wire m_mei_v =  m_mei;
+  wire m_msi_v = ~m_mei &  m_msi;
+  wire m_mti_v = ~m_mei & ~m_msi &  m_mti;
+  wire m_sei_v = ~m_mei & ~m_msi & ~m_mti &  m_sei;
+  wire m_ssi_v = ~m_mei & ~m_msi & ~m_mti & ~m_sei &  m_ssi;
+  wire m_sti_v = ~m_mei & ~m_msi & ~m_mti & ~m_sei & ~m_ssi & m_sti;
+
+  wire [15:0] m_interrupt_icode_dec_li =
+    {4'b0
+
      ,m_mei_v
+     ,1'b0
+     ,m_sei_v
+     ,1'b0
+
+     ,m_mti_v
+     ,1'b0 // Reserved
+     ,m_sti_v
+     ,1'b0
+
+     ,m_msi_v
+     ,1'b0 // Reserved
+     ,m_ssi_v
+     ,1'b0
      };
 
-  wire [15:0] s_interrupt_pri_dec_li =
-    {13'b0
-     ,s_sti_v
-     ,s_ssi_v
+  // S-mode interrupts are in s-mode if delegated
+  wire s_sei =  mideleg_lo.sei & sei;
+  wire s_ssi =  mideleg_lo.ssi & ssi;
+  wire s_sti =  mideleg_lo.sti & sti;
+
+  // S-mode arbiter
+  wire s_sei_v =  s_sei;
+  wire s_ssi_v = ~s_sei &  s_ssi;
+  wire s_sti_v = ~s_sei & ~s_ssi & s_sti;
+
+  wire [15:0] s_interrupt_icode_dec_li =
+    {4'b0
+
+     ,1'b0
+     ,1'b0
      ,s_sei_v
+     ,1'b0
+
+     ,1'b0
+     ,1'b0 // Reserved
+     ,s_sti_v
+     ,1'b0
+
+     ,1'b0
+     ,1'b0 // Reserved
+     ,s_ssi_v
+     ,1'b0
      };
 
-  assign irq_waiting_o = |m_interrupt_pri_dec_li | |s_interrupt_pri_dec_li;
+  assign irq_waiting_o = |{s_interrupt_icode_dec_li, m_interrupt_icode_dec_li};
 
   rv64_exception_dec_s exception_dec_li;
   assign exception_dec_li =
@@ -214,42 +252,22 @@ module bp_be_csr
   wire d_interrupt_icode_v_li = debug_irq_i;
 
   logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
-  logic [3:0] m_interrupt_pri_li, s_interrupt_pri_li;
   logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
   bsg_priority_encode
    #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
    m_interrupt_enc
-    (.i(m_interrupt_pri_dec_li)
-     ,.addr_o(m_interrupt_pri_li)
+    (.i(m_interrupt_icode_dec_li)
+     ,.addr_o(m_interrupt_icode_li)
      ,.v_o(m_interrupt_icode_v_li)
      );
 
   bsg_priority_encode
    #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
    s_interrupt_enc
-    (.i(s_interrupt_pri_dec_li)
-     ,.addr_o(s_interrupt_pri_li)
+    (.i(s_interrupt_icode_dec_li)
+     ,.addr_o(s_interrupt_icode_li)
      ,.v_o(s_interrupt_icode_v_li)
      );
-
-  always_comb
-    unique case (m_interrupt_pri_li)
-      4'd0: m_interrupt_icode_li = 4'd11;
-      4'd1: m_interrupt_icode_li = 4'd3;
-      4'd2: m_interrupt_icode_li = 4'd7;
-      4'd3: m_interrupt_icode_li = 4'd9;
-      4'd4: m_interrupt_icode_li = 4'd1;
-      4'd5: m_interrupt_icode_li = 4'd5;
-      default: m_interrupt_icode_li = '0;
-    endcase
-
-  always_comb
-    unique case (s_interrupt_pri_li)
-      4'd0: s_interrupt_icode_li = 4'd9;
-      4'd1: s_interrupt_icode_li = 4'd1;
-      4'd2: s_interrupt_icode_li = 4'd5;
-      default: s_interrupt_icode_li = '0;
-    endcase
 
   wire                               csr_w_v_li = retire_pkt_cast_i.special.csrw;
   wire [rv64_reg_data_width_gp-1:0] csr_data_li = retire_pkt_cast_i.data;
@@ -732,3 +750,4 @@ module bp_be_csr
   assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
 
 endmodule
+
