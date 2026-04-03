@@ -19,6 +19,9 @@ progs=(
 	fp_neg_zero_nanbox
 	fp_precision
 	hello_world
+	interrupt_priority
+	interrupt_priority_simultaneous
+	interrupt_priority_race
 	jalr_illegal
 	l2_cache_ops
 	loop
