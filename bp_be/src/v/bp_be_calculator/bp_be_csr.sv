@@ -251,9 +251,9 @@ module bp_be_csr
 
   wire d_interrupt_icode_v_li = debug_irq_i;
 
-  logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
-  logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
-  bsg_priority_encode
+  logic [3:0] m_interrupt_icode_li;
+  logic       m_interrupt_icode_v_li;
+  bsg_encode_one_hot
    #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
    m_interrupt_enc
     (.i(m_interrupt_icode_dec_li)
@@ -261,7 +261,9 @@ module bp_be_csr
      ,.v_o(m_interrupt_icode_v_li)
      );
 
-  bsg_priority_encode
+  logic [3:0] s_interrupt_icode_li;
+  logic       s_interrupt_icode_v_li;
+  bsg_encode_one_hot
    #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
    s_interrupt_enc
     (.i(s_interrupt_icode_dec_li)
