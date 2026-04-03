@@ -11,7 +11,7 @@ progs=(add-01 addi-01 addiw-01 add.uw-01 addw-01 amoadd.d-01 amoadd.w-01 amoand.
 
 export SPIKE_COSIM=1
 export CFG=${cfg}
-bsg_run_task "building ${cfg}" make -C ${bsg_top}/${end}/${tool} build.${tool}
+bsg_run_task build "building ${cfg}" make -C ${bsg_top}/${end}/${tool} build.${tool}
 parallel -j${cores} do_single_sim ${tool} ${cfg} ${suite} {} ::: "${progs[@]}"
 
 bsg_pass $(basename $0)
