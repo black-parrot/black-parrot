@@ -27,9 +27,6 @@ module top;
     );
 
     initial begin
-        $dumpfile("waveform.vcd");
-        $dumpvars(0, top);
-
         // Reset
         p_if.rst_n = 0;
         p_if.wr_en = 0;
