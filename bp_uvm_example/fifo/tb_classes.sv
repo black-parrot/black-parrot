@@ -56,7 +56,7 @@ class fifo_driver;
             vif.drv_cb.rd_en   <= do_read;
             vif.drv_cb.data_in <= data;
 
-            if (do_write && !vif.full) begin
+            if (do_write && !vif.drv_cb.full) begin
                 sb.write_expected(data);
                 $display("[%0t] WRITE: %h", $time, data);
             end
