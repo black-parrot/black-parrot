@@ -27,9 +27,6 @@ $BP_DIR/bp_top/test/common/bsg_nonsynth_waveform_tracer.sv
 $BP_DIR/bp_top/test/common/bsg_nonsynth_assert.sv
 $BP_DIR/bp_me/test/common/bp_me_nonsynth_cfg_loader.sv
 $BP_DIR/bp_top/test/common/bp_nonsynth_cfg_loader.sv
-$BP_DIR/bp_top/src/v/bp_io_link_to_lce.sv
-$BP_DIR/bp_me/src/v/cce/bp_io_cce.sv
-$BP_DIR/bp_me/test/tb/bp_cce/bp_io_amo_bridge_regression_tb.sv
 $BP_DIR/bp_me/test/tb/bp_cce/testbench.sv
 $BP_DIR/bp_me/test/tb/bp_cce/wrapper.sv
 +incdir+$BP_DIR/bp_common/test/common
