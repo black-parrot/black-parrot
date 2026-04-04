@@ -18,6 +18,9 @@ class fifo_scoreboard;
                 $display("[%0t] FAIL: expected %h got %h", $time, expected, d_out);
                 error_count++;
             end
+        end else begin
+            $display("[%0t] FAIL: unexpected read got %h (model_q empty)", $time, d_out);
+            error_count++;
         end
     endfunction
 
