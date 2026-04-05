@@ -11,9 +11,7 @@
  *   forwarding is supported. If both clear_i and pending_i are asserted, only the clear
  *   to 0 is processed.
  *
- *   The pending bit counters saturate at the max value and at zero.
- *   Overflow/underflow attempts are silently ignored (counter holds at boundary)
- *   and a simulation warning is printed to aid debugging protocol violations.
+ *   WARNING: the pending bit counters do not saturate and may over/underflow. Be careful!
  *
  *   The width of address into bsg_hash_bank is log2(cce_way_groups_p), where cce_way_groups_p
  *   is the total number of way groups in the system.
@@ -111,12 +109,10 @@ module bp_cce_pending_bits
         pending_bits_n[w_wg] = '0;
       end
       else begin
-        if (pending_i) begin // increment count — saturate at max
-          if (pending_bits_r[w_wg] != {width_p{1'b1}})
-            pending_bits_n[w_wg] = pending_bits_r[w_wg] + 'd1;
-        end else begin // decrement count — saturate at zero
-          if (pending_bits_r[w_wg] != '0)
-            pending_bits_n[w_wg] = pending_bits_r[w_wg] - 'd1;
+        if (pending_i) begin // increment count
+          pending_bits_n[w_wg] = pending_bits_r[w_wg] + 'd1;
+        end else begin // decrement count
+          pending_bits_n[w_wg] = pending_bits_r[w_wg] - 'd1;
         end
       end
     end
@@ -125,13 +121,12 @@ module bp_cce_pending_bits
   // synopsys translate_off
   always_ff @(negedge clk_i) begin
     if (~reset_i & w_v_i & ~clear_i) begin
-      if (pending_i & (pending_bits_r[w_wg] == {width_p{1'b1}})) begin
-        $display("%0t: CCE %0d WARNING: pending bit overflow attempt on way group %0d (counter saturated at max)",
-                 $time, cce_id_i, w_wg);
-      end
-      if (~pending_i & (pending_bits_r[w_wg] == '0)) begin
-        $display("%0t: CCE %0d WARNING: pending bit underflow attempt on way group %0d (counter already at 0)",
-                 $time, cce_id_i, w_wg);
+      if (pending_i) begin
+        assert (pending_bits_r[w_wg] != {width_p{1'b1}})
+          else $error("CCE %0d: pending bit overflow attempt on way group %0d", cce_id_i, w_wg);
+      end else begin
+        assert (pending_bits_r[w_wg] != '0)
+          else $error("CCE %0d: pending bit underflow attempt on way group %0d", cce_id_i, w_wg);
       end
     end
   end
