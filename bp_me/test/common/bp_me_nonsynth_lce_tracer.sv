@@ -14,6 +14,7 @@ module bp_me_nonsynth_lce_tracer
    `declare_bp_proc_params(bp_params_p)
 
    , parameter string trace_str_p = ""
+   , parameter string plusargs_str_p = ""
 
    , parameter `BSG_INV_PARAM(sets_p)
    , parameter `BSG_INV_PARAM(assoc_p)
@@ -81,7 +82,7 @@ module bp_me_nonsynth_lce_tracer
   wire uc_req = lce_req_header.msg_type inside {e_bedrock_req_uc_rd, e_bedrock_req_uc_wr};
 
   // record
-  `declare_bp_tracer_control(clk_i, reset_i, en_i, trace_str_p, lce_id);
+  `declare_bp_tracer_control_plusargs(clk_i, reset_i, en_i, trace_str_p, lce_id, plusargs_str_p);
 
   int latency_cnt;
   int req_pending, cmd_pending, fill_pending, resp_pending;

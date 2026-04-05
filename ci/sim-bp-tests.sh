@@ -19,6 +19,9 @@ progs=(
 	fp_neg_zero_nanbox
 	fp_precision
 	hello_world
+	interrupt_priority
+	interrupt_priority_simultaneous
+	interrupt_priority_race
 	jalr_illegal
 	l2_cache_ops
 	loop
@@ -38,7 +41,7 @@ progs=(
 
 export DROMAJO_COSIM=1
 export CFG=${cfg}
-bsg_run_task "building ${cfg}" make -C ${bsg_top}/${end}/${tool} build.${tool}
+bsg_run_task build "building ${cfg}" make -C ${bsg_top}/${end}/${tool} build.${tool}
 parallel -j${cores} do_single_sim ${tool} ${cfg} ${suite} {} ::: "${progs[@]}"
 
 bsg_pass $(basename $0)

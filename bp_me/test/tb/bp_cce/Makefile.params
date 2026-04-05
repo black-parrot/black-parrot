@@ -4,18 +4,12 @@ LCE_MODE_P ?= 0
 ME_TEST_P ?= 0
 
 NUM_INSTR_P ?= 4096
-CCE_TRACE_P ?= 0
-LCE_TRACE_P ?= 0
-DRAM_TRACE_P ?= 0
 
 HDL_PARAMS += \
 	-pvalue+instr_count=$(NUM_INSTR_P) \
 	-pvalue+cce_mode_p=$(CCE_MODE_P) \
 	-pvalue+lce_mode_p=$(LCE_MODE_P) \
-	-pvalue+me_test_p=$(ME_TEST_P) \
-	-pvalue+lce_trace_p=$(LCE_TRACE_P) \
-	-pvalue+cce_trace_p=$(CCE_TRACE_P) \
-	-pvalue+dram_trace_p=$(DRAM_TRACE_P)
+	-pvalue+me_test_p=$(ME_TEST_P)
 
 HDL_DEFINES += \
 	+define+BP_CFG_FLOWVAR=$(CFG)

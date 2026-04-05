@@ -1,4 +1,4 @@
-# v1.0
+# v1.1 - 03/27/2026
 
 #############################
 # global settings
@@ -73,7 +73,8 @@ define bsg_fn_default_cmake
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_C_FLAGS="$(CFLAGS)" \
 		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
-		-DCMAKE_EXE_LINKER_FLAGS="${$@_strip} $(LDFLAGS)"; \
+		-DCMAKE_EXE_LINKER_FLAGS="${$@_strip} $(LDFLAGS)" \
+		${$@_extra}; \
 	:;
 endef
 

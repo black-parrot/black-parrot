@@ -143,35 +143,82 @@ module bp_be_csr
   wire mgie = ~is_debug_mode & (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
   wire sgie = ~is_debug_mode & (mstatus_r.sie & is_s_mode) | is_u_mode;
 
-  wire mti_v = mie_r.mtie & mip_r.mtip;
-  wire msi_v = mie_r.msie & mip_r.msip;
-  wire mei_v = mie_r.meie & mip_r.meip;
+  wire mti = mie_r.mtie & mip_r.mtip;
+  wire msi = mie_r.msie & mip_r.msip;
+  wire mei = mie_r.meie & mip_r.meip;
 
-  wire sti_v = mie_r.stie & mip_r.stip;
-  wire ssi_v = mie_r.ssie & mip_r.ssip;
-  wire sei_v = mie_r.seie & (mip_r.seip | s_external_irq_i);
+  wire sti = mie_r.stie & mip_r.stip;
+  wire ssi = mie_r.ssie & mip_r.ssip;
+  wire sei = mie_r.seie & (mip_r.seip | s_external_irq_i);
 
-  // TODO: interrupt priority is non-compliant with the spec.
-  wire [15:0] interrupt_icode_dec_li =
+  // interrupt priority is mei > msi > mti > sei > ssi > sti
+  // M-mode interrupts cannot be delegated
+  wire m_mei = mei;
+  wire m_msi = msi;
+  wire m_mti = mti;
+
+  // S-mode interrupts are in m-mode if not-delegated
+  wire m_sei = ~mideleg_lo.sei & sei;
+  wire m_ssi = ~mideleg_lo.ssi & ssi;
+  wire m_sti = ~mideleg_lo.sti & sti;
+
+  // M-mode arbiter
+  wire m_mei_v =  m_mei;
+  wire m_msi_v = ~m_mei &  m_msi;
+  wire m_mti_v = ~m_mei & ~m_msi &  m_mti;
+  wire m_sei_v = ~m_mei & ~m_msi & ~m_mti &  m_sei;
+  wire m_ssi_v = ~m_mei & ~m_msi & ~m_mti & ~m_sei &  m_ssi;
+  wire m_sti_v = ~m_mei & ~m_msi & ~m_mti & ~m_sei & ~m_ssi & m_sti;
+
+  wire [15:0] m_interrupt_icode_dec_li =
     {4'b0
 
-     ,mei_v
+     ,m_mei_v
      ,1'b0
-     ,sei_v
-     ,1'b0
-
-     ,mti_v
-     ,1'b0 // Reserved
-     ,sti_v
+     ,m_sei_v
      ,1'b0
 
-     ,msi_v
+     ,m_mti_v
      ,1'b0 // Reserved
-     ,ssi_v
+     ,m_sti_v
+     ,1'b0
+
+     ,m_msi_v
+     ,1'b0 // Reserved
+     ,m_ssi_v
      ,1'b0
      };
 
-  assign irq_waiting_o = |interrupt_icode_dec_li;
+  // S-mode interrupts are in s-mode if delegated
+  wire s_sei =  mideleg_lo.sei & sei;
+  wire s_ssi =  mideleg_lo.ssi & ssi;
+  wire s_sti =  mideleg_lo.sti & sti;
+
+  // S-mode arbiter
+  wire s_sei_v =  s_sei;
+  wire s_ssi_v = ~s_sei &  s_ssi;
+  wire s_sti_v = ~s_sei & ~s_ssi & s_sti;
+
+  wire [15:0] s_interrupt_icode_dec_li =
+    {4'b0
+
+     ,1'b0
+     ,1'b0
+     ,s_sei_v
+     ,1'b0
+
+     ,1'b0
+     ,1'b0 // Reserved
+     ,s_sti_v
+     ,1'b0
+
+     ,1'b0
+     ,1'b0 // Reserved
+     ,s_ssi_v
+     ,1'b0
+     };
+
+  assign irq_waiting_o = |{s_interrupt_icode_dec_li, m_interrupt_icode_dec_li};
 
   rv64_exception_dec_s exception_dec_li;
   assign exception_dec_li =
@@ -204,20 +251,22 @@ module bp_be_csr
 
   wire d_interrupt_icode_v_li = debug_irq_i;
 
-  logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
-  logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
-  bsg_priority_encode
+  logic [3:0] m_interrupt_icode_li;
+  logic       m_interrupt_icode_v_li;
+  bsg_encode_one_hot
    #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
    m_interrupt_enc
-    (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:$bits(exception_dec_li)])
+    (.i(m_interrupt_icode_dec_li)
      ,.addr_o(m_interrupt_icode_li)
      ,.v_o(m_interrupt_icode_v_li)
      );
 
-  bsg_priority_encode
+  logic [3:0] s_interrupt_icode_li;
+  logic       s_interrupt_icode_v_li;
+  bsg_encode_one_hot
    #(.width_p($bits(exception_dec_li)), .lo_to_hi_p(1))
    s_interrupt_enc
-    (.i(interrupt_icode_dec_li & mideleg_lo[0+:$bits(exception_dec_li)])
+    (.i(s_interrupt_icode_dec_li)
      ,.addr_o(s_interrupt_icode_li)
      ,.v_o(s_interrupt_icode_v_li)
      );
@@ -523,11 +572,13 @@ module bp_be_csr
               mstatus_li.spp       = priv_mode_r;
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
-
+           
               sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               stval_li             = (exception_ecode_li == 2)
-                                    ? retire_pkt_cast_i.instr
-                                    : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
+                                     ? retire_pkt_cast_i.instr
+                                     : (exception_ecode_li inside {0, 1})
+                                       ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
+                                       : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
 
               scause_li._interrupt = 1'b0;
               scause_li.ecode      = exception_ecode_li;
@@ -544,8 +595,10 @@ module bp_be_csr
 
               mepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               mtval_li             = (exception_ecode_li == 2)
-                                    ? retire_pkt_cast_i.instr
-                                    : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
+                                     ? retire_pkt_cast_i.instr
+                                     : (exception_ecode_li inside {0, 1})
+                                       ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
+                                       : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
 
               mcause_li._interrupt = 1'b0;
               mcause_li.ecode      = exception_ecode_li;
@@ -694,7 +747,7 @@ module bp_be_csr
   assign decode_info_cast_o.ebreaku    = dcsr_lo.ebreaku;
   assign decode_info_cast_o.fpu_en     = (mstatus_lo.fs != 2'b00);
   assign decode_info_cast_o.cycle_en   = is_m_mode | (is_s_mode & mcounteren_lo.cy) | (is_u_mode & scounteren_lo.cy);
-  assign decode_info_cast_o.instret_en = is_m_mode | (is_m_mode & mcounteren_lo.ir) | (is_u_mode & mcounteren_lo.ir);
+  assign decode_info_cast_o.instret_en = is_m_mode | (is_s_mode & mcounteren_lo.ir) | (is_u_mode & mcounteren_lo.ir);
 
   assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
 
