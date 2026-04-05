@@ -118,6 +118,20 @@ module bp_cce_pending_bits
     end
   end
 
+  // synopsys translate_off
+  always_ff @(negedge clk_i) begin
+    if (~reset_i & w_v_i & ~clear_i) begin
+      if (pending_i) begin
+        assert (pending_bits_r[w_wg] != {width_p{1'b1}})
+          else $error("CCE %0d: pending bit overflow attempt on way group %0d", cce_id_i, w_wg);
+      end else begin
+        assert (pending_bits_r[w_wg] != '0)
+          else $error("CCE %0d: pending bit underflow attempt on way group %0d", cce_id_i, w_wg);
+      end
+    end
+  end
+  // synopsys translate_on
+
   // Pending bit output
   // Normally, the output is determined by the read way group and comes from the flopped values
   // If reading from the same way group that is being written, output the next value
