@@ -118,6 +118,13 @@ module bp_cce_pending_bits
     end
   end
 
+  // Pending bit output
+  // Normally, the output is determined by the read way group and comes from the flopped values
+  // If reading from the same way group that is being written, output the next value
+  assign pending_o = (r_v_i & w_v_i & (w_wg == r_wg))
+    ? ~(pending_bits_n[r_wg] == 0)
+    : ~(pending_bits_r[r_wg] == 0);
+
   // synopsys translate_off
   always_ff @(negedge clk_i) begin
     if (~reset_i & w_v_i & ~clear_i) begin
@@ -131,14 +138,7 @@ module bp_cce_pending_bits
     end
   end
   // synopsys translate_on
-
-  // Pending bit output
-  // Normally, the output is determined by the read way group and comes from the flopped values
-  // If reading from the same way group that is being written, output the next value
-  assign pending_o = (r_v_i & w_v_i & (w_wg == r_wg))
-    ? ~(pending_bits_n[r_wg] == 0)
-    : ~(pending_bits_r[r_wg] == 0);
-
+  
 endmodule
 
 `BSG_ABSTRACT_MODULE(bp_cce_pending_bits)
