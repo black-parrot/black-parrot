@@ -11,7 +11,7 @@ progs=(riscv_amo_test riscv_arithmetic_basic_test riscv_floating_point_arithmeti
 
 export DROMAJO_COSIM=1
 export CFG=${cfg}
-bsg_run_task "building ${cfg}" make -C ${bsg_top}/${end}/${tool} build.${tool}
+bsg_run_task build "building ${cfg}" make -C ${bsg_top}/${end}/${tool} build.${tool}
 #for K in $(seq 1 19); do
 parallel -j${cores} do_single_sim ${tool} ${cfg} ${suite} '{1}_{2}' ::: "${progs[@]}" ::: $(seq 1 1)
 
