@@ -120,6 +120,10 @@ module bp_be_pipe_mem
   wire is_req = reservation.v & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
   wire [rv64_eaddr_width_gp-1:0] eaddr = rs1 + imm;
 
+  wire eaddr_out_of_bounds_v = |eaddr[rv64_eaddr_width_gp-1 : paddr_width_p];
+  logic dtlb_load_access_fault_v;
+  logic dtlb_store_access_fault_v;
+
   logic early_v_r;
   bsg_dff_chain
    #(.width_p(1), .num_stages_p(2))
@@ -207,8 +211,8 @@ module bp_be_pipe_mem
      ,.r_nonidem_o(/* All D$ misses are non-speculative */)
      ,.r_dram_o(dtlb_ptag_dram_lo)
      ,.r_instr_access_fault_o()
-     ,.r_load_access_fault_o(load_access_fault_v_o)
-     ,.r_store_access_fault_o(store_access_fault_v_o)
+     ,.r_load_access_fault_o(dtlb_load_access_fault_v)
+     ,.r_store_access_fault_o(dtlb_store_access_fault_v)
      ,.r_instr_misaligned_o()
      ,.r_load_misaligned_o(load_misaligned_v_o)
      ,.r_store_misaligned_o(store_misaligned_v_o)
@@ -216,6 +220,12 @@ module bp_be_pipe_mem
      ,.r_load_page_fault_o(load_page_fault_v_o)
      ,.r_store_page_fault_o(store_page_fault_v_o)
      );
+
+  wire is_load_i  = decode.dcache_r_v;
+  wire is_store_i = decode.dcache_w_v;
+  
+  assign load_access_fault_v_o  = dtlb_load_access_fault_v  | (is_load_i  & eaddr_out_of_bounds_v);
+  assign store_access_fault_v_o = dtlb_store_access_fault_v | (is_store_i & eaddr_out_of_bounds_v);
 
   bp_be_dcache_pkt_s dcache_pkt;
   wire dcache_pkt_v = is_req;
