@@ -165,7 +165,7 @@ module bp_mmu
   wire hio_fault_v = (r_instr_r & ptag_v_lo & ptag_lo[ptag_width_p-1-:hio_width_p] != '0)
     || (ptag_v_lo & ptag_lo[ptag_width_p-1-:hio_width_p] & ~hio_mask_i);
   
-  wire eaddr_out_of_bounds_v = |eaddr[rv64_eaddr_width_gp-1 : paddr_width_p];
+  wire eaddr_out_of_bounds_v = |r_eaddr_i[rv64_eaddr_width_gp-1 : paddr_width_p];
 
   // Access faults
   wire instr_access_fault_v = r_instr_r & (hio_fault_v | eaddr_out_of_bounds_v);
