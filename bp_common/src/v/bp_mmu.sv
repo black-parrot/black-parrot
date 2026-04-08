@@ -164,11 +164,13 @@ module bp_mmu
   // Fault if hio bit is not enabled and we're accessing that hio
   wire hio_fault_v = (r_instr_r & ptag_v_lo & ptag_lo[ptag_width_p-1-:hio_width_p] != '0)
     || (ptag_v_lo & ptag_lo[ptag_width_p-1-:hio_width_p] & ~hio_mask_i);
+  
+  wire eaddr_out_of_bounds_v = |eaddr[rv64_eaddr_width_gp-1 : paddr_width_p];
 
   // Access faults
-  wire instr_access_fault_v = r_instr_r & hio_fault_v;
-  wire load_access_fault_v  = r_load_r  & cached_fault_v;
-  wire store_access_fault_v = r_store_r & cached_fault_v;
+  wire instr_access_fault_v = r_instr_r & (hio_fault_v | eaddr_out_of_bounds_v);
+  wire load_access_fault_v  = r_load_r  & (cached_fault_v | eaddr_out_of_bounds_v);
+  wire store_access_fault_v = r_store_r & (cached_fault_v | eaddr_out_of_bounds_v);
   wire any_access_fault_v   = |{instr_access_fault_v, load_access_fault_v, store_access_fault_v};
 
   // Page faults
