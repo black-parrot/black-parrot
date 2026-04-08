@@ -260,19 +260,6 @@ module bp_l2e_tile
   wire is_cfg_fwd      = local_fwd_li & (device_fwd_li == cfg_dev_gp);
   wire is_mem_fwd      = ~local_fwd_li || (local_fwd_li & (device_fwd_li == cache_dev_gp));
   wire is_loopback_fwd = local_fwd_li & ~is_cfg_fwd & ~is_mem_fwd;
-  
-  // synopsys translate_off
-
-  always_ff @(negedge clk_i) begin
-  if (reset_i !== 1'b1) begin
-    if (mem_fwd_v_lo && mem_fwd_header_lo.payload.uncached) 
-      begin
-      $error("L2 Cache Controller received unsupported Uncached operation");
-      end
-    end
-  end
-
-  // synopsys translate_on
 
   bsg_encode_one_hot
    #(.width_p(3), .lo_to_hi_p(1))
