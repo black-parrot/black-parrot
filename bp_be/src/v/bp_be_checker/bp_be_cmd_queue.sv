@@ -28,8 +28,9 @@ module bp_be_cmd_queue
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  wire enq = fe_cmd_v_i;
-  wire deq = fe_cmd_yumi_i;
+  wire bypass_v = empty_lo & fe_cmd_v_i;
+  wire enq = fe_cmd_v_i & (~bypass_v | ~fe_cmd_yumi_i);
+  wire deq = fe_cmd_yumi_i & ~empty_lo;
 
   logic [ptr_width_lp-1:0] wptr_r, rptr_n, rptr_r;
   logic full_lo, empty_lo;
@@ -48,6 +49,8 @@ module bp_be_cmd_queue
      ,.empty_o(empty_lo)
      );
 
+  logic [fe_cmd_width_lp-1:0] fifo_cmd_lo;
+
   bsg_mem_1r1w
    #(.width_p($bits(bp_fe_cmd_s)), .els_p(fe_cmd_fifo_els_p))
    fifo_mem
@@ -58,10 +61,11 @@ module bp_be_cmd_queue
      ,.w_data_i(fe_cmd_i)
      ,.r_v_i(fe_cmd_v_o)
      ,.r_addr_i(rptr_r)
-     ,.r_data_o(fe_cmd_o)
+     ,.r_data_o(fifo_cmd_lo)
      );
 
-  assign fe_cmd_v_o     = ~empty_lo;
+  assign fe_cmd_o       = bypass_v ? fe_cmd_i : fifo_cmd_lo;
+  assign fe_cmd_v_o     = bypass_v | ~empty_lo;
 
   wire almost_full = (rptr_r == wptr_r+1'b1);
   wire almost_empty = (rptr_r == wptr_r-1'b1);
@@ -72,4 +76,3 @@ module bp_be_cmd_queue
   assign full_n_o  = (full_lo | (almost_full & enq)) & ~deq;
 
 endmodule
-

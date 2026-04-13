@@ -165,17 +165,17 @@ module bp_be_top
      ,.asid_i('0)
      );
 
-  // Debug: trace context switching signals
-  // always @(posedge clk_i) begin
-  //   if (!reset_i) begin
-  //     if (ctx_npc_write_v_lo)
-  //       $display("[BETOP @%0t] CSR0x082 SEED: tid=%0d npc=0x%08x",
-  //                $time, ctx_npc_write_tid_lo, ctx_npc_write_npc_lo);
-  //     if (commit_pkt.ctxtsw)
-  //       $display("[BETOP @%0t] CTXTSW: old_tid=%0d -> new_tid=%0d context_npc=0x%08x commit_npc=0x%08x",
-  //                $time, current_thread_id_lo, csr_ctxt_write_data_lo, context_npc_lo, commit_pkt.npc);
-  //   end
-  // end
+  // Temporary debug to localize context-switch latency through the BE path.
+  always @(posedge clk_i) begin
+    if (!reset_i) begin
+      if (ctx_npc_write_v_lo)
+        $display("[BETOP @%0t] seed tid=%0d npc=0x%08x",
+                 $time, ctx_npc_write_tid_lo, ctx_npc_write_npc_lo);
+      if (commit_pkt.ctxtsw)
+        $display("[BETOP @%0t] commit ctxtsw old_tid=%0d new_tid=%0d context_npc=0x%08x commit_npc=0x%08x",
+                 $time, current_thread_id_lo, csr_ctxt_write_data_lo, context_npc_lo, commit_pkt.npc);
+    end
+  end
 
   bp_be_director
    #(.bp_params_p(bp_params_p))
@@ -185,6 +185,7 @@ module bp_be_top
      ,.cfg_bus_i(cfg_bus_i)
      ,.context_npc_i(context_npc_lo)
      ,.current_thread_id_i(current_thread_id_lo)
+     ,.context_thread_id_i(csr_ctxt_write_data_lo)
      ,.context_asid_i(context_asid_lo)
      ,.context_priv_i(context_priv_mode_lo)
 

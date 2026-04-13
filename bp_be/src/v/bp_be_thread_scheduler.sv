@@ -50,6 +50,7 @@ module bp_be_thread_scheduler
     end else if (csr_write_ctxt_v_i) begin
       // CSR write to CTXT (0x081) - jump to requested thread
       current_thread_r <= csr_write_ctxt_data_i;
+      $display("[TSCHED @%0t] thread_id %0d -> %0d", $time, current_thread_r, csr_write_ctxt_data_i);
     end
     // else: Hold current thread (no auto-increment for Phase 1.4)
   end

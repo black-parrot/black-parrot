@@ -152,7 +152,7 @@ module bp_fe_controller
   assign attaboy_ntaken_o          = attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken;
   assign attaboy_br_metadata_fwd_o = fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
 
-  assign state_reset_v_o = state_reset_v | context_switch_v;
+  assign state_reset_v_o = state_reset_v;
 
   assign shadow_priv_w_o = state_reset_v | trap_v | interrupt_v | eret_v | context_switch_v;
   assign shadow_priv_o = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
@@ -181,6 +181,18 @@ module bp_fe_controller
     : icache_fill_response_v
       ? (fe_cmd_cast_i.operands.icache_fill_response.count > '0)
       : '0;
+
+  always @(posedge clk_i) begin
+    if (!reset_i && context_switch_v)
+      $display("[FECTRL @%0t] consume ctxtsw npc=0x%08x state=%0d redirect=%0b state_reset=%0b thread_meta=0x%0x",
+               $time
+               ,fe_cmd_cast_i.npc
+               ,state_r
+               ,redirect_v_o
+               ,state_reset_v_o
+               ,fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd
+               );
+  end
 
   logic itlb_miss_tv_r, instr_page_fault_tv_r, instr_access_fault_tv_r;
   bsg_dff_reset_en
@@ -309,4 +321,3 @@ module bp_fe_controller
         state_r <= state_n;
 
 endmodule
-

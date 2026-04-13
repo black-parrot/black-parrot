@@ -53,8 +53,11 @@ module bp_be_director
    // Context NPC for thread switch redirects
    , input [vaddr_width_p-1:0]           context_npc_i
 
-   // Current thread ID for embedding in ctxtsw fe_cmd
+   // Current thread ID for normal FE metadata generation
    , input [thread_id_width_p-1:0]       current_thread_id_i
+
+   // Target thread ID for ctxtsw FE metadata generation
+   , input [thread_id_width_p-1:0]       context_thread_id_i
 
    // Current thread ASID for embedding in ctxtsw fe_cmd (for FE shadow_asid)
    , input [asid_width_p-1:0]            context_asid_i
@@ -216,9 +219,9 @@ module bp_be_director
           fe_cmd_pc_redirect_operands.priv            = context_priv_i;
           fe_cmd_pc_redirect_operands.translation_en  = commit_pkt_cast_i.translation_en_n;
           fe_cmd_pc_redirect_operands.asid            = context_asid_i;
-          // Embed new thread_id in MSB of branch_metadata_fwd so pc_gen can update thread_id_r
+          // Embed target thread_id in MSB of branch_metadata_fwd so pc_gen can update thread_id_r
           fe_cmd_pc_redirect_operands.branch_metadata_fwd =
-            {current_thread_id_i, {(branch_metadata_fwd_width_p - thread_id_width_p){1'b0}}};
+            {context_thread_id_i, {(branch_metadata_fwd_width_p - thread_id_width_p){1'b0}}};
           fe_cmd_li.operands.pc_redirect_operands     = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = 1'b1;
@@ -288,6 +291,12 @@ module bp_be_director
           fe_cmd_v_li = 1'b1;
         end
     end
+
+  always @(posedge clk_i) begin
+    if (!reset_i && commit_pkt_cast_i.ctxtsw)
+      $display("[DIRECTOR @%0t] emit fe_cmd ctxtsw cur_tid=%0d new_tid=%0d target_npc=0x%08x asid=0x%0x priv=%0d",
+               $time, current_thread_id_i, context_thread_id_i, context_npc_i, context_asid_i, context_priv_i);
+  end
 
   bp_be_cmd_queue
    #(.bp_params_p(bp_params_p))

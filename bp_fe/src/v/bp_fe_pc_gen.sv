@@ -86,7 +86,7 @@ module bp_fe_pc_gen
   always_ff @(posedge clk_i) begin
     if (reset_i)
       thread_id_r <= '0;
-    else if (state_reset_v_i)
+    else if (redirect_v_i | state_reset_v_i)
       thread_id_r <= redirect_br_metadata_fwd_cast_i.thread_id;
   end
 
@@ -429,4 +429,3 @@ module bp_fe_pc_gen
      );
 
 endmodule
-
