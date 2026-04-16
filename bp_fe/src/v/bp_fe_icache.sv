@@ -516,10 +516,10 @@ module bp_fe_icache
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
+      e_miss    : state_n = force_i ? e_ready : complete_recv ? e_recover : state_r;
+      e_recover : state_n = force_i ? e_ready : e_ready;
       e_ready   : state_n = cache_req_yumi_i ? e_miss : state_r;
-      e_miss    : state_n = complete_recv ? e_recover : state_r;
-      // e_recover:
-      default  : state_n = e_ready;
+      default   : state_n = e_ready;
     endcase
 
   // synopsys sync_set_reset "reset_i"
@@ -737,4 +737,3 @@ module bp_fe_icache
   // synopsys translate_on
 
 endmodule
-
