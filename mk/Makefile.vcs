@@ -44,6 +44,7 @@ VCS_BUILD_OPTS += -lriscv
 VCS_BUILD_OPTS += $(BP_DIR)/bp_be/test/common/spike_cosim.cpp
 endif
 
+
 %/flist.vcs:
 	@$(MKDIR) -p $(@D)
 	@$(CAT) $(END_PATH)/flist.vcs >> $@
