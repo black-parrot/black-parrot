@@ -138,9 +138,10 @@ make -C bp_me/verilator build.verilator sim.verilator TRACE=1 PROG=mixed ME_TEST
 BlackParrot support Verilog-2005 pickling through [bsg_sv2v](https://github.com/bespoke-silicon-group/bsg_sv2v).
 Unfortunately, this requires access to [Synopsys DC](https://www.synopsys.com/implementation-and-signoff/rtl-synthesis-test/dc-ultra.html), but we welcome help supporting an open-source alternative.
 
-
-    cd bp_top/dc
-	make check_design.dc; # Lints for a variety of common synthesis issues
-	make check_loops.dc;  # Checks for timing loops in addition to lint (requires PDK)
-	make sv2v.dc;         # Pickles the design
+```bash
+cd bp_top/dc
+make check_design.dc; # Lints for a variety of common synthesis issues
+make check_loops.dc;  # Checks for timing loops in addition to lint (requires PDK)
+make sv2v.dc;         # Pickles the design
+```
 
