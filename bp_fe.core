@@ -1,0 +1,214 @@
+CAPI=2:
+
+name: ::bp_fe:0-r1
+description: Black-parrot front-end
+
+filesets:
+  src:
+    files:
+      # Include files
+      - bp_common/src/include/bp_common_accelerator_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_addr_defines.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_addr_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_aviary_cfg_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_aviary_custom_defines.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_aviary_defines.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_aviary_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_bedrock_if.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_bedrock_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_bedrock_wormhole_defines.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_cache_engine_if.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_cache_engine_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_cache_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_cfg_bus_defines.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_cfg_bus_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_clint_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_core_if.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_core_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_defines.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_host_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_log_defines.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_rv64_csr_defines.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_rv64_instr_defines.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_rv64_pkgdef.svh: {is_include_file: true}
+      - bp_common/src/include/bp_common_pkg.sv
+
+      - bp_fe/src/include/bp_fe_decompress.svh: {is_include_file: true}
+      - bp_fe/src/include/bp_fe_defines.svh: {is_include_file: true}
+      - bp_fe/src/include/bp_fe_icache_defines.svh: {is_include_file: true}
+      - bp_fe/src/include/bp_fe_icache_pkgdef.svh: {is_include_file: true}
+      - bp_fe/src/include/bp_fe_pkg.sv
+
+      - bp_be/src/include/bp_be_ctl_pkgdef.svh: {is_include_file: true}
+      - bp_be/src/include/bp_be_dcache_defines.svh: {is_include_file: true}
+      - bp_be/src/include/bp_be_dcache_pkgdef.svh: {is_include_file: true}
+      - bp_be/src/include/bp_be_defines.svh: {is_include_file: true}
+      - bp_be/src/include/bp_be_pkg.sv
+
+      - bp_me/src/include/bp_me_cce_defines.svh: {is_include_file: true}
+      - bp_me/src/include/bp_me_cce_inst_defines.svh: {is_include_file: true}
+      - bp_me/src/include/bp_me_cce_inst_pkgdef.svh: {is_include_file: true}
+      - bp_me/src/include/bp_me_cce_pkgdef.svh: {is_include_file: true}
+      - bp_me/src/include/bp_me_defines.svh: {is_include_file: true}
+      - bp_me/src/include/bp_me_pkg.sv
+
+      - bp_top/src/include/bp_top_defines.svh: {is_include_file: true}
+      - bp_top/src/include/bp_top_pkg.sv
+
+      # Common files
+      - bp_common/src/v/bsg_fifo_1r1w_rolly.sv
+      - bp_common/src/v/bsg_bus_pack.sv
+      - bp_common/src/v/bsg_serial_in_parallel_out_passthrough_last.v
+      - bp_common/src/v/bsg_parallel_in_serial_out_passthrough_dynamic_last.v
+      - bp_common/src/v/bp_pma.sv
+      - bp_common/src/v/bp_tlb.sv
+      ## BE files
+      - bp_be/src/v/bp_be_top.sv
+      # Calculator
+      - bp_be/src/v/bp_be_calculator/bp_be_calculator_top.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_csr.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_fp_to_reg.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_nan_unbox.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_pipe_int.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_pipe_aux.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_pipe_ctl.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_pipe_fma.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_pipe_long.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_pipe_mem.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_pipe_sys.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_ptw.sv
+      - bp_be/src/v/bp_be_calculator/bp_be_reg_to_fp.sv
+      # Checker
+      - bp_be/src/v/bp_be_checker/bp_be_detector.sv
+      - bp_be/src/v/bp_be_checker/bp_be_director.sv
+      - bp_be/src/v/bp_be_checker/bp_be_instr_decoder.sv
+      - bp_be/src/v/bp_be_checker/bp_be_issue_queue.sv
+      - bp_be/src/v/bp_be_checker/bp_be_regfile.sv
+      - bp_be/src/v/bp_be_checker/bp_be_scheduler.sv
+      # MMU
+      - bp_be/src/v/bp_be_dcache/bp_be_dcache.sv
+      - bp_be/src/v/bp_be_dcache/bp_be_dcache_decoder.sv
+      - bp_be/src/v/bp_be_dcache/bp_be_dcache_wbuf.sv
+      ## FE files
+      - bp_fe/src/v/bp_fe_bht.sv
+      - bp_fe/src/v/bp_fe_btb.sv
+      - bp_fe/src/v/bp_fe_icache.sv
+      - bp_fe/src/v/bp_fe_instr_scan.sv
+      - bp_fe/src/v/bp_fe_pc_gen.sv
+      - bp_fe/src/v/bp_fe_top.sv
+      ## ME files
+      # LCE
+      - bp_me/src/v/lce/bp_lce.sv
+      - bp_me/src/v/lce/bp_lce_req.sv
+      - bp_me/src/v/lce/bp_lce_cmd.sv
+      - bp_me/src/v/lce/bp_lce_fill.sv
+      # Cache
+      - bp_me/src/v/dev/bp_me_cce_to_cache.sv
+      - bp_me/src/v/dev/bp_me_dram_hash_decode.sv
+      - bp_me/src/v/dev/bp_me_dram_hash_encode.sv
+      # CCE
+      - bp_me/src/v/cce/bp_cce.sv
+      - bp_me/src/v/cce/bp_cce_alu.sv
+      - bp_me/src/v/cce/bp_cce_arbitrate.sv
+      - bp_me/src/v/cce/bp_cce_branch.sv
+      - bp_me/src/v/cce/bp_cce_dir.sv
+      - bp_me/src/v/cce/bp_cce_dir_lru_extract.sv
+      - bp_me/src/v/cce/bp_cce_dir_segment.sv
+      - bp_me/src/v/cce/bp_cce_dir_tag_checker.sv
+      - bp_me/src/v/cce/bp_cce_gad.sv
+      - bp_me/src/v/cce/bp_cce_inst_decode.sv
+      - bp_me/src/v/cce/bp_cce_inst_predecode.sv
+      - bp_me/src/v/cce/bp_cce_inst_ram.sv
+      - bp_me/src/v/cce/bp_cce_inst_stall.sv
+      - bp_me/src/v/cce/bp_cce_msg.sv
+      - bp_me/src/v/cce/bp_cce_pending_bits.sv
+      - bp_me/src/v/cce/bp_cce_pma.sv
+      - bp_me/src/v/cce/bp_cce_reg.sv
+      - bp_me/src/v/cce/bp_cce_spec_bits.sv
+      - bp_me/src/v/cce/bp_cce_src_sel.sv
+      - bp_me/src/v/cce/bp_cce_fsm.sv
+      - bp_me/src/v/cce/bp_cce_wrapper.sv
+      # Dev
+      - bp_me/src/v/dev/bp_me_bedrock_register.sv
+      - bp_me/src/v/dev/bp_me_cache_slice.sv
+      - bp_me/src/v/dev/bp_me_cfg_slice.sv
+      - bp_me/src/v/dev/bp_me_clint_slice.sv
+      - bp_me/src/v/dev/bp_me_loopback.sv
+      # Network
+      - bp_me/src/v/cce/bp_uce.sv
+      - bp_me/src/v/network/bp_me_addr_to_cce_id.sv
+      - bp_me/src/v/network/bp_me_cce_id_to_cord.sv
+      - bp_me/src/v/network/bp_me_cord_to_id.sv
+      - bp_me/src/v/network/bp_me_lce_id_to_cord.sv
+      - bp_me/src/v/network/bp_me_stream_pump_in.sv
+      - bp_me/src/v/network/bp_me_stream_pump_out.sv
+      - bp_me/src/v/network/bp_me_stream_wraparound.sv
+      - bp_me/src/v/network/bp_me_stream_fifo.sv
+      - bp_me/src/v/network/bp_me_stream_to_burst.sv
+      - bp_me/src/v/network/bp_me_burst_to_stream.sv
+      - bp_me/src/v/network/bp_me_xbar_burst.sv
+
+      # BSG Staging area
+      - bp_common/src/v/bsg_async_noc_link.sv
+      - bp_common/src/v/bsg_deff_reset.v
+      - bp_common/src/v/bsg_dff_sync_read.v
+    file_type: systemVerilogSource
+    depend:
+      - bsg_stl_all_rtl
+      - hardfloat_riscv
+
+  test_sv:
+    files:
+      - bp_top/test/common/bp_nonsynth_if_verif.sv
+      - bp_be/test/common/bp_be_nonsynth_dcache_tracer.sv
+      - bp_me/test/common/bp_me_nonsynth_pkg.sv
+      - bp_me/test/common/bp_me_nonsynth_cce_tracer.sv
+      - bp_me/test/common/bp_me_nonsynth_lce_tracer.sv
+      - bp_me/test/common/bp_nonsynth_mem_tracer.sv
+      - bp_me/test/common/bp_nonsynth_dram.sv
+      - bp_me/test/common/bp_nonsynth_mem.sv
+    file_type: systemVerilogSource
+    depend:
+      - bsg_stl_all_rtl
+
+  test_cpp:
+    files:
+      - bp_top/test/common/bp_nonsynth_if_verif.sv
+      - bp_be/test/common/bp_be_nonsynth_dcache_tracer.sv
+      - bp_me/test/common/bp_me_nonsynth_pkg.sv
+      - bp_me/test/common/bp_me_nonsynth_cce_tracer.sv
+      - bp_me/test/common/bp_me_nonsynth_lce_tracer.sv
+      - bp_me/test/common/bp_nonsynth_mem_tracer.sv
+      - bp_me/test/common/bp_nonsynth_dram.sv
+      - bp_me/test/common/bp_nonsynth_mem.sv
+    file_type: cppSource
+    depend:
+      - bsg_mem_dma
+
+targets:
+  default:
+    filesets: [src]
+
+  lint:
+    default_tool: verilator
+    filesets: [src]
+    tools:
+      verilator: 
+        mode: lint-only
+        verilator_options:
+          - -Wwarn-lint
+          - -Wwarn-style
+          - -Wno-WIDTH
+          - -Wno-DECLFILENAME
+      modelsim:
+        vcom_options:
+          - '-64'
+          - -lint
+        vlog_options:
+          - '-64'
+          - -suppress vlog-2583
+        vsim_options:
+          - '-64'
+    toplevel: bp_fe_top
+
+  # Implement testbenches in the future
