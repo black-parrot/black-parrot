@@ -25,5 +25,5 @@ include $(TB_PATH)/Makefile.cfgs
 include $(TB_PATH)/Makefile.params
 include $(TB_PATH)/Makefile.collateral
 
-include $(BP_MK_DIR)/Makefile.verilator
+include $(BP_MK_DIR)/Makefile.xcelium
 
