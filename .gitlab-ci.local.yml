@@ -304,6 +304,8 @@ build-image:
         (cd "${BUILD_DIR}" && find -name "*.vdb" ! -name "design.vdb" -exec cp -r --parents {} "${COVERAGE_DIR}/" \;)
       elif [ "$TOOL" == "verilator" ]; then
         (cd "${BUILD_DIR}" && find -name "*.dat" ! -name "*__verFiles.dat" -exec cp -r --parents {} "${COVERAGE_DIR}/" \;)
+        # Strip the absolute CI runner path to make source file references relative
+        find "${COVERAGE_DIR}" -name "*.dat" -exec sed -i "s|${CI_PROJECT_DIR}/|../../../../../|g" {} +
       fi
   rules:
     - if: '"$[[ inputs.do_sim_riscv ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
@@ -360,74 +362,68 @@ gather-riscv:
   extends: [.gather_riscv_job]
   needs: [{job: scatter-libs, optional: true}]
 
-    #check-design:
-    #  extends: [.check_design_job]
-    #  parallel:
-    #    matrix:
-    #      - CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
-    #  needs: [{job: build-image, optional: true}]
-    #
-    #check-loops:
-    #  extends: [.check_loops_job]
-    #  parallel:
-    #    matrix:
-    #      - CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
-    #  needs: [check-design]
-    #
-    #sv2v:
-    #  extends: [.sv2v_job]
-    #  parallel:
-    #    matrix:
-    #      - CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
-    #  needs: [check-design, gather-tools, gather-libs]
-    #
-    #scatter-sv2v:
-    #  extends: [.scatter_sv2v_job]
-    #  needs: [sv2v]
-    #
-    #gather-sv2v:
-    #  extends: [.gather_sv2v_job]
-    #  needs: [{job: scatter-sv2v, optional: true}]
-    #
-    #lint-top:
-    #  extends: [.lint_job]
-    #  parallel:
-    #    matrix:
-    #      - TOOL: ["verilator", "xcelium", "vcs"]
-    #        CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
-    #      - TOOL: ["vcs"]
-    #        CFG: ["e_bp_multicore_2_cfg", "e_bp_multicore_2_cce_ucode_cfg"]
-    #      - TOOL: ["vcs"]
-    #        CFG: ["e_bp_multicore_4_cfg", "e_bp_multicore_4_cce_ucode_cfg"]
-    #  needs: [check-design, gather-tools, gather-libs]
-    #
-    #me-regress:
-    #  extends: [.me_regress_job]
-    #  parallel:
-    #    matrix:
-    #      - TOOL: ["vcs", "verilator", "xcelium"]
-    #        CFG: ["e_bp_test_multicore_half_cce_ucode_cfg", "e_bp_test_multicore_half_cfg"]
-    #  needs: [lint-top]
+check-design:
+  extends: [.check_design_job]
+  parallel:
+    matrix:
+      - CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+  needs: [{job: build-image, optional: true}]
 
+check-loops:
+  extends: [.check_loops_job]
+  parallel:
+    matrix:
+      - CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+  needs: [check-design]
+
+sv2v:
+  extends: [.sv2v_job]
+  parallel:
+    matrix:
+      - CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+  needs: [check-design, gather-tools, gather-libs]
+
+scatter-sv2v:
+  extends: [.scatter_sv2v_job]
+  needs: [sv2v]
+
+gather-sv2v:
+  extends: [.gather_sv2v_job]
+  needs: [{job: scatter-sv2v, optional: true}]
+
+lint-top:
+  extends: [.lint_job]
+  parallel:
+    matrix:
+      - TOOL: ["verilator", "vcs", "xcelium"]
+        CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+      - TOOL: ["vcs"]
+        CFG: ["e_bp_multicore_2_cfg", "e_bp_multicore_2_cce_ucode_cfg"]
+      - TOOL: ["vcs"]
+        CFG: ["e_bp_multicore_4_cfg", "e_bp_multicore_4_cce_ucode_cfg"]
+  needs: [check-design, gather-tools, gather-libs]
+
+me-regress:
+  extends: [.me_regress_job]
+  parallel:
+    matrix:
+      - TOOL: ["vcs", "verilator", "xcelium"]
+        CFG: ["e_bp_test_multicore_half_cce_ucode_cfg", "e_bp_test_multicore_half_cfg"]
+  needs: [lint-top]
 
 sim-riscv:
   extends: [.sim_riscv_job]
   parallel:
     matrix:
       - TOOL: ["vcs", "verilator", "xcelium"]
-        CFG: ["e_bp_unicore_cfg"]
-        TESTLIST: ["bp-demos"]
-    #  parallel:
-    #    matrix:
-    #      - TOOL: ["vcs", "verilator", "xcelium"]
-    #        CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
-    #        TESTLIST: ["bp-tests", "bp-demos"]
-    #      - TOOL: ["vcs"]
-    #        CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
-    #        TESTLIST: ["beebs", "nocosim", "coremark", "riscv-arch", "riscv-dv", "riscv-tests"]
-    #      - TOOL: ["vcs"]
-    #        CFG: ["e_bp_multicore_1_cfg", "e_bp_multicore_2_cfg", "e_bp_multicore_4_cfg", "e_bp_multicore_8_cfg", "e_bp_multicore_16_cfg"]
-    #        TESTLIST: ["mc-tests"]
+        CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+        TESTLIST: ["bp-tests", "bp-demos"]
+      - TOOL: ["vcs"]
+        CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
+        TESTLIST: ["beebs", "nocosim", "coremark", "riscv-arch", "riscv-dv", "riscv-tests"]
+      - TOOL: ["vcs"]
+        CFG: ["e_bp_multicore_1_cfg", "e_bp_multicore_2_cfg", "e_bp_multicore_4_cfg", "e_bp_multicore_8_cfg", "e_bp_multicore_16_cfg"]
+        TESTLIST: ["mc-tests"]
   needs: [{job: lint-top, optional: true}, gather-tools, gather-libs, gather-sdk, gather-riscv]
 
 coverage:
