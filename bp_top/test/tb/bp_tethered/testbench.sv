@@ -262,6 +262,8 @@ module testbench
 
 // v5.036: Unsupported: Bind with instance list
 `ifndef VERILATOR
+// v21.09
+`ifndef XCELIUM
   wire immu_tracer_en_li = 1'b1;
   bind bp_mmu:immu bp_nonsynth_vm_tracer
    #(.bp_params_p(bp_params_p), .trace_str_p("immu"), .plusargs_str_p("vm_trace"))
@@ -279,6 +281,7 @@ module testbench
      ,.reset_i(reset_i)
      ,.en_i(testbench.dmmu_tracer_en_li)
      );
+`endif
 `endif
 
   wire cosim_en_li = 1'b1;
@@ -348,6 +351,8 @@ module testbench
 
 // v5.036: Unsupported: Bind with instance list
 `ifndef VERILATOR
+// v21.09
+`ifndef XCELIUM
   wire clint_trace_en_li = 1'b1;
   bind bp_me_bedrock_register:clints_register
     bp_me_nonsynth_dev_tracer
@@ -377,6 +382,7 @@ module testbench
        ,.en_i(testbench.cfg_trace_en_li)
        ,.cfg_bus_i(bp_me_cfg_slice.cfg_bus_o)
        );
+`endif
 `endif
 
   wire dram_trace_en_li = 1'b1;
