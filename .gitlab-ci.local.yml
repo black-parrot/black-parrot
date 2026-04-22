@@ -29,9 +29,7 @@ build-image:
     - if: '"$[[ inputs.do_build_image ]]" =~ "/on_event/"'
       changes:
         paths:
-          - docker/Dockerfile.${DOCKER_PLATFORM}
-          - docker/entrypoint.${DOCKER_PLATFORM}.sh
-          - docker/requirements.txt
+          - docker/
 
 ###################################################
 ## project definition
@@ -50,15 +48,18 @@ build-image:
     RISCV_PACKAGE: "riscv"
     RISCV_PACKAGE_VER: "master"
     RISCV_PROJECT_ID: "27392985"
+    SDK_PACKAGE: "tools-${DOCKER_PLATFORM}"
+    SDK_PACKAGE_VER: "master"
+    SDK_PROJECT_ID: "27392985"
     SV2V_WILDCARD: "sv2v"
     SV2V_ARTIFACT: "sv2v/wrapper.${CFG}.pickle.sv"
     SV2V_PACKAGE: "sv2v-${DOCKER_PLATFORM}"
     # exported to make sure things go in the right place
-    BP_WORK_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-rtl-work"
-    BP_INSTALL_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-rtl-install"
-    BP_TOOLS_INSTALL_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-tools-install"
-    BP_SDK_INSTALL_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-sdk-install"
-    BP_RISCV_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-riscv"
+    BP_WORK_DIR: "${CI_PROJECT_DIR}/${JOB_WORK_ROOT}/bp-rtl-work"
+    BP_INSTALL_DIR: "${CI_PROJECT_DIR}/${JOB_WORK_ROOT}/bp-rtl-install"
+    BP_TOOLS_INSTALL_DIR: "${CI_PROJECT_DIR}/${JOB_WORK_ROOT}/bp-tools-install"
+    BP_SDK_INSTALL_DIR: "${CI_PROJECT_DIR}/${JOB_WORK_ROOT}/bp-sdk-install"
+    BP_RISCV_DIR: "${CI_PROJECT_DIR}/${JOB_WORK_ROOT}/bp-riscv"
   before_script:
     - !reference [.job_template, before_script]
     - COMMON_INSTALL_DIR="${JOB_COMMON_ROOT}/$(basename ${BP_INSTALL_DIR})"
@@ -140,6 +141,19 @@ build-image:
     - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}"
     - !reference [.api_anchors, api_download]
     - mkdir -p ${COMMON_TOOLS_DIR}
+    - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_INSTALL_DIR}
+
+.gather_sdk_job:
+  extends: [.project_template, .api_mixin]
+  variables:
+    # template variables
+    API_PACKAGE_NAME: "${SDK_PACKAGE}"
+    API_PACKAGE_VER: "${SDK_PACKAGE_VER}"
+    API_PROJECT_ID: "${SDK_PROJECT_ID}"
+  script:
+    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}"
+    - !reference [.api_anchors, api_download]
+    - mkdir -p ${COMMON_SDK_DIR}
     - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_INSTALL_DIR}
 
 .gather_riscv_job:
@@ -307,6 +321,10 @@ gather-tools:
   extends: [.gather_tools_job]
   needs: [{job: scatter-libs, optional: true}]
 
+gather-sdk:
+  extends: [.gather_sdk_job]
+  needs: [{job: scatter-libs, optional: true}]
+
 gather-riscv:
   extends: [.gather_riscv_job]
   needs: [{job: scatter-libs, optional: true}]
@@ -344,7 +362,7 @@ lint-top:
   extends: [.lint_job]
   parallel:
     matrix:
-      - TOOL: ["verilator", "vcs"]
+      - TOOL: ["verilator", "vcs", "xcelium"]
         CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
       - TOOL: ["vcs"]
         CFG: ["e_bp_multicore_2_cfg", "e_bp_multicore_2_cce_ucode_cfg"]
@@ -356,7 +374,7 @@ me-regress:
   extends: [.me_regress_job]
   parallel:
     matrix:
-      - TOOL: ["vcs", "verilator"]
+      - TOOL: ["vcs", "verilator", "xcelium"]
         CFG: ["e_bp_test_multicore_half_cce_ucode_cfg", "e_bp_test_multicore_half_cfg"]
   needs: [lint-top]
 
@@ -364,7 +382,7 @@ sim-riscv:
   extends: [.sim_riscv_job]
   parallel:
     matrix:
-      - TOOL: ["vcs", "verilator"]
+      - TOOL: ["vcs", "verilator", "xcelium"]
         CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
         TESTLIST: ["bp-tests", "bp-demos"]
       - TOOL: ["vcs"]
