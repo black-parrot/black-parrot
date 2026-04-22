@@ -65,9 +65,29 @@ module bp_be_csr
   rv64_mie_s sie_rwmask_li;
   rv64_mip_s sip_wmask_li, sip_rmask_li, mip_wmask_li;
 
+  localparam [1:0] pmp_a_off_lp = 2'b00;
+
   logic [rv64_priv_width_gp-1:0] priv_mode_n, priv_mode_r;
   logic debug_mode_n, debug_mode_r;
   logic translation_en_n, translation_en_r;
+
+  function automatic rv64_pmpcfg_entry_s pmpcfg_warl_entry
+    (input rv64_pmpcfg_entry_s entry_i);
+    rv64_pmpcfg_entry_s entry_o;
+    begin
+      entry_o = entry_i;
+
+      // MVP only supports OFF and TOR addressing in CSR state.
+      if (entry_o.a[1])
+        entry_o.a = pmp_a_off_lp;
+
+      // W without R is a reserved encoding, force WARL-compliant state.
+      if (~entry_o.r)
+        entry_o.w = 1'b0;
+
+      pmpcfg_warl_entry = entry_o;
+    end
+  endfunction
 
   wire is_debug_mode = debug_mode_r;
   // Debug Mode grants pseudo M-mode permission
@@ -108,7 +128,11 @@ module bp_be_csr
   `declare_csr_addr(mtval, vaddr_width_p, paddr_width_p);
   `declare_csr(mip);
 
-  // No support for PMP currently
+  `declare_csr(pmpcfg0);
+  `declare_csr(pmpaddr0);
+  `declare_csr(pmpaddr1);
+  `declare_csr(pmpaddr2);
+  `declare_csr(pmpaddr3);
 
   `declare_csr(mcycle);
   `declare_csr(minstret);
@@ -418,6 +442,12 @@ module bp_be_csr
         {`CSR_ADDR_MTVEC        }: csr_data_lo = mtvec_lo;
         {`CSR_ADDR_MCOUNTEREN   }: csr_data_lo = mcounteren_lo;
         {`CSR_ADDR_MIP          }: csr_data_lo = mip_lo;
+        {`CSR_ADDR_PMPCFG0      }: csr_data_lo = pmpcfg0_lo;
+        {`CSR_ADDR_PMPCFG2      }: csr_data_lo = '0;
+        {`CSR_ADDR_PMPADDR0     }: csr_data_lo = pmpaddr0_lo;
+        {`CSR_ADDR_PMPADDR1     }: csr_data_lo = pmpaddr1_lo;
+        {`CSR_ADDR_PMPADDR2     }: csr_data_lo = pmpaddr2_lo;
+        {`CSR_ADDR_PMPADDR3     }: csr_data_lo = pmpaddr3_lo;
         {`CSR_ADDR_MSCRATCH     }: csr_data_lo = mscratch_lo;
         {`CSR_ADDR_MEPC         }: csr_data_lo = mepc_lo;
         {`CSR_ADDR_MCAUSE       }: csr_data_lo = mcause_lo;
@@ -466,6 +496,11 @@ module bp_be_csr
       mcause_li   = mcause_lo;
       mtval_li    = mtval_lo;
       mip_li      = mip_lo;
+      pmpcfg0_li  = pmpcfg0_lo;
+      pmpaddr0_li = pmpaddr0_lo;
+      pmpaddr1_li = pmpaddr1_lo;
+      pmpaddr2_li = pmpaddr2_lo;
+      pmpaddr3_li = pmpaddr3_lo;
 
       mcycle_li        = mcycle_lo;
       minstret_li      = minstret_lo;
@@ -511,6 +546,23 @@ module bp_be_csr
         {1'b1, `CSR_ADDR_MTVEC        }: mtvec_li = csr_data_li;
         {1'b1, `CSR_ADDR_MCOUNTEREN   }: mcounteren_li = csr_data_li;
         {1'b1, `CSR_ADDR_MIP          }: mip_li = csr_data_li;
+        {1'b1, `CSR_ADDR_PMPCFG0      }:
+          for (int i = 0; i < 4; i++)
+            if (~pmpcfg0_lo.pmpcfg[i].l)
+              pmpcfg0_li.pmpcfg[i] = pmpcfg_warl_entry(rv64_pmpcfg0_s'(csr_data_li).pmpcfg[i]);
+        {1'b1, `CSR_ADDR_PMPCFG2      }: begin end
+        {1'b1, `CSR_ADDR_PMPADDR0     }:
+          if (~pmpcfg0_lo.pmpcfg[0].l)
+            pmpaddr0_li = rv64_pmpaddr0_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR1     }:
+          if (~pmpcfg0_lo.pmpcfg[1].l)
+            pmpaddr1_li = rv64_pmpaddr1_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR2     }:
+          if (~pmpcfg0_lo.pmpcfg[2].l)
+            pmpaddr2_li = rv64_pmpaddr2_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR3     }:
+          if (~pmpcfg0_lo.pmpcfg[3].l)
+            pmpaddr3_li = rv64_pmpaddr3_s'(csr_data_li);
         {1'b1, `CSR_ADDR_MSCRATCH     }: mscratch_li = csr_data_li;
         {1'b1, `CSR_ADDR_MEPC         }: mepc_li = csr_data_li;
         {1'b1, `CSR_ADDR_MCAUSE       }: mcause_li = csr_data_li;
