@@ -14,6 +14,7 @@ module bp_nonsynth_dram_tracer
    , parameter `BSG_INV_PARAM(dma_mask_width_p)
 
    , parameter string trace_str_p = ""
+   , parameter string plusargs_str_p = ""
    )
   (input         clk_i
    , input        reset_i
@@ -39,7 +40,7 @@ module bp_nonsynth_dram_tracer
   logic mem_read_r; always_ff @(posedge clk_i) mem_read_r <= mem_read;
 
   // record
-  `declare_bp_tracer_control(clk_i, reset_i, en_i, trace_str_p, 1'b0);
+  `declare_bp_tracer_control_plusargs(clk_i, reset_i, en_i, trace_str_p, 0, plusargs_str_p);
   always_ff @(posedge clk_i)
     if (is_go)
       begin

@@ -13,14 +13,14 @@ static std::once_flag handle_init_once, handle_fini_once;
 
 void printf_stub(int hartid, const char *fmt, ...) { }
 
-extern "C" void* cosim_init(int ncpus, int memsize) {
+extern "C" void* cosim_init(int ncpus, int memsize, const char* prog_name) {
 
     std::call_once(handle_init_once, [&] {
         char argv_str[1024];
         char *argv[64];
         int argc = 0;
         // Create the argument string
-        sprintf(argv_str, "dromajo --ncpus=%d --memory_size=%d prog.riscv", ncpus, memsize);
+        sprintf(argv_str, "dromajo --ncpus=%d --memory_size=%d %s", ncpus, memsize, prog_name);
 
         // Tokenize the string
         char *token = strtok(argv_str, " ");
