@@ -55,6 +55,7 @@ FLAGS:
 - COMMITLOG: Create RISCV commitlog during execution
 - DROMAJO_TRACE: Creates a dromajo-based golden trace
 - SPIKE_TRACE: Creates a spike-based golden trace
+- COVERAGE: Generates coverage data for VCS or Verilator
 
 PARAMS:
 - PERF_ENABLE_P: Enable performance profiler
@@ -144,5 +145,14 @@ cd bp_top/dc
 make check_design.dc; # Lints for a variety of common synthesis issues
 make check_loops.dc;  # Checks for timing loops in addition to lint (requires PDK)
 make sv2v.dc;         # Pickles the design
+```
+
+## Code coverage
+
+If code coverage has been enabled during simulations (COVERAGE=1), then the results can be merged into a convenient report.
+
+```bash
+make merge.vcs; # Generates a combined coverage report using URG
+make merge.verilator; # Generates a combined coverage report using Verilator
 ```
 
