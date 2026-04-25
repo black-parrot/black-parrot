@@ -18,7 +18,7 @@ readonly _LOCAL_SH_INCLUDE=1
 do_single_sim() {
     _bsg_parse_args 4 tool cfg suite prog "$1" "$2" "$3" "$4"
 
-    bsg_log_init ${JOB_LOG} ${JOB_RPT} ${JOB_OUT} ${JOB_LOGLEVEL} || exit 1
+    _bsg_log_init ${JOB_LOG} ${JOB_RPT} ${JOB_OUT} ${JOB_LOGLEVEL} || exit 1
     echo "tool: ${_tool} cfg: ${_cfg} suite: ${_suite} prog: ${_prog}"
 
     # find test components

@@ -13,8 +13,8 @@ COH_PROTO ?=
 
 # Flags
 ASSERT        ?= 0
-TRACE         ?= 0
 COVERAGE      ?= 0
+TRACE         ?= 0
 DROMAJO_COSIM ?= 0
 SPIKE_COSIM   ?= 0
 DISASSEMBLE   ?= 0
@@ -26,5 +26,5 @@ include $(TB_PATH)/Makefile.cfgs
 include $(TB_PATH)/Makefile.params
 include $(TB_PATH)/Makefile.collateral
 
-include $(BP_MK_DIR)/Makefile.vcs
+include $(BP_MK_DIR)/Makefile.xcelium
 
