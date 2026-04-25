@@ -657,7 +657,7 @@ module bp_cce_inst_decode
                   decoded_inst_o.addr_sel = e_mux_sel_addr_mem_rev;
                 end
                 e_src_q_sel_pending: begin
-                  decoded_inst_o.pending_yumi = 1'b0;
+                  decoded_inst_o.pending_yumi = 1'b1;
                   decoded_inst_o.addr_sel = e_mux_sel_addr_pending;
                 end
                 default: begin
@@ -718,26 +718,34 @@ module bp_cce_inst_decode
             e_popd_op: begin
               // TODO: add full support when removing message deserialization
               // pop 64-bits of data from src_q to a GPR
-              decoded_inst_o.popd = 1'b1;
               decoded_inst_o.popq_qsel = op_type_u.popq.src_q;
               decoded_inst_o.src_a_sel = e_src_sel_queue;
-              decoded_inst_o.dst_sel = e_dst_sel_gpr;
-              decoded_inst_o.dst.gpr = op_type_u.popq.dst;
-              decoded_inst_o.gpr_w_v[op_type_u.popq.dst[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;
               unique case (op_type_u.popq.src_q)
                 e_src_q_sel_lce_resp: begin
+                  decoded_inst_o.popd = 1'b1;
                   decoded_inst_o.src_a.q = e_opd_lce_resp_data;
                 end
                 e_src_q_sel_mem_rev: begin
+                  decoded_inst_o.popd = 1'b1;
                   decoded_inst_o.src_a.q = e_opd_mem_rev_data;
                 end
                 e_src_q_sel_lce_req: begin
+                  decoded_inst_o.popd = 1'b1;
                   decoded_inst_o.src_a.q = e_opd_lce_req_data;
                 end
+                e_src_q_sel_pending: begin
+                  // pending queue has no data payload for popd
+                end
                 default: begin
-                  decoded_inst_o.src_a.q = e_opd_lce_resp_data;
+                  // no-op on unsupported queue selections
                 end
               endcase
+
+              if (decoded_inst_o.popd) begin
+                decoded_inst_o.dst_sel = e_dst_sel_gpr;
+                decoded_inst_o.dst.gpr = op_type_u.popq.dst;
+                decoded_inst_o.gpr_w_v[op_type_u.popq.dst[0+:`bp_cce_inst_gpr_sel_width]] = 1'b1;
+              end
 
             end
             e_specq_op: begin
