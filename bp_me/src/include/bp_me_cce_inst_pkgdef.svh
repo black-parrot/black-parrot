@@ -160,8 +160,7 @@
   //,e_pushqc_op                           = 4'b0001   // Push Queue Custom Message
     ,e_popq_op                             = 4'b0010   // Pop Queue - dequeue the header
     ,e_poph_op                             = 4'b0011   // Pop Header From Queue - does not pop message
-    // TODO: popd not yet fully supported - will be supported after serdes changes
-    ,e_popd_op                             = 4'b0100   // Pop Data From Queue
+    ,e_popd_op                             = 4'b0100   // Pop Data From Queue to GPR (uses popq encoding)
     ,e_specq_op                            = 4'b0101   // Write or read speculative access bits
     ,e_inv_op                              = 4'b1000   // Send all Invalidations based on sharers vector
   } bp_cce_inst_minor_queue_op_e;
