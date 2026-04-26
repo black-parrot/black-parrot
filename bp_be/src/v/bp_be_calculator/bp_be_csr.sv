@@ -110,22 +110,22 @@ module bp_be_csr
 
   `declare_csr(pmpcfg0);
   `declare_csr(pmpcfg2);
-  `declare_csr(pmpaddr0);
-  `declare_csr(pmpaddr1);
-  `declare_csr(pmpaddr2);
-  `declare_csr(pmpaddr3);
-  `declare_csr(pmpaddr4);
-  `declare_csr(pmpaddr5);
-  `declare_csr(pmpaddr6);
-  `declare_csr(pmpaddr7);
-  `declare_csr(pmpaddr8);
-  `declare_csr(pmpaddr9);
-  `declare_csr(pmpaddr10);
-  `declare_csr(pmpaddr11);
-  `declare_csr(pmpaddr12);
-  `declare_csr(pmpaddr13);
-  `declare_csr(pmpaddr14);
-  `declare_csr(pmpaddr15);
+  `declare_csr_addr(pmpaddr0, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr1, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr2, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr3, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr4, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr5, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr6, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr7, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr8, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr9, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr10, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr11, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr12, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr13, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr14, vaddr_width_p, paddr_width_p);
+  `declare_csr_addr(pmpaddr15, vaddr_width_p, paddr_width_p);
 
   `declare_csr(mcycle);
   `declare_csr(minstret);
@@ -588,6 +588,9 @@ module bp_be_csr
   // CSR update
   always_comb
     begin
+      rv64_pmpcfg0_s pmpcfg0_wdata;
+      rv64_pmpcfg2_s pmpcfg2_wdata;
+
       priv_mode_n   = priv_mode_r;
 
       fcsr_li       = fcsr_lo;
@@ -647,6 +650,9 @@ module bp_be_csr
       exception_v_lo    = '0;
       interrupt_v_lo    = '0;
 
+      pmpcfg0_wdata = rv64_pmpcfg0_s'(csr_data_li);
+      pmpcfg2_wdata = rv64_pmpcfg2_s'(csr_data_li);
+
       unique casez ({csr_w_v_li, csr_addr_li})
         {1'b1, `CSR_ADDR_FFLAGS       }: fcsr_li = '{frm: fcsr_lo.frm, fflags: csr_data_li, default: '0};
         {1'b1, `CSR_ADDR_FRM          }: fcsr_li = '{frm: csr_data_li, fflags: fcsr_lo.fflags, default: '0};
@@ -683,7 +689,7 @@ module bp_be_csr
             for (int i = 0; i < 8; i++)
               if (~pmpcfg0_lo.pmpcfg[i].l)
                 begin
-                  pmpcfg0_li.pmpcfg[i] = rv64_pmpcfg0_s'(csr_data_li).pmpcfg[i];
+                  pmpcfg0_li.pmpcfg[i] = pmpcfg0_wdata.pmpcfg[i];
                   // R=0,W=1 is reserved; normalize by clearing W when R is 0.
                   pmpcfg0_li.pmpcfg[i].w = pmpcfg0_li.pmpcfg[i].w & pmpcfg0_li.pmpcfg[i].r;
                 end
@@ -694,7 +700,7 @@ module bp_be_csr
             for (int i = 0; i < 8; i++)
               if (~pmpcfg2_lo.pmpcfg[i].l)
                 begin
-                  pmpcfg2_li.pmpcfg[i] = rv64_pmpcfg2_s'(csr_data_li).pmpcfg[i];
+                  pmpcfg2_li.pmpcfg[i] = pmpcfg2_wdata.pmpcfg[i];
                   // R=0,W=1 is reserved; normalize by clearing W when R is 0.
                   pmpcfg2_li.pmpcfg[i].w = pmpcfg2_li.pmpcfg[i].w & pmpcfg2_li.pmpcfg[i].r;
                 end

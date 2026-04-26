@@ -247,6 +247,7 @@
           ,`bp_aviary_parameter_override(fpu_support, override_cfg_mp, default_cfg_mp)             \
           ,`bp_aviary_parameter_override(compressed_support, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(bitmanip_support, override_cfg_mp, default_cfg_mp)        \
+          ,`bp_aviary_parameter_override(num_pmp_entries, override_cfg_mp, default_cfg_mp)         \
                                                                                                    \
           ,`bp_aviary_parameter_override(branch_metadata_fwd_width, override_cfg_mp, default_cfg_mp) \
           ,`bp_aviary_parameter_override(ras_idx_width, override_cfg_mp, default_cfg_mp)           \
