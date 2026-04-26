@@ -48,6 +48,7 @@
     , localparam daddr_width_p   = proc_param_lp.daddr_width                                       \
     , localparam caddr_width_p   = proc_param_lp.caddr_width                                       \
     , localparam asid_width_p    = proc_param_lp.asid_width                                        \
+    , localparam num_pmp_entries_p = proc_param_lp.num_pmp_entries                                 \
     , localparam hio_width_p     = paddr_width_p - daddr_width_p                                   \
                                                                                                    \
     , localparam branch_metadata_fwd_width_p = proc_param_lp.branch_metadata_fwd_width             \

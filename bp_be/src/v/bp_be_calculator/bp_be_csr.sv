@@ -470,6 +470,119 @@ module bp_be_csr
             csr_r_illegal_o = csr_r_v_i;
           end
       endcase
+
+      // PMP CSR visibility depends on the configured PMP entry count.
+      unique casez (csr_r_addr_i)
+        {`CSR_ADDR_PMPCFG0      }:
+          if (num_pmp_entries_p < 8)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPCFG2      }:
+          if (num_pmp_entries_p < 16)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR0     }:
+          if (num_pmp_entries_p < 1)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR1     }:
+          if (num_pmp_entries_p < 2)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR2     }:
+          if (num_pmp_entries_p < 3)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR3     }:
+          if (num_pmp_entries_p < 4)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR4     }:
+          if (num_pmp_entries_p < 5)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR5     }:
+          if (num_pmp_entries_p < 6)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR6     }:
+          if (num_pmp_entries_p < 7)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR7     }:
+          if (num_pmp_entries_p < 8)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR8     }:
+          if (num_pmp_entries_p < 9)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR9     }:
+          if (num_pmp_entries_p < 10)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR10    }:
+          if (num_pmp_entries_p < 11)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR11    }:
+          if (num_pmp_entries_p < 12)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR12    }:
+          if (num_pmp_entries_p < 13)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR13    }:
+          if (num_pmp_entries_p < 14)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR14    }:
+          if (num_pmp_entries_p < 15)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        {`CSR_ADDR_PMPADDR15    }:
+          if (num_pmp_entries_p < 16)
+            begin
+              csr_data_lo = '0;
+              csr_r_illegal_o = csr_r_v_i;
+            end
+        default: begin end
+      endcase
     end
 
   // CSR update
@@ -565,33 +678,43 @@ module bp_be_csr
         {1'b1, `CSR_ADDR_MCOUNTEREN   }: mcounteren_li = csr_data_li;
         {1'b1, `CSR_ADDR_MIP          }: mip_li = csr_data_li;
         {1'b1, `CSR_ADDR_PMPCFG0      }:
+          if (num_pmp_entries_p >= 8)
           begin
             for (int i = 0; i < 8; i++)
               if (~pmpcfg0_lo.pmpcfg[i].l)
-                pmpcfg0_li.pmpcfg[i] = rv64_pmpcfg0_s'(csr_data_li).pmpcfg[i];
+                begin
+                  pmpcfg0_li.pmpcfg[i] = rv64_pmpcfg0_s'(csr_data_li).pmpcfg[i];
+                  // R=0,W=1 is reserved; normalize by clearing W when R is 0.
+                  pmpcfg0_li.pmpcfg[i].w = pmpcfg0_li.pmpcfg[i].w & pmpcfg0_li.pmpcfg[i].r;
+                end
           end
         {1'b1, `CSR_ADDR_PMPCFG2      }:
+          if (num_pmp_entries_p >= 16)
           begin
             for (int i = 0; i < 8; i++)
               if (~pmpcfg2_lo.pmpcfg[i].l)
-                pmpcfg2_li.pmpcfg[i] = rv64_pmpcfg2_s'(csr_data_li).pmpcfg[i];
+                begin
+                  pmpcfg2_li.pmpcfg[i] = rv64_pmpcfg2_s'(csr_data_li).pmpcfg[i];
+                  // R=0,W=1 is reserved; normalize by clearing W when R is 0.
+                  pmpcfg2_li.pmpcfg[i].w = pmpcfg2_li.pmpcfg[i].w & pmpcfg2_li.pmpcfg[i].r;
+                end
           end
-        {1'b1, `CSR_ADDR_PMPADDR0     }: if (~pmpcfg0_lo.pmpcfg[0].l) pmpaddr0_li = rv64_pmpaddr0_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR1     }: if (~pmpcfg0_lo.pmpcfg[1].l) pmpaddr1_li = rv64_pmpaddr1_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR2     }: if (~pmpcfg0_lo.pmpcfg[2].l) pmpaddr2_li = rv64_pmpaddr2_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR3     }: if (~pmpcfg0_lo.pmpcfg[3].l) pmpaddr3_li = rv64_pmpaddr3_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR4     }: if (~pmpcfg0_lo.pmpcfg[4].l) pmpaddr4_li = rv64_pmpaddr4_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR5     }: if (~pmpcfg0_lo.pmpcfg[5].l) pmpaddr5_li = rv64_pmpaddr5_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR6     }: if (~pmpcfg0_lo.pmpcfg[6].l) pmpaddr6_li = rv64_pmpaddr6_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR7     }: if (~pmpcfg0_lo.pmpcfg[7].l) pmpaddr7_li = rv64_pmpaddr7_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR8     }: if (~pmpcfg2_lo.pmpcfg[0].l) pmpaddr8_li = rv64_pmpaddr8_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR9     }: if (~pmpcfg2_lo.pmpcfg[1].l) pmpaddr9_li = rv64_pmpaddr9_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR10    }: if (~pmpcfg2_lo.pmpcfg[2].l) pmpaddr10_li = rv64_pmpaddr10_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR11    }: if (~pmpcfg2_lo.pmpcfg[3].l) pmpaddr11_li = rv64_pmpaddr11_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR12    }: if (~pmpcfg2_lo.pmpcfg[4].l) pmpaddr12_li = rv64_pmpaddr12_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR13    }: if (~pmpcfg2_lo.pmpcfg[5].l) pmpaddr13_li = rv64_pmpaddr13_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR14    }: if (~pmpcfg2_lo.pmpcfg[6].l) pmpaddr14_li = rv64_pmpaddr14_s'(csr_data_li);
-        {1'b1, `CSR_ADDR_PMPADDR15    }: if (~pmpcfg2_lo.pmpcfg[7].l) pmpaddr15_li = rv64_pmpaddr15_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR0     }: if ((num_pmp_entries_p >= 1)  && ~pmpcfg0_lo.pmpcfg[0].l) pmpaddr0_li = rv64_pmpaddr0_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR1     }: if ((num_pmp_entries_p >= 2)  && ~pmpcfg0_lo.pmpcfg[1].l) pmpaddr1_li = rv64_pmpaddr1_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR2     }: if ((num_pmp_entries_p >= 3)  && ~pmpcfg0_lo.pmpcfg[2].l) pmpaddr2_li = rv64_pmpaddr2_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR3     }: if ((num_pmp_entries_p >= 4)  && ~pmpcfg0_lo.pmpcfg[3].l) pmpaddr3_li = rv64_pmpaddr3_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR4     }: if ((num_pmp_entries_p >= 5)  && ~pmpcfg0_lo.pmpcfg[4].l) pmpaddr4_li = rv64_pmpaddr4_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR5     }: if ((num_pmp_entries_p >= 6)  && ~pmpcfg0_lo.pmpcfg[5].l) pmpaddr5_li = rv64_pmpaddr5_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR6     }: if ((num_pmp_entries_p >= 7)  && ~pmpcfg0_lo.pmpcfg[6].l) pmpaddr6_li = rv64_pmpaddr6_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR7     }: if ((num_pmp_entries_p >= 8)  && ~pmpcfg0_lo.pmpcfg[7].l) pmpaddr7_li = rv64_pmpaddr7_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR8     }: if ((num_pmp_entries_p >= 9)  && ~pmpcfg2_lo.pmpcfg[0].l) pmpaddr8_li = rv64_pmpaddr8_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR9     }: if ((num_pmp_entries_p >= 10) && ~pmpcfg2_lo.pmpcfg[1].l) pmpaddr9_li = rv64_pmpaddr9_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR10    }: if ((num_pmp_entries_p >= 11) && ~pmpcfg2_lo.pmpcfg[2].l) pmpaddr10_li = rv64_pmpaddr10_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR11    }: if ((num_pmp_entries_p >= 12) && ~pmpcfg2_lo.pmpcfg[3].l) pmpaddr11_li = rv64_pmpaddr11_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR12    }: if ((num_pmp_entries_p >= 13) && ~pmpcfg2_lo.pmpcfg[4].l) pmpaddr12_li = rv64_pmpaddr12_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR13    }: if ((num_pmp_entries_p >= 14) && ~pmpcfg2_lo.pmpcfg[5].l) pmpaddr13_li = rv64_pmpaddr13_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR14    }: if ((num_pmp_entries_p >= 15) && ~pmpcfg2_lo.pmpcfg[6].l) pmpaddr14_li = rv64_pmpaddr14_s'(csr_data_li);
+        {1'b1, `CSR_ADDR_PMPADDR15    }: if ((num_pmp_entries_p >= 16) && ~pmpcfg2_lo.pmpcfg[7].l) pmpaddr15_li = rv64_pmpaddr15_s'(csr_data_li);
         {1'b1, `CSR_ADDR_MSCRATCH     }: mscratch_li = csr_data_li;
         {1'b1, `CSR_ADDR_MEPC         }: mepc_li = csr_data_li;
         {1'b1, `CSR_ADDR_MCAUSE       }: mcause_li = csr_data_li;
