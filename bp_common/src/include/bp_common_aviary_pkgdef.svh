@@ -7,6 +7,15 @@
   // Default configuration is unicore
   localparam bp_proc_param_s bp_unicore_cfg_p = bp_default_cfg_p;
 
+  localparam bp_proc_param_s bp_unicore_pmp16_override_p =
+    '{num_pmp_entries: 16
+      ,default: "inv"
+      };
+  `bp_aviary_derive_cfg(bp_unicore_pmp16_cfg_p
+                        ,bp_unicore_pmp16_override_p
+                        ,bp_unicore_cfg_p
+                        );
+
   localparam bp_proc_param_s bp_unicore_megaparrot_override_p =
     '{paddr_width : 56
       ,daddr_width: 55
@@ -536,6 +545,7 @@
     ,bp_multicore_1_cfg_p
 
     // Unicore configurations
+    ,bp_unicore_pmp16_cfg_p
     ,bp_unicore_megaparrot_cfg_p
     ,bp_unicore_miniparrot_cfg_p
     ,bp_unicore_tinyparrot_cfg_p
@@ -551,40 +561,43 @@
   // This enum MUST be kept up to date with the parameter array above
   typedef enum bit [lg_max_cfgs-1:0]
   {
+    // PMP configuration
+    e_bp_unicore_pmp16_cfg                        = 6
+
     // L2 extension configurations
-    e_bp_multicore_4_l2e_cfg                        = 32
-    ,e_bp_multicore_2_l2e_cfg                       = 31
-    ,e_bp_multicore_1_l2e_cfg                       = 30
+    ,e_bp_multicore_4_l2e_cfg                        = 33
+    ,e_bp_multicore_2_l2e_cfg                       = 32
+    ,e_bp_multicore_1_l2e_cfg                       = 31
 
     // Accelerator configurations
-    ,e_bp_multicore_4_acc_vdp_cfg                   = 29
-    ,e_bp_multicore_4_acc_scratchpad_cfg            = 28
-    ,e_bp_multicore_1_acc_vdp_cfg                   = 27
-    ,e_bp_multicore_1_acc_scratchpad_cfg            = 26
+    ,e_bp_multicore_4_acc_vdp_cfg                   = 30
+    ,e_bp_multicore_4_acc_scratchpad_cfg            = 29
+    ,e_bp_multicore_1_acc_vdp_cfg                   = 28
+    ,e_bp_multicore_1_acc_scratchpad_cfg            = 27
 
     // Ucode configurations
-    ,e_bp_multicore_16_cce_ucode_cfg                = 25
-    ,e_bp_multicore_12_cce_ucode_cfg                = 24
-    ,e_bp_multicore_8_cce_ucode_cfg                 = 23
-    ,e_bp_multicore_6_cce_ucode_cfg                 = 22
-    ,e_bp_multicore_4_cce_ucode_cfg                 = 21
-    ,e_bp_multicore_3_cce_ucode_cfg                 = 20
-    ,e_bp_multicore_2_cce_ucode_cfg                 = 19
-    ,e_bp_multicore_1_cce_ucode_megaparrot_cfg      = 18
-    ,e_bp_multicore_1_cce_ucode_miniparrot_cfg      = 17
-    ,e_bp_multicore_1_cce_ucode_cfg                 = 16
+    ,e_bp_multicore_16_cce_ucode_cfg                = 26
+    ,e_bp_multicore_12_cce_ucode_cfg                = 25
+    ,e_bp_multicore_8_cce_ucode_cfg                 = 24
+    ,e_bp_multicore_6_cce_ucode_cfg                 = 23
+    ,e_bp_multicore_4_cce_ucode_cfg                 = 22
+    ,e_bp_multicore_3_cce_ucode_cfg                 = 21
+    ,e_bp_multicore_2_cce_ucode_cfg                 = 20
+    ,e_bp_multicore_1_cce_ucode_megaparrot_cfg      = 19
+    ,e_bp_multicore_1_cce_ucode_miniparrot_cfg      = 18
+    ,e_bp_multicore_1_cce_ucode_cfg                 = 17
 
     // Multicore configurations
-    ,e_bp_multicore_16_cfg                          = 15
-    ,e_bp_multicore_12_cfg                          = 14
-    ,e_bp_multicore_8_cfg                           = 13
-    ,e_bp_multicore_6_cfg                           = 12
-    ,e_bp_multicore_4_cfg                           = 11
-    ,e_bp_multicore_3_cfg                           = 10
-    ,e_bp_multicore_2_cfg                           = 9
-    ,e_bp_multicore_1_megaparrot_cfg                = 8
-    ,e_bp_multicore_1_miniparrot_cfg                = 7
-    ,e_bp_multicore_1_cfg                           = 6
+    ,e_bp_multicore_16_cfg                          = 16
+    ,e_bp_multicore_12_cfg                          = 15
+    ,e_bp_multicore_8_cfg                           = 14
+    ,e_bp_multicore_6_cfg                           = 13
+    ,e_bp_multicore_4_cfg                           = 12
+    ,e_bp_multicore_3_cfg                           = 11
+    ,e_bp_multicore_2_cfg                           = 10
+    ,e_bp_multicore_1_megaparrot_cfg                = 9
+    ,e_bp_multicore_1_miniparrot_cfg                = 8
+    ,e_bp_multicore_1_cfg                           = 7
 
     // Unicore configurations
     ,e_bp_unicore_megaparrot_cfg                    = 5
