@@ -13,7 +13,7 @@ static std::once_flag handle_init_once, handle_fini_once;
 
 void printf_stub(int hartid, const char *fmt, ...) { }
 
-extern "C" void* cosim_init(int ncpus, int memsize, const char* prog_name) {
+extern "C" void* cosim_init(int ncpus, int memsize, int pmp_entries, const char* prog_name) {
 
     std::call_once(handle_init_once, [&] {
         char argv_str[1024];
@@ -30,6 +30,10 @@ extern "C" void* cosim_init(int ncpus, int memsize, const char* prog_name) {
         }
 
         argv[argc] = NULL;
+
+        char pmp_entries_str[16];
+        snprintf(pmp_entries_str, sizeof(pmp_entries_str), "%d", pmp_entries);
+        setenv("BP_COSIM_PMP_ENTRIES", pmp_entries_str, 1);
 
         std::cout << "Running with Dromajo cosimulation" << std::endl;
 
