@@ -50,7 +50,7 @@ class loadmem_memif_t : public memif_t {
         size_t start;
 };
 
-extern "C" void* cosim_init(int ncpus, int memsize, const char* prog_name) {
+extern "C" void* cosim_init(int ncpus, int memsize, int pmp_entries, const char* prog_name) {
     size_t memory_size = memsize;
     size_t base = 0x80000000;
     size_t size = memory_size*1024*1024;
@@ -62,7 +62,7 @@ extern "C" void* cosim_init(int ncpus, int memsize, const char* prog_name) {
         cfg.isa = "rv64imafdcZifencei_Zicsr_Zba_Zbb_Zbc_Zbs";
         cfg.priv = "msu";
         cfg.start_pc = base;
-        cfg.pmpregions = 0;
+        cfg.pmpregions = (pmp_entries == 16) ? 16 : 0;
 
         args.push_back(prog_name);
 

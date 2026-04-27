@@ -253,6 +253,14 @@
     ,e_fmt_double = 1'b1
   } rv64_fmt_e;
 
+  typedef enum logic [1:0]
+  {
+    e_pmp_addr_mode_off   = 2'b00
+    ,e_pmp_addr_mode_tor  = 2'b01
+    ,e_pmp_addr_mode_na4  = 2'b10
+    ,e_pmp_addr_mode_napot = 2'b11
+  } rv64_pmp_addr_mode_e;
+
   typedef struct packed
   {
     // Invalid operation

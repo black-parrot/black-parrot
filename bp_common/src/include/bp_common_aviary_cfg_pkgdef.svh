@@ -233,6 +233,9 @@
     int compressed_support;
     // Whether to enable bitmanip extensions
     int bitmanip_support;
+    // Number of physical memory protection entries supported by the core.
+    // Legal values are 0 (disabled) and 16 (full RV64 PMP CSR set).
+    int num_pmp_entries;
 
     // Whether the coherence network is on the core clock or on its own clock
     int async_coh_clk;
@@ -369,6 +372,7 @@
       ,fpu_support       : (1 << e_fma) | (1 << e_fdivsqrt) | (1 << e_fdivsqrt2b)
       ,bitmanip_support  : (1 << e_zba) | (1 << e_zbb) | (1 << e_zbs)
       ,compressed_support: (1 << e_compressed)
+      ,num_pmp_entries   : 0
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 128
@@ -426,6 +430,7 @@
       ,`bp_aviary_define_override(fpu_support, BP_FPU_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(bitmanip_support, BP_BITMANIP_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(compressed_support, BP_COMPRESSED_SUPPORT, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(num_pmp_entries, BP_NUM_PMP_ENTRIES, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(branch_metadata_fwd_width, BRANCH_METADATA_FWD_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(ras_idx_width, BP_RAS_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
