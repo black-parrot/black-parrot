@@ -290,11 +290,44 @@ build-image:
     TESTLIST: "setme"
     RUN_SCRIPT: "./ci/common/run-ci.sh"
     BUILD_SCRIPT: "./ci/sim-${TESTLIST}.sh"
+    COVERAGE: "1"
+    BUILD_DIR: "${CI_PROJECT_DIR}/${END}/${TOOL}/results/bp_tethered.${CFG}.sim-${TESTLIST}"
+    COVERAGE_DIR: "${CI_PROJECT_DIR}/${JOB_SUCCESS_ROOT}/coverage/${TOOL}/${CFG}"
   script:
     - echo "[CI] doing makefile checkout"
     - make -j${BSG_CI_CORES_PER_JOB} checkout
     - echo "[CI] running script for ${BUILD_SCRIPT}"
     - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG} ${BSG_CI_CORES_PER_JOB}
+    - mkdir -p "${COVERAGE_DIR}"
+    - |
+      if [ "$TOOL" == "vcs" ]; then
+        (cd "${BUILD_DIR}" && find -name "*.vdb" ! -name "design.vdb" -exec cp -r --parents {} "${COVERAGE_DIR}/" \;)
+      elif [ "$TOOL" == "verilator" ]; then
+        (cd "${BUILD_DIR}" && find -name "*.dat" ! -name "*__verFiles.dat" -exec cp -r --parents {} "${COVERAGE_DIR}/" \;)
+        # Strip the absolute CI runner path to make source file references relative
+        find "${COVERAGE_DIR}" -name "*.dat" -exec sed -i "s|${CI_PROJECT_DIR}/|../../../../../|g" {} +
+      fi
+  rules:
+    - if: '"$[[ inputs.do_sim_riscv ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
+
+.coverage_job:
+  extends: [.project_template]
+  variables:
+    TOOL: "setme"
+    END: "bp_top"
+    CFG: "setme"
+    RUN_SCRIPT: "./ci/common/run-ci.sh"
+    BUILD_SCRIPT: "./ci/coverage-merge.sh"
+    COVERAGE: "1"
+    BUILD_DIR: "${CI_PROJECT_DIR}/${END}/${TOOL}/results/bp_tethered.${CFG}"
+    COVERAGE_DIR: "${CI_PROJECT_DIR}/${JOB_DEPS_ROOT}/coverage/${TOOL}/${CFG}"
+    MERGE_DIR: "${COVERAGE_DIR}/merge"
+  script:
+    - make -C ${END}/${TOOL} build.${TOOL}
+    - mv ${COVERAGE_DIR}/* ${BUILD_DIR}
+    - make -C ${END}/${TOOL} merge.${TOOL}
+    - mkdir -p ${JOB_SUCCESS_ROOT}/coverage
+    - cp -r ${END}/${TOOL}/results/bp_tethered.${CFG}/coverage ${JOB_SUCCESS_ROOT}/coverage/${TOOL}
   rules:
     - if: '"$[[ inputs.do_sim_riscv ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
 
@@ -391,5 +424,13 @@ sim-riscv:
       - TOOL: ["vcs"]
         CFG: ["e_bp_multicore_1_cfg", "e_bp_multicore_2_cfg", "e_bp_multicore_4_cfg", "e_bp_multicore_8_cfg", "e_bp_multicore_16_cfg"]
         TESTLIST: ["mc-tests"]
-  needs: [{job: lint-top, optional: true}, gather-tools, gather-libs, gather-riscv]
+  needs: [{job: lint-top, optional: true}, gather-tools, gather-libs, gather-sdk, gather-riscv]
+
+coverage:
+  extends: [.coverage_job]
+  parallel:
+    matrix:
+      - TOOL: ["vcs", "verilator"]
+        CFG: ["e_bp_unicore_cfg"]
+  needs: [job: sim-riscv]
 

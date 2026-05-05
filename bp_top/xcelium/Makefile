@@ -13,6 +13,7 @@ COH_PROTO ?=
 
 # Flags
 ASSERT        ?= 0
+COVERAGE      ?= 0
 TRACE         ?= 0
 DROMAJO_COSIM ?= 0
 SPIKE_COSIM   ?= 0
