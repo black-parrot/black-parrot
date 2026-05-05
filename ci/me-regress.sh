@@ -45,7 +45,7 @@ parallel --colsep ' ' -j${cores} --progress '
 
     export TAG={1}.{2}.{3}.{4}.{5}
 
-    bsg_run_task "running sim" ${RUN_CMD}
+    bsg_run_task sim "running sim" ${RUN_CMD}
 ' ::: "${cfg_cohs[@]}" ::: "${tests[@]}"
 
 

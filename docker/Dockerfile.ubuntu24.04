@@ -17,6 +17,7 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
         device-tree-compiler \
         pkg-config tcl tcl-dev libreadline-dev libffi-dev \
         gperf virtualenv \
+        parallel dc time lcov \
         && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Accept arguments for user and group

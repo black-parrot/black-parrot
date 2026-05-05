@@ -39,7 +39,7 @@ trigger_job:
   trigger:
     strategy: depend
     include:
-      - remote: 'https://gitlab.com/bespoke-silicon-group/bsg-ci-templates/-/raw/v1p0/.gitlab-ci.common.yml'
+      - remote: 'https://gitlab.com/bespoke-silicon-group/bsg-ci-templates/-/raw/v1p1/.gitlab-ci.common.yml'
         inputs:
           do_clean_run  : $[[ inputs.do_clean_run   ]]
       - local: .gitlab-ci.local.yml

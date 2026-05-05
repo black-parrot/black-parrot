@@ -29,9 +29,7 @@ build-image:
     - if: '"$[[ inputs.do_build_image ]]" =~ "/on_event/"'
       changes:
         paths:
-          - docker/Dockerfile.${DOCKER_PLATFORM}
-          - docker/entrypoint.${DOCKER_PLATFORM}.sh
-          - docker/requirements.txt
+          - docker/
 
 ###################################################
 ## project definition
@@ -50,15 +48,18 @@ build-image:
     RISCV_PACKAGE: "riscv"
     RISCV_PACKAGE_VER: "master"
     RISCV_PROJECT_ID: "27392985"
+    SDK_PACKAGE: "tools-${DOCKER_PLATFORM}"
+    SDK_PACKAGE_VER: "master"
+    SDK_PROJECT_ID: "27392985"
     SV2V_WILDCARD: "sv2v"
     SV2V_ARTIFACT: "sv2v/wrapper.${CFG}.pickle.sv"
     SV2V_PACKAGE: "sv2v-${DOCKER_PLATFORM}"
     # exported to make sure things go in the right place
-    BP_WORK_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-rtl-work"
-    BP_INSTALL_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-rtl-install"
-    BP_TOOLS_INSTALL_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-tools-install"
-    BP_SDK_INSTALL_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-sdk-install"
-    BP_RISCV_DIR: "${PROJECT_DIR}/${JOB_WORK_ROOT}/bp-riscv"
+    BP_WORK_DIR: "${CI_PROJECT_DIR}/${JOB_WORK_ROOT}/bp-rtl-work"
+    BP_INSTALL_DIR: "${CI_PROJECT_DIR}/${JOB_WORK_ROOT}/bp-rtl-install"
+    BP_TOOLS_INSTALL_DIR: "${CI_PROJECT_DIR}/${JOB_WORK_ROOT}/bp-tools-install"
+    BP_SDK_INSTALL_DIR: "${CI_PROJECT_DIR}/${JOB_WORK_ROOT}/bp-sdk-install"
+    BP_RISCV_DIR: "${CI_PROJECT_DIR}/${JOB_WORK_ROOT}/bp-riscv"
   before_script:
     - !reference [.job_template, before_script]
     - COMMON_INSTALL_DIR="${JOB_COMMON_ROOT}/$(basename ${BP_INSTALL_DIR})"
@@ -87,15 +88,15 @@ build-image:
   variables:
     LIB: "setme"
   script:
-    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
-    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
-    - echo "[CI] checking out ${LIB}" | tee -a ${JOB_LOG}
-    - make -j${CORES_PER_JOB} checkout.${LIB} >> ${JOB_LOG} 2>&1
-    - echo "[CI] patching ${LIB}" | tee -a ${JOB_LOG}
-    - make -j${CORES_PER_JOB} patch.${LIB} >> ${JOB_LOG} 2>&1
-    - echo "[CI] building ${LIB}" | tee -a ${JOB_LOG}
-    - make -j${CORES_PER_JOB} build.${LIB} >> ${JOB_LOG} 2>&1
-    - echo "[CI] moving installation directory to build output" | tee -a ${JOB_LOG}
+    - echo "[CI] doing makefile checkout"
+    - make -j${BSG_CI_CORES_PER_JOB} checkout
+    - echo "[CI] checking out ${LIB}"
+    - make -j${CORES_PER_JOB} checkout.${LIB}
+    - echo "[CI] patching ${LIB}"
+    - make -j${CORES_PER_JOB} patch.${LIB}
+    - echo "[CI] building ${LIB}"
+    - make -j${CORES_PER_JOB} build.${LIB}
+    - echo "[CI] moving installation directory to build output"
     - mv ${BP_INSTALL_DIR} ${JOB_SUCCESS_ROOT}/${LIBS_ARTIFACT}
   rules:
     - if: '"$[[ inputs.do_build_libs ]]" =~ "/on_success|on_event/"'
@@ -108,10 +109,10 @@ build-image:
     API_PACKAGE_VER: "${CI_COMMIT_REF_SLUG}"
     API_PROJECT_ID: "${CI_PROJECT_ID}"
   script:
-    - echo "[CI] gathering inputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - echo "[CI] gathering inputs for ${API_PACKAGE_NAME}"
     - mkdir -p ${API_UPLOAD_ROOT}
     - find ${JOB_DEPS_ROOT} -maxdepth 1 -type d -name ${LIBS_WILDCARD}
-        -exec rsync --remove-source-files -a {}/ ${API_UPLOAD_ROOT} \; >> ${JOB_LOG} 2>&1
+        -exec rsync --remove-source-files -a {}/ ${API_UPLOAD_ROOT} \;
     - !reference [.api_anchors, api_upload]
   rules:
     - if: '"$[[ inputs.do_build_libs ]]" =~ "/on_success|on_event/"'
@@ -124,7 +125,7 @@ build-image:
     API_PACKAGE_VER: "${CI_COMMIT_REF_SLUG}"
     API_PROJECT_ID: "${CI_PROJECT_ID}"
   script:
-    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}"
     - !reference [.api_anchors, api_download]
     - mkdir -p ${COMMON_INSTALL_DIR}
     - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_INSTALL_DIR}
@@ -137,9 +138,22 @@ build-image:
     API_PACKAGE_VER: "${TOOLS_PACKAGE_VER}"
     API_PROJECT_ID: "${TOOLS_PROJECT_ID}"
   script:
-    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}"
     - !reference [.api_anchors, api_download]
     - mkdir -p ${COMMON_TOOLS_DIR}
+    - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_INSTALL_DIR}
+
+.gather_sdk_job:
+  extends: [.project_template, .api_mixin]
+  variables:
+    # template variables
+    API_PACKAGE_NAME: "${SDK_PACKAGE}"
+    API_PACKAGE_VER: "${SDK_PACKAGE_VER}"
+    API_PROJECT_ID: "${SDK_PROJECT_ID}"
+  script:
+    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}"
+    - !reference [.api_anchors, api_download]
+    - mkdir -p ${COMMON_SDK_DIR}
     - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_INSTALL_DIR}
 
 .gather_riscv_job:
@@ -150,7 +164,7 @@ build-image:
     API_PACKAGE_VER: "${RISCV_PACKAGE_VER}"
     API_PROJECT_ID: "${RISCV_PROJECT_ID}"
   script:
-    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}"
     - !reference [.api_anchors, api_download]
     - mkdir -p ${COMMON_RISCV_DIR}
     - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_RISCV_DIR}
@@ -164,9 +178,9 @@ build-image:
     RUN_SCRIPT: "./ci/common/run-ci.sh"
     BUILD_SCRIPT: "./ci/check-design.sh"
   script:
-    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
-    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
-    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - echo "[CI] doing makefile checkout"
+    - make -j${BSG_CI_CORES_PER_JOB} checkout
+    - echo "[CI] running script for ${BUILD_SCRIPT}"
     - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG}
   rules:
     - if: '"$[[ inputs.do_check_rtl ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
@@ -180,9 +194,9 @@ build-image:
     RUN_SCRIPT: "./ci/common/run-ci.sh"
     BUILD_SCRIPT: "./ci/check-loops.sh"
   script:
-    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
-    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
-    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - echo "[CI] doing makefile checkout"
+    - make -j${BSG_CI_CORES_PER_JOB} checkout
+    - echo "[CI] running script for ${BUILD_SCRIPT}"
     - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG}
   rules:
     - if: '"$[[ inputs.do_check_rtl ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
@@ -196,9 +210,9 @@ build-image:
     RUN_SCRIPT: "./ci/common/run-ci.sh"
     BUILD_SCRIPT: "./ci/lint.sh"
   script:
-    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
-    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
-    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - echo "[CI] doing makefile checkout"
+    - make -j${BSG_CI_CORES_PER_JOB} checkout
+    - echo "[CI] running script for ${BUILD_SCRIPT}"
     - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG}
   rules:
     - if: '"$[[ inputs.do_check_rtl ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
@@ -212,9 +226,9 @@ build-image:
     RUN_SCRIPT: "./ci/common/run-ci.sh"
     BUILD_SCRIPT: "./ci/sv2v.sh"
   script:
-    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
-    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
-    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - echo "[CI] doing makefile checkout"
+    - make -j${BSG_CI_CORES_PER_JOB} checkout
+    - echo "[CI] running script for ${BUILD_SCRIPT}"
     - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG}
     - mkdir -p $(dirname ${JOB_SUCCESS_ROOT}/${SV2V_ARTIFACT})
     - find ${END}/${TOOL} -name wrapper.pickle.sv -exec cp {} ${JOB_SUCCESS_ROOT}/${SV2V_ARTIFACT} \;
@@ -229,7 +243,7 @@ build-image:
     API_PACKAGE_VER: "${CI_COMMIT_REF_SLUG}"
     API_PROJECT_ID: "${CI_PROJECT_ID}"
   script:
-    - echo "[CI] gathering inputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - echo "[CI] gathering inputs for ${API_PACKAGE_NAME}"
     - mkdir -p ${API_UPLOAD_ROOT}
     - mv ${JOB_DEPS_ROOT}/${SV2V_WILDCARD} ${API_UPLOAD_ROOT}/
     - !reference [.api_anchors, api_upload]
@@ -244,7 +258,7 @@ build-image:
     API_PACKAGE_VER: "${CI_COMMIT_REF_SLUG}"
     API_PROJECT_ID: "${CI_PROJECT_ID}"
   script:
-    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}" | tee -a ${JOB_LOG}
+    - echo "[CI] scattering outputs for ${API_PACKAGE_NAME}"
     - !reference [.api_anchors, api_download]
     - mkdir -p ${COMMON_INSTALL_DIR}/sv2v
     - rsync -a --remove-source-files ${API_DOWNLOAD_ROOT}/ ${COMMON_INSTALL_DIR}/sv2v
@@ -260,9 +274,9 @@ build-image:
     RUN_SCRIPT: "./ci/common/run-ci.sh"
     BUILD_SCRIPT: "./ci/me-regress.sh"
   script:
-    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
-    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
-    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - echo "[CI] doing makefile checkout"
+    - make -j${BSG_CI_CORES_PER_JOB} checkout
+    - echo "[CI] running script for ${BUILD_SCRIPT}"
     - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG}
   rules:
     - if: '"$[[ inputs.do_check_rtl ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
@@ -276,11 +290,44 @@ build-image:
     TESTLIST: "setme"
     RUN_SCRIPT: "./ci/common/run-ci.sh"
     BUILD_SCRIPT: "./ci/sim-${TESTLIST}.sh"
+    COVERAGE: "1"
+    BUILD_DIR: "${CI_PROJECT_DIR}/${END}/${TOOL}/results/bp_tethered.${CFG}.sim-${TESTLIST}"
+    COVERAGE_DIR: "${CI_PROJECT_DIR}/${JOB_SUCCESS_ROOT}/coverage/${TOOL}/${CFG}"
   script:
-    - echo "[CI] doing makefile checkout" | tee -a ${JOB_LOG}
-    - make -j${BSG_CI_CORES_PER_JOB} checkout >> ${JOB_LOG} 2>&1
-    - echo "[CI] running script for ${BUILD_SCRIPT}" | tee -a ${JOB_LOG}
+    - echo "[CI] doing makefile checkout"
+    - make -j${BSG_CI_CORES_PER_JOB} checkout
+    - echo "[CI] running script for ${BUILD_SCRIPT}"
     - ${RUN_SCRIPT} ${BUILD_SCRIPT} ${TOOL} ${END} ${CFG} ${BSG_CI_CORES_PER_JOB}
+    - mkdir -p "${COVERAGE_DIR}"
+    - |
+      if [ "$TOOL" == "vcs" ]; then
+        (cd "${BUILD_DIR}" && find -name "*.vdb" ! -name "design.vdb" -exec cp -r --parents {} "${COVERAGE_DIR}/" \;)
+      elif [ "$TOOL" == "verilator" ]; then
+        (cd "${BUILD_DIR}" && find -name "*.dat" ! -name "*__verFiles.dat" -exec cp -r --parents {} "${COVERAGE_DIR}/" \;)
+        # Strip the absolute CI runner path to make source file references relative
+        find "${COVERAGE_DIR}" -name "*.dat" -exec sed -i "s|${CI_PROJECT_DIR}/|../../../../../|g" {} +
+      fi
+  rules:
+    - if: '"$[[ inputs.do_sim_riscv ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
+
+.coverage_job:
+  extends: [.project_template]
+  variables:
+    TOOL: "setme"
+    END: "bp_top"
+    CFG: "setme"
+    RUN_SCRIPT: "./ci/common/run-ci.sh"
+    BUILD_SCRIPT: "./ci/coverage-merge.sh"
+    COVERAGE: "1"
+    BUILD_DIR: "${CI_PROJECT_DIR}/${END}/${TOOL}/results/bp_tethered.${CFG}"
+    COVERAGE_DIR: "${CI_PROJECT_DIR}/${JOB_DEPS_ROOT}/coverage/${TOOL}/${CFG}"
+    MERGE_DIR: "${COVERAGE_DIR}/merge"
+  script:
+    - make -C ${END}/${TOOL} build.${TOOL}
+    - mv ${COVERAGE_DIR}/* ${BUILD_DIR}
+    - make -C ${END}/${TOOL} merge.${TOOL}
+    - mkdir -p ${JOB_SUCCESS_ROOT}/coverage
+    - cp -r ${END}/${TOOL}/results/bp_tethered.${CFG}/coverage ${JOB_SUCCESS_ROOT}/coverage/${TOOL}
   rules:
     - if: '"$[[ inputs.do_sim_riscv ]]" =~ "/on_success|on_event/" && $DOCKER_PLATFORM == "centos7"'
 
@@ -305,6 +352,10 @@ gather-libs:
 
 gather-tools:
   extends: [.gather_tools_job]
+  needs: [{job: scatter-libs, optional: true}]
+
+gather-sdk:
+  extends: [.gather_sdk_job]
   needs: [{job: scatter-libs, optional: true}]
 
 gather-riscv:
@@ -344,7 +395,7 @@ lint-top:
   extends: [.lint_job]
   parallel:
     matrix:
-      - TOOL: ["verilator", "vcs"]
+      - TOOL: ["verilator", "vcs", "xcelium"]
         CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
       - TOOL: ["vcs"]
         CFG: ["e_bp_multicore_2_cfg", "e_bp_multicore_2_cce_ucode_cfg"]
@@ -356,7 +407,7 @@ me-regress:
   extends: [.me_regress_job]
   parallel:
     matrix:
-      - TOOL: ["vcs", "verilator"]
+      - TOOL: ["vcs", "verilator", "xcelium"]
         CFG: ["e_bp_test_multicore_half_cce_ucode_cfg", "e_bp_test_multicore_half_cfg"]
   needs: [lint-top]
 
@@ -364,7 +415,7 @@ sim-riscv:
   extends: [.sim_riscv_job]
   parallel:
     matrix:
-      - TOOL: ["vcs", "verilator"]
+      - TOOL: ["vcs", "verilator", "xcelium"]
         CFG: ["e_bp_unicore_cfg", "e_bp_multicore_1_cfg", "e_bp_multicore_1_cce_ucode_cfg"]
         TESTLIST: ["bp-tests", "bp-demos"]
       - TOOL: ["vcs"]
@@ -373,5 +424,13 @@ sim-riscv:
       - TOOL: ["vcs"]
         CFG: ["e_bp_multicore_1_cfg", "e_bp_multicore_2_cfg", "e_bp_multicore_4_cfg", "e_bp_multicore_8_cfg", "e_bp_multicore_16_cfg"]
         TESTLIST: ["mc-tests"]
-  needs: [{job: lint-top, optional: true}, gather-tools, gather-libs, gather-riscv]
+  needs: [{job: lint-top, optional: true}, gather-tools, gather-libs, gather-sdk, gather-riscv]
+
+coverage:
+  extends: [.coverage_job]
+  parallel:
+    matrix:
+      - TOOL: ["vcs", "verilator"]
+        CFG: ["e_bp_unicore_cfg"]
+  needs: [job: sim-riscv]
 

@@ -113,7 +113,8 @@ module bp_nonsynth_dram
 
   always_ff @(posedge clk_i)
     for (int i = 0; i < dma_data_width_p/8; i++)
-        if (mem_write) mem[mem_waddr+i] <= mem_wdata[i];
+        // assoc arrays cannot use nonblocking assignments (IEEE 1800-2023 6.21)
+        if (mem_write) mem[mem_waddr+i] = mem_wdata[i];
 
   always_ff @(posedge clk_i)
     for (int i = 0; i < dma_data_width_p/8; i++)

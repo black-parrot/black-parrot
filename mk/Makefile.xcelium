@@ -1,0 +1,106 @@
+
+include $(BP_MK_DIR)/Makefile.paths
+
+XRUN_BUILD_OPTS += -64bit
+XRUN_BUILD_OPTS += -sv
+XRUN_BUILD_OPTS += -timescale 1ps/1ps
+XRUN_BUILD_OPTS += -elaborate -notimingchecks
+XRUN_BUILD_OPTS += -top testbench
+XRUN_BUILD_OPTS += -f flist.vcs
+XRUN_BUILD_OPTS += "-Wcxx,-std=c++17"
+
+ifeq ($(COVERAGE),1)
+XRUN_BUILD_OPTS += -coverage b:t:f
+XRUN_BUILD_OPTS += -covdut wrapper
+XRUN_BUILD_OPTS += -covworkdir $(DUT_PATH)/design
+endif
+
+ifeq ($(ASSERT),1)
+XRUN_BUILD_OPTS += +define+BSG_NONSYNTH_ASSERT_ENABLE
+XRUN_BUILD_OPTS += -assert
+endif
+
+ifeq ($(TRACE),1)
+XRUN_BUILD_OPTS += -access +rc
+XRUN_BUILD_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_ENABLE
+XRUN_BUILD_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_DEPTH=0
+XRUN_BUILD_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_HIER=testbench.wrapper
+XRUN_BUILD_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_SHM
+endif
+
+ifeq ($(DROMAJO_COSIM),1)
+XRUN_BUILD_OPTS += $(BP_DIR)/bp_be/test/common/dromajo_cosim.cpp
+XRUN_BUILD_OPTS += -CFLAGS "-I$(BP_SDK_INSTALL_DIR)/dromajo/include"
+XRUN_BUILD_OPTS += -ldromajo_cosim
+endif
+ifeq ($(SPIKE_COSIM),1)
+XRUN_BUILD_OPTS += $(BP_DIR)/bp_be/test/common/spike_cosim.cpp
+XRUN_BUILD_OPTS += -CFLAGS "-I$(BP_SDK_INSTALL_DIR)/riscv/include"
+XRUN_BUILD_OPTS += -lriscv
+endif
+
+%/flist.vcs:
+	@$(MKDIR) -p $(@D)
+	@$(CAT) $(END_PATH)/flist.vcs >> $@
+	@$(CAT) $(TB_PATH)/flist.vcs >> $@
+	@$(SED) -i "/^#/d" $@
+
+LINT_FILE ?= $(DUT_PATH)/lint
+lint.xcelium: ## lints the design
+lint.xcelium: $(LINT_FILE)
+$(LINT_FILE): XRUN_BUILD_OPTS += +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
+$(LINT_FILE): $(addprefix $(DUT_PATH)/,$(BUILD_COLLATERAL))
+	@$(call bsg_fn_declare_log_rpt,$(DUT_TAG))
+	@$(CD) $(DUT_PATH); \
+		$(XRUN) $(XRUN_BUILD_OPTS) $(subst pvalue+,defparam testbench.,$(HDL_PARAMS)) $(HDL_DEFINES) 2>&1 | $(TEE) -i $(LOG_FILE)
+
+DUMP_FILE ?= dump.shm
+
+ifeq ($(TRACE),1)
+XMSIM_OPTS += +bsg_trace=$(DUMP_FILE)
+XMSIM_OPTS += -input $(BP_TCL_DIR)/xcelium_dump.tcl
+endif
+
+XMSIM_OPTS += -64BIT
+XMSIM_OPTS += testbench
+
+
+BUILD_FILE ?= $(DUT_PATH)/simx
+build.xcelium: ## builds a simv
+build.xcelium: $(BUILD_FILE)
+$(BUILD_FILE): $(addprefix $(DUT_PATH)/,$(BUILD_COLLATERAL))
+	@$(call bsg_fn_declare_log_rpt,$(DUT_TAG))
+	@$(CD) $(DUT_PATH); \
+		$(XRUN) $(XRUN_BUILD_OPTS) $(subst pvalue+,defparam testbench.,$(HDL_PARAMS)) $(HDL_DEFINES) 2>&1 | $(TEE) -i $(LOG_FILE)
+	@$(ECHO) "$(SYMLINK) ../xcelium.d xcelium.d; $(XMSIM) $(XMSIM_OPTS) \$$@;" >> $@
+	@$(CHMOD) +x $@
+	@$(call bsg_fn_info_search,$(LOG_FILE),$(RPT_FILE),"processes executed",100)
+	@$(call bsg_fn_sentinal_search,$(LOG_FILE),$(ERR_FILE),"simv up to date")
+
+SIM_FILE ?= $(SIM_PATH)/$(SIM_PROG)
+sim.xcelium: ## runs a simulation
+sim.xcelium: $(SIM_FILE)
+$(SIM_FILE): $(addprefix $(SIM_PATH)/,$(RUN_COLLATERAL))
+$(SIM_FILE): $(BUILD_FILE)
+	@$(call bsg_fn_declare_log_rpt,$(SIM_TAG))
+ifeq (1,$(COVERAGE))
+	@$(eval HDL_PLUSARGS += -covtest test_$(basename $(@F)))
+endif
+	@$(CD) $(SIM_PATH); \
+		$< $(HDL_PLUSARGS) 2>&1 | $(TEE) -i $(LOG_FILE)
+	@$(call bsg_fn_fail_search,$(LOG_FILE),$(ERR_FILE))
+	@$(call bsg_fn_pass_search,$(LOG_FILE),$(ERR_FILE))
+	@$(call bsg_fn_sentinal_search,$(LOG_FILE),$(ERR_FILE),"finish called from file")
+	@$(call bsg_fn_stat_search,$(LOG_FILE),$(RPT_FILE))
+
+XRUN_WAVE_BIN := simvision
+XRUN_WAVE_OPTS += -64BIT
+
+wave.xcelium: ## opens a waveform
+wave.xcelium: $(SIM_PATH)/$(DUMP_FILE)
+	$(XRUN_WAVE_BIN) $(XRUN_WAVE_OPTS) $<
+
+ALL_COVDBS := $(wildcard $(DUT_PATH)/*/cov_work)
+merge.xcelium: ## merges Xcelium coverage
+	@$(ECHO) "Coverage merging not currently supported in xcelium"
+
