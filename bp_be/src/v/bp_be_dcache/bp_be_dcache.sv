@@ -205,6 +205,7 @@ module bp_be_dcache
   logic blocking_req, blocking_sent;
   logic nonblocking_req, nonblocking_sent;
   logic lrsc_lock;
+  logic fill_flushed_r;
 
   wire flush_tv = flush_i | tag_mem_write_hazard | blocking_hazard | nonblocking_hazard | fill_hazard;
   wire flush_tl = flush_tv | data_mem_write_hazard;
@@ -1188,6 +1189,23 @@ module bp_be_dcache
       state_r <= e_ready;
     else
       state_r <= state_n;
+
+  // Track whether the outstanding miss was flushed before its critical beat arrived.
+  // Used only in the assertion below; fill_restart_tv is not gated because the
+  // pipeline depth prevents v_tv_r=1 from coinciding with flush_i=1 in a
+  // single-issue in-order core.  The assertion fires if that assumption breaks.
+  always_ff @(posedge clk_i)
+    if (reset_i | blocking_sent | complete_recv)
+      fill_flushed_r <= '0;
+    else if (flush_i & ~is_ready)
+      fill_flushed_r <= '1;
+
+  // synopsys translate_off
+  always_ff @(negedge clk_i) begin
+    assert(reset_i !== '0 || !(critical_recv & fill_flushed_r))
+      else $error("bp_be_dcache: fill_restart_tv fired for a flushed miss — phantom v_tv_r possible\n");
+  end
+  // synopsys translate_on
 
   /////////////////////////////////////////////////////////////////////////////
   // MSHR
