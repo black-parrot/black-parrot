@@ -57,8 +57,27 @@ module bp_be_pipe_long
      ,.data_i({fp_v_li, int_v_li})
      ,.data_o({fmask_r, imask_r})
      );
-  wire flush_int_li = flush_i & (imask_r | int_v_li);
-  wire flush_fp_li  = flush_i & (fmask_r | fp_v_li);
+
+  // Sticky bits: set on dispatch, cleared when the write-back is consumed.
+  // fmask_r / imask_r only cover the dispatch cycle and D+1, leaving a window
+  // where flush_fp_li / flush_int_li are permanently 0 while the unit is
+  // still computing or has completed but not yet been accepted.  These extend
+  // the flush window to the full in-flight lifetime of the operation.
+  logic fop_inflight_r, iop_inflight_r;
+  always_ff @(posedge clk_i)
+    if (reset_i | (fwb_v_o & fwb_yumi_i))
+      fop_inflight_r <= '0;
+    else if (fp_v_li)
+      fop_inflight_r <= '1;
+
+  always_ff @(posedge clk_i)
+    if (reset_i | (iwb_v_o & iwb_yumi_i))
+      iop_inflight_r <= '0;
+    else if (int_v_li)
+      iop_inflight_r <= '1;
+
+  wire flush_int_li = flush_i & (iop_inflight_r | int_v_li);
+  wire flush_fp_li  = flush_i & (fop_inflight_r | fp_v_li);
 
   wire signed_div_li = decode.fu_op inside {e_long_op_div, e_long_op_rem};
   wire rem_not_div_li = decode.fu_op inside {e_long_op_rem, e_long_op_remu};
