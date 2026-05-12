@@ -1,0 +1,5 @@
+
+BUILD_COLLATERAL += flist.vcs
+
+include $(BP_MK_DIR)/Makefile.collateral
+
