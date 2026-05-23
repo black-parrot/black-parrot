@@ -483,7 +483,7 @@ module bp_cce_fsm
 
   // Counter for message send/receive
   logic cnt_rst;
-  logic [`BSG_WIDTH(1)-1:0] cnt_inc, cnt_dec;
+  logic [2:0] cnt_inc, cnt_dec;
   logic [`BSG_WIDTH(num_lce_p+1)-1:0] cnt;
   bsg_counter_up_down
     #(.max_val_p(num_lce_p+1)

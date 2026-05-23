@@ -2,7 +2,6 @@
 include $(BP_MK_DIR)/Makefile.paths
 
 %/flist.vcs:
-	@$(eval export BP_DIR)
 	@$(MKDIR) -p $(@D)
 	@$(CAT) $(END_PATH)/flist.vcs >> $@
 	@$(ECHO) $(TB_PATH)/wrapper.sv >> $@

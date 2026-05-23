@@ -38,7 +38,11 @@ module bp_be_nonsynth_perf
 
   int cycle_cnt;
   int instr_cnt;
+`ifndef XCELIUM
   int warm = !warmup_instr_pi;
+`else
+  int warm;
+`endif
   always_ff @(posedge clk_i)
     if (is_go)
       begin

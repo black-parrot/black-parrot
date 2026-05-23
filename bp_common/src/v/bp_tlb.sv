@@ -256,7 +256,7 @@ module bp_tlb
      ,.data_o(r_entry[r_entry_low_bits_lp+r_entry_med_bits_lp+:r_entry_high_bits_lp])
      );
 
-  logic [`BSG_WIDTH(3)-1:0] match_cnt;
+  logic [1:0] match_cnt;
   bsg_popcount
    #(.width_p(3))
    mpc

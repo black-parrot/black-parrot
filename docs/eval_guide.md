@@ -30,12 +30,12 @@ Simulation testbenches support FLAGS:
 
 Instructions for a bp\_me verilator simulation:
 
-
-    cd bp_me/verilator
-    # make build.verilator; # optional build, will also be done on-demand
-    # make lint.verilator; # optional lint
-    make sim.verilator; # optional <CONFIG>= <FLAG>= <PARAM>= <PLUSARGS>=
-
+```bash
+cd bp_me/verilator
+# make build.verilator; # optional build, will also be done on-demand
+# make lint.verilator; # optional lint
+make sim.verilator; # optional <CONFIG>= <FLAG>= <PARAM>= <PLUSARGS>=
+```
 
 ## Running RISC-V regression
 
@@ -55,26 +55,28 @@ FLAGS:
 - COMMITLOG: Create RISCV commitlog during execution
 - DROMAJO_TRACE: Creates a dromajo-based golden trace
 - SPIKE_TRACE: Creates a spike-based golden trace
+- COVERAGE: Generates coverage data for VCS or Verilator
 
 PARAMS:
 - PERF_ENABLE_P: Enable performance profiler
-    - WARMUP_INSTR_P: Number of warmup instructions for performance profiler
-    - MAX_INSTR_P: Maximum number of instructions to execute
-    - MAX_CYCLE_P: Maximum number of cycles to execute
+- WARMUP_INSTR_P: Number of warmup instructions for performance profiler
+- MAX_INSTR_P: Maximum number of instructions to execute
+- MAX_CYCLE_P: Maximum number of cycles to execute
 - WATCHDOG_ENABLE_P: Enable watchdog timer
-    - STALL_CYCLES_P: How many cycles before watchdog throws error
-    - HALT_INSTR_P: How many instructions before watchdog considers a core halted
-    - HEARTBEAT_INSTR_P: Period for heatbeat information
+- STALL_CYCLES_P: How many cycles before watchdog throws error
+- HALT_INSTR_P: How many instructions before watchdog considers a core halted
+- HEARTBEAT_INSTR_P: Period for heatbeat information
 
 PLUSARGS:
-  - +icache_trace: L1 I$ tracer
-  - +dcache_trace: L1 D$ tracer
-  - +vm_trace: ITLB / DTLB tracers
-  - +cce_trace: CCE tracer
-  - +lce_trace: LCE tracer
-  - +uce_trace: UCE tracer
-  - +dev_trace: CLINT / CFG tracers
-  - +dram_trace: DRAM tracer
+- +icache_trace: L1 I$ tracer
+- +dcache_trace: L1 D$ tracer
+- +vm_trace: ITLB / DTLB tracers
+- +cce_trace: CCE tracer
+- +lce_trace: LCE tracer
+- +uce_trace: UCE tracer
+- +dev_trace: CLINT / CFG tracers
+- +dram_trace: DRAM tracer
+
 ## bp\_top Simulation Examples
 **Hello World**
 ```bash
@@ -138,9 +140,19 @@ make -C bp_me/verilator build.verilator sim.verilator TRACE=1 PROG=mixed ME_TEST
 BlackParrot support Verilog-2005 pickling through [bsg_sv2v](https://github.com/bespoke-silicon-group/bsg_sv2v).
 Unfortunately, this requires access to [Synopsys DC](https://www.synopsys.com/implementation-and-signoff/rtl-synthesis-test/dc-ultra.html), but we welcome help supporting an open-source alternative.
 
+```bash
+cd bp_top/dc
+make check_design.dc; # Lints for a variety of common synthesis issues
+make check_loops.dc;  # Checks for timing loops in addition to lint (requires PDK)
+make sv2v.dc;         # Pickles the design
+```
 
-    cd bp_top/dc
-	make check_design.dc; # Lints for a variety of common synthesis issues
-	make check_loops.dc;  # Checks for timing loops in addition to lint (requires PDK)
-	make sv2v.dc;         # Pickles the design
+## Code coverage
+
+If code coverage has been enabled during simulations (COVERAGE=1), then the results can be merged into a convenient report.
+
+```bash
+make merge.vcs; # Generates a combined coverage report using URG
+make merge.verilator; # Generates a combined coverage report using Verilator
+```
 
