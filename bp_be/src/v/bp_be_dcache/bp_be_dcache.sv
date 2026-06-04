@@ -1264,5 +1264,23 @@ module bp_be_dcache
      ,.o(snoop_bank_sel_one_hot)
      );
 
+  // synopsys translate_off
+  // Track whether the outstanding miss was flushed before its critical beat arrived.
+  // Used only in the assertion below; fill_restart_tv is not gated because the
+  // pipeline depth prevents v_tv_r=1 from coinciding with flush_i=1 in a
+  // single-issue in-order core.  The assertion fires if that assumption breaks.
+  logic fill_flushed_r;
+  always_ff @(posedge clk_i)
+    if (reset_i | blocking_sent | complete_recv)
+      fill_flushed_r <= '0;
+    else if (flush_i & ~is_ready)
+      fill_flushed_r <= '1;
+
+  always_ff @(negedge clk_i) begin
+    assert(reset_i !== '0 || !(critical_recv & fill_flushed_r))
+      else $error("bp_be_dcache: fill_restart_tv fired for a flushed miss — phantom v_tv_r possible\n");
+  end
+  // synopsys translate_on
+
 endmodule
 
