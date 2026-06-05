@@ -1,0 +1,29 @@
+`verilator_config
+////////////////////////////////
+// General rules
+////////////////////////////////
+// Disable lint for configuration assignment
+lint_off -rule WIDTHCONCAT -file "*/bp_common_aviary_cfg_pkgdef.svh"
+lint_off -rule WIDTHEXPAND -file "*/bp_common_aviary_cfg_pkgdef.svh"
+lint_off -rule WIDTHCONCAT -file "*/bp_common_aviary_pkgdef.svh"
+lint_off -rule WIDTHEXPAND -file "*/bp_common_aviary_pkgdef.svh"
+// Disable lint for BaseJump STL
+lint_off -file "*/bsg_async/*"
+lint_off -file "*/bsg_cache/*"
+lint_off -file "*/bsg_dataflow/*"
+lint_off -file "*/bsg_dmc/*"
+lint_off -file "*/bsg_fpu/*"
+lint_off -file "*/bsg_link/*"
+lint_off -file "*/bsg_mem/*"
+lint_off -file "*/bsg_misc/*"
+lint_off -file "*/bsg_noc/*"
+lint_off -file "*/bsg_tag/*"
+lint_off -file "*/bsg_test/*"
+lint_off -rule WIDTHCONCAT -file "*/bsg_misc/bsg_reduce.sv"
+// Disable lint for HardFloat
+lint_off -file "*/HardFloat/source/*"
+
+////////////////////////////////
+// Specific rules
+////////////////////////////////
+lint_off -rule WIDTHEXPAND -file "*/bp_be_dcache.sv"
