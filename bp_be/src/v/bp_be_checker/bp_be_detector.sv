@@ -242,14 +242,14 @@ module bp_be_detector
       control_haz_v = fence_haz_v | fflags_haz_v;
 
       // Combine all data hazard information
-      // TODO: Parameterize away floating point data hazards without hardware support
       data_haz_v = (|irs1_data_haz_v)
                    | (|irs2_data_haz_v)
-                   | (|frs1_data_haz_v)
-                   | (|frs2_data_haz_v)
-                   | (|frs3_data_haz_v)
                    | (irs1_sb_raw_haz_v | irs2_sb_raw_haz_v | ird_sb_waw_haz_v)
-                   | (frs1_sb_raw_haz_v | frs2_sb_raw_haz_v | frs3_sb_raw_haz_v | frd_sb_waw_haz_v);
+                   | (fpu_support_p ? ((|frs1_data_haz_v)
+                                       | (|frs2_data_haz_v)
+                                       | (|frs3_data_haz_v)
+                                       | (frs1_sb_raw_haz_v | frs2_sb_raw_haz_v | frs3_sb_raw_haz_v | frd_sb_waw_haz_v))
+                                    : 1'b0);
 
       // Combine all structural hazard information
       struct_haz_v = cmd_haz_v

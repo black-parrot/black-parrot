@@ -178,20 +178,29 @@ module bp_be_scheduler
      );
 
   logic [dpath_width_gp-1:0] frf_rs1, frf_rs2, frf_rs3;
-  bp_be_regfile
-  #(.bp_params_p(bp_params_p), .read_ports_p(3), .zero_x0_p(0), .data_width_p($bits(bp_be_fp_reg_s)))
-   fp_regfile
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  if (fpu_support_p)
+    begin : gen_fp_regfile
+      bp_be_regfile
+      #(.bp_params_p(bp_params_p), .read_ports_p(3), .zero_x0_p(0), .data_width_p($bits(bp_be_fp_reg_s)))
+       fp_regfile
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
 
-     ,.rd_w_v_i(fwb_pkt_cast_i.frd_w_v)
-     ,.rd_addr_i(fwb_pkt_cast_i.rd_addr)
-     ,.rd_data_i(fwb_pkt_cast_i.rd_data)
+         ,.rd_w_v_i(fwb_pkt_cast_i.frd_w_v)
+         ,.rd_addr_i(fwb_pkt_cast_i.rd_addr)
+         ,.rd_data_i(fwb_pkt_cast_i.rd_data)
 
-     ,.rs_r_v_i({preissue_pkt.frs3_v, preissue_pkt.frs2_v, preissue_pkt.frs1_v})
-     ,.rs_addr_i({preissue_instr.rs3_addr, preissue_instr.rs2_addr, preissue_instr.rs1_addr})
-     ,.rs_data_o({frf_rs3, frf_rs2, frf_rs1})
-     );
+         ,.rs_r_v_i({preissue_pkt.frs3_v, preissue_pkt.frs2_v, preissue_pkt.frs1_v})
+         ,.rs_addr_i({preissue_instr.rs3_addr, preissue_instr.rs2_addr, preissue_instr.rs1_addr})
+         ,.rs_data_o({frf_rs3, frf_rs2, frf_rs1})
+         );
+    end
+  else
+    begin : gen_no_fp_regfile
+      assign frf_rs1 = '0;
+      assign frf_rs2 = '0;
+      assign frf_rs3 = '0;
+    end
 
   bp_be_decode_s fe_exc_decode_li;
   rv64_instr_fmatype_s fe_exc_instr_li;
