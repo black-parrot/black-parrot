@@ -179,12 +179,15 @@ module bp_io_cce
      ,.fsm_last_o(fsm_cmd_last_lo)
      );
 
-  wire lce_req_wr_not_rd = (fsm_req_header_lo.msg_type.req == e_bedrock_req_uc_wr);
   wire mem_rev_wr_not_rd = (fsm_rev_header_lo.msg_type.rev == e_bedrock_mem_wr);
   always_comb
     begin
-      fsm_fwd_header_li.msg_type         = lce_req_wr_not_rd ? e_bedrock_mem_wr : e_bedrock_mem_rd;
-      fsm_fwd_header_li.subop            = e_bedrock_store; // TODO: support I/O AMOs
+      unique case (fsm_req_header_lo.msg_type.req)
+        e_bedrock_req_uc_wr : fsm_fwd_header_li.msg_type = e_bedrock_mem_wr;
+        e_bedrock_req_uc_amo: fsm_fwd_header_li.msg_type = e_bedrock_mem_amo;
+        default             : fsm_fwd_header_li.msg_type = e_bedrock_mem_rd;
+      endcase
+      fsm_fwd_header_li.subop            = fsm_req_header_lo.subop;
       fsm_fwd_header_li.addr             = fsm_req_header_lo.addr;
       fsm_fwd_header_li.size             = fsm_req_header_lo.size;
       fsm_fwd_header_li.payload          = '0;
@@ -196,7 +199,7 @@ module bp_io_cce
       fsm_req_yumi_li                    = fsm_fwd_v_li;
 
       fsm_cmd_header_li.msg_type         = mem_rev_wr_not_rd ? e_bedrock_cmd_uc_st_done : e_bedrock_cmd_uc_data;
-      fsm_cmd_header_li.subop            = e_bedrock_store; // TODO: support I/O AMOs
+      fsm_cmd_header_li.subop            = fsm_rev_header_lo.subop;
       fsm_cmd_header_li.addr             = fsm_rev_header_lo.addr;
       fsm_cmd_header_li.size             = fsm_rev_header_lo.size;
       fsm_cmd_header_li.payload          = '0;

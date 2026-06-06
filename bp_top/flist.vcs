@@ -248,6 +248,7 @@ $BP_DIR/bp_me/src/v/lce/bp_lce_req.sv
 $BP_DIR/bp_me/src/v/lce/bp_lce_cmd.sv
 # Cache
 $BP_DIR/bp_me/src/v/dev/bp_me_bedrock_register.sv
+$BP_DIR/bp_me/src/v/dev/bp_me_bedrock_register_amo.sv
 $BP_DIR/bp_me/src/v/dev/bp_me_cache_controller.sv
 $BP_DIR/bp_me/src/v/dev/bp_me_dram_hash_decode.sv
 $BP_DIR/bp_me/src/v/dev/bp_me_dram_hash_encode.sv
