@@ -68,6 +68,18 @@ module bp_nonsynth_if_verif
       
       $display("MEM FWD Header Flits:    %0d", ($bits(bp_bedrock_mem_fwd_header_s) + mem_noc_flit_width_p - 1) / mem_noc_flit_width_p);
       $display("MEM REV Header Flits:    %0d", ($bits(bp_bedrock_mem_rev_header_s) + mem_noc_flit_width_p - 1) / mem_noc_flit_width_p);
+      // L2 Cache Total Size (if L2 exists)
+      if (l2_sets_p > 0)
+      $display("L2 Cache Total Size: %0d KB", (l2_sets_p * l2_assoc_p * l2_block_width_p) / 8192);
+      
+      // Total Cache Size (L1 I$ + L1 D$ + L2)
+      $display("Total Cache Size (all levels): %0d KB", 
+               ((icache_sets_p * icache_assoc_p * icache_block_width_p) +
+                (dcache_sets_p * dcache_assoc_p * dcache_block_width_p) +
+                (l2_sets_p * l2_assoc_p * l2_block_width_p)) / 8192);
+
+      // Number of cores (derived from parameters)
+      $display("Number of cores: %0d", num_core_p);
       $display("#############################################");
       if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32})) begin
         $error("Error: unsupported number of CCE's");
