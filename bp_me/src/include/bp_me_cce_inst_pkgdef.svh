@@ -148,8 +148,9 @@
   //    and also captures the message type into the specified GPR.
   // 2. popd dequeues a single 64-bit data packet into a single GPR. The user must first have at
   //    at least done a poph to determine that data was available and so ucode can use size
-  //    field in MSHR to determine how many packets to dequeue.
-  // 3. popq dequeues only the header. We assume that all data has been popped off
+  //    field in MSHR to determine how many packets to dequeue. Note: popd is
+  //    not currently supported.
+  // 3. popq dequeues the message from the queue. We assume that all data has been popped off
   //    either by popd commands, or by the message unit auto-forward mechanism, or by issuing
   //    a pushq command that consumes the data (e.g., an explicit pushq memCmd that consumes an
   //    lceResp containing writeback data). No state is written from the message to the CCE.
@@ -158,10 +159,9 @@
     e_wfq_op                               = 4'b0000   // Wait for Queue Valid
     ,e_pushq_op                            = 4'b0001   // Push Queue
   //,e_pushqc_op                           = 4'b0001   // Push Queue Custom Message
-    ,e_popq_op                             = 4'b0010   // Pop Queue - dequeue the header
-    ,e_poph_op                             = 4'b0011   // Pop Header From Queue - does not pop message
-    // TODO: popd not yet fully supported - will be supported after serdes changes
-    ,e_popd_op                             = 4'b0100   // Pop Data From Queue
+    ,e_popq_op                             = 4'b0010   // Pop Queue
+    ,e_poph_op                             = 4'b0011   // Place Header into GPR - does not dequeue
+  //,e_popd_op                             = 4'b0100   // Place Data into GPR - does not dequeue
     ,e_specq_op                            = 4'b0101   // Write or read speculative access bits
     ,e_inv_op                              = 4'b1000   // Send all Invalidations based on sharers vector
   } bp_cce_inst_minor_queue_op_e;
