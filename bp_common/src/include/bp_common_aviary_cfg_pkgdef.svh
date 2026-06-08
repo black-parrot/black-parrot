@@ -165,6 +165,7 @@
     int icache_block_width;
     int icache_fill_width;
     int icache_data_width;
+    int icache_bank_width;
     int icache_mshr;
 
     // D$ cache features
@@ -318,6 +319,7 @@
       ,icache_fill_width    : 128
       ,icache_mshr          : 1
       ,icache_data_width    : 64
+      ,icache_bank_width    : 32
 
       ,dcache_features      : (1 << e_cfg_enabled)
                               | (1 << e_cfg_writeback)
@@ -448,6 +450,7 @@
       ,`bp_aviary_define_override(icache_block_width, BP_ICACHE_BLOCK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_fill_width, BP_ICACHE_FILL_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_data_width, BP_ICACHE_DATA_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(icache_bank_width, BP_ICACHE_BANK_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(icache_mshr, BP_ICACHE_MSHR, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(dcache_features, BP_DCACHE_FEATURES, `BP_CUSTOM_BASE_CFG)

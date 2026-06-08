@@ -73,6 +73,7 @@
     , localparam icache_block_width_p       = proc_param_lp.icache_block_width                     \
     , localparam icache_fill_width_p        = proc_param_lp.icache_fill_width                      \
     , localparam icache_data_width_p        = proc_param_lp.icache_data_width                      \
+    , localparam icache_bank_width_p        = proc_param_lp.icache_bank_width                      \
     , localparam icache_mshr_p              = proc_param_lp.icache_mshr                            \
     , localparam icache_req_id_width_p      = `BSG_SAFE_CLOG2(icache_mshr_p)                       \
     , localparam icache_way_groups_p        = icache_sets_p                                        \
@@ -268,6 +269,7 @@
           ,`bp_aviary_parameter_override(icache_block_width, override_cfg_mp, default_cfg_mp)      \
           ,`bp_aviary_parameter_override(icache_fill_width, override_cfg_mp, default_cfg_mp)       \
           ,`bp_aviary_parameter_override(icache_data_width, override_cfg_mp, default_cfg_mp)       \
+          ,`bp_aviary_parameter_override(icache_bank_width, override_cfg_mp, default_cfg_mp)       \
           ,`bp_aviary_parameter_override(icache_mshr, override_cfg_mp, default_cfg_mp)             \
                                                                                                    \
           ,`bp_aviary_parameter_override(dcache_features, override_cfg_mp, default_cfg_mp)         \
