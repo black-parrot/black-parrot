@@ -550,13 +550,18 @@
   }  rv64_pmpcfg_s;                                                                        \
   typedef rv64_pmpcfg_s rv64_pmpcfg0_s;                                                    \
   typedef rv64_pmpcfg_s rv64_pmpcfg1_s;                                                    \
+  typedef rv64_pmpcfg_s rv64_pmpcfg2_s;                                                    \
+  typedef rv64_pmpcfg_s rv64_pmpcfg3_s;                                                    \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
-    rv64_pmpcfg_entry_s [3:0] pmpcfg;                                                      \
+    rv64_pmpcfg_entry_s [7:0] pmpcfg;                                                      \
   }  bp_pmpcfg_s;                                                                          \
                                                                                            \
   typedef bp_pmpcfg_s bp_pmpcfg0_s;                                                        \
+  typedef bp_pmpcfg_s bp_pmpcfg1_s;                                                        \
+  typedef bp_pmpcfg_s bp_pmpcfg2_s;                                                        \
+  typedef bp_pmpcfg_s bp_pmpcfg3_s;                                                        \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
@@ -568,6 +573,18 @@
   typedef rv64_pmpaddr_s rv64_pmpaddr1_s;                                                  \
   typedef rv64_pmpaddr_s rv64_pmpaddr2_s;                                                  \
   typedef rv64_pmpaddr_s rv64_pmpaddr3_s;                                                  \
+  typedef rv64_pmpaddr_s rv64_pmpaddr4_s;                                                  \
+  typedef rv64_pmpaddr_s rv64_pmpaddr5_s;                                                  \
+  typedef rv64_pmpaddr_s rv64_pmpaddr6_s;                                                  \
+  typedef rv64_pmpaddr_s rv64_pmpaddr7_s;                                                  \
+  typedef rv64_pmpaddr_s rv64_pmpaddr8_s;                                                  \
+  typedef rv64_pmpaddr_s rv64_pmpaddr9_s;                                                  \
+  typedef rv64_pmpaddr_s rv64_pmpaddr10_s;                                                 \
+  typedef rv64_pmpaddr_s rv64_pmpaddr11_s;                                                 \
+  typedef rv64_pmpaddr_s rv64_pmpaddr12_s;                                                 \
+  typedef rv64_pmpaddr_s rv64_pmpaddr13_s;                                                 \
+  typedef rv64_pmpaddr_s rv64_pmpaddr14_s;                                                 \
+  typedef rv64_pmpaddr_s rv64_pmpaddr15_s;                                                 \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
@@ -590,6 +607,18 @@
   typedef bp_pmpaddr_s bp_pmpaddr1_s;                                                      \
   typedef bp_pmpaddr_s bp_pmpaddr2_s;                                                      \
   typedef bp_pmpaddr_s bp_pmpaddr3_s;                                                      \
+  typedef bp_pmpaddr_s bp_pmpaddr4_s;                                                      \
+  typedef bp_pmpaddr_s bp_pmpaddr5_s;                                                      \
+  typedef bp_pmpaddr_s bp_pmpaddr6_s;                                                      \
+  typedef bp_pmpaddr_s bp_pmpaddr7_s;                                                      \
+  typedef bp_pmpaddr_s bp_pmpaddr8_s;                                                      \
+  typedef bp_pmpaddr_s bp_pmpaddr9_s;                                                      \
+  typedef bp_pmpaddr_s bp_pmpaddr10_s;                                                     \
+  typedef bp_pmpaddr_s bp_pmpaddr11_s;                                                     \
+  typedef bp_pmpaddr_s bp_pmpaddr12_s;                                                     \
+  typedef bp_pmpaddr_s bp_pmpaddr13_s;                                                     \
+  typedef bp_pmpaddr_s bp_pmpaddr14_s;                                                     \
+  typedef bp_pmpaddr_s bp_pmpaddr15_s;                                                     \
                                                                                            \
   typedef logic [63:0] rv64_mcounter_s;                                                    \
   typedef logic [47:0] bp_mcounter_s;                                                      \
@@ -937,15 +966,35 @@
       }
 
   `define compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    '{pmpcfg: data_cast_mp.pmpcfg[0+:4]}
+    '{pmpcfg: '{'{l: data_cast_mp.pmpcfg[0].l, a: data_cast_mp.pmpcfg[0].a, x: data_cast_mp.pmpcfg[0].x, w: data_cast_mp.pmpcfg[0].w & data_cast_mp.pmpcfg[0].r, r: data_cast_mp.pmpcfg[0].r, default: '0} \
+               ,'{l: data_cast_mp.pmpcfg[1].l, a: data_cast_mp.pmpcfg[1].a, x: data_cast_mp.pmpcfg[1].x, w: data_cast_mp.pmpcfg[1].w & data_cast_mp.pmpcfg[1].r, r: data_cast_mp.pmpcfg[1].r, default: '0} \
+               ,'{l: data_cast_mp.pmpcfg[2].l, a: data_cast_mp.pmpcfg[2].a, x: data_cast_mp.pmpcfg[2].x, w: data_cast_mp.pmpcfg[2].w & data_cast_mp.pmpcfg[2].r, r: data_cast_mp.pmpcfg[2].r, default: '0} \
+               ,'{l: data_cast_mp.pmpcfg[3].l, a: data_cast_mp.pmpcfg[3].a, x: data_cast_mp.pmpcfg[3].x, w: data_cast_mp.pmpcfg[3].w & data_cast_mp.pmpcfg[3].r, r: data_cast_mp.pmpcfg[3].r, default: '0} \
+               ,'{l: data_cast_mp.pmpcfg[4].l, a: data_cast_mp.pmpcfg[4].a, x: data_cast_mp.pmpcfg[4].x, w: data_cast_mp.pmpcfg[4].w & data_cast_mp.pmpcfg[4].r, r: data_cast_mp.pmpcfg[4].r, default: '0} \
+               ,'{l: data_cast_mp.pmpcfg[5].l, a: data_cast_mp.pmpcfg[5].a, x: data_cast_mp.pmpcfg[5].x, w: data_cast_mp.pmpcfg[5].w & data_cast_mp.pmpcfg[5].r, r: data_cast_mp.pmpcfg[5].r, default: '0} \
+               ,'{l: data_cast_mp.pmpcfg[6].l, a: data_cast_mp.pmpcfg[6].a, x: data_cast_mp.pmpcfg[6].x, w: data_cast_mp.pmpcfg[6].w & data_cast_mp.pmpcfg[6].r, r: data_cast_mp.pmpcfg[6].r, default: '0} \
+               ,'{l: data_cast_mp.pmpcfg[7].l, a: data_cast_mp.pmpcfg[7].a, x: data_cast_mp.pmpcfg[7].x, w: data_cast_mp.pmpcfg[7].w & data_cast_mp.pmpcfg[7].r, r: data_cast_mp.pmpcfg[7].r, default: '0} \
+               }}
 
   `define decompress_pmpcfg_s(data_comp_mp) \
-    '{pmpcfg: ($bits(rv64_pmpcfg_entry_s)*8)'(data_comp_mp.pmpcfg)}
+    '{pmpcfg: '{'{l: data_comp_mp.pmpcfg[0].l, a: data_comp_mp.pmpcfg[0].a, x: data_comp_mp.pmpcfg[0].x, w: data_comp_mp.pmpcfg[0].w, r: data_comp_mp.pmpcfg[0].r, default: '0} \
+               ,'{l: data_comp_mp.pmpcfg[1].l, a: data_comp_mp.pmpcfg[1].a, x: data_comp_mp.pmpcfg[1].x, w: data_comp_mp.pmpcfg[1].w, r: data_comp_mp.pmpcfg[1].r, default: '0} \
+               ,'{l: data_comp_mp.pmpcfg[2].l, a: data_comp_mp.pmpcfg[2].a, x: data_comp_mp.pmpcfg[2].x, w: data_comp_mp.pmpcfg[2].w, r: data_comp_mp.pmpcfg[2].r, default: '0} \
+               ,'{l: data_comp_mp.pmpcfg[3].l, a: data_comp_mp.pmpcfg[3].a, x: data_comp_mp.pmpcfg[3].x, w: data_comp_mp.pmpcfg[3].w, r: data_comp_mp.pmpcfg[3].r, default: '0} \
+               ,'{l: data_comp_mp.pmpcfg[4].l, a: data_comp_mp.pmpcfg[4].a, x: data_comp_mp.pmpcfg[4].x, w: data_comp_mp.pmpcfg[4].w, r: data_comp_mp.pmpcfg[4].r, default: '0} \
+               ,'{l: data_comp_mp.pmpcfg[5].l, a: data_comp_mp.pmpcfg[5].a, x: data_comp_mp.pmpcfg[5].x, w: data_comp_mp.pmpcfg[5].w, r: data_comp_mp.pmpcfg[5].r, default: '0} \
+               ,'{l: data_comp_mp.pmpcfg[6].l, a: data_comp_mp.pmpcfg[6].a, x: data_comp_mp.pmpcfg[6].x, w: data_comp_mp.pmpcfg[6].w, r: data_comp_mp.pmpcfg[6].r, default: '0} \
+               ,'{l: data_comp_mp.pmpcfg[7].l, a: data_comp_mp.pmpcfg[7].a, x: data_comp_mp.pmpcfg[7].x, w: data_comp_mp.pmpcfg[7].w, r: data_comp_mp.pmpcfg[7].r, default: '0} \
+               }}
 
   `define compress_pmpcfg0_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
   `define compress_pmpcfg1_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpcfg2_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpcfg3_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
   `define decompress_pmpcfg0_s(data_comp_mp) `decompress_pmpcfg_s(data_comp_mp)
   `define decompress_pmpcfg1_s(data_comp_mp) `decompress_pmpcfg_s(data_comp_mp)
+  `define decompress_pmpcfg2_s(data_comp_mp) `decompress_pmpcfg_s(data_comp_mp)
+  `define decompress_pmpcfg3_s(data_comp_mp) `decompress_pmpcfg_s(data_comp_mp)
 
   `define compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{word_addr: data_cast_mp.addr_55_2[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2]}
@@ -959,11 +1008,35 @@
   `define compress_pmpaddr1_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
   `define compress_pmpaddr2_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
   `define compress_pmpaddr3_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr4_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr5_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr6_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr7_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr8_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr9_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr10_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr11_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr12_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr13_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr14_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_pmpaddr15_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
 
   `define decompress_pmpaddr0_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
   `define decompress_pmpaddr1_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
   `define decompress_pmpaddr2_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
   `define decompress_pmpaddr3_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr4_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr5_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr6_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr7_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr8_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr9_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr10_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr11_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr12_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr13_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr14_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define decompress_pmpaddr15_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
 
   `define compress_mcause_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{_interrupt: data_cast_mp._interrupt \

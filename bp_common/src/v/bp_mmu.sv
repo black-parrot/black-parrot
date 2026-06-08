@@ -63,6 +63,12 @@ module bp_mmu
    , output logic                                     r_store_page_fault_o
    );
 
+`ifndef SYNTHESIS
+  initial
+    assert ((num_pmp_entries_p == 0) || (num_pmp_entries_p == 16))
+      else $fatal(1, "bp_mmu supports num_pmp_entries_p values of 0 or 16 only");
+`endif
+
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
   // This logic only works for 8-byte words max.

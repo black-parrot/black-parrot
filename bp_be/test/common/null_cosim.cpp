@@ -5,7 +5,7 @@
 #include <string.h>
 #include <vector>
 
-extern "C" void* __attribute__((weak)) cosim_init(int ncpus, int memsize) {
+extern "C" void* __attribute__((weak)) cosim_init(int ncpus, int memsize, int pmp_entries, const char* prog_name) {
     return nullptr;
 }
 

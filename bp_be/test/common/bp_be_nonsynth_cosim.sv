@@ -22,7 +22,7 @@ module bp_be_nonsynth_cosim
     , input                                cosim_reset_i
     );
 
-  import "DPI-C" context function chandle cosim_init(input int ncpus, input int memsize, input string prog_name);
+  import "DPI-C" context function chandle cosim_init(input int ncpus, input int memsize, input int pmp_entries, input string prog_name);
   import "DPI-C" context function chandle cosim_finish(input chandle cosim_handle);
   import "DPI-C" context function int cosim_step(input chandle cosim_handle,
                                                    input int hartid,
@@ -176,7 +176,7 @@ module bp_be_nonsynth_cosim
       $display("FATAL: +elf_file=<filename> plusarg not found! Please provide a valid RISC-V executable.");
       $finish;
     end
-    cosim_handle = cosim_init(num_core_p, 256, prog_name);
+    cosim_handle = cosim_init(num_core_p, 256, num_pmp_entries_p, prog_name);
   end
   final cosim_handle = cosim_finish(cosim_handle);
 
