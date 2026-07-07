@@ -159,16 +159,19 @@ module bp_mmu
      );
 
   // Fault if higher bits of eaddr do not match vaddr MSB
-  wire eaddr_fault_v = ~&r_etag_r[etag_width_p-1:vtag_width_p-1] & |r_etag_r[etag_width_p-1:vtag_width_p-1];
+  wire eaddr_canon_fault_v = ~&r_etag_r[etag_width_p-1:vtag_width_p-1] & |r_etag_r[etag_width_p-1:vtag_width_p-1];
+  // Fault if accessing an address > physically supported
+  wire eaddr_oob_fault_v = ~trans_r & |r_etag_r[etag_width_p-1:ptag_width_p];
+  // Fault if peforming cache management ops on an uncached address
   wire cached_fault_v = r_cbo_r & ptag_v_lo & ptag_uncached_lo;
   // Fault if hio bit is not enabled and we're accessing that hio
   wire hio_fault_v = (r_instr_r & ptag_v_lo & ptag_lo[ptag_width_p-1-:hio_width_p] != '0)
     || (ptag_v_lo & ptag_lo[ptag_width_p-1-:hio_width_p] & ~hio_mask_i);
 
   // Access faults
-  wire instr_access_fault_v = r_instr_r & hio_fault_v;
-  wire load_access_fault_v  = r_load_r  & cached_fault_v;
-  wire store_access_fault_v = r_store_r & cached_fault_v;
+  wire instr_access_fault_v = r_instr_r & (hio_fault_v | eaddr_oob_fault_v);
+  wire load_access_fault_v  = r_load_r  & (cached_fault_v | eaddr_oob_fault_v);
+  wire store_access_fault_v = r_store_r & (cached_fault_v | eaddr_oob_fault_v);
   wire any_access_fault_v   = |{instr_access_fault_v, load_access_fault_v, store_access_fault_v};
 
   // Page faults
@@ -181,9 +184,9 @@ module bp_mmu
                                           );
   wire data_read_page_fault  = tlb_v_lo & ~(tlb_entry_lo.r | (tlb_entry_lo.x & mxr_i));
   wire data_write_page_fault = tlb_v_lo & ~(tlb_entry_lo.w & tlb_entry_lo.d);
-  wire instr_page_fault_v = trans_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v | eaddr_fault_v);
-  wire load_page_fault_v  = trans_r & r_load_r & (data_priv_page_fault | data_read_page_fault  | eaddr_fault_v);
-  wire store_page_fault_v = trans_r & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_fault_v);
+  wire instr_page_fault_v = trans_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v | eaddr_canon_fault_v);
+  wire load_page_fault_v  = trans_r & r_load_r & (data_priv_page_fault | data_read_page_fault  | eaddr_canon_fault_v);
+  wire store_page_fault_v = trans_r & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_canon_fault_v);
   wire any_page_fault_v   = |{instr_page_fault_v, load_page_fault_v, store_page_fault_v};
 
   wire any_fault_v        = any_access_fault_v | any_page_fault_v;
