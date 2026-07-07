@@ -358,8 +358,8 @@
       ,l2_slices           : 2
       ,l2_banks            : 1
       ,l2_data_width       : 128
-      ,l2_sets             : 32
-      ,l2_assoc            : 2
+      ,l2_sets             : 256
+      ,l2_assoc            : 4
       ,l2_block_width      : 512
       ,l2_fill_width       : 128
 
