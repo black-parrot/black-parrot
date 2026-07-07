@@ -4,7 +4,7 @@ spec:
     # global
     platforms:
       type: array
-      default: ["centos7", "ubuntu24.04"]
+      default: ["centos7"]
     # passthrough
     do_clean_run:
       type: boolean

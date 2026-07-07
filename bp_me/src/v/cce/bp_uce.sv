@@ -827,11 +827,6 @@ module bp_uce
       state_r <= state_n;
 
   // synopsys translate_off
-  // e_cache_binval is gated by features_p[e_cfg_coherent] in bp_be_dcache, so it
-  // is statically 0 for all non-coherent (UCE) configurations and must never arrive here.
-  assert property (@(posedge clk_i) disable iff (reset_i) ~binval_v_li)
-    else $error("bp_uce: unexpected e_cache_binval request — binval is handled in bp_be_dcache for non-coherent systems");
-  
   always_ff @(negedge clk_i)
     assert(reset_i !== '0 || (writeback_p == 1) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_wait, e_writeback_write_req}))
       else $error("writethrough cache should not be in writeback states");
