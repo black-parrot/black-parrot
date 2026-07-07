@@ -87,6 +87,7 @@ $BP_DIR/external/basejump_stl/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.sv
 $BP_DIR/external/basejump_stl/bsg_mem/bsg_mem_1rw_sync_synth.sv
 $BP_DIR/external/basejump_stl/bsg_mem/bsg_mem_2r1w_sync.sv
 $BP_DIR/external/basejump_stl/bsg_mem/bsg_mem_2r1w_sync_synth.sv
+$BP_DIR/external/basejump_stl/bsg_misc/bsg_adder_one_hot.sv
 $BP_DIR/external/basejump_stl/bsg_misc/bsg_adder_ripple_carry.sv
 $BP_DIR/external/basejump_stl/bsg_misc/bsg_arb_fixed.sv
 $BP_DIR/external/basejump_stl/bsg_misc/bsg_arb_round_robin.sv
