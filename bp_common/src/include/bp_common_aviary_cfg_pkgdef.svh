@@ -131,6 +131,9 @@
     // Address space ID width
     //   Currently unused, so set to 1 bit
     int asid_width;
+    // Number of physical memory protection entries supported by the core.
+    // Legal values are 0 < num_pmp < 16
+    int num_pmp;
 
     // Branch metadata information for the Front End
     // Must be kept consistent with FE
@@ -295,6 +298,7 @@
       ,daddr_width: 33
       ,caddr_width: 32
       ,asid_width : 1
+      ,num_pmp    : 0
 
       ,branch_metadata_fwd_width: 49
       ,ras_idx_width            : 4
@@ -426,6 +430,7 @@
       ,`bp_aviary_define_override(fpu_support, BP_FPU_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(bitmanip_support, BP_BITMANIP_SUPPORT, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(compressed_support, BP_COMPRESSED_SUPPORT, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(num_pmp, BP_NUM_PMP, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(branch_metadata_fwd_width, BRANCH_METADATA_FWD_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(ras_idx_width, BP_RAS_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
