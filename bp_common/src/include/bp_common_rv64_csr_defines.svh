@@ -105,6 +105,8 @@
   `define CSR_ADDR_PMPADDR14     12'h3be
   `define CSR_ADDR_PMPADDR15     12'h3bf
 
+  `define CSR_ADDR_PMPADDR       12'h3b? // Matches PMPADDR 0-15
+
   `define CSR_ADDR_MCYCLE        12'hb00
   `define CSR_ADDR_MINSTRET      12'hb02
   `define CSR_ADDR_MHPMCOUNTER3  12'hb03
@@ -544,19 +546,16 @@
     logic          r;                                                                      \
   }  rv64_pmpcfg_entry_s;                                                                  \
                                                                                            \
+  /* Only support regions at the page granularity */                                       \
   typedef struct packed                                                                    \
   {                                                                                        \
-    rv64_pmpcfg_entry_s [7:0] pmpcfg;                                                      \
-  }  rv64_pmpcfg_s;                                                                        \
-  typedef rv64_pmpcfg_s rv64_pmpcfg0_s;                                                    \
-  typedef rv64_pmpcfg_s rv64_pmpcfg1_s;                                                    \
-                                                                                           \
-  typedef struct packed                                                                    \
-  {                                                                                        \
-    rv64_pmpcfg_entry_s [3:0] pmpcfg;                                                      \
-  }  bp_pmpcfg_s;                                                                          \
-                                                                                           \
-  typedef bp_pmpcfg_s bp_pmpcfg0_s;                                                        \
+    logic            l;                                                                    \
+    logic            napot;                                                                \
+    logic            tor;                                                                  \
+    logic            x;                                                                    \
+    logic            w;                                                                    \
+    logic            r;                                                                    \
+  }  bp_pmpcfg_entry_s;                                                                    \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
@@ -564,10 +563,11 @@
     logic [53:0] addr_55_2;                                                                \
   }  rv64_pmpaddr_s;                                                                       \
                                                                                            \
-  typedef rv64_pmpaddr_s rv64_pmpaddr0_s;                                                  \
-  typedef rv64_pmpaddr_s rv64_pmpaddr1_s;                                                  \
-  typedef rv64_pmpaddr_s rv64_pmpaddr2_s;                                                  \
-  typedef rv64_pmpaddr_s rv64_pmpaddr3_s;                                                  \
+  typedef struct packed                                                                    \
+  {                                                                                        \
+    /* G = 8 -> page aligned */                                                            \
+    logic [ptag_width_p-1:0] ptag;                                                         \
+  }  bp_pmpaddr_s;                                                                         \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
@@ -580,16 +580,6 @@
     logic       _interrupt;                                                                \
     logic [3:0] ecode;                                                                     \
   }  bp_mcause_s;                                                                          \
-                                                                                           \
-  typedef struct packed                                                                    \
-  {                                                                                        \
-    logic [(`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2)-1:0] word_addr;                    \
-  }  bp_pmpaddr_s;                                                                         \
-                                                                                           \
-  typedef bp_pmpaddr_s bp_pmpaddr0_s;                                                      \
-  typedef bp_pmpaddr_s bp_pmpaddr1_s;                                                      \
-  typedef bp_pmpaddr_s bp_pmpaddr2_s;                                                      \
-  typedef bp_pmpaddr_s bp_pmpaddr3_s;                                                      \
                                                                                            \
   typedef logic [63:0] rv64_mcounter_s;                                                    \
   typedef logic [47:0] bp_mcounter_s;                                                      \
@@ -937,33 +927,30 @@
       }
 
   `define compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    '{pmpcfg: data_cast_mp.pmpcfg[0+:4]}
-
-  `define decompress_pmpcfg_s(data_comp_mp) \
-    '{pmpcfg: ($bits(rv64_pmpcfg_entry_s)*8)'(data_comp_mp.pmpcfg)}
-
-  `define compress_pmpcfg0_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
-  `define compress_pmpcfg1_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpcfg_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
-  `define decompress_pmpcfg0_s(data_comp_mp) `decompress_pmpcfg_s(data_comp_mp)
-  `define decompress_pmpcfg1_s(data_comp_mp) `decompress_pmpcfg_s(data_comp_mp)
-
-  `define compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    '{word_addr: data_cast_mp.addr_55_2[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)-2]}
-
-  `define decompress_pmpaddr_s(data_comp_mp) \
-    '{addr_55_2: 54'(data_comp_mp.word_addr) \
-      ,default: '0                           \
+    '{l              : data_cast_mp.l                  \
+      ,napot         : (data_cast_mp.a == 2'b11)       \
+      ,tor           : (data_cast_mp.a == 2'b01)       \
+      ,x             : data_cast_mp.x                  \
+      ,w             : data_cast_mp.w & data_cast_mp.r \
+      ,r             : data_cast_mp.r                  \
       }
 
-  `define compress_pmpaddr0_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
-  `define compress_pmpaddr1_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
-  `define compress_pmpaddr2_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
-  `define compress_pmpaddr3_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define decompress_pmpcfg_s(data_comp_mp) \
+    '{l      : data_comp_mp.l                         \
+      ,a     : {data_comp_mp.napot, data_comp_mp.tor} \
+      ,x     : data_comp_mp.x                         \
+      ,w     : data_comp_mp.w                         \
+      ,r     : data_comp_mp.r                         \
+      ,default: '0                                    \
+      }
 
-  `define decompress_pmpaddr0_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
-  `define decompress_pmpaddr1_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
-  `define decompress_pmpaddr2_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
-  `define decompress_pmpaddr3_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+  `define compress_pmpaddr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
+    '{ptag: data_cast_mp.addr_55_2[page_offset_width_gp-2+:ptag_width_p]}
+
+  `define decompress_pmpaddr_s(data_comp_mp) \
+    '{addr_55_2: 54'(data_comp_mp.ptag << (page_offset_width_gp-2)) \
+      ,default: '0                                                  \
+      }
 
   `define compress_mcause_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{_interrupt: data_cast_mp._interrupt \
@@ -1054,20 +1041,48 @@
   `define decompress_dscratch1_s(data_comp_mp) \
     64'(data_comp_mp)
 
-  `define declare_csr_addr(csr_name_mp, vaddr_width_mp, paddr_width_mp)                           \
-    /* verilator lint_off UNUSED */                                                               \
-    rv64_``csr_name_mp``_s ``csr_name_mp``_li, ``csr_name_mp``_lo;                                \
-    bp_``csr_name_mp``_s ``csr_name_mp``_n, ``csr_name_mp``_r;                                    \
-    bsg_dff_reset                                                                                 \
-     #(.width_p($bits(bp_``csr_name_mp``_s)))                                                     \
-    ``csr_name_mp``_reg                                                                           \
-      (.clk_i(clk_i), .reset_i(reset_i), .data_i(``csr_name_mp``_n), .data_o(``csr_name_mp``_r)); \
-    assign ``csr_name_mp``_lo = `decompress_``csr_name_mp``_s(``csr_name_mp``_r);                 \
+  `define declare_csr_addr(csr_name_mp, vaddr_width_mp, paddr_width_mp) \
+    rv64_``csr_name_mp``_s ``csr_name_mp``_li, ``csr_name_mp``_lo;                                  \
+    bp_``csr_name_mp``_s ``csr_name_mp``_n, ``csr_name_mp``_r;                                      \
+    begin : creg_``csr_name_mp                                                                      \
+      bsg_dff_reset                                                                                 \
+       #(.width_p($bits(bp_``csr_name_mp``_s)))                                                     \
+      ``csr_name_mp``_reg                                                                           \
+        (.clk_i(clk_i), .reset_i(reset_i), .data_i(``csr_name_mp``_n), .data_o(``csr_name_mp``_r)); \
+    end                                                                                             \
+    assign ``csr_name_mp``_lo = `decompress_``csr_name_mp``_s(``csr_name_mp``_r);                   \
     assign ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li, vaddr_width_mp, paddr_width_mp)
-    /* verilator lint_on UNUSED */
+
+  `define declare_csr_pmp(index_mp, paddr_width_mp, num_pmp_mp) \
+    rv64_pmpaddr_s pmpaddr``index_mp``_li, pmpaddr``index_mp``_lo;                                             \
+    bp_pmpaddr_s pmpaddr``index_mp``_n, pmpaddr``index_mp``_r;                                                 \
+    rv64_pmpcfg_entry_s pmpcfg``index_mp``_li, pmpcfg``index_mp``_lo;                                          \
+    bp_pmpcfg_entry_s pmpcfg``index_mp``_n, pmpcfg``index_mp``_r;                                              \
+    if (index_mp < num_pmp_mp)                                                                                 \
+      begin : creg_pmp``index_mp                                                                               \
+        bsg_dff_reset_en                                                                                       \
+         #(.width_p($bits(bp_pmpcfg_entry_s)))                                                                 \
+         pmpcfg``index_mp``_reg                                                                                \
+          (.clk_i(clk_i), .reset_i(reset_i), .en_i(!pmpcfg``index_mp``_r.l)                                    \
+           ,.data_i(pmpcfg``index_mp``_n), .data_o(pmpcfg``index_mp``_r));                                     \
+        bsg_dff_reset_en                                                                                       \
+         #(.width_p($bits(bp_pmpaddr_s)))                                                                      \
+         pmpaddr``index_mp``_reg                                                                               \
+          (.clk_i(clk_i), .reset_i(reset_i), .en_i(!pmpcfg``index_mp``_r.l)                                    \
+           ,.data_i(pmpaddr``index_mp``_n), .data_o(pmpaddr``index_mp``_r));                                   \
+      end                                                                                                      \
+    else                                                                                                       \
+      begin : creg_pmp``index_mp                                                                               \
+        assign pmpaddr``index_mp``_r = '0;                                                                     \
+        assign pmpcfg``index_mp``_r = '0;                                                                      \
+      end                                                                                                      \
+     assign pmpcfg_lo[index_mp]   = `decompress_pmpcfg_s(pmpcfg``index_mp``_r);                                \
+     assign pmpaddr_lo[index_mp]  = `decompress_pmpaddr_s(pmpaddr``index_mp``_r);                              \
+     assign pmpaddr``index_mp``_n = `compress_pmpaddr_s(pmpaddr_li[index_mp], paddr_width_mp, paddr_width_mp); \
+     assign pmpcfg``index_mp``_n = `compress_pmpcfg_s(pmpcfg_li[index_mp], pcfg_width_mp, pcfg_width_mp)
 
   `define declare_csr(csr_name_mp) \
-    `declare_csr_addr(csr_name_mp, 0, 0)
+    `declare_csr_addr(csr_name_mp, 0, 0);
 
 `endif
 

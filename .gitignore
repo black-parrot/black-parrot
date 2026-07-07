@@ -12,3 +12,4 @@ stack.info.*
 bsg_cadenv/
 obj_dir/
 session.dump.vpd.tcl
+.vscode/

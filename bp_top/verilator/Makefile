@@ -1,5 +1,5 @@
 ## Set common environment variables
-TOP ?= $(shell git rev-parse --show-toplevel)
+TOP := $(shell git rev-parse --show-toplevel)
 include $(TOP)/Makefile.common
 include $(TOP)/Makefile.env
 

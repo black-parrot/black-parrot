@@ -137,6 +137,10 @@ module bp_nonsynth_if_verif
   // daddr_width_p must be less than paddr_width_p to leave room for high MMIO
   if (daddr_width_p >= paddr_width_p)
     $error("Error: daddr cannot exceed paddr");
+  if (num_pmp_p > 16)
+    $error("Error: Only up to 16 PMP registers are supported.");
+  if (num_pmp_p != 0)
+    $warning("Warning: PMP registers are implemented but not currently checked on access.");
 
   // L2 Cache
   if (l2_fill_width_p < l2_data_width_p)
