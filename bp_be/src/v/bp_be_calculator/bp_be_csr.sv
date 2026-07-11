@@ -547,7 +547,7 @@ module bp_be_csr
         {1'b1, `CSR_ADDR_MCOUNTINHIBIT}: mcountinhibit_li = csr_data_li;
         // illegal accesses are checked in decode, so we don't need to recheck here
         {1'b1, `CSR_ADDR_PMPCFG0      }: pmpcfg_li[0+:8] = csr_data_li;
-        {1'b1, `CSR_ADDR_PMPCFG2      }: pmpcfg_li[8+:16] = csr_data_li;
+        {1'b1, `CSR_ADDR_PMPCFG2      }: pmpcfg_li[8+:8] = csr_data_li;
         {1'b1, `CSR_ADDR_PMPADDR      }: pmpaddr_li[pmpaddr_sel_li] = csr_data_li;
         {1'b1, `CSR_ADDR_DCSR         }: dcsr_li = csr_data_li;
         {1'b1, `CSR_ADDR_DPC          }: dpc_li = csr_data_li;
