@@ -422,6 +422,8 @@ module bp_core_tile
      ,.concentrated_link_v_o(req_concentrated_link_lo.v)
      ,.concentrated_link_data_o(req_concentrated_link_lo.data)
      ,.concentrated_link_ready_and_rev_i(req_concentrated_link_li.ready_and_rev)
+
+     ,.links_credit_late_o()
      );
   assign lce_req_link_li[1].v = 1'b0;
   assign lce_req_link_li[0].v = 1'b0;
@@ -500,6 +502,8 @@ module bp_core_tile
      ,.concentrated_link_v_o(resp_concentrated_link_lo.v)
      ,.concentrated_link_data_o(resp_concentrated_link_lo.data)
      ,.concentrated_link_ready_and_rev_i(resp_concentrated_link_li.ready_and_rev)
+
+     ,.links_credit_late_o()
      );
   assign lce_resp_link_li[1].v = 1'b0;
   assign lce_resp_link_li[0].v = 1'b0;

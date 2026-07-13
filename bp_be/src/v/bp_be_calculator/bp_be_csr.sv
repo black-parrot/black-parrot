@@ -88,8 +88,8 @@ module bp_be_csr
   // 0: Tapeout 0, July 2019
   // 1: Tapeout 1, June 2021
   // 2: Tapeout 2, Sept 2022
-  // 3: Current
-  wire [dword_width_gp-1:0] mimpid_lo  = 64'd3;
+  // 3: Tapeout 3, Jan 2025
+  wire [dword_width_gp-1:0] mimpid_lo  = 64'd4;
   wire [dword_width_gp-1:0] mhartid_lo = cfg_bus_cast_i.core_id;
 
   `declare_csr(mstatus);
@@ -108,8 +108,6 @@ module bp_be_csr
   `declare_csr_addr(mtval, vaddr_width_p, paddr_width_p);
   `declare_csr(mip);
 
-  // No support for PMP currently
-
   `declare_csr(mcycle);
   `declare_csr(minstret);
   // mhpmcounter not implemented
@@ -117,6 +115,27 @@ module bp_be_csr
   `declare_csr(mcountinhibit);
   // mhpmevent not implemented
   //   This is non-compliant. We should hardcode to 0 instead of trapping
+
+  // Up to 16 physical PMP registers are supported
+  // But if you implement one you have to implement them all
+  rv64_pmpaddr_s [15:0] pmpaddr_li, pmpaddr_lo;
+  rv64_pmpcfg_entry_s [15:0] pmpcfg_li, pmpcfg_lo;
+  `declare_csr_pmp(0, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(1, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(2, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(3, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(4, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(5, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(6, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(7, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(8, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(9, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(10, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(11, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(12, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(13, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(14, paddr_width_p, num_pmp_p);
+  `declare_csr_pmp(15, paddr_width_p, num_pmp_p);
 
   // sstatus subset of mstatus
   wire [dword_width_gp-1:0] sstatus_lo = mstatus_lo & sstatus_rmask_li;
@@ -280,6 +299,8 @@ module bp_be_csr
   wire instr_fany_li = retire_pkt_cast_i.instr.t.rtype.opcode inside
     {`RV64_FLOAD_OP, `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FP_OP};
 
+  wire [2:0] pmpaddr_sel_li = csr_addr_li - `CSR_ADDR_PMPCFG0;
+
   logic enter_debug, exit_debug;
   bsg_dff_reset_set_clear
    #(.width_p(1))
@@ -425,6 +446,9 @@ module bp_be_csr
         {`CSR_ADDR_MCYCLE       }: csr_data_lo = mcycle_lo;
         {`CSR_ADDR_MINSTRET     }: csr_data_lo = minstret_lo;
         {`CSR_ADDR_MCOUNTINHIBIT}: csr_data_lo = mcountinhibit_lo;
+        {`CSR_ADDR_PMPCFG0      }: csr_data_lo = pmpcfg_lo[0+:8];
+        {`CSR_ADDR_PMPCFG2      }: csr_data_lo = pmpcfg_lo[8+:8];
+        {`CSR_ADDR_PMPADDR      }: csr_data_lo = pmpaddr_lo[pmpaddr_sel_li];
         {`CSR_ADDR_DCSR         }: csr_data_lo = dcsr_lo;
         {`CSR_ADDR_DPC          }: csr_data_lo = dpc_lo;
         {`CSR_ADDR_DSCRATCH0    }: csr_data_lo = dscratch0_lo;
@@ -470,6 +494,9 @@ module bp_be_csr
       mcycle_li        = mcycle_lo;
       minstret_li      = minstret_lo;
       mcountinhibit_li = mcountinhibit_lo;
+
+      pmpcfg_li   = pmpcfg_lo;
+      pmpaddr_li  = pmpaddr_lo;
 
       dcsr_li     = dcsr_lo;
       dpc_li      = dpc_lo;
@@ -518,6 +545,10 @@ module bp_be_csr
         {1'b1, `CSR_ADDR_MCYCLE       }: mcycle_li = csr_data_li;
         {1'b1, `CSR_ADDR_MINSTRET     }: minstret_li = csr_data_li;
         {1'b1, `CSR_ADDR_MCOUNTINHIBIT}: mcountinhibit_li = csr_data_li;
+        // illegal accesses are checked in decode, so we don't need to recheck here
+        {1'b1, `CSR_ADDR_PMPCFG0      }: pmpcfg_li[0+:8] = csr_data_li;
+        {1'b1, `CSR_ADDR_PMPCFG2      }: pmpcfg_li[8+:8] = csr_data_li;
+        {1'b1, `CSR_ADDR_PMPADDR      }: pmpaddr_li[pmpaddr_sel_li] = csr_data_li;
         {1'b1, `CSR_ADDR_DCSR         }: dcsr_li = csr_data_li;
         {1'b1, `CSR_ADDR_DPC          }: dpc_li = csr_data_li;
         {1'b1, `CSR_ADDR_DSCRATCH0    }: dscratch0_li = csr_data_li;
@@ -732,8 +763,8 @@ module bp_be_csr
   assign trans_info_cast_o.base_ppn       = satp_lo.ppn;
   assign trans_info_cast_o.translation_en = translation_en_r
     | ((~is_debug_mode | dcsr_lo.mprven) & mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
-  assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;
-  assign trans_info_cast_o.mstatus_mxr = mstatus_lo.mxr;
+  assign trans_info_cast_o.mstatus_sum    = mstatus_lo.sum;
+  assign trans_info_cast_o.mstatus_mxr    = mstatus_lo.mxr;
 
   assign decode_info_cast_o.m_mode     = is_m_mode;
   assign decode_info_cast_o.s_mode     = is_s_mode;

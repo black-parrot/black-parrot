@@ -300,6 +300,7 @@ module bp_uce
   wire flush_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
   wire binval_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_binval};
   wire bclean_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_bclean};
+
   wire nonblocking_v_li = cache_req_v_i & (uc_store_v_li | wt_store_v_li) & ~uc_evict_v_li;
 
   wire store_resp_v_li  = fsm_rev_v_li & fsm_rev_header_li.msg_type inside {e_bedrock_mem_wr};

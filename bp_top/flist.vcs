@@ -59,6 +59,7 @@ $BP_DIR/external/basejump_stl/bsg_dataflow/bsg_fifo_1r1w_large.sv
 $BP_DIR/external/basejump_stl/bsg_dataflow/bsg_fifo_1r1w_pseudo_large.sv
 $BP_DIR/external/basejump_stl/bsg_dataflow/bsg_fifo_1r1w_small.sv
 $BP_DIR/external/basejump_stl/bsg_dataflow/bsg_fifo_1r1w_small_unhardened.sv
+$BP_DIR/external/basejump_stl/bsg_dataflow/bsg_fifo_1r1w_small_hardened.sv
 $BP_DIR/external/basejump_stl/bsg_dataflow/bsg_fifo_1rw_large.sv
 $BP_DIR/external/basejump_stl/bsg_dataflow/bsg_fifo_tracker.sv
 $BP_DIR/external/basejump_stl/bsg_dataflow/bsg_flow_counter.sv
