@@ -30,10 +30,13 @@ module bp_sacc_scratchpad
   `declare_bp_bedrock_if(paddr_width_p, lce_id_width_p, cce_id_width_p, did_width_p, lce_assoc_p);
   `declare_bp_memory_map(paddr_width_p, daddr_width_p);
 
+  if (acache_fill_width_p > dword_width_gp)
+    $error("bp_sacc_scratchpad supports request widths <= 64b only");
+
   logic r_v_li, w_v_li;
   logic [paddr_width_p-1:0] addr_lo;
   logic [dword_width_gp-1:0] data_li, data_lo;
-  bp_me_bedrock_register
+  bp_me_bedrock_register_amo
    #(.bp_params_p(bp_params_p)
      ,.els_p(1)
      ,.reg_addr_width_p(paddr_width_p)
