@@ -68,6 +68,33 @@ module bp_nonsynth_if_verif
       
       $display("MEM FWD Header Flits:    %0d", ($bits(bp_bedrock_mem_fwd_header_s) + mem_noc_flit_width_p - 1) / mem_noc_flit_width_p);
       $display("MEM REV Header Flits:    %0d", ($bits(bp_bedrock_mem_rev_header_s) + mem_noc_flit_width_p - 1) / mem_noc_flit_width_p);
+
+      if (l2_features_p[e_cfg_enabled])
+        begin
+          $display("L2 Cache (per core): %0d sets, %0d-way, %0d B/line, %0dx%0dx%0d banks, data width %0d B",
+            l2_sets_p
+            , l2_assoc_p
+            , l2_block_width_p / 8
+            , num_cce_p
+            , l2_slices_p
+            , l2_banks_p
+            , l2_data_width_p / 8
+            );
+          $display("L2 Cache Total Size: %0d kB",
+            (l2_sets_p * l2_assoc_p * l2_block_width_p * l2_slices_p * l2_banks_p * num_cce_p) / 8192
+            );
+        end
+      else
+        $display("L2 Cache: disabled");
+
+      begin
+        int instr_width_bytes = instr_width_gp / 8;
+        int icache_cap_bytes = (icache_sets_p * icache_assoc_p * icache_block_width_p) / 8;
+        int total_instr_slots = icache_cap_bytes / instr_width_bytes;
+
+        $display("I-Cache Capacity:      %0d kB", icache_cap_bytes/1024);
+        $display("Instruction Slots:     %0d", total_instr_slots);
+      end
       $display("#############################################");
       if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32})) begin
         $error("Error: unsupported number of CCE's");
@@ -190,4 +217,3 @@ module bp_nonsynth_if_verif
     $error("BP Fatal: mem_noc_cid_width_p (%0d) cannot concentrate l2_dmas_p (%0d).", mem_noc_cid_width_p, l2_dmas_p);
 
 endmodule
-
