@@ -937,7 +937,7 @@
 
   `define decompress_pmpcfg_s(data_comp_mp) \
     '{l      : data_comp_mp.l                         \
-      ,a     : {data_comp_mp.napot, data_comp_mp.tor} \
+      ,a     : {data_comp_mp.napot, data_comp_mp.napot | data_comp_mp.tor} \
       ,x     : data_comp_mp.x                         \
       ,w     : data_comp_mp.w                         \
       ,r     : data_comp_mp.r                         \
