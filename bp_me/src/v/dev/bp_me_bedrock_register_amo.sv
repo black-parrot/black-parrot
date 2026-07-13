@@ -126,50 +126,47 @@ module bp_me_bedrock_register_amo
       assign addr_match[i] = (reg_addr inside {base_addr_p[i]});
     end
 
-  // Minimal AMO tracking FSM: capture the AMO request, then issue a single
+  // Minimal AMO tracking FSM: issue a single
   // write pulse after read data becomes available.
-  logic amo_pending_r, amo_write_done_r;
-  logic [els_p-1:0] amo_match_r;
-  logic [reg_addr_width_p-1:0] amo_addr_r;
-  logic [reg_size_width_p-1:0] amo_size_r;
-  logic [reg_data_width_p-1:0] amo_operand_r;
-  bp_bedrock_wr_subop_e amo_subop_r;
+  logic amo_write_done_r;
+
+  wire amo_pending = v_r & req_is_amo;
 
   logic lr_v_r;
   logic [reg_addr_width_p-1:0] lr_addr_r;
-  wire sc_success = lr_v_r & (lr_addr_r == amo_addr_r);
+  wire sc_success = lr_v_r & (lr_addr_r == reg_addr);
   wire [reg_data_width_p-1:0] sc_resp_data = {{(reg_data_width_p-1){1'b0}}, ~sc_success};
 
   logic [reg_data_width_p-1:0] atomic_alu_result;
   always_comb
     begin
-      unique case (amo_subop_r)
-        e_bedrock_amoswap: atomic_alu_result = amo_operand_r;
-        e_bedrock_amoand : atomic_alu_result = amo_operand_r & rdata_lo;
-        e_bedrock_amoor  : atomic_alu_result = amo_operand_r | rdata_lo;
-        e_bedrock_amoxor : atomic_alu_result = amo_operand_r ^ rdata_lo;
-        e_bedrock_amoadd : atomic_alu_result = amo_operand_r + rdata_lo;
+      unique case (mem_fwd_header_li.subop)
+        e_bedrock_amoswap: atomic_alu_result = reg_data;
+        e_bedrock_amoand : atomic_alu_result = reg_data & rdata_lo;
+        e_bedrock_amoor  : atomic_alu_result = reg_data | rdata_lo;
+        e_bedrock_amoxor : atomic_alu_result = reg_data ^ rdata_lo;
+        e_bedrock_amoadd : atomic_alu_result = reg_data + rdata_lo;
         e_bedrock_amomin : atomic_alu_result =
-          ($signed(amo_operand_r) < $signed(rdata_lo)) ? amo_operand_r : rdata_lo;
+          ($signed(reg_data) < $signed(rdata_lo)) ? reg_data : rdata_lo;
         e_bedrock_amomax : atomic_alu_result =
-          ($signed(amo_operand_r) > $signed(rdata_lo)) ? amo_operand_r : rdata_lo;
-        e_bedrock_amominu: atomic_alu_result = (amo_operand_r < rdata_lo) ? amo_operand_r : rdata_lo;
-        e_bedrock_amomaxu: atomic_alu_result = (amo_operand_r > rdata_lo) ? amo_operand_r : rdata_lo;
+          ($signed(reg_data) > $signed(rdata_lo)) ? reg_data : rdata_lo;
+        e_bedrock_amominu: atomic_alu_result = (reg_data < rdata_lo) ? reg_data : rdata_lo;
+        e_bedrock_amomaxu: atomic_alu_result = (reg_data > rdata_lo) ? reg_data : rdata_lo;
         default          : atomic_alu_result = rdata_lo;
       endcase
     end
 
-  wire amo_do_write = amo_pending_r & ~amo_write_done_r
-                      & (amo_subop_r != e_bedrock_amolr)
-                      & ((amo_subop_r != e_bedrock_amosc) | sc_success);
+  wire amo_do_write = amo_pending & ~amo_write_done_r
+                      & (mem_fwd_header_li.subop != e_bedrock_amolr)
+                      & ((mem_fwd_header_li.subop != e_bedrock_amosc) | sc_success);
 
   wire [reg_data_width_p-1:0] amo_wdata =
-    (amo_subop_r == e_bedrock_amosc) ? amo_operand_r : atomic_alu_result;
+    (mem_fwd_header_li.subop == e_bedrock_amosc) ? reg_data : atomic_alu_result;
 
   assign r_v_o = {els_p{reg_read}} & addr_match;
-  assign w_v_o = ({els_p{reg_write}} & addr_match) | ({els_p{amo_do_write}} & amo_match_r);
-  assign addr_o = amo_do_write ? amo_addr_r : reg_addr;
-  assign size_o = amo_do_write ? amo_size_r : reg_size;
+  assign w_v_o = ({els_p{reg_write}} & addr_match) | ({els_p{amo_do_write}} & addr_match);
+  assign addr_o = reg_addr;
+  assign size_o = reg_size;
   assign data_o = amo_do_write ? amo_wdata : reg_data;
 
   assign mem_rev_header_cast_o = mem_fwd_header_li;
@@ -180,7 +177,7 @@ module bp_me_bedrock_register_amo
   always_comb
     begin
       resp_data_lo = rdata_lo;
-      if (amo_pending_r & (amo_subop_r == e_bedrock_amosc))
+      if (amo_pending & (mem_fwd_header_li.subop == e_bedrock_amosc))
         resp_data_lo = sc_resp_data;
     end
 
@@ -188,43 +185,25 @@ module bp_me_bedrock_register_amo
     begin
       if (reset_i)
         begin
-          amo_pending_r <= 1'b0;
           amo_write_done_r <= 1'b0;
-          amo_match_r <= '0;
-          amo_addr_r <= '0;
-          amo_size_r <= '0;
-          amo_operand_r <= '0;
-          amo_subop_r <= e_bedrock_store;
           lr_v_r <= 1'b0;
           lr_addr_r <= '0;
         end
       else
         begin
-          if (v_n & req_is_amo)
-            begin
-              amo_pending_r <= 1'b1;
-              amo_write_done_r <= 1'b0;
-              amo_match_r <= addr_match;
-              amo_addr_r <= reg_addr;
-              amo_size_r <= reg_size;
-              amo_operand_r <= reg_data;
-              amo_subop_r <= mem_fwd_header_li.subop;
-            end
-
           if (amo_do_write)
             amo_write_done_r <= 1'b1;
 
           if (mem_fwd_yumi_li)
             begin
-              amo_pending_r <= 1'b0;
               amo_write_done_r <= 1'b0;
 
               if (req_is_amo)
                 begin
-                  if (amo_subop_r == e_bedrock_amolr)
+                  if (mem_fwd_header_li.subop == e_bedrock_amolr)
                     begin
                       lr_v_r <= 1'b1;
-                      lr_addr_r <= amo_addr_r;
+                      lr_addr_r <= reg_addr;
                     end
                   else
                     lr_v_r <= 1'b0;
