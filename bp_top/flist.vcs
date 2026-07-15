@@ -330,4 +330,5 @@ $BP_DIR/bp_top/src/v/bp_processor.sv
 $BP_DIR/bp_common/src/v/bsg_async_noc_link.sv
 $BP_DIR/bp_common/src/v/bsg_dff_sync_read.sv
 $BP_DIR/bp_common/src/v/bsg_fifo_1r1w_edge.sv
+$BP_DIR/bp_common/src/v/bsg_fifo_1r1w_rolly.sv
 

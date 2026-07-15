@@ -189,9 +189,11 @@ module testbench
      ,.reset_i(dut_reset)
      ,.en_i(1'b1)
 
-     // Receive channel (not used in Phase 2)
-     ,.v_i(1'b0)
-     ,.data_i('0)
+     // Receive channel — feed D$ load responses for eReceive verification.
+     // v_i qualifies with ret_o to filter out store completions (stores
+     // assert v_o but not ret_o). data_i is zero-extended to payload width.
+     ,.v_i(dcache_v_lo & dcache_ret_lo)
+     ,.data_i(trace_replay_data_width_lp'(dcache_data_lo))
      ,.ready_o()
 
      ,.v_o(tr_v_lo)
@@ -226,10 +228,50 @@ module testbench
   // We register the Cycle 1 signals by one clock to align them.
   //////////////////////////////////////////////////////////////////////////////
 
-  // Cycle 0: Issue request when trace is valid and D$ not busy
-  assign dcache_pkt_li = trace_pkt.dcache_pkt;
-  assign dcache_v_li   = tr_v_lo & ~dcache_busy_lo;
-  assign tr_yumi_li    = dcache_v_li;
+  // Replay FIFO for cache misses
+  logic rolly_v_lo, rolly_yumi_li, rolly_ready_lo;
+  logic commit_v, rollback_v;
+  bp_be_dcache_trace_s rolly_data_lo;
+
+  bsg_fifo_1r1w_rolly
+   #(.width_p(trace_replay_data_width_lp)
+     ,.els_p(8)
+     )
+   replay_fifo
+    (.clk_i(dut_clk)
+     ,.reset_i(dut_reset)
+     ,.clr_v_i(1'b0)
+     ,.deq_v_i(commit_v)
+     ,.roll_v_i(rollback_v)
+     ,.data_i(tr_pkt_lo)
+     ,.v_i(tr_v_lo)
+     ,.ready_o(rolly_ready_lo)
+     ,.data_o(rolly_data_lo)
+     ,.v_o(rolly_v_lo)
+     ,.yumi_i(rolly_yumi_li)
+     );
+
+  assign tr_yumi_li = tr_v_lo & rolly_ready_lo;
+
+  // Backoff counter to prevent livelock during cache misses
+  logic [3:0] backoff_cnt;
+  always_ff @(posedge dut_clk) begin
+    if (dut_reset) begin
+      backoff_cnt <= '0;
+    end else if (miss_tv) begin
+      backoff_cnt <= 10; // Wait 10 cycles before replaying to allow fills
+    end else if (backoff_cnt > 0) begin
+      backoff_cnt <= backoff_cnt - 1;
+    end
+  end
+
+  // Cycle 0: Issue request from Replay FIFO when D$ not busy and not backing off
+  assign dcache_pkt_li = rolly_data_lo.dcache_pkt;
+  assign dcache_v_li   = rolly_v_lo & ~dcache_busy_lo & (backoff_cnt == 0);
+  assign rolly_yumi_li = dcache_v_li;
+
+  bp_be_dcache_pkt_s rolly_dcache_pkt;
+  assign rolly_dcache_pkt = dcache_pkt_li;
 
   // Cycle 1: Pipelined tag/data signals (delayed by 1 cycle)
   logic [trace_ptag_width_lp-1:0] trace_ptag_r;
@@ -245,10 +287,10 @@ module testbench
       vaddr_r         <= '0;
     end else begin
       if (dcache_v_li) begin
-        trace_ptag_r    <= trace_pkt.ptag;
+        trace_ptag_r    <= rolly_data_lo.ptag;
         ptag_v_r        <= 1'b1;
-        ptag_uncached_r <= trace_pkt.uncached;
-        vaddr_r         <= trace_dcache_pkt.vaddr;
+        ptag_uncached_r <= rolly_data_lo.uncached;
+        vaddr_r         <= rolly_dcache_pkt.vaddr;
       end else begin
         ptag_v_r        <= 1'b0;
       end
@@ -262,7 +304,27 @@ module testbench
   assign ptag_dram_li     = ~ptag_uncached_r;
   // Store data: use the physical address as a deterministic pattern
   assign st_data_li       = data_width_lp'({trace_ptag_r, vaddr_r[vaddr_width_p-1:page_offset_width_gp], vaddr_r[page_offset_width_gp-1:0]});
-  assign flush_li         = 1'b0;
+
+  // Pipeline tracking for rollback
+  logic v_tl_r, v_tv_r;
+
+  always_ff @(posedge dut_clk) begin
+    if (dut_reset) begin
+      v_tl_r <= 1'b0;
+      v_tv_r <= 1'b0;
+    end else begin
+      v_tl_r <= dcache_v_li;
+      v_tv_r <= v_tl_r & ~flush_li;
+    end
+  end
+
+  logic hit_tv, miss_tv;
+  assign hit_tv  = v_tv_r & dcache_v_lo;
+  assign miss_tv = v_tv_r & ~dcache_v_lo;
+
+  assign commit_v   = hit_tv;
+  assign rollback_v = miss_tv;
+  assign flush_li   = miss_tv;
 
   wrapper
    #(.bp_params_p(bp_params_p))
@@ -451,8 +513,10 @@ module testbench
   //////////////////////////////////////////////////////////////////////////////
   // Termination logic
   //
-  // Phase 2: Trace-replay driven completion.
+  // Trace-replay driven completion.
   // The simulation ends when bsg_trace_replay asserts done_o (eDone opcode).
+  // eReceive commands verify D$ load responses against expected values;
+  // on mismatch bsg_trace_replay prints FAIL and calls $finish.
   // A safety timeout terminates the sim if it runs too long.
   //////////////////////////////////////////////////////////////////////////////
 

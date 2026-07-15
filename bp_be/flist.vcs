@@ -179,4 +179,4 @@ $BP_DIR/bp_common/src/v/bsg_async_noc_link.sv
 $BP_DIR/bp_common/src/v/bsg_dff_sync_read.sv
 $BP_DIR/bp_common/src/v/bsg_parallel_in_serial_out_passthrough_dynamic.sv
 $BP_DIR/bp_common/src/v/bsg_serial_in_parallel_out_passthrough_dynamic.sv
-
+$BP_DIR/bp_common/src/v/bsg_fifo_1r1w_rolly.sv
