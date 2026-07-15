@@ -10,6 +10,12 @@
 # Full trace replay command format:
 #   { tr_op(4) | ptag(paddr_width_p - vaddr_width_p) | dcache_pkt | uncached(1) }
 #
+# bsg_trace_replay opcodes:
+#   0 = eNop       : wait one cycle
+#   1 = eSend      : send payload to DUT
+#   2 = eReceive   : receive data from DUT and compare against expected payload
+#   3 = eDone      : assert done_o; test complete
+#
 # Usage:
 #   python trace_gen.py <data_width> <vaddr_width> <paddr_width>
 
@@ -35,6 +41,11 @@ class TraceGen(object):
         self._dcache_pkt_width = (self._REG_ADDR_WIDTH
                                   + self._OPCODE_WIDTH
                                   + vaddr_width_p)
+        # bsg_trace_replay payload width — must match testbench localparam
+        # trace_replay_data_width_lp = ptag_width + dcache_pkt_width + 1(uncached)
+        self._trace_replay_data_width = (self._ptag_width_p
+                                         + self._dcache_pkt_width
+                                         + 1)
 
     def send_write(self, addr):
         trace  = "0001_"
@@ -48,11 +59,39 @@ class TraceGen(object):
     def send_read(self, addr):
         trace  = "0001_"
         trace += self.format_bin_str(addr >> self._vaddr_width_p, self._ptag_width_p) + "_"
-        trace += self.format_bin_str(0,            self._REG_ADDR_WIDTH) + "_"
+        trace += self.format_bin_str(1,            self._REG_ADDR_WIDTH) + "_"
         trace += self.format_bin_str(DCACHE_OP_LD, self._OPCODE_WIDTH)  + "_"
         trace += self.format_addr(addr)  + "_"
         trace += "0"   # uncached bit
         print(trace)
+
+    def send_recv(self, expected_data):
+        """Emit an eReceive (opcode 0010) command.
+
+        bsg_trace_replay will block until v_i is asserted by the testbench,
+        then compare data_i against the payload (expected_data) from the ROM.
+        On mismatch it prints FAIL and calls $finish.
+
+        The expected_data is zero-padded to trace_replay_data_width to match
+        the payload width — bsg_trace_replay uses a single payload_width_p
+        for both send and receive channels.
+        """
+        trace  = "0010_"
+        trace += self.format_bin_str(expected_data, self._trace_replay_data_width)
+        print(trace)
+
+    def compute_st_data(self, addr):
+        """Replicate the RTL store data pattern for a given address.
+
+        The testbench (testbench.sv) generates store data as:
+          st_data = data_width'({trace_ptag, vaddr})
+        With identity mapping (ptag = paddr bits above vaddr), this reduces to:
+          st_data = data_width'(paddr)
+        The result is then truncated to trace_replay_data_width on the
+        receive channel, so we apply the same mask here.
+        """
+        st_data = addr & ((1 << self._data_width_p) - 1)
+        return st_data & ((1 << self._trace_replay_data_width) - 1)
 
     def done(self):
         trace  = "0011_"
@@ -77,12 +116,15 @@ class TraceGen(object):
 def basic_dram(tg, n):
     # DRAM base address is 0x8000_0000. Accesses must be 8-byte aligned (doubleword).
     dram_base = 0x80000000
+    # Phase 1: Write known data pattern to N addresses
     for i in range(n):
         addr = dram_base + i * 8
         tg.send_write(addr)
+    # Phase 2: Read back each address and verify via eReceive
     for i in range(n):
         addr = dram_base + i * 8
         tg.send_read(addr)
+        tg.send_recv(tg.compute_st_data(addr))
     return
 
 
