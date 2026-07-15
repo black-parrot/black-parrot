@@ -29,7 +29,6 @@ class TraceGen(object):
         self._data_width_p  = data_width_p
         self._vaddr_width_p = vaddr_width_p
         self._paddr_width_p = paddr_width_p
-        self._mask_width_p  = data_width_p >> 3
         self._ptag_width_p  = paddr_width_p - vaddr_width_p
         # from bp_be_dcache_pkt_width macro:
         # reg_addr_width_gp + $bits(bp_be_dcache_fu_op_e) + vaddr_width_mp
@@ -37,16 +36,12 @@ class TraceGen(object):
                                   + self._OPCODE_WIDTH
                                   + vaddr_width_p)
 
-    def send_write(self, addr, data, mask=-1):
-        if mask == -1:
-            mask = self.max_mask()
+    def send_write(self, addr):
         trace  = "0001_"
         trace += self.format_bin_str(addr >> self._vaddr_width_p, self._ptag_width_p) + "_"
         trace += self.format_bin_str(0,            self._REG_ADDR_WIDTH) + "_"
         trace += self.format_bin_str(DCACHE_OP_SD, self._OPCODE_WIDTH)  + "_"
         trace += self.format_addr(addr)  + "_"
-        trace += self.format_data(data)  + "_"
-        trace += self.format_mask(mask)  + "_"
         trace += "0"   # uncached bit
         print(trace)
 
@@ -56,8 +51,6 @@ class TraceGen(object):
         trace += self.format_bin_str(0,            self._REG_ADDR_WIDTH) + "_"
         trace += self.format_bin_str(DCACHE_OP_LD, self._OPCODE_WIDTH)  + "_"
         trace += self.format_addr(addr)  + "_"
-        trace += self.format_data(0)     + "_"
-        trace += self.format_mask(0)     + "_"
         trace += "0"   # uncached bit
         print(trace)
 
@@ -67,19 +60,11 @@ class TraceGen(object):
         trace += self.format_bin_str(0, self._REG_ADDR_WIDTH) + "_"
         trace += self.format_bin_str(0, self._OPCODE_WIDTH)   + "_"
         trace += self.format_addr(0) + "_"
-        trace += self.format_data(0) + "_"
-        trace += self.format_mask(0) + "_"
         trace += "0"   # uncached bit
         print(trace)
 
     def max_addr(self):
         return (1 << self._vaddr_width_p) - 1
-
-    def max_data(self):
-        return (1 << self._data_width_p) - 1
-
-    def max_mask(self):
-        return (1 << self._mask_width_p) - 1
 
     def format_bin_str(self, value, width):
         return format(value, "0" + str(width) + "b")
@@ -88,39 +73,18 @@ class TraceGen(object):
         addr &= self.max_addr()
         return self.format_bin_str(addr, self._vaddr_width_p)
 
-    def format_data(self, data):
-        data &= self.max_data()
-        return self.format_bin_str(data, self._data_width_p)
 
-    def format_mask(self, mask):
-        mask &= self.max_mask()
-        return self.format_bin_str(mask, self._mask_width_p)
-
-
-def basic(tg, n):
-    for addr in range(n):
-        tg.send_write(addr, addr)
-    for addr in range(n):
-        tg.send_read(addr)
-    return
-
-def basic_random_data(tg, n):
-    from random import randint
-    for addr in range(n):
-        tg.send_write(addr, randint(0, tg.max_data()), tg.max_mask())
-    for addr in range(n):
-        tg.send_read(addr)
-    return
-
-def random_access(tg, n):
-    from random import randint
-    addrs = []
+def basic_dram(tg, n):
+    # DRAM base address is 0x8000_0000. Accesses must be 8-byte aligned (doubleword).
+    dram_base = 0x80000000
     for i in range(n):
-        addrs.append(randint(0, tg.max_addr()))
-    for addr in addrs:
-        tg.send_write(addr, randint(0, tg.max_data()), randint(0, tg.max_mask()))
-    for addr in addrs:
+        addr = dram_base + i * 8
+        tg.send_write(addr)
+    for i in range(n):
+        addr = dram_base + i * 8
         tg.send_read(addr)
+    return
+
 
 if __name__ == "__main__":
     import sys
@@ -128,6 +92,6 @@ if __name__ == "__main__":
     vaddr_width = int(sys.argv[2])
     paddr_width = int(sys.argv[3])
     tg = TraceGen(data_width, vaddr_width, paddr_width)
-    N = 10000
-    random_access(tg, N)
+    N = 4
+    basic_dram(tg, N)
     tg.done()
