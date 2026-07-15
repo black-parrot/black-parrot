@@ -1,0 +1,6 @@
+
+HDL_DEFINES += \
+	+define+BP_CFG_FLOWVAR=$(CFG)
+
+include $(BP_MK_DIR)/Makefile.params
+
