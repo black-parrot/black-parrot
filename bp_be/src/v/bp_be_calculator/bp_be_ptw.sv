@@ -93,7 +93,9 @@ module bp_be_ptw
   wire s_priv_req               = pte_is_leaf & (trans_info_cast_i.priv_mode == `PRIV_MODE_S) & (instr_r | ~trans_info_cast_i.mstatus_sum);
   wire u_priv_req               = pte_is_leaf & (trans_info_cast_i.priv_mode == `PRIV_MODE_U);
   wire priv_fault               = pte_is_leaf & ((dcache_pte.u & s_priv_req) | (~dcache_pte.u & u_priv_req));
-  wire misaligned_superpage     = pte_is_leaf & |level_r & |dcache_pte.ppn[page_idx_width_p*(level_r-1'b1)+:page_idx_width_p];
+  wire misaligned_superpage     = pte_is_leaf
+    & ((pte_is_megapage & |dcache_pte.ppn[0+:page_idx_width_p])
+       | (pte_is_gigapage & |dcache_pte.ppn[0+:2*page_idx_width_p]));
 
   wire ad_fault                 = pte_is_leaf & (~dcache_pte.a | (store_r & ~dcache_pte.d));
   wire common_faults            = pte_invalid | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
@@ -190,4 +192,3 @@ module bp_be_ptw
 endmodule
 
 `BSG_ABSTRACT_MODULE(bp_be_ptw)
-
