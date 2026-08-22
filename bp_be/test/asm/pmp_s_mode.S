@@ -30,6 +30,11 @@ trap:
     csrr t0, mcause
     li t1, 2
     bne t0, t1, fail
+    csrr t0, mstatus
+    srli t0, t0, 11
+    andi t0, t0, 3
+    li t1, 1
+    bne t0, t1, fail
 
 pass:
     li t0, 0x00102000
