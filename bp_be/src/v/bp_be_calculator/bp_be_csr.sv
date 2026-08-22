@@ -759,12 +759,12 @@ module bp_be_csr
   assign commit_pkt_cast_o.iscore_v          = retire_pkt_cast_i.iscore;
   assign commit_pkt_cast_o.fscore_v          = retire_pkt_cast_i.fscore;
 
-  assign trans_info_cast_o.priv_mode      = ((~is_debug_mode | dcsr_lo.mprven) & mstatus_lo.mprv)
-    ? mstatus_lo.mpp
-    : priv_mode_r;
+  wire mprv_en = (~is_debug_mode | dcsr_lo.mprven) & mstatus_lo.mprv;
+  assign trans_info_cast_o.priv_mode      = priv_mode_r;
+  assign trans_info_cast_o.dpriv_mode     = mprv_en ? mstatus_lo.mpp : priv_mode_r;
   assign trans_info_cast_o.base_ppn       = satp_lo.ppn;
   assign trans_info_cast_o.translation_en = translation_en_r
-    | ((~is_debug_mode | dcsr_lo.mprven) & mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
+    | (mprv_en & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
   assign trans_info_cast_o.mstatus_sum    = mstatus_lo.sum;
   assign trans_info_cast_o.mstatus_mxr    = mstatus_lo.mxr;
 

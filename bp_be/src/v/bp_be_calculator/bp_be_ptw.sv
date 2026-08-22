@@ -90,8 +90,12 @@ module bp_be_ptw
 
   wire pte_invalid              = ~dcache_pte.v | (~dcache_pte.r & dcache_pte.w);
   wire leaf_not_found           = pte_is_kilopage & ~pte_is_leaf;
-  wire s_priv_req               = pte_is_leaf & (trans_info_cast_i.priv_mode == `PRIV_MODE_S) & (instr_r | ~trans_info_cast_i.mstatus_sum);
-  wire u_priv_req               = pte_is_leaf & (trans_info_cast_i.priv_mode == `PRIV_MODE_U);
+  // MPRV applies to data accesses only, never to instruction fetch
+  wire [rv64_priv_width_gp-1:0] eff_priv_mode = instr_r
+    ? trans_info_cast_i.priv_mode
+    : trans_info_cast_i.dpriv_mode;
+  wire s_priv_req               = pte_is_leaf & (eff_priv_mode == `PRIV_MODE_S) & (instr_r | ~trans_info_cast_i.mstatus_sum);
+  wire u_priv_req               = pte_is_leaf & (eff_priv_mode == `PRIV_MODE_U);
   wire priv_fault               = pte_is_leaf & ((dcache_pte.u & s_priv_req) | (~dcache_pte.u & u_priv_req));
   wire misaligned_superpage     = pte_is_leaf & |level_r & |dcache_pte.ppn[page_idx_width_p*(level_r-1'b1)+:page_idx_width_p];
 
