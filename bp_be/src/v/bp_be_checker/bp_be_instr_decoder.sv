@@ -528,13 +528,11 @@ module bp_be_instr_decoder
                     ,`CSR_ADDR_FRM      : illegal_instr_o = !decode_info_cast_i.fpu_en;
                     `CSR_ADDR_CYCLE     : illegal_instr_o = !decode_info_cast_i.cycle_en;
                     `CSR_ADDR_INSTRET   : illegal_instr_o = !decode_info_cast_i.instret_en;
-                    `CSR_ADDR_SATP      : illegal_instr_o = decode_info_cast_i.u_mode
-                                                           | (decode_info_cast_i.s_mode & decode_info_cast_i.tvm);
-                    `CSR_ADDR_CYCLE     : illegal_instr_o = !decode_info_cast_i.cycle_en;
-                    `CSR_ADDR_INSTRET   : illegal_instr_o = !decode_info_cast_i.instret_en;
                     `CSR_ADDR_SATP      : illegal_instr_o = decode_info_cast_i.s_mode & decode_info_cast_i.tvm;
                     `CSR_ADDR_CYCLE     : illegal_instr_o = !decode_info_cast_i.cycle_en | csrw_o;
                     `CSR_ADDR_INSTRET   : illegal_instr_o = !decode_info_cast_i.instret_en | csrw_o;
+                    `CSR_ADDR_CYCLE     : illegal_instr_o = !decode_info_cast_i.cycle_en;
+                    `CSR_ADDR_INSTRET   : illegal_instr_o = !decode_info_cast_i.instret_en;
                     `CSR_ADDR_SATP      : illegal_instr_o = decode_info_cast_i.s_mode & decode_info_cast_i.tvm;
                     `CSR_ADDR_PMPCFG0
                     ,`CSR_ADDR_PMPCFG2
@@ -545,6 +543,12 @@ module bp_be_instr_decoder
                     {12'b??01_????_????}: illegal_instr_o = decode_info_cast_i.u_mode;
                     {12'b??10_????_????}: illegal_instr_o = decode_info_cast_i.s_mode | decode_info_cast_i.u_mode;
                     {12'b??11_????_????}: illegal_instr_o = decode_info_cast_i.s_mode | decode_info_cast_i.u_mode;
+                  endcase
+
+                  casez (instr[31-:12])
+                    `CSR_ADDR_CYCLE
+                    ,`CSR_ADDR_INSTRET  : illegal_instr_o |= csrw_o;
+                    default             : begin end
                   endcase
                 end
               default: illegal_instr_o = 1'b1;
