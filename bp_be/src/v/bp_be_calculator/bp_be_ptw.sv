@@ -89,7 +89,8 @@ module bp_be_ptw
   wire pte_is_gigapage          = (level_r == 2'd2);
 
   wire pte_invalid              = ~dcache_pte.v | (~dcache_pte.r & dcache_pte.w);
-  wire reserved_fault           = |dcache_pte.reserved;
+  wire reserved_fault           = |dcache_pte.reserved
+    | (~pte_is_leaf & (dcache_pte.a | dcache_pte.d | dcache_pte.u));
   wire leaf_not_found           = pte_is_kilopage & ~pte_is_leaf;
   wire s_priv_req               = pte_is_leaf & (trans_info_cast_i.priv_mode == `PRIV_MODE_S) & (instr_r | ~trans_info_cast_i.mstatus_sum);
   wire u_priv_req               = pte_is_leaf & (trans_info_cast_i.priv_mode == `PRIV_MODE_U);
