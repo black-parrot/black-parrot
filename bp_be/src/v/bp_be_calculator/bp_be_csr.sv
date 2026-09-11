@@ -529,7 +529,8 @@ module bp_be_csr
         {1'b1, `CSR_ADDR_STVAL        }: stval_li = csr_data_li;
         // SIP subset of MIP
         {1'b1, `CSR_ADDR_SIP          }: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
-        {1'b1, `CSR_ADDR_SATP         }: satp_li = csr_data_li;
+        {1'b1, `CSR_ADDR_SATP         }: satp_li = (csr_data_li[63:60] inside {4'd0, 4'd8})
+                                                ? csr_data_li : satp_lo;
         {1'b1, `CSR_ADDR_MSTATUS      }: mstatus_li = csr_data_li;
         {1'b1, `CSR_ADDR_MISA         }: begin end
         {1'b1, `CSR_ADDR_MEDELEG      }: medeleg_li = csr_data_li;
