@@ -522,23 +522,32 @@ module bp_be_instr_decoder
                   decode_cast_o.irf_w_v = (instr.rd_addr != '0);
                   csrw_o = decode_cast_o.csr_w_v;
 
-                  casez (instr[31-:12])
+                  // Check CSR-specific restrictions.
+                  unique casez (instr[31-:12])
                     `CSR_ADDR_FCSR
                     ,`CSR_ADDR_FFLAGS
                     ,`CSR_ADDR_FRM      : illegal_instr_o = !decode_info_cast_i.fpu_en;
                     `CSR_ADDR_CYCLE     : illegal_instr_o = !decode_info_cast_i.cycle_en;
                     `CSR_ADDR_INSTRET   : illegal_instr_o = !decode_info_cast_i.instret_en;
-                    `CSR_ADDR_SATP      : illegal_instr_o = decode_info_cast_i.u_mode
-                                                           | (decode_info_cast_i.s_mode & decode_info_cast_i.tvm);
+                    `CSR_ADDR_SATP      : illegal_instr_o = decode_info_cast_i.s_mode & decode_info_cast_i.tvm;
                     `CSR_ADDR_PMPCFG0
                     ,`CSR_ADDR_PMPCFG2
-                    ,`CSR_ADDR_PMPADDR  : illegal_instr_o = (num_pmp_p == 0)
-                                                           | decode_info_cast_i.s_mode
-                                                           | decode_info_cast_i.u_mode;
-                    {12'b11??_????_????}: illegal_instr_o = csrw_o;
-                    {12'b??01_????_????}: illegal_instr_o = decode_info_cast_i.u_mode;
-                    {12'b??10_????_????}: illegal_instr_o = decode_info_cast_i.s_mode | decode_info_cast_i.u_mode;
-                    {12'b??11_????_????}: illegal_instr_o = decode_info_cast_i.s_mode | decode_info_cast_i.u_mode;
+                    ,`CSR_ADDR_PMPADDR  : illegal_instr_o = num_pmp_p == 0;
+                    default: begin end
+                  endcase
+
+                  // Check readonly restrictions
+                  unique casez (instr[31-:12])
+                    {12'b11??_????_????}: illegal_instr_o |= csrw_o;
+                    default: begin end
+                  endcase
+
+                  // Check M/S/U permissions
+                  unique casez (instr[31-:12])
+                    {12'b??01_????_????}: illegal_instr_o |= decode_info_cast_i.u_mode;
+                    {12'b??10_????_????},
+                    {12'b??11_????_????}: illegal_instr_o |= decode_info_cast_i.s_mode | decode_info_cast_i.u_mode;
+                    default: begin end
                   endcase
                 end
               default: illegal_instr_o = 1'b1;
