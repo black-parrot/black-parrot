@@ -231,13 +231,13 @@ module bp_be_instr_decoder
               `RV64_ANDI              : decode_cast_o.fu_op = e_int_op_and;
               `RV64_CPOP, `RV64_CPOPW : decode_cast_o.fu_op = e_int_op_cpop;
               `RV64_CTZ, `RV64_CTZW   ,
-              `RV64_CLZ, `RV64_CLZW   : decode_cast_o.fu_op = e_int_op_clz;
+              `RV64_CLZ, `RV64_CLZW   : decode_cast_o.fu_op = e_int_op_clztz;
               `RV64_ORCB              : decode_cast_o.fu_op = e_int_op_orcb;
               `RV64_REV8              : decode_cast_o.fu_op = e_int_op_rev8;
-              `RV64_BCLRI            : decode_cast_o.fu_op = e_int_op_bclr;
-              `RV64_BEXTI            : decode_cast_o.fu_op = e_int_op_bext;
-              `RV64_BINVI            : decode_cast_o.fu_op = e_int_op_binv;
-              `RV64_BSETI            : decode_cast_o.fu_op = e_int_op_bset;
+              `RV64_BCLRI             : decode_cast_o.fu_op = e_int_op_bclr;
+              `RV64_BEXTI             : decode_cast_o.fu_op = e_int_op_bext;
+              `RV64_BINVI             : decode_cast_o.fu_op = e_int_op_binv;
+              `RV64_BSETI             : decode_cast_o.fu_op = e_int_op_bset;
               default : illegal_instr_o = 1'b1;
             endcase
 
