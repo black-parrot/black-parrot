@@ -720,7 +720,7 @@ module bp_be_csr
   // However, software read operations return as if it does. bit 9 is supervisor software interrupt
   always_comb
     unique casez (csr_addr_li)
-      `CSR_ADDR_SIP   : csr_r_data_o = csr_data_lo | ((s_external_irq_i & sip_rmask_li) << 9);
+      `CSR_ADDR_SIP   : csr_r_data_o = csr_data_lo | ((s_external_irq_i & mideleg_lo.sei) << 9);
       `CSR_ADDR_MIP   : csr_r_data_o = csr_data_lo | (s_external_irq_i << 9);
       `CSR_ADDR_FFLAGS
       ,`CSR_ADDR_FCSR : csr_r_data_o = csr_data_lo | fflags_acc_i;
