@@ -352,7 +352,8 @@
                                                                                            \
     logic [1:0] fs;                                                                        \
                                                                                            \
-    logic [1:0] mpp;                                                                       \
+    logic       mpp_m;                                                                     \
+    logic       mpp_s_not_u;                                                               \
     logic       spp;                                                                       \
                                                                                            \
     logic       mpie;                                                                      \
@@ -688,7 +689,8 @@
     logic       ebreaku;                                                                   \
     logic       stepie;                                                                    \
     logic [3:0] cause;                                                                     \
-    logic [1:0] prv;                                                                       \
+    logic       prv_s_not_u;                                                               \
+    logic       prv_m;                                                                     \
     logic       mprven;                                                                    \
     logic       step;                                                                      \
   }  bp_dcsr_s;                                                                            \
@@ -772,19 +774,20 @@
       }
 
   `define compress_mstatus_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    '{tsr  : data_cast_mp.tsr  \
-      ,tw  : data_cast_mp.tw   \
-      ,tvm : data_cast_mp.tvm  \
-      ,mxr : data_cast_mp.mxr  \
-      ,sum : data_cast_mp.sum  \
-      ,mprv: data_cast_mp.mprv \
-      ,fs  : data_cast_mp.fs   \
-      ,mpp : data_cast_mp.mpp  \
-      ,spp : data_cast_mp.spp  \
-      ,mpie: data_cast_mp.mpie \
-      ,spie: data_cast_mp.spie \
-      ,mie : data_cast_mp.mie  \
-      ,sie : data_cast_mp.sie  \
+    '{tsr          : data_cast_mp.tsr  \
+      ,tw          : data_cast_mp.tw   \
+      ,tvm         : data_cast_mp.tvm  \
+      ,mxr         : data_cast_mp.mxr  \
+      ,sum         : data_cast_mp.sum  \
+      ,mprv        : data_cast_mp.mprv \
+      ,fs          : data_cast_mp.fs   \
+      ,mpp_m       : data_cast_mp.mpp[1] \
+      ,mpp_s_not_u : data_cast_mp.mpp[0] \
+      ,spp         : data_cast_mp.spp  \
+      ,mpie        : data_cast_mp.mpie \
+      ,spie        : data_cast_mp.spie \
+      ,mie         : data_cast_mp.mie  \
+      ,sie         : data_cast_mp.sie  \
       }
 
   `define decompress_mstatus_s(data_comp_mp) \
@@ -798,7 +801,7 @@
       ,sum : data_comp_mp.sum  \
       ,mprv: data_comp_mp.mprv \
       ,fs  : data_comp_mp.fs   \
-      ,mpp : data_comp_mp.mpp  \
+      ,mpp : {data_comp_mp.mpp_m, (data_comp_mp.mpp_m|data_comp_mp.mpp_s_not_u)}  \
       ,spp : data_comp_mp.spp  \
       ,mpie: data_comp_mp.mpie \
       ,spie: data_comp_mp.spie \
@@ -997,14 +1000,15 @@
       }
 
   `define compress_dcsr_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    '{ebreakm : data_cast_mp.ebreakm \
-      ,ebreaks: data_cast_mp.ebreaks \
-      ,ebreaku: data_cast_mp.ebreaku \
-      ,stepie : data_cast_mp.stepie  \
-      ,cause  : data_cast_mp.cause   \
-      ,prv    : data_cast_mp.prv     \
-      ,step   : data_cast_mp.step    \
-      ,mprven : data_cast_mp.mprven  \
+    '{ebreakm     : data_cast_mp.ebreakm \
+      ,ebreaks    : data_cast_mp.ebreaks \
+      ,ebreaku    : data_cast_mp.ebreaku \
+      ,stepie     : data_cast_mp.stepie  \
+      ,cause      : data_cast_mp.cause   \
+      ,prv_m      : data_cast_mp.prv[1]  \
+      ,prv_s_not_u: data_cast_mp.prv[0]  \
+      ,step       : data_cast_mp.step    \
+      ,mprven     : data_cast_mp.mprven  \
       }
 
   `define decompress_dcsr_s(data_comp_mp) \
@@ -1019,7 +1023,7 @@
       ,mprven   : data_comp_mp.mprven   \
       ,nmip     : 1'b0                  \
       ,step     : data_comp_mp.step     \
-      ,prv      : data_comp_mp.prv      \
+      ,prv      : {data_comp_mp.prv_m, (data_comp_mp.prv_m|data_comp_mp.prv_s_not_u)} \
       ,default  : '0                    \
       }
 
