@@ -7,6 +7,11 @@ XRUN_BUILD_OPTS += -timescale 1ps/1ps
 XRUN_BUILD_OPTS += -elaborate -notimingchecks
 XRUN_BUILD_OPTS += -top testbench
 XRUN_BUILD_OPTS += -f flist.vcs
+XRUN_BUILD_OPTS += -nowarn UEXPSC
+XRUN_BUILD_OPTS += -nowarn NOTDEF
+XRUN_BUILD_OPTS += -nowarn SPDUSD
+XRUN_BUILD_OPTS += -nowarn SVBNOI
+XRUN_BUILD_OPTS += -nowarn DEFFIN
 XRUN_BUILD_OPTS += "-Wcxx,-std=c++17"
 
 ifeq ($(COVERAGE),1)

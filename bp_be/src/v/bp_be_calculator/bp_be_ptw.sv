@@ -92,13 +92,12 @@ module bp_be_ptw
   wire reserved_fault           = |dcache_pte.reserved
     | (~pte_is_leaf & (dcache_pte.a | dcache_pte.d | dcache_pte.u));
   wire leaf_not_found           = pte_is_kilopage & ~pte_is_leaf;
+
   // MPRV applies to data accesses only, never to instruction fetch
-  wire [rv64_priv_width_gp-1:0] eff_priv_mode = instr_r
-    ? trans_info_cast_i.priv_mode
-    : trans_info_cast_i.dpriv_mode;
-  wire s_priv_req               = pte_is_leaf & (eff_priv_mode == `PRIV_MODE_S) & (instr_r | ~trans_info_cast_i.mstatus_sum);
-  wire u_priv_req               = pte_is_leaf & (eff_priv_mode == `PRIV_MODE_U);
-  wire priv_fault               = pte_is_leaf & ((dcache_pte.u & s_priv_req) | (~dcache_pte.u & u_priv_req));
+  wire [rv64_priv_width_gp-1:0] priv_mode_eff = (~instr_r & trans_info_cast_i.mprv) ? trans_info_cast_i.mpp : trans_info_cast_i.priv_mode;
+  wire s_priv_req               = pte_is_leaf & (priv_mode_eff == `PRIV_MODE_S) & (instr_r | ~trans_info_cast_i.sum);
+  wire u_priv_req               = pte_is_leaf & (priv_mode_eff == `PRIV_MODE_U);
+  wire priv_fault               = pte_is_leaf & (dcache_pte.u ? s_priv_req : u_priv_req);
   wire misaligned_superpage     = pte_is_leaf
     & ((pte_is_megapage & |dcache_pte.ppn[0+:page_idx_width_p])
        | (pte_is_gigapage & |dcache_pte.ppn[0+:2*page_idx_width_p]));
@@ -107,7 +106,7 @@ module bp_be_ptw
   wire common_faults            = pte_invalid | reserved_fault | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
 
   wire instr_page_fault         = instr_r & (common_faults | (pte_is_leaf & ~dcache_pte.x));
-  wire load_page_fault          = load_r  & (common_faults | (pte_is_leaf & ~(dcache_pte.r | (dcache_pte.x & trans_info_cast_i.mstatus_mxr))));
+  wire load_page_fault          = load_r  & (common_faults | (pte_is_leaf & ~(dcache_pte.r | (dcache_pte.x & trans_info_cast_i.mxr))));
   wire store_page_fault         = store_r & (common_faults | (pte_is_leaf & ~dcache_pte.w));
   wire page_fault_v             = instr_page_fault | load_page_fault | store_page_fault;
   wire fill_v                   = pte_is_leaf & ~page_fault_v;

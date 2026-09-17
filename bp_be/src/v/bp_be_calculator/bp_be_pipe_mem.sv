@@ -163,6 +163,8 @@ module bp_be_pipe_mem
   logic dtlb_ptag_uncached_lo, dtlb_ptag_dram_lo;
   wire uncached_mode_li = cfg_bus_cast_i.dcache_mode == e_lce_mode_uncached;
   wire nonspec_mode_li = cfg_bus_cast_i.dcache_mode == e_lce_mode_nonspec;
+  wire [rv64_priv_width_gp-1:0] priv_mode_li = trans_info_cast_i.mprv ? trans_info_cast_i.mpp : trans_info_cast_i.priv_mode;
+  wire trans_en_li = (priv_mode_li < `PRIV_MODE_M) & trans_info_cast_i.satp_mode;
   bp_mmu
    #(.bp_params_p(bp_params_p)
      ,.tlb_els_4k_p(dtlb_els_4k_p)
@@ -177,10 +179,10 @@ module bp_be_pipe_mem
 
      ,.flush_i(flush_i)
      ,.fence_i(sfence_i)
-     ,.priv_mode_i(trans_info_cast_i.dpriv_mode)
-     ,.sum_i(trans_info_cast_i.mstatus_sum)
-     ,.mxr_i(trans_info_cast_i.mstatus_mxr)
-     ,.trans_en_i(trans_info_cast_i.dtranslation_en)
+     ,.priv_mode_i(priv_mode_li)
+     ,.trans_en_i(trans_en_li)
+     ,.sum_i(trans_info_cast_i.sum)
+     ,.mxr_i(trans_info_cast_i.mxr)
      ,.uncached_mode_i(uncached_mode_li)
      ,.nonspec_mode_i(nonspec_mode_li)
      ,.hio_mask_i(cfg_bus_cast_i.hio_mask)

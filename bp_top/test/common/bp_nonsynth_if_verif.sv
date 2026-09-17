@@ -88,9 +88,9 @@ module bp_nonsynth_if_verif
         $display("L2 Cache: disabled");
 
       begin
-        int instr_width_bytes = instr_width_gp / 8;
-        int icache_cap_bytes = (icache_sets_p * icache_assoc_p * icache_block_width_p) / 8;
-        int total_instr_slots = icache_cap_bytes / instr_width_bytes;
+        static int instr_width_bytes = instr_width_gp / 8;
+        static int icache_cap_bytes = (icache_sets_p * icache_assoc_p * icache_block_width_p) / 8;
+        static int total_instr_slots = icache_cap_bytes / instr_width_bytes;
 
         $display("I-Cache Capacity:      %0d kB", icache_cap_bytes/1024);
         $display("Instruction Slots:     %0d", total_instr_slots);
