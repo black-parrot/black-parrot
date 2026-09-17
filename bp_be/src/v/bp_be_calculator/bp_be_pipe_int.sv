@@ -70,11 +70,11 @@ module bp_be_pipe_int
   wire [dword_width_gp-1:0] pc_data = `BSG_SIGN_EXTEND(pc, dword_width_gp);
 
   logic [dword_width_gp-1:0] src1;
-  wire [int_rec_width_gp-1:0] rs1_rev = {<<{rs1}};
+  wire [dword_width_gp-1:0] rs1_rev = {<<{rs1[0+:dword_width_gp]}};
   always_comb
     case (decode.src1_sel)
       e_src1_is_rs1     : src1 = decode.irs1_r_v ? rs1 : pc_data;
-      e_src1_is_rs1_rev : src1 = rs1_rev >> 1'b1;
+      e_src1_is_rs1_rev : src1 = opw_v ? {32'b0, rs1_rev[word_width_gp+:word_width_gp]} : rs1_rev;
       e_src1_is_rs1_lsh : src1 = rs1 <<  shamt;
       e_src1_is_rs1_lshn: src1 = rs1 << shamtn;
       e_src1_is_zero    : src1 = '0;
@@ -126,17 +126,22 @@ module bp_be_pipe_int
    popc
     (.i(rs1[0+:dword_width_gp]), .o(popcount));
 
-  logic [`BSG_WIDTH(word_width_gp)-1:0] clzh, clzl;
-  wire [`BSG_WIDTH(dword_width_gp)-1:0] clz = !clzh[5] ? clzh : (!opw_v << 5) | clzl;
+  logic [`BSG_SAFE_CLOG2(word_width_gp)-1:0] clzh;
+  logic hzero;
   bsg_counting_leading_zeros
    #(.width_p(word_width_gp))
    bclzh
-    (.a_i(rs1[word_width_gp+:word_width_gp]), .num_zero_o(clzh));
+    (.a_i(src1[word_width_gp+:word_width_gp]), .num_zero_o({hzero, clzh}));
 
+  logic [`BSG_SAFE_CLOG2(word_width_gp)-1:0] clzl;
+  logic lzero;
   bsg_counting_leading_zeros
    #(.width_p(word_width_gp))
    bclzl
-    (.a_i(rs1[0+:word_width_gp]), .num_zero_o(clzl));
+    (.a_i(src1[0+:word_width_gp]), .num_zero_o({lzero, clzl}));
+
+  wire [`BSG_WIDTH(dword_width_gp)-1:0] clztz =
+      {(~opw_v & hzero & lzero), (~opw_v & hzero & ~lzero) | (opw_v & lzero), hzero ? clzl : clzh};
 
   logic [num_bytes_lp-1:0][7:0] orcb;
   for (genvar i = 0; i < num_bytes_lp; i++)
@@ -165,7 +170,7 @@ module bp_be_pipe_int
 
       // Bitmanip
       e_int_op_cpop      : alu_result = popcount;
-      e_int_op_clz       : alu_result = clz;
+      e_int_op_clztz     : alu_result = clztz;
       e_int_op_max, e_int_op_maxu, e_int_op_min, e_int_op_minu
                          : alu_result = comp_result ? rs1 : rs2;
       e_int_op_orcb      : alu_result = orcb;
