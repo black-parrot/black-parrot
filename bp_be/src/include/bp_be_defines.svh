@@ -208,7 +208,7 @@
       logic [rv64_priv_width_gp-1:0]                  priv_mode;                                   \
       logic [rv64_priv_width_gp-1:0]                  dpriv_mode;                                  \
       logic [paddr_width_mp-page_offset_width_gp-1:0] base_ppn;                                    \
-      logic                                           translation_en;                              \
+      logic                                           dtranslation_en;                             \
       logic                                           mstatus_sum;                                 \
       logic                                           mstatus_mxr;                                 \
     }  bp_be_trans_info_s;                                                                         \
