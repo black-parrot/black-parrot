@@ -67,7 +67,7 @@ module bp_be_csr
 
   logic [rv64_priv_width_gp-1:0] priv_mode_n, priv_mode_r;
   logic debug_mode_n, debug_mode_r;
-  logic translation_en_n, translation_en_r;
+  logic itranslation_en_n, itranslation_en_r;
 
   wire is_debug_mode = debug_mode_r;
   // Debug Mode grants pseudo M-mode permission
@@ -367,15 +367,15 @@ module bp_be_csr
 
   assign apc_n = (enter_debug | cfg_bus_cast_i.freeze) ? debug_halt_pc : core_npc;
 
-  assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
+  assign itranslation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
   bsg_dff_reset
    #(.width_p(3), .reset_val_p({1'b0, `PRIV_MODE_M}))
    priv_mode_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({translation_en_n, priv_mode_n})
-     ,.data_o({translation_en_r, priv_mode_r})
+     ,.data_i({itranslation_en_n, priv_mode_n})
+     ,.data_o({itranslation_en_r, priv_mode_r})
      );
 
   // sstatus mask
@@ -738,7 +738,8 @@ module bp_be_csr
   assign commit_pkt_cast_o.instr             = retire_pkt_cast_i.instr;
   assign commit_pkt_cast_o.pte_leaf          = retire_pkt_cast_i.data;
   assign commit_pkt_cast_o.priv_n            = priv_mode_n;
-  assign commit_pkt_cast_o.translation_en_n  = translation_en_n;
+  // The FE shadows instruction translation state; MPRV only affects data accesses.
+  assign commit_pkt_cast_o.translation_en_n  = itranslation_en_n;
   assign commit_pkt_cast_o.exception         = exception_v_lo;
   // Debug mode acts as a pseudo-interrupt
   assign commit_pkt_cast_o._interrupt        = interrupt_v_lo | enter_debug;
@@ -763,8 +764,9 @@ module bp_be_csr
   assign trans_info_cast_o.priv_mode      = priv_mode_r;
   assign trans_info_cast_o.dpriv_mode     = mprv_en ? mstatus_lo.mpp : priv_mode_r;
   assign trans_info_cast_o.base_ppn       = satp_lo.ppn;
-  assign trans_info_cast_o.translation_en = translation_en_r
-    | (mprv_en & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
+  assign trans_info_cast_o.dtranslation_en = mprv_en
+    ? ((mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8))
+    : itranslation_en_r;
   assign trans_info_cast_o.mstatus_sum    = mstatus_lo.sum;
   assign trans_info_cast_o.mstatus_mxr    = mstatus_lo.mxr;
 
