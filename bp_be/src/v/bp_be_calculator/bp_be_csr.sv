@@ -64,6 +64,7 @@ module bp_be_csr
   rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
   rv64_mie_s sie_rwmask_li;
   rv64_mip_s sip_wmask_li, sip_rmask_li, mip_wmask_li;
+  rv64_satp_s satp_wmask_li;
 
   logic [rv64_priv_width_gp-1:0] priv_mode_n, priv_mode_r;
   logic debug_mode_n, debug_mode_r;
@@ -292,7 +293,6 @@ module bp_be_csr
 
   wire                               csr_w_v_li = retire_pkt_cast_i.special.csrw;
   wire [rv64_reg_data_width_gp-1:0] csr_data_li = retire_pkt_cast_i.data;
-  wire rv64_satp_s satp_data_cast_li = rv64_satp_s'(csr_data_li);
   wire [rv64_csr_addr_width_gp-1:0] csr_addr_li = retire_pkt_cast_i.instr.t.itype.imm12;
   wire [rv64_funct3_width_gp-1:0]   csr_func_li = retire_pkt_cast_i.instr.t.itype.funct3;
 
@@ -405,6 +405,11 @@ module bp_be_csr
                               ,msip: 1'b0, ssip: mideleg_lo.ssi
                               ,default: '0
                               };
+
+  // Special case: legalize SATP. RISC-V defines that writing to an
+  //   unsupported mode nullifies the entire write
+  wire rv64_satp_s satp_wdata_li = rv64_satp_s'(csr_data_li);
+  assign satp_wmask_li = satp_wdata_li.mode inside {4'd0, 4'd8} ? '1 : '0;
 
   // CSR read
   always_comb
@@ -530,8 +535,7 @@ module bp_be_csr
         {1'b1, `CSR_ADDR_STVAL        }: stval_li = csr_data_li;
         // SIP subset of MIP
         {1'b1, `CSR_ADDR_SIP          }: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
-        {1'b1, `CSR_ADDR_SATP         }: satp_li = (satp_data_cast_li.mode inside {4'd0, 4'd8})
-                                                ? satp_data_cast_li : satp_lo;
+        {1'b1, `CSR_ADDR_SATP         }: satp_li = (satp_lo & ~satp_wmask_li) | (csr_data_li & satp_wmask_li);
         {1'b1, `CSR_ADDR_MSTATUS      }: mstatus_li = csr_data_li;
         {1'b1, `CSR_ADDR_MISA         }: begin end
         {1'b1, `CSR_ADDR_MEDELEG      }: medeleg_li = csr_data_li;
