@@ -404,6 +404,17 @@ module bp_be_csr
                               ,msip: 1'b0, ssip: mideleg_lo.ssi
                               ,default: '0
                               };
+  // 0, 1, 3, 12 -> instruction address
+  // 2 -> instruction data
+  // 4, 5, 6, 7, 13, 15 -> data address
+  // 8, 9, 11 -> zero
+  wire [dword_width_gp-1:0] tval_li = (exception_ecode_li inside {2})
+    ? retire_pkt_cast_i.instr
+    : (exception_ecode_li inside {0, 1, 3, 12})
+      ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
+      : (exception_ecode_li inside {4, 5, 6, 7, 13, 15})
+        ? `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp)
+        : '0
 
   // CSR read
   always_comb
@@ -605,11 +616,7 @@ module bp_be_csr
               mstatus_li.sie       = 1'b0;
            
               sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
-              stval_li             = (exception_ecode_li == 2)
-                                     ? retire_pkt_cast_i.instr
-                                     : (exception_ecode_li inside {0, 1})
-                                       ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
-                                       : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
+              stval_li             = tval_li;
 
               scause_li._interrupt = 1'b0;
               scause_li.ecode      = exception_ecode_li;
@@ -625,11 +632,7 @@ module bp_be_csr
               mstatus_li.mie       = 1'b0;
 
               mepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
-              mtval_li             = (exception_ecode_li == 2)
-                                     ? retire_pkt_cast_i.instr
-                                     : (exception_ecode_li inside {0, 1})
-                                       ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
-                                       : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
+              mtval_li             = tval_li;
 
               mcause_li._interrupt = 1'b0;
               mcause_li.ecode      = exception_ecode_li;
