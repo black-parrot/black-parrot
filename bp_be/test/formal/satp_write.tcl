@@ -27,7 +27,7 @@ foreach source [list \
     external/basejump_stl/bsg_misc/bsg_priority_encode_one_hot_out.sv \
     external/basejump_stl/bsg_misc/bsg_priority_encode.sv \
     bp_be/src/v/bp_be_calculator/bp_be_csr.sv \
-    bp_be/test/common/bp_be_nonsynth_satp_checker.sv] {
+    bp_be/test/formal/bp_be_nonsynth_satp_checker.sv] {
     lappend analyze_args $bp_dir/$source
 }
 analyze {*}$analyze_args
