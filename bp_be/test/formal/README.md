@@ -16,3 +16,6 @@ jg "$BP_DIR/bp_be/test/formal/satp_write.tcl" -batch -proj jgproject
 ```
 
 Expected result: five assertions proven and four explicit covers reached. The default configuration was verified with JasperGold 2025.06; its summary includes five additional covered assertion preconditions. The checker also passes Verilator lint and VCS compilation. This checks CSR behavior at the RTL boundary. Full-core software execution is outside this test's scope.
+
+NOTE: This flow was graciously contributed and 100% unsupported as maintainers do not have access to JasperGold. If you would like to donate JasperGold access, please contact us!
+
