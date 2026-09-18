@@ -298,7 +298,7 @@ module bp_be_csr
 
   wire csr_fany_li = csr_addr_li inside {`CSR_ADDR_FCSR, `CSR_ADDR_FFLAGS, `CSR_ADDR_FRM};
   wire instr_fany_li = retire_pkt_cast_i.instr.t.rtype.opcode inside
-    {`RV64_FLOAD_OP, `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FP_OP};
+  {`RV64_FLOAD_OP, `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMADD_OP, `RV64_FNMSUB_OP, `RV64_FP_OP};
 
   wire [2:0] pmpaddr_sel_li = csr_addr_li - `CSR_ADDR_PMPCFG0;
 
