@@ -64,6 +64,7 @@ module bp_be_csr
   rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
   rv64_mie_s sie_rwmask_li;
   rv64_mip_s sip_wmask_li, sip_rmask_li, mip_wmask_li;
+  rv64_satp_s satp_wmask_li;
 
   logic [rv64_priv_width_gp-1:0] priv_mode_n, priv_mode_r;
   logic debug_mode_n, debug_mode_r;
@@ -297,7 +298,7 @@ module bp_be_csr
 
   wire csr_fany_li = csr_addr_li inside {`CSR_ADDR_FCSR, `CSR_ADDR_FFLAGS, `CSR_ADDR_FRM};
   wire instr_fany_li = retire_pkt_cast_i.instr.t.rtype.opcode inside
-    {`RV64_FLOAD_OP, `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FP_OP};
+  {`RV64_FLOAD_OP, `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMADD_OP, `RV64_FNMSUB_OP, `RV64_FP_OP};
 
   wire [2:0] pmpaddr_sel_li = csr_addr_li - `CSR_ADDR_PMPCFG0;
 
@@ -404,6 +405,22 @@ module bp_be_csr
                               ,msip: 1'b0, ssip: mideleg_lo.ssi
                               ,default: '0
                               };
+  // 0, 1, 3, 12 -> instruction address
+  // 2 -> instruction data
+  // 4, 5, 6, 7, 13, 15 -> data address
+  // 8, 9, 11 -> zero
+  wire [dword_width_gp-1:0] tval_li = (exception_ecode_li inside {2})
+    ? retire_pkt_cast_i.instr
+    : (exception_ecode_li inside {0, 1, 3, 12})
+      ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
+      : (exception_ecode_li inside {4, 5, 6, 7, 13, 15})
+        ? `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp)
+        : '0
+
+  // Special case: legalize SATP. RISC-V defines that writing to an
+  //   unsupported mode nullifies the entire write
+  wire rv64_satp_s satp_wdata_li = rv64_satp_s'(csr_data_li);
+  assign satp_wmask_li = satp_wdata_li.mode inside {4'd0, 4'd8} ? '1 : '0;
 
   // CSR read
   always_comb
@@ -529,7 +546,7 @@ module bp_be_csr
         {1'b1, `CSR_ADDR_STVAL        }: stval_li = csr_data_li;
         // SIP subset of MIP
         {1'b1, `CSR_ADDR_SIP          }: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
-        {1'b1, `CSR_ADDR_SATP         }: satp_li = csr_data_li;
+        {1'b1, `CSR_ADDR_SATP         }: satp_li = (satp_lo & ~satp_wmask_li) | (csr_data_li & satp_wmask_li);
         {1'b1, `CSR_ADDR_MSTATUS      }: mstatus_li = csr_data_li;
         {1'b1, `CSR_ADDR_MISA         }: begin end
         {1'b1, `CSR_ADDR_MEDELEG      }: medeleg_li = csr_data_li;
@@ -605,11 +622,7 @@ module bp_be_csr
               mstatus_li.sie       = 1'b0;
            
               sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
-              stval_li             = (exception_ecode_li == 2)
-                                     ? retire_pkt_cast_i.instr
-                                     : (exception_ecode_li inside {0, 1})
-                                       ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
-                                       : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
+              stval_li             = tval_li;
 
               scause_li._interrupt = 1'b0;
               scause_li.ecode      = exception_ecode_li;
@@ -625,11 +638,7 @@ module bp_be_csr
               mstatus_li.mie       = 1'b0;
 
               mepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
-              mtval_li             = (exception_ecode_li == 2)
-                                     ? retire_pkt_cast_i.instr
-                                     : (exception_ecode_li inside {0, 1})
-                                       ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
-                                       : `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp);
+              mtval_li             = tval_li;
 
               mcause_li._interrupt = 1'b0;
               mcause_li.ecode      = exception_ecode_li;
@@ -720,7 +729,7 @@ module bp_be_csr
   // However, software read operations return as if it does. bit 9 is supervisor software interrupt
   always_comb
     unique casez (csr_addr_li)
-      `CSR_ADDR_SIP   : csr_r_data_o = csr_data_lo | ((s_external_irq_i & sip_rmask_li) << 9);
+      `CSR_ADDR_SIP   : csr_r_data_o = csr_data_lo | ((s_external_irq_i & mideleg_lo.sei) << 9);
       `CSR_ADDR_MIP   : csr_r_data_o = csr_data_lo | (s_external_irq_i << 9);
       `CSR_ADDR_FFLAGS
       ,`CSR_ADDR_FCSR : csr_r_data_o = csr_data_lo | fflags_acc_i;
@@ -777,10 +786,13 @@ module bp_be_csr
   assign decode_info_cast_o.ebreaks    = dcsr_lo.ebreaks;
   assign decode_info_cast_o.ebreaku    = dcsr_lo.ebreaku;
   assign decode_info_cast_o.fpu_en     = (mstatus_lo.fs != 2'b00);
-  assign decode_info_cast_o.cycle_en   = is_m_mode | (is_s_mode & mcounteren_lo.cy) | (is_u_mode & scounteren_lo.cy);
-  assign decode_info_cast_o.instret_en = is_m_mode | (is_s_mode & mcounteren_lo.ir) | (is_u_mode & mcounteren_lo.ir);
+  assign decode_info_cast_o.cycle_en   = is_m_mode
+    | (is_s_mode & mcounteren_lo.cy)
+    | (is_u_mode & mcounteren_lo.cy & scounteren_lo.cy);
+  assign decode_info_cast_o.instret_en = is_m_mode
+    | (is_s_mode & mcounteren_lo.ir)
+    | (is_u_mode & mcounteren_lo.ir & scounteren_lo.ir);
 
   assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
 
 endmodule
-

@@ -18,7 +18,7 @@
     ,e_int_op_ne        = 6'b001110
     ,e_int_op_and       = 6'b000111
     ,e_int_op_cpop      = 6'b010000
-    ,e_int_op_clz       = 6'b010001
+    ,e_int_op_clztz     = 6'b010001
     ,e_int_op_min       = 6'b010010
     ,e_int_op_minu      = 6'b010011
     ,e_int_op_max       = 6'b010100

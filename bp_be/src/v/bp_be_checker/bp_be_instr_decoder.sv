@@ -231,13 +231,13 @@ module bp_be_instr_decoder
               `RV64_ANDI              : decode_cast_o.fu_op = e_int_op_and;
               `RV64_CPOP, `RV64_CPOPW : decode_cast_o.fu_op = e_int_op_cpop;
               `RV64_CTZ, `RV64_CTZW   ,
-              `RV64_CLZ, `RV64_CLZW   : decode_cast_o.fu_op = e_int_op_clz;
+              `RV64_CLZ, `RV64_CLZW   : decode_cast_o.fu_op = e_int_op_clztz;
               `RV64_ORCB              : decode_cast_o.fu_op = e_int_op_orcb;
               `RV64_REV8              : decode_cast_o.fu_op = e_int_op_rev8;
-              `RV64_BCLRI            : decode_cast_o.fu_op = e_int_op_bclr;
-              `RV64_BEXTI            : decode_cast_o.fu_op = e_int_op_bext;
-              `RV64_BINVI            : decode_cast_o.fu_op = e_int_op_binv;
-              `RV64_BSETI            : decode_cast_o.fu_op = e_int_op_bset;
+              `RV64_BCLRI             : decode_cast_o.fu_op = e_int_op_bclr;
+              `RV64_BEXTI             : decode_cast_o.fu_op = e_int_op_bext;
+              `RV64_BINVI             : decode_cast_o.fu_op = e_int_op_binv;
+              `RV64_BSETI             : decode_cast_o.fu_op = e_int_op_bset;
               default : illegal_instr_o = 1'b1;
             endcase
 
@@ -522,7 +522,8 @@ module bp_be_instr_decoder
                   decode_cast_o.irf_w_v = (instr.rd_addr != '0);
                   csrw_o = decode_cast_o.csr_w_v;
 
-                  casez (instr[31-:12])
+                  // Check CSR-specific restrictions.
+                  unique casez (instr[31-:12])
                     `CSR_ADDR_FCSR
                     ,`CSR_ADDR_FFLAGS
                     ,`CSR_ADDR_FRM      : illegal_instr_o = !decode_info_cast_i.fpu_en;
@@ -532,10 +533,21 @@ module bp_be_instr_decoder
                     `CSR_ADDR_PMPCFG0
                     ,`CSR_ADDR_PMPCFG2
                     ,`CSR_ADDR_PMPADDR  : illegal_instr_o = num_pmp_p == 0;
-                    {12'b11??_????_????}: illegal_instr_o = csrw_o;
-                    {12'b??01_????_????}: illegal_instr_o = decode_info_cast_i.u_mode;
-                    {12'b??10_????_????}: illegal_instr_o = decode_info_cast_i.s_mode | decode_info_cast_i.u_mode;
-                    {12'b??11_????_????}: illegal_instr_o = decode_info_cast_i.s_mode | decode_info_cast_i.u_mode;
+                    default: begin end
+                  endcase
+
+                  // Check readonly restrictions
+                  unique casez (instr[31-:12])
+                    {12'b11??_????_????}: illegal_instr_o |= csrw_o;
+                    default: begin end
+                  endcase
+
+                  // Check M/S/U permissions
+                  unique casez (instr[31-:12])
+                    {12'b??01_????_????}: illegal_instr_o |= decode_info_cast_i.u_mode;
+                    {12'b??10_????_????},
+                    {12'b??11_????_????}: illegal_instr_o |= decode_info_cast_i.s_mode | decode_info_cast_i.u_mode;
+                    default: begin end
                   endcase
                 end
               default: illegal_instr_o = 1'b1;
@@ -822,4 +834,3 @@ module bp_be_instr_decoder
     end
 
 endmodule
-
