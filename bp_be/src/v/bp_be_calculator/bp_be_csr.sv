@@ -415,7 +415,7 @@ module bp_be_csr
       ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
       : (exception_ecode_li inside {4, 5, 6, 7, 13, 15})
         ? `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp)
-        : '0
+        : '0;
 
   // Special case: legalize SATP. RISC-V defines that writing to an
   //   unsupported mode nullifies the entire write
