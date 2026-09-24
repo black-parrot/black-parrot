@@ -82,10 +82,10 @@ module bp_be_csr
   `declare_csr(dscratch1);
 
   // We have no vendorid currently
-  wire [dword_width_gp-1:0] mvendorid_lo = 64'h0;
+  wire [dword_width_gp-1:0] mvendorid_lo = 64'h5e5;
   // https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md
   //   Lucky 13 (*v*)
-  wire [dword_width_gp-1:0] marchid_lo = 13;
+  wire [dword_width_gp-1:0] marchid_lo = 0;
   // 0: Tapeout 0, July 2019
   // 1: Tapeout 1, June 2021
   // 2: Tapeout 2, Sept 2022
@@ -96,7 +96,7 @@ module bp_be_csr
   `declare_csr(mstatus);
   // MISA is optionally read-write, but all fields are read-only in BlackParrot
   //   64 bit MXLEN, IMACFDSUB extensions
-  wire [dword_width_gp-1:0] misa_lo = {2'b10, 36'b0, 26'h14112f};
+  wire [dword_width_gp-1:0] misa_lo = {2'b10, 36'b0, 26'h34112d};
   `declare_csr(medeleg);
   `declare_csr(mideleg);
   `declare_csr(mie);
@@ -470,6 +470,36 @@ module bp_be_csr
         {`CSR_ADDR_DPC          }: csr_data_lo = dpc_lo;
         {`CSR_ADDR_DSCRATCH0    }: csr_data_lo = dscratch0_lo;
         {`CSR_ADDR_DSCRATCH1    }: csr_data_lo = dscratch1_lo;
+        // Legal to make read-only zero
+        {`CSR_ADDR_MHPMCOUNTER3  }
+        ,{`CSR_ADDR_MHPMCOUNTER4 }
+        ,{`CSR_ADDR_MHPMCOUNTER5 }
+        ,{`CSR_ADDR_MHPMCOUNTER6 }
+        ,{`CSR_ADDR_MHPMCOUNTER7 }
+        ,{`CSR_ADDR_MHPMCOUNTER8 }
+        ,{`CSR_ADDR_MHPMCOUNTER9 }
+        ,{`CSR_ADDR_MHPMCOUNTER10}
+        ,{`CSR_ADDR_MHPMCOUNTER11}
+        ,{`CSR_ADDR_MHPMCOUNTER12}
+        ,{`CSR_ADDR_MHPMCOUNTER13}
+        ,{`CSR_ADDR_MHPMCOUNTER14}
+        ,{`CSR_ADDR_MHPMCOUNTER15}
+        ,{`CSR_ADDR_MHPMCOUNTER16}
+        ,{`CSR_ADDR_MHPMCOUNTER17}
+        ,{`CSR_ADDR_MHPMCOUNTER18}
+        ,{`CSR_ADDR_MHPMCOUNTER19}
+        ,{`CSR_ADDR_MHPMCOUNTER20}
+        ,{`CSR_ADDR_MHPMCOUNTER21}
+        ,{`CSR_ADDR_MHPMCOUNTER22}
+        ,{`CSR_ADDR_MHPMCOUNTER23}
+        ,{`CSR_ADDR_MHPMCOUNTER24}
+        ,{`CSR_ADDR_MHPMCOUNTER25}
+        ,{`CSR_ADDR_MHPMCOUNTER26}
+        ,{`CSR_ADDR_MHPMCOUNTER27}
+        ,{`CSR_ADDR_MHPMCOUNTER28}
+        ,{`CSR_ADDR_MHPMCOUNTER29}
+        ,{`CSR_ADDR_MHPMCOUNTER30}
+        ,{`CSR_ADDR_MHPMCOUNTER31}: csr_data_lo = '0;
         default:
           begin
             csr_data_lo = '0;
@@ -620,7 +650,7 @@ module bp_be_csr
               mstatus_li.spp       = priv_mode_r;
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
-           
+
               sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               stval_li             = tval_li;
 

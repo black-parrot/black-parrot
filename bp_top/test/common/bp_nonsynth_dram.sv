@@ -92,7 +92,7 @@ module bp_nonsynth_dram
      ,.count_o(count_lo)
      );
 
-  localparam mem_size_p = 2**25;
+  localparam mem_size_p = 2**26;
   logic [7:0] mem [int];
   logic [(dma_data_width_p>>3)-1:0][7:0] mem_wdata, mem_rdata;
   logic [`BSG_SAFE_CLOG2(mem_size_p)-1:0] mem_raddr, mem_waddr;

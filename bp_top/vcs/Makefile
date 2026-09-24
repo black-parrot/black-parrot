@@ -13,9 +13,9 @@ COH_PROTO ?=
 
 # Flags
 ASSERT        ?= 0
-TRACE         ?= 0
+TRACE         ?= 1
 COVERAGE      ?= 0
-DROMAJO_COSIM ?= 0
+DROMAJO_COSIM ?= 1
 SPIKE_COSIM   ?= 0
 DISASSEMBLE   ?= 0
 COMMITLOG     ?= 0
