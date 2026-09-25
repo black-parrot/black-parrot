@@ -177,10 +177,10 @@ module bp_be_pipe_mem
 
      ,.flush_i(flush_i)
      ,.fence_i(sfence_i)
-     ,.priv_mode_i(trans_info_cast_i.priv_mode)
+     ,.priv_mode_i(trans_info_cast_i.dpriv_mode)
      ,.sum_i(trans_info_cast_i.mstatus_sum)
      ,.mxr_i(trans_info_cast_i.mstatus_mxr)
-     ,.trans_en_i(trans_info_cast_i.translation_en)
+     ,.trans_en_i(trans_info_cast_i.dtranslation_en)
      ,.uncached_mode_i(uncached_mode_li)
      ,.nonspec_mode_i(nonspec_mode_li)
      ,.hio_mask_i(cfg_bus_cast_i.hio_mask)

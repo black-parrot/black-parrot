@@ -206,8 +206,9 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic [rv64_priv_width_gp-1:0]                  priv_mode;                                   \
+      logic [rv64_priv_width_gp-1:0]                  dpriv_mode;                                  \
       logic [paddr_width_mp-page_offset_width_gp-1:0] base_ppn;                                    \
-      logic                                           translation_en;                              \
+      logic                                           dtranslation_en;                             \
       logic                                           mstatus_sum;                                 \
       logic                                           mstatus_mxr;                                 \
     }  bp_be_trans_info_s;                                                                         \
@@ -276,7 +277,7 @@
     (3+reg_addr_width_gp+dpath_width_gp+$bits(rv64_fflags_s))
 
   `define bp_be_trans_info_width(paddr_width_mp) \
-    (rv64_priv_width_gp+paddr_width_mp-page_offset_width_gp+3)
+    (2*rv64_priv_width_gp+paddr_width_mp-page_offset_width_gp+3)
 
   `define bp_be_decode_info_width \
     (rv64_priv_width_gp+11)
