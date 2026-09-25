@@ -285,8 +285,8 @@ module testbench
 `endif
 
   wire cosim_en_li = 1'b1;
-  localparam cosim_trace_en_li = 1;
-  localparam cosim_check_en_li = 1;
+  localparam cosim_trace_en_li = cosim_trace_p;
+  localparam cosim_check_en_li = cosim_check_p;
   bind bp_be_top
     bp_be_nonsynth_cosim
      #(.bp_params_p(bp_params_p)
