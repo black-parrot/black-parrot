@@ -1,0 +1,11 @@
+
+%/test_0.tr:
+	@$(MKDIR) -p $(@D)
+	$(PYTHON) $(TB_PATH)/../../common/trace_gen.py 64 39 40 > $@
+
+RUN_COLLATERAL += test_0.tr
+
+BUILD_COLLATERAL += flist.vcs
+
+include $(BP_MK_DIR)/Makefile.collateral
+
