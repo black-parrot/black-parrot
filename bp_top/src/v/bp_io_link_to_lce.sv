@@ -190,12 +190,14 @@ module bp_io_link_to_lce
      ,.cce_id_o(cce_id_lo)
      );
 
-  wire mem_fwd_wr_not_rd = (fsm_fwd_header_lo.msg_type == e_bedrock_mem_wr);
-  wire lce_cmd_wr_not_rd = (fsm_cmd_header_lo.msg_type == e_bedrock_cmd_uc_st_done);
   always_comb
     begin
-      fsm_req_header_li.msg_type        = mem_fwd_wr_not_rd ? e_bedrock_req_uc_wr : e_bedrock_req_uc_rd;
-      fsm_req_header_li.subop           = e_bedrock_store; // TODO: support I/O AMOs
+      unique case (fsm_fwd_header_lo.msg_type)
+        e_bedrock_mem_wr : fsm_req_header_li.msg_type = e_bedrock_req_uc_wr;
+        e_bedrock_mem_amo: fsm_req_header_li.msg_type = e_bedrock_req_uc_amo;
+        default          : fsm_req_header_li.msg_type = e_bedrock_req_uc_rd;
+      endcase
+      fsm_req_header_li.subop           = fsm_fwd_header_lo.subop;
       fsm_req_header_li.addr            = fsm_fwd_header_lo.addr;
       fsm_req_header_li.size            = fsm_fwd_header_lo.size;
       fsm_req_header_li.payload         = '0;
@@ -206,8 +208,13 @@ module bp_io_link_to_lce
       fsm_req_v_li                      = fsm_req_ready_then_lo & fsm_fwd_v_lo;
       fsm_fwd_yumi_li                   = fsm_req_v_li;
 
-      fsm_rev_header_li.msg_type        = lce_cmd_wr_not_rd ? e_bedrock_mem_wr : e_bedrock_mem_rd;
-      fsm_rev_header_li.subop           = e_bedrock_store; // TODO: support I/O AMOs
+      if (fsm_cmd_header_lo.msg_type == e_bedrock_cmd_uc_st_done)
+        fsm_rev_header_li.msg_type = e_bedrock_mem_wr;
+      else if (fsm_cmd_header_lo.subop != e_bedrock_store)
+        fsm_rev_header_li.msg_type = e_bedrock_mem_amo;
+      else
+        fsm_rev_header_li.msg_type = e_bedrock_mem_rd;
+      fsm_rev_header_li.subop           = fsm_cmd_header_lo.subop;
       fsm_rev_header_li.addr            = fsm_cmd_header_lo.addr;
       fsm_rev_header_li.size            = fsm_cmd_header_lo.size;
       fsm_rev_header_li.payload         = '0;
