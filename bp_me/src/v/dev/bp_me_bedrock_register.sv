@@ -152,7 +152,7 @@ module bp_me_bedrock_register
   // synopsys translate_off
   always_ff @(negedge clk_i)
     begin
-      assert(reset_i !== '0 || ~mem_fwd_v_li | (v_r | ~wr_not_rd | |w_v_o) | (v_r | ~rd_not_wr | |r_v_o))
+      assert(reset_i !== '0 || ~mem_fwd_v_li | (v_r | ~wr_not_rd | (|w_v_o)) | (v_r | ~rd_not_wr | (|r_v_o)))
         else $error("Command to non-existent register: %x", addr_o);
     end
   // synopsys translate_on

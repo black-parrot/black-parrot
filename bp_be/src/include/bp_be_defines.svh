@@ -207,9 +207,11 @@
     {                                                                                              \
       logic [rv64_priv_width_gp-1:0]                  priv_mode;                                   \
       logic [paddr_width_mp-page_offset_width_gp-1:0] base_ppn;                                    \
-      logic                                           translation_en;                              \
-      logic                                           mstatus_sum;                                 \
-      logic                                           mstatus_mxr;                                 \
+      logic                                           satp_mode;                                   \
+      logic                                           sum;                                         \
+      logic                                           mxr;                                         \
+      logic [rv64_priv_width_gp-1:0]                  mpp;                                         \
+      logic                                           mprv;                                        \
     }  bp_be_trans_info_s;                                                                         \
                                                                                                    \
     typedef struct packed                                                                          \
@@ -276,7 +278,7 @@
     (3+reg_addr_width_gp+dpath_width_gp+$bits(rv64_fflags_s))
 
   `define bp_be_trans_info_width(paddr_width_mp) \
-    (rv64_priv_width_gp+paddr_width_mp-page_offset_width_gp+3)
+    (rv64_priv_width_gp+paddr_width_mp-page_offset_width_gp+4+rv64_priv_width_gp)
 
   `define bp_be_decode_info_width \
     (rv64_priv_width_gp+11)
