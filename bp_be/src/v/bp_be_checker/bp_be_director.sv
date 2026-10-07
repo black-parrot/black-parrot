@@ -120,19 +120,19 @@ module bp_be_director
       unique casez (state_r)
         e_run   : state_n = freeze_li
                             ? e_freeze
-                            : commit_pkt_cast_i.wfi
-                              ? e_wait
-                              : commit_pkt_cast_i.fencei
-                                ? e_fencei
-                                : fe_cmd_nonattaboy_v
-                                  ? e_cmd_fence
-                                  : state_r;
+                            : fe_cmd_nonattaboy_v
+                              ? e_cmd_fence
+                              : state_r;
         e_freeze
         ,e_fencei
         ,e_wait : state_n = commit_pkt_cast_i.resume ? e_cmd_fence : state_r;
         // e_cmd_fence:
         default : state_n = cmd_empty_r_lo ? e_run : state_r;
       endcase
+
+      // always break to WFI or FENCEI states if these are received
+      if (commit_pkt_cast_i.wfi) state_n = e_wait;
+      if (commit_pkt_cast_i.fencei) state_n = e_fencei;
     end
 
   // synopsys sync_set_reset "reset_i"
