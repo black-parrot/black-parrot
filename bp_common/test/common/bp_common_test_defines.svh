@@ -12,9 +12,11 @@
       int file, inited;                                                    \
       initial                                                              \
         begin                                                              \
-          wait (!reset_mp);                                                \
+          @(posedge clk_mp);                                               \
+          wait (reset_mp === 1'b0);                                        \
+          @(posedge clk_mp);                                               \
           $display("BSG-INFO: %m initializing...");                        \
-          file = $fopen($sformatf("%s_%0d.trace", str_mp, n_mp), "w");      \
+          file = $fopen($sformatf("%s_%0d.trace", str_mp, n_mp), "w");     \
           inited = 1;                                                      \
         end                                                                \
                                                                            \

@@ -249,9 +249,12 @@ module testbench
        ,.cfg_bus_i(bp_fe_top.cfg_bus_i)
        );
 
+// v5.036: Unsupported: Bind with instance list
+`ifndef VERILATOR
+// v21.09
+`ifndef XCELIUM
   wire dcache_tracer_en_li = 1'b1;
-  bind bp_be_dcache
-    bp_be_nonsynth_dcache_tracer
+  bind bp_be_dcache:dcache bp_be_nonsynth_dcache_tracer
      #(.bp_params_p(bp_params_p), .trace_str_p("dcache"), .plusargs_str_p("dcache_trace"))
      dcache_tracer
       (.clk_i(clk_i)
@@ -260,10 +263,18 @@ module testbench
        ,.cfg_bus_i(bp_be_pipe_mem.cfg_bus_i)
        );
 
-// v5.036: Unsupported: Bind with instance list
-`ifndef VERILATOR
-// v21.09
-`ifndef XCELIUM
+  if (cacc_type_p != e_cacc_none)
+    begin : acache_bind
+      bind bp_be_dcache:acache bp_be_nonsynth_dcache_tracer
+         #(.bp_params_p(bp_params_p), .trace_str_p("acache"), .plusargs_str_p("acache_trace"))
+         acache_tracer
+          (.clk_i(clk_i)
+           ,.reset_i(reset_i)
+           ,.en_i(testbench.dcache_tracer_en_li)
+           ,.cfg_bus_i(bp_cacc_vdp.cfg_bus_cast_i)
+           );
+    end
+
   wire immu_tracer_en_li = 1'b1;
   bind bp_mmu:immu bp_nonsynth_vm_tracer
    #(.bp_params_p(bp_params_p), .trace_str_p("immu"), .plusargs_str_p("vm_trace"))

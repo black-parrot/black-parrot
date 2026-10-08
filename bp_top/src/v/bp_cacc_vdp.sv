@@ -102,6 +102,7 @@ module bp_cacc_vdp
 
   `declare_bp_cfg_bus_s(vaddr_width_p, hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, did_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i.core_id = lce_id_i - (2*num_core_p);
   assign cfg_bus_cast_i.dcache_id = lce_id_i;
   assign cfg_bus_cast_i.dcache_mode = e_lce_mode_normal;
 
@@ -357,7 +358,7 @@ module bp_cacc_vdp
                            };
 
   always_ff @(posedge clk_i) begin
-    acache_ptag_li <= vaddr[page_offset_width_gp+:ptag_width_p];
+    acache_ptag_li <= vaddr[page_offset_width_gp+:vtag_width_p];
     acache_st_data_r <= dot_product_res;
   end
 

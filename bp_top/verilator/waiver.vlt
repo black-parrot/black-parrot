@@ -27,3 +27,4 @@ lint_off -file "*/HardFloat/source/*"
 // Specific rules
 ////////////////////////////////
 lint_off -rule WIDTHEXPAND -file "*/bp_be_dcache.sv"
+lint_off -rule COMBDLY -file "*/bsg_misc/bsg_dlatch.sv"
