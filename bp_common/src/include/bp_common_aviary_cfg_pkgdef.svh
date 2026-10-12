@@ -371,7 +371,8 @@
                            | (1 << e_imulh)
                            | (1 << e_idiv2b)
       ,fpu_support       : (1 << e_fma) | (1 << e_fdivsqrt) | (1 << e_fdivsqrt2b)
-      ,bitmanip_support  : (1 << e_zba) | (1 << e_zbb) | (1 << e_zbs)
+      // Buggy, reenable when stable
+      //,bitmanip_support  : (1 << e_zba) | (1 << e_zbb) | (1 << e_zbs)
       ,compressed_support: (1 << e_compressed)
 
       ,async_coh_clk       : 0
