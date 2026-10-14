@@ -23,10 +23,11 @@ BlackParrot v2.0 was released in January 2024 and has been up and running in the
 BlackParrot v2.1 was released in November 2025
 
 Currently supported:
-- RV64IMAFDCSU\_Zfencei\_Zicsr\_Zcbo\_Zba\_Zbb\_Zbs ISA extensions
-- Baseline user and privilege mode functionality to run Linux, SPEC and other standard workloads
+- RV64IMAFDCSU\_Zfencei\_Zicsr User Mode 20191213 extensions with Privilege Mode 1.11 support
+- Baseline user and privileged functionality to run Linux, SPEC and other standard workloads
 - Configuration scaling up to a 16-core+ cache coherent multicore with distributed LLC
 - Configuration scaling down to an size-optimized single core with < 16 KiB total SRAM
+- Experimental micro-coded BP-BedRock cache coherence support (not fully featured)
 
 Development of BlackParrot continues, and we are very excited about what we are releasing next!
 
