@@ -186,6 +186,7 @@ $BP_DIR/bp_me/src/v/cce/bp_cce_fsm.sv
 $BP_DIR/bp_me/src/v/cce/bp_cce_wrapper.sv
 # CACHE
 $BP_DIR/bp_me/src/v/dev/bp_me_bedrock_register.sv
+$BP_DIR/bp_me/src/v/dev/bp_me_bedrock_register_amo.sv
 $BP_DIR/bp_me/src/v/dev/bp_me_cache_slice.sv
 $BP_DIR/bp_me/src/v/dev/bp_me_cfg_slice.sv
 # NETWORK
