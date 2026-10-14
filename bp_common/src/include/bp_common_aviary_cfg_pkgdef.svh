@@ -373,6 +373,7 @@
       ,fpu_support       : (1 << e_fma) | (1 << e_fdivsqrt) | (1 << e_fdivsqrt2b)
       // Buggy, reenable when stable
       //,bitmanip_support  : (1 << e_zba) | (1 << e_zbb) | (1 << e_zbs)
+      ,bitmanip_support  : 0
       ,compressed_support: (1 << e_compressed)
 
       ,async_coh_clk       : 0
