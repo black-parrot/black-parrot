@@ -1,0 +1,12 @@
+
+# Supported configurations for the D$ testbench
+# Using unicore_half for simplicity — single-core config with UCE (no coherence)
+e_bp_test_unicore_half_cfg_lces := 1
+
+export CFG_NUM_LCE ?= $($(CFG)_lces)
+ifeq ($(origin $(CFG)_lces), undefined)
+$(error CFG_NUM_LCE not found for CFG=$(CFG))
+endif
+
+include $(BP_MK_DIR)/Makefile.cfgs
+
