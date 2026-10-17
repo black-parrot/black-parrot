@@ -138,12 +138,13 @@ module bp_lce_req
   wire miss_store_v_li  = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_store};
   wire miss_v_li        = cache_req_v_i & miss_load_v_li | miss_store_v_li;
   wire bclean_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_bclean};
+  wire bflush_req_v_li  = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_bflush};
   wire clean_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clean};
   wire uc_load_v_li     = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
   wire uc_amo_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
   wire uc_store_v_li    = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
   wire blocking_v_li    = miss_load_v_li | miss_store_v_li | uc_load_v_li | uc_amo_v_li;
-  wire nonblocking_v_li = uc_store_v_li;
+  wire nonblocking_v_li = uc_store_v_li | bclean_v_li | bflush_req_v_li;
 
   bp_bedrock_lce_req_header_s fsm_req_header_lo;
   logic [paddr_width_p-1:0] fsm_req_addr_lo;
@@ -179,13 +180,15 @@ module bp_lce_req
   wire miss_load_v_r   = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
   wire miss_v_r        = miss_load_v_r | miss_store_v_r;
+  wire bclean_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_cache_bclean};
   wire bflush_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_cache_bclean, e_cache_binval, e_cache_bflush};
+  wire bflush_req_v_r  = cache_req_v_r & cache_req_r.msg_type inside {e_cache_bflush};
   wire clean_v_r       = cache_req_v_r & cache_req_r.msg_type inside {e_cache_clean};
   wire uc_load_v_r     = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire uc_amo_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
   wire uc_store_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
   wire blocking_v_r    = miss_load_v_r | miss_store_v_r | uc_load_v_r | uc_amo_v_r;
-  wire nonblocking_v_r = uc_store_v_r;
+  wire nonblocking_v_r = uc_store_v_r | bclean_v_r | bflush_req_v_r;
 
   // Outstanding request credit counter
   // one credit used per LCE request sent
@@ -256,6 +259,7 @@ module bp_lce_req
       // Send request header when able
       // requires valid cache request and possibly valid metadata (cached requests only)
       unique case (cache_req_r.msg_type)
+        e_cache_bclean: fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_wr;
         e_cache_bflush: fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_wr;
         e_uc_store    : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_wr;
         e_uc_load     : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_rd;
