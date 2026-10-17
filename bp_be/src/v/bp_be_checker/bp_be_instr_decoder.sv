@@ -543,6 +543,12 @@ module bp_be_instr_decoder
                     default: begin end
                   endcase
 
+                  // Check debug-mode-only restrictions (0x7b0-0x7bf)
+                  unique casez (instr[31-:12])
+                    {12'b0111_1011_????}: illegal_instr_o |= ~decode_info_cast_i.debug_mode;
+                    default: begin end
+                  endcase
+
                   // Check M/S/U permissions
                   unique casez (instr[31-:12])
                     {12'b??01_????_????}: illegal_instr_o |= decode_info_cast_i.u_mode;
