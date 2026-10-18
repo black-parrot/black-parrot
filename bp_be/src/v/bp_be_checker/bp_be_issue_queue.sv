@@ -246,6 +246,9 @@ module bp_be_issue_queue
 
   wire [vaddr_width_p-1:0] issue_pc = fe_queue_lo.pc + (rptr_r.entry << 1'b1);
   wire [instr_width_gp-1:0] issue_instr = preissue_pkt_r.instr;
+  // Original 16-bit encoding, reported in xtval for illegal compressed instructions
+  wire [cinstr_width_gp-1:0] issue_cinstr = fe_queue_lo.instr[rptr_r.entry*cinstr_width_gp+:cinstr_width_gp];
+  wire issue_compressed = (preissue_pkt_r.size == 2'b01);
   wire [fetch_ptr_p-1:0] issue_size = issue_pkt_cast_o.fetch ? preissue_pkt_r.size : entry_ptr_width_lp;
   wire [fetch_ptr_p-1:0] issue_count = fe_queue_lo.count;
 
@@ -306,7 +309,7 @@ module bp_be_issue_queue
       issue_pkt_cast_o.csrw                 = csrw_lo;
 
       issue_pkt_cast_o.pc                   = issue_pc;
-      issue_pkt_cast_o.instr                = issue_instr;
+      issue_pkt_cast_o.instr                = (illegal_instr_lo & issue_compressed) ? instr_width_gp'(issue_cinstr) : issue_instr;
       issue_pkt_cast_o.size                 = issue_size;
       issue_pkt_cast_o.count                = issue_count;
       issue_pkt_cast_o.decode               = decoded_instr_lo;
