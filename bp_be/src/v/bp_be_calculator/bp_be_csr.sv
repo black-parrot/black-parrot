@@ -403,15 +403,16 @@ module bp_be_csr
                               ,msip: 1'b0, ssip: mideleg_lo.ssi
                               ,default: '0
                               };
-  // 0, 1, 3, 12 -> instruction address
+  // 0, 3 -> instruction address
+  // 1, 12 -> address of the faulting portion of the instruction
   // 2 -> instruction data
   // 4, 5, 6, 7, 13, 15 -> data address
   // 8, 9, 11 -> zero
   wire [dword_width_gp-1:0] tval_li = (exception_ecode_li inside {2})
     ? retire_pkt_cast_i.instr
-    : (exception_ecode_li inside {0, 1, 3, 12})
+    : (exception_ecode_li inside {0, 3})
       ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
-      : (exception_ecode_li inside {4, 5, 6, 7, 13, 15})
+      : (exception_ecode_li inside {1, 4, 5, 6, 7, 12, 13, 15})
         ? `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp)
         : '0;
 
