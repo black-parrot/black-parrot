@@ -71,7 +71,7 @@ module bp_be_detector
   assign decode = issue_pkt_cast_i.decode;
   bp_be_dep_status_s [3:0] dep_status_r;
 
-  logic fence_haz_v, cmd_haz_v, fflags_haz_v, iscore_haz_v, fscore_haz_v;
+  logic fence_haz_v, cmd_haz_v, fflags_haz_v, instret_haz_v, iscore_haz_v, fscore_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
 
   wire [reg_addr_width_gp-1:0] score_rd_li  = commit_pkt_cast_i.instr.t.fmatype.rd_addr;
@@ -239,7 +239,13 @@ module bp_be_detector
                         | fdiv_busy_i
                         );
 
-      control_haz_v = fence_haz_v | fflags_haz_v;
+      // instret is incremented at retirement but CSRs are read in EX1,
+      //   so wait for older instructions to retire before reading it
+      instret_haz_v = decode.csr_r_v
+                      & (issue_pkt_cast_i.instr.t.itype.imm12 inside {`CSR_ADDR_INSTRET, `CSR_ADDR_MINSTRET})
+                      & (dep_status_r[0].v | dep_status_r[1].v | dep_status_r[2].v);
+
+      control_haz_v = fence_haz_v | fflags_haz_v | instret_haz_v;
 
       // Combine all data hazard information
       // TODO: Parameterize away floating point data hazards without hardware support
