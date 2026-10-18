@@ -270,7 +270,7 @@ module bp_be_detector
     begin
       dep_status_n.v           = dispatch_pkt_cast_i.v;
       // nspec == writeback, could reduce to only fflags setting
-      dep_status_n.fflags_v    = dispatch_pkt_cast_i.nspec_v | dep_decode.pipe_aux_v | dep_decode.pipe_fma_v;
+      dep_status_n.fflags_v    = dispatch_pkt_cast_i.nspec_v | dep_decode.pipe_aux_v | dep_decode.pipe_fma_v | dep_decode.frf_w_v;
       dep_status_n.eint_iwb_v  = dep_decode.pipe_int_v       & dep_decode.irf_w_v  & ~ispec_v_o;
       dep_status_n.eint_fwb_v  = dep_decode.pipe_int_v       & dep_decode.frf_w_v;
       dep_status_n.fint_iwb_v  = dep_decode.pipe_int_v       & dep_decode.irf_w_v  &  ispec_v_o;
