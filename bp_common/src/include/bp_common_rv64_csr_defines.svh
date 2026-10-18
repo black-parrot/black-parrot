@@ -238,7 +238,7 @@
   }  bp_scause_s;                                                                          \
                                                                                            \
   typedef logic [63:0] rv64_stval_s;                                                       \
-  typedef logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-1:0] bp_stval_s;                 \
+  typedef logic [63:0] bp_stval_s;                                                         \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
@@ -514,7 +514,7 @@
   }  bp_mip_s;                                                                             \
                                                                                            \
   typedef logic [63:0] rv64_mtval_s;                                                       \
-  typedef logic [`BSG_MAX(vaddr_width_mp, paddr_width_mp)-1:0] bp_mtval_s;                 \
+  typedef logic [63:0] bp_mtval_s;                                                         \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
@@ -755,7 +755,7 @@
       }
 
   `define compress_stval_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    bp_stval_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
+    bp_stval_s'(data_cast_mp)
 
   `define decompress_stval_s(data_comp_mp) \
     `BSG_SIGN_EXTEND(data_comp_mp, 64)
@@ -913,7 +913,7 @@
       }
 
   `define compress_mtval_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
-    bp_mtval_s'(data_cast_mp[0+:`BSG_MAX(vaddr_width_mp, paddr_width_mp)])
+    bp_mtval_s'(data_cast_mp)
 
   `define decompress_mtval_s(data_comp_mp) \
     `BSG_SIGN_EXTEND(data_comp_mp, 64)
