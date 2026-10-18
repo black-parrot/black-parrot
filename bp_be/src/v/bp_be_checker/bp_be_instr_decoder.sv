@@ -743,7 +743,8 @@ module bp_be_instr_decoder
               default: decode_cast_o.fu_op = e_fma_op_fmadd;
             endcase
 
-            illegal_instr_o = ~decode_info_cast_i.fpu_en;
+            // fmt 10 (H) and 11 (Q) are not supported
+            illegal_instr_o = ~decode_info_cast_i.fpu_en | instr.fmt[1];
           end
 
         `RV64_AMO_OP:
