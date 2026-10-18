@@ -807,6 +807,13 @@ module bp_be_instr_decoder
         default : illegal_instr_o = 1'b1;
       endcase
 
+      // Reserved rounding modes: static rm 101/110, or dynamic rm with an invalid frm
+      if (((instr.opcode == `RV64_FP_OP)
+           & (instr[31:27] inside {5'b00000, 5'b00001, 5'b00010, 5'b00011, 5'b01011, 5'b01000, 5'b11000, 5'b11010}))
+          | (instr.opcode inside {`RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMSUB_OP, `RV64_FNMADD_OP}))
+        illegal_instr_o |= (instr.rm inside {3'b101, 3'b110})
+                           | ((instr.rm == 3'b111) & decode_info_cast_i.frm_invalid);
+
       // Immediate extraction
       // This may be overwritten by exception injection
       unique casez (instr.opcode)
