@@ -537,6 +537,10 @@ module bp_be_instr_decoder
                     default: begin end
                   endcase
 
+                  // mcounteren.hpm and scounteren.hpm are read-only 0
+                  if (instr[31-:12] inside {[`CSR_ADDR_HPMCOUNTER3:`CSR_ADDR_HPMCOUNTER31]})
+                    illegal_instr_o |= ~decode_info_cast_i.m_mode;
+
                   // Check readonly restrictions
                   unique casez (instr[31-:12])
                     {12'b11??_????_????}: illegal_instr_o |= csrw_o;
