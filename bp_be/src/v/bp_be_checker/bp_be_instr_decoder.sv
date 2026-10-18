@@ -807,6 +807,24 @@ module bp_be_instr_decoder
         default : illegal_instr_o = 1'b1;
       endcase
 
+      // Detect bitmanip support level
+      unique casez (instr)
+        `RV64_ADDUW, `RV64_SH1ADD, `RV64_SH1ADDUW, `RV64_SH2ADD, `RV64_SH2ADDUW
+        ,`RV64_SH3ADD, `RV64_SH3ADDUW, `RV64_SLLIUW:
+          illegal_instr_o |= ~bitmanip_support_p[e_zba];
+        `RV64_ANDN, `RV64_ORN, `RV64_XNOR
+        ,`RV64_CLZ, `RV64_CLZW, `RV64_CTZ, `RV64_CTZW, `RV64_CPOP, `RV64_CPOPW
+        ,`RV64_MAX, `RV64_MAXU, `RV64_MIN, `RV64_MINU
+        ,`RV64_SEXTB, `RV64_SEXTH, `RV64_ZEXTH
+        ,`RV64_ROL, `RV64_ROLW, `RV64_ROR, `RV64_RORI, `RV64_RORIW, `RV64_RORW
+        ,`RV64_ORCB, `RV64_REV8:
+          illegal_instr_o |= ~bitmanip_support_p[e_zbb];
+        `RV64_BCLR, `RV64_BCLRI, `RV64_BEXT, `RV64_BEXTI
+        ,`RV64_BINV, `RV64_BINVI, `RV64_BSET, `RV64_BSETI:
+          illegal_instr_o |= ~bitmanip_support_p[e_zbs];
+        default: begin end
+      endcase
+
       // Immediate extraction
       // This may be overwritten by exception injection
       unique casez (instr.opcode)
