@@ -71,7 +71,7 @@ module bp_be_detector
   assign decode = issue_pkt_cast_i.decode;
   bp_be_dep_status_s [3:0] dep_status_r;
 
-  logic fence_haz_v, cmd_haz_v, fflags_haz_v, iscore_haz_v, fscore_haz_v;
+  logic fence_haz_v, cmd_haz_v, csr_haz_v, iscore_haz_v, fscore_haz_v;
   logic data_haz_v, control_haz_v, struct_haz_v;
 
   wire [reg_addr_width_gp-1:0] score_rd_li  = commit_pkt_cast_i.instr.t.fmatype.rd_addr;
@@ -231,15 +231,17 @@ module bp_be_detector
       fence_haz_v        = decode.fence_v & ~mem_ordered_i;
       cmd_haz_v          = cmd_full_i;
 
-      fflags_haz_v = (decode.csr_r_v | decode.csr_w_v)
-                     & (dep_status_r[0].fflags_v
-                        | dep_status_r[1].fflags_v
-                        | dep_status_r[2].fflags_v
-                        | dep_status_r[3].fflags_v
-                        | fdiv_busy_i
-                        );
+      // CSRs are accessed in EX1, but retiring instructions update CSR state
+      //   (instret, fflags, mstatus.FS, ...), so drain the pipeline first
+      csr_haz_v = (decode.csr_r_v | decode.csr_w_v)
+                  & (dep_status_r[0].v
+                     | dep_status_r[1].v
+                     | dep_status_r[2].v
+                     | dep_status_r[3].v
+                     | fdiv_busy_i
+                     );
 
-      control_haz_v = fence_haz_v | fflags_haz_v;
+      control_haz_v = fence_haz_v | csr_haz_v;
 
       // Combine all data hazard information
       // TODO: Parameterize away floating point data hazards without hardware support
@@ -269,8 +271,6 @@ module bp_be_detector
   always_comb
     begin
       dep_status_n.v           = dispatch_pkt_cast_i.v;
-      // nspec == writeback, could reduce to only fflags setting
-      dep_status_n.fflags_v    = dispatch_pkt_cast_i.nspec_v | dep_decode.pipe_aux_v | dep_decode.pipe_fma_v;
       dep_status_n.eint_iwb_v  = dep_decode.pipe_int_v       & dep_decode.irf_w_v  & ~ispec_v_o;
       dep_status_n.eint_fwb_v  = dep_decode.pipe_int_v       & dep_decode.frf_w_v;
       dep_status_n.fint_iwb_v  = dep_decode.pipe_int_v       & dep_decode.irf_w_v  &  ispec_v_o;
