@@ -99,7 +99,6 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic                              v;                                                        \
-      logic                              fflags_v;                                                 \
       logic                              aux_iwb_v;                                                \
       logic                              aux_fwb_v;                                                \
       logic                              eint_iwb_v;                                               \
