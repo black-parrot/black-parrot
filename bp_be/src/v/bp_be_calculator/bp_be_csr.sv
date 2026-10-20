@@ -323,6 +323,11 @@ module bp_be_csr
      ,.data_i(apc_n)
      ,.data_o(apc_r)
      );
+  // apc_r[0] marks a non-canonical fetch target (see bp_be_pipe_int). Report it
+  //   as an invalid address, with bits 63:vaddr_width_p set and bit vaddr_width_p-1 cleared
+  wire [dword_width_gp-1:0] apc_li = apc_r[0]
+    ? {{(dword_width_gp-vaddr_width_p){1'b1}}, 1'b0, apc_r[vaddr_width_p-2:1], 1'b0}
+    : `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
 
   // Just for timing, could remove and save some regs...
   logic [vaddr_width_p-1:0] cfg_npc_r;
@@ -410,7 +415,7 @@ module bp_be_csr
   wire [dword_width_gp-1:0] tval_li = (exception_ecode_li inside {2})
     ? retire_pkt_cast_i.instr
     : (exception_ecode_li inside {0, 1, 3, 12})
-      ? `BSG_SIGN_EXTEND(apc_r, dword_width_gp)
+      ? apc_li
       : (exception_ecode_li inside {4, 5, 6, 7, 13, 15})
         ? `BSG_SIGN_EXTEND(retire_pkt_cast_i.vaddr, dword_width_gp)
         : '0;
@@ -581,7 +586,7 @@ module bp_be_csr
               mstatus_li.mpie      = mstatus_lo.mie;
               mstatus_li.mie       = 1'b0;
 
-              mepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
+              mepc_li              = apc_li;
               mtval_li             = '0;
               mcause_li._interrupt = 1'b1;
               mcause_li.ecode      = m_interrupt_icode_li;
@@ -596,7 +601,7 @@ module bp_be_csr
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
 
-              sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
+              sepc_li              = apc_li;
               stval_li             = '0;
               scause_li._interrupt = 1'b1;
               scause_li.ecode      = s_interrupt_icode_li;
@@ -619,7 +624,7 @@ module bp_be_csr
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
            
-              sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
+              sepc_li              = apc_li;
               stval_li             = tval_li;
 
               scause_li._interrupt = 1'b0;
@@ -635,7 +640,7 @@ module bp_be_csr
               mstatus_li.mpie      = mstatus_lo.mie;
               mstatus_li.mie       = 1'b0;
 
-              mepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
+              mepc_li              = apc_li;
               mtval_li             = tval_li;
 
               mcause_li._interrupt = 1'b0;

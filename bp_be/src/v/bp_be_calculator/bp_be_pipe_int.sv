@@ -62,12 +62,15 @@ module bp_be_pipe_int
   assign shamtn = (opw_v ? 32 : 64) - shamt;
 
   // We need a separate adder here to do branch comparison + address calc
-  wire [vaddr_width_p-1:0] baddr = decode.jr_v ? rs1 : pc;
-  wire [vaddr_width_p-1:0] taken_raw = baddr + imm;
-  wire [vaddr_width_p-1:0] taken_tgt = taken_raw & {{vaddr_width_p-1{1'b1}}, 1'b0};
+  wire [dword_width_gp-1:0] pc_data = `BSG_SIGN_EXTEND(pc, dword_width_gp);
+  wire [dword_width_gp-1:0] baddr = decode.jr_v ? rs1 : pc_data;
+  wire [dword_width_gp-1:0] taken_raw = baddr + imm;
+  // Bit 0 of a target is always zero, so it marks a target whose upper bits are
+  //   not a sign extension. The FE faults on it and tval reports an invalid address
+  wire taken_noncanon = ~&taken_raw[dword_width_gp-1:vaddr_width_p-1] & |taken_raw[dword_width_gp-1:vaddr_width_p-1];
+  wire [vaddr_width_p-1:0] taken_tgt = {taken_raw[vaddr_width_p-1:1], taken_noncanon};
   wire [vaddr_width_p-1:0] ntaken_tgt = pc + (reservation.size << 1'b1);
   wire [dword_width_gp-1:0] ntaken_data = `BSG_SIGN_EXTEND(ntaken_tgt, dword_width_gp);
-  wire [dword_width_gp-1:0] pc_data = `BSG_SIGN_EXTEND(pc, dword_width_gp);
 
   logic [dword_width_gp-1:0] src1;
   wire [dword_width_gp-1:0] rs1_rev = {<<{rs1[0+:dword_width_gp]}};
@@ -199,7 +202,7 @@ module bp_be_pipe_int
   assign data_o = (decode.j_v | decode.jr_v) ? ntaken_data : ird_data_lo;
   assign v_o    = en_i & reservation.v & reservation.decode.pipe_int_v;
 
-  assign instr_misaligned_v_o = en_i & btaken_o & (taken_tgt[1:0] != 2'b00) & ~|compressed_support_p;
+  assign instr_misaligned_v_o = en_i & btaken_o & taken_tgt[1] & ~|compressed_support_p;
 
   assign branch_o = decode.br_v | decode.j_v | decode.jr_v;
   assign btaken_o = (decode.br_v & comp_result) || decode.j_v || decode.jr_v;
