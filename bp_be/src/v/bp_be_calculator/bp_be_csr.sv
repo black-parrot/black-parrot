@@ -328,6 +328,13 @@ module bp_be_csr
   wire [dword_width_gp-1:0] apc_li = apc_r[0]
     ? {{(dword_width_gp-vaddr_width_p){1'b1}}, 1'b0, apc_r[vaddr_width_p-2:1], 1'b0}
     : `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
+  // mepc/sepc keep bits max(vaddr, paddr):1. A written address whose upper bits are
+  //   not a sign extension of these is stored as an invalid address, as in apc_li
+  wire csr_data_fit = &csr_data_li[dword_width_gp-1:`BSG_MAX(vaddr_width_p, paddr_width_p)]
+    | ~|csr_data_li[dword_width_gp-1:`BSG_MAX(vaddr_width_p, paddr_width_p)];
+  wire [dword_width_gp-1:0] csr_epc_li = csr_data_fit
+    ? csr_data_li
+    : {{(dword_width_gp-vaddr_width_p){1'b1}}, 1'b0, csr_data_li[0+:vaddr_width_p-1]};
 
   // Just for timing, could remove and save some regs...
   logic [vaddr_width_p-1:0] cfg_npc_r;
@@ -349,12 +356,16 @@ module bp_be_csr
 
   wire ret_v = |{retire_pkt_cast_i.special.dret, retire_pkt_cast_i.special.mret, retire_pkt_cast_i.special.sret};
 
-  wire [vaddr_width_p-1:0] ret_pc =
+  // Mark a return target whose upper bits are not a sign extension in bit 0, as
+  //   bp_be_pipe_int does for jumps. dpc stores bit 0, which keeps such a mark
+  wire [dword_width_gp-1:0] ret_epc =
     retire_pkt_cast_i.special.sret
     ? sepc_lo
     : retire_pkt_cast_i.special.mret
       ? mepc_lo
       : dpc_lo;
+  wire ret_noncanon = ~&ret_epc[dword_width_gp-1:vaddr_width_p-1] & |ret_epc[dword_width_gp-1:vaddr_width_p-1];
+  wire [vaddr_width_p-1:0] ret_pc = {ret_epc[vaddr_width_p-1:1], ret_epc[0] | ret_noncanon};
   wire [vaddr_width_p-1:0] tvec_pc =
     is_debug_mode ? debug_exception_pc
     : (priv_mode_n == `PRIV_MODE_S)
@@ -544,7 +555,7 @@ module bp_be_csr
         {1'b1, `CSR_ADDR_STVEC        }: stvec_li = csr_data_li;
         {1'b1, `CSR_ADDR_SCOUNTEREN   }: scounteren_li = csr_data_li;
         {1'b1, `CSR_ADDR_SSCRATCH     }: sscratch_li = csr_data_li;
-        {1'b1, `CSR_ADDR_SEPC         }: sepc_li = csr_data_li;
+        {1'b1, `CSR_ADDR_SEPC         }: sepc_li = csr_epc_li;
         {1'b1, `CSR_ADDR_SCAUSE       }: scause_li = csr_data_li;
         {1'b1, `CSR_ADDR_STVAL        }: stval_li = csr_data_li;
         // SIP subset of MIP
@@ -559,7 +570,7 @@ module bp_be_csr
         {1'b1, `CSR_ADDR_MCOUNTEREN   }: mcounteren_li = csr_data_li;
         {1'b1, `CSR_ADDR_MIP          }: mip_li = csr_data_li;
         {1'b1, `CSR_ADDR_MSCRATCH     }: mscratch_li = csr_data_li;
-        {1'b1, `CSR_ADDR_MEPC         }: mepc_li = csr_data_li;
+        {1'b1, `CSR_ADDR_MEPC         }: mepc_li = csr_epc_li;
         {1'b1, `CSR_ADDR_MCAUSE       }: mcause_li = csr_data_li;
         {1'b1, `CSR_ADDR_MTVAL        }: mtval_li = csr_data_li;
         {1'b1, `CSR_ADDR_MCYCLE       }: mcycle_li = csr_data_li;
