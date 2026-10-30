@@ -174,7 +174,10 @@ module bp_fe_top
      );
 
   logic itlb_r_v_li;
-  wire [dword_width_gp-1:0] r_eaddr_li = `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
+  // next_pc_lo[0] marks a non-canonical target (see bp_be_pipe_int), fault on it
+  wire [dword_width_gp-1:0] r_eaddr_li = next_pc_lo[0]
+    ? {{(dword_width_gp-vaddr_width_p){1'b1}}, 1'b0, next_pc_lo[0+:vaddr_width_p-1]}
+    : `BSG_SIGN_EXTEND(next_pc_lo, dword_width_gp);
   wire [1:0] r_size_li = 2'b10;
 
   logic itlb_w_v_li, itlb_fence_v_li;
