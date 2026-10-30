@@ -137,13 +137,15 @@ module bp_lce_req
   wire miss_load_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_load};
   wire miss_store_v_li  = cache_req_v_i & cache_req_cast_i.msg_type inside {e_miss_store};
   wire miss_v_li        = cache_req_v_i & miss_load_v_li | miss_store_v_li;
-  wire bclean_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_bclean};
+  // it is legal to flush on all clean, invalidate and flush ops. This is
+  //   easier because an uncached amoor causes an automatic flush of the L1
+  wire bflush_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_bclean, e_cache_binval, e_cache_bflush};
   wire clean_v_li       = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clean};
   wire uc_load_v_li     = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_load};
   wire uc_amo_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_amo};
   wire uc_store_v_li    = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
   wire blocking_v_li    = miss_load_v_li | miss_store_v_li | uc_load_v_li | uc_amo_v_li;
-  wire nonblocking_v_li = uc_store_v_li;
+  wire nonblocking_v_li = bflush_v_li | uc_store_v_li;
 
   bp_bedrock_lce_req_header_s fsm_req_header_lo;
   logic [paddr_width_p-1:0] fsm_req_addr_lo;
@@ -185,7 +187,7 @@ module bp_lce_req
   wire uc_amo_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_uc_amo};
   wire uc_store_v_r    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_store};
   wire blocking_v_r    = miss_load_v_r | miss_store_v_r | uc_load_v_r | uc_amo_v_r;
-  wire nonblocking_v_r = uc_store_v_r;
+  wire nonblocking_v_r = uc_store_v_r | bflush_v_r;
 
   // Outstanding request credit counter
   // one credit used per LCE request sent
@@ -251,17 +253,19 @@ module bp_lce_req
       fsm_req_header_lo.payload.non_exclusive =
         (miss_load_v_r && (non_excl_reads_p == 1)) ? e_bedrock_req_non_excl : e_bedrock_req_excl;
       fsm_req_header_lo.subop = bflush_v_r ? e_bedrock_amoor : req_subop;
-      fsm_req_data_lo = cache_req_r.data;
+      fsm_req_data_lo = bflush_v_r ? '0 : cache_req_r.data;
 
       // Send request header when able
       // requires valid cache request and possibly valid metadata (cached requests only)
       unique case (cache_req_r.msg_type)
-        e_cache_bflush: fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_wr;
-        e_uc_store    : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_wr;
-        e_uc_load     : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_rd;
-        e_uc_amo      : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_amo;
-        e_miss_load   : fsm_req_header_lo.msg_type.req = e_bedrock_req_rd_miss;
-        e_miss_store  : fsm_req_header_lo.msg_type.req = e_bedrock_req_wr_miss;
+        e_cache_bflush
+        ,e_cache_binval
+        ,e_cache_bclean
+        ,e_uc_store    : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_wr;
+        e_uc_load      : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_rd;
+        e_uc_amo       : fsm_req_header_lo.msg_type.req = e_bedrock_req_uc_amo;
+        e_miss_load    : fsm_req_header_lo.msg_type.req = e_bedrock_req_rd_miss;
+        e_miss_store   : fsm_req_header_lo.msg_type.req = e_bedrock_req_wr_miss;
         default: begin end
       endcase
     end
