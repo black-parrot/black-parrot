@@ -180,24 +180,28 @@ module bp_be_nonsynth_cosim
   end
   final cosim_handle = cosim_finish(cosim_handle);
 
+  // ret_code: {exit_code, terminate}
   int ret_code;
   always_ff @(posedge cosim_clk_i)
-    if (instret_v_lo)
-      ret_code <= cosim_step(cosim_handle, mhartid, step_pc, step_insn, step_wdata, step_status);
-    else if (trap_v_lo)
-      ret_code <= cosim_trap(cosim_handle, mhartid, step_cause);
+    begin
+      if (instret_v_lo)
+        ret_code = cosim_step(cosim_handle, mhartid, step_pc, step_insn, step_wdata, step_status);
+      else if (trap_v_lo)
+        ret_code = cosim_trap(cosim_handle, mhartid, step_cause);
+      else
+        ret_code = 0;
 
-   // ret_code: {exit_code, terminate}
-   always_ff @(posedge cosim_clk_i)
-     if (ret_code[0] && (ret_code>>1))
-       begin
-         $display("[BSG-FAIL] co-simulation failure: exit code: %d", (ret_code>>1));
-         $finish;
-       end
-     else if (ret_code[0] && !(ret_code>>1))
-       begin
-         $display("[BSG-FINISH] co-simulation finish: exit code: %d", (ret_code>>1));
-       end
+      if (ret_code[0] && (ret_code>>1))
+        begin
+          $display("[BSG-FAIL] co-simulation failure: exit code: %d %d", (ret_code>>1), ret_code[0]);
+          $finish;
+        end
+      else if (ret_code[0] && !(ret_code>>1))
+        begin
+          $display("[BSG-FINISH] co-simulation finish: exit code: %d %d", (ret_code>>1), ret_code[0]);
+          $finish;
+        end
+    end
 
   // record
   `declare_bp_tracer_control(cosim_clk_i, cosim_reset_i, trace_en_li, trace_str_p, mhartid);

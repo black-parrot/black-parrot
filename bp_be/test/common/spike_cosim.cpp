@@ -114,7 +114,7 @@ extern "C" int cosim_step(sim_t *sim_pointer,
 
     if (pc != s->pc) {
         printf("[error] EMU PC %016" PRIx64 ", DUT PC %016" PRIx64 "\n", emu_pc, pc);
-        return -1;
+        return 5;
     }
 
     p->step(1);
@@ -131,18 +131,19 @@ extern "C" int cosim_step(sim_t *sim_pointer,
         if (wdata != emu_wdata) {
             printf("[error] EMU PC %016" PRIx64 ", DUT PC %016" PRIx64 "\n", emu_pc, pc);
             printf("[error] EMU WDATA %016" PRIx64 ", DUT WDATA %016" PRIx64 "\n", emu_wdata, wdata);
-            return -1;
+            return 3;
         }
     }
 
     return 0;
 }
 
-extern "C" void cosim_trap(sim_t *sim_pointer,
+extern "C" int cosim_trap(sim_t *sim_pointer,
          int hartid,
          uint64_t cause) {
     processor_t *p = sim_pointer->get_core(0);
     p->step(1);
+    return 0;
 }
 
 extern "C" void* cosim_finish(sim_t *sim_pointer) {
