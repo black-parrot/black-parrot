@@ -171,24 +171,28 @@ module bp_be_instr_decoder
               begin
                 decode_cast_o.src1_sel = e_src1_is_rs1_lsh;
                 decode_cast_o.src2_sel = e_src2_is_zero;
+                decode_cast_o.src3_sel = e_src3_is_rs2;
               end
 
             if (instr inside {`RV64_SRL, `RV64_SRLW, `RV64_SRA, `RV64_SRAW})
               begin
                 decode_cast_o.src1_sel = e_src1_is_zero;
                 decode_cast_o.src2_sel = e_src2_is_rs1_rsh;
+                decode_cast_o.src3_sel = e_src3_is_rs2;
               end
 
             if (instr inside {`RV64_ROL, `RV64_ROLW})
               begin
                 decode_cast_o.src1_sel = e_src1_is_rs1_lsh;
                 decode_cast_o.src2_sel = e_src2_is_rs1_rshn;
+                decode_cast_o.src3_sel = e_src3_is_rs2;
               end
 
             if (instr inside {`RV64_ROR, `RV64_RORW})
               begin
                 decode_cast_o.src1_sel = e_src1_is_rs1_lshn;
                 decode_cast_o.src2_sel = e_src2_is_rs1_rsh;
+                decode_cast_o.src3_sel = e_src3_is_rs2;
               end
 
             if (instr inside {`RV64_ZEXTH})
@@ -199,6 +203,7 @@ module bp_be_instr_decoder
             if (instr inside {`RV64_SH1ADD, `RV64_SH1ADDUW, `RV64_SH2ADD, `RV64_SH2ADDUW, `RV64_SH3ADD, `RV64_SH3ADDUW})
               begin
                 decode_cast_o.src1_sel = e_src1_is_rs1_lsh;
+                decode_cast_o.src3_sel = e_src3_is_imm;
               end
           end
         `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP:
@@ -261,6 +266,7 @@ module bp_be_instr_decoder
               begin
                 decode_cast_o.src1_sel = e_src1_is_rs1_lsh;
                 decode_cast_o.src2_sel = e_src2_is_zero;
+                decode_cast_o.src3_sel = e_src3_is_imm;
               end
 
             if (instr inside {`RV64_RORI, `RV64_RORIW})
@@ -268,12 +274,14 @@ module bp_be_instr_decoder
                 decode_cast_o.irs1_unsigned = 1'b1;
                 decode_cast_o.src1_sel = e_src1_is_rs1_lshn;
                 decode_cast_o.src2_sel = e_src2_is_rs1_rsh;
+                decode_cast_o.src3_sel = e_src3_is_imm;
               end
 
             if (instr inside {`RV64_SRLI, `RV64_SRLIW, `RV64_SRAI, `RV64_SRAIW})
               begin
                 decode_cast_o.src1_sel = e_src1_is_zero;
                 decode_cast_o.src2_sel = e_src2_is_rs1_rsh;
+                decode_cast_o.src3_sel = e_src3_is_imm;
               end
 
             if (instr inside {`RV64_SLTI, `RV64_SLTIU})

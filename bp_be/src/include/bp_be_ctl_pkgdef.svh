@@ -170,9 +170,9 @@
 
   typedef enum logic
   {
-    e_baddr_is_pc   = 1'b0
-    ,e_baddr_is_rs1 = 1'b1
-  } bp_be_baddr_e;
+    e_src3_is_rs2        = 1'b0
+    ,e_src3_is_imm       = 1'b1
+  } bp_be_src3_e;
 
   typedef struct packed
   {
@@ -222,6 +222,7 @@
 
     logic [$bits(bp_be_src1_e)-1:0]    src1_sel;
     logic [$bits(bp_be_src2_e)-1:0]    src2_sel;
+    logic [$bits(bp_be_src2_e)-1:0]    src3_sel;
   }  bp_be_decode_s;
 
   typedef struct packed
