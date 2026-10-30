@@ -187,7 +187,7 @@ module bp_be_pipe_aux
   rv64_fflags_s f2f_fflags;
 
   assign f2f_result = frs1_raw;
-  assign f2f_fflags = '0;
+  assign f2f_fflags = '{nv: frs1_raw.is_snan, default: '0};
 
   //
   // FMV Int -> Float
