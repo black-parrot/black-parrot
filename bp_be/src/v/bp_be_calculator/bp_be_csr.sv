@@ -110,11 +110,13 @@ module bp_be_csr
 
   `declare_csr(mcycle);
   `declare_csr(minstret);
-  // mhpmcounter not implemented
-  //   This is non-compliant. We should hardcode to 0 instead of trapping
   `declare_csr(mcountinhibit);
-  // mhpmevent not implemented
-  //   This is non-compliant. We should hardcode to 0 instead of trapping
+  // mhpmcounter3-31, mhpmevent3-31 (and hpmcounter3-31) are not implemented
+  //   A legal implementation is to make both the counter and event selector read-only 0
+  wire hpm_r_addr_li = csr_r_addr_i inside {[`CSR_ADDR_MHPMCOUNTER3:`CSR_ADDR_MHPMCOUNTER31]
+                                            ,[`CSR_ADDR_MHPMEVENT3:`CSR_ADDR_MHPMEVENT31]
+                                            ,[`CSR_ADDR_HPMCOUNTER3:`CSR_ADDR_HPMCOUNTER31]
+                                            };
 
   // Up to 16 physical PMP registers are supported
   // But if you implement one you have to implement them all
@@ -471,7 +473,7 @@ module bp_be_csr
         default:
           begin
             csr_data_lo = '0;
-            csr_r_illegal_o = csr_r_v_i;
+            csr_r_illegal_o = csr_r_v_i & ~hpm_r_addr_li;
           end
       endcase
     end
