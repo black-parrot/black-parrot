@@ -72,8 +72,8 @@ module bp_be_csr
   wire is_debug_mode = debug_mode_r;
   // Debug Mode grants pseudo M-mode permission
   wire is_m_mode = is_debug_mode | (priv_mode_r == `PRIV_MODE_M);
-  wire is_s_mode = (priv_mode_r == `PRIV_MODE_S);
-  wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
+  wire is_s_mode = ~is_debug_mode & (priv_mode_r == `PRIV_MODE_S);
+  wire is_u_mode = ~is_debug_mode & (priv_mode_r == `PRIV_MODE_U);
 
   `declare_csr(dcsr);
   `declare_csr_addr(dpc, vaddr_width_p, paddr_width_p);
