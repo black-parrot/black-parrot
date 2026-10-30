@@ -93,11 +93,11 @@
   `define RV64_ORI        `rv64_i_type(`RV64_OP_IMM_OP,3'b110)
   `define RV64_ANDI       `rv64_i_type(`RV64_OP_IMM_OP,3'b111)
   `define RV64_SLLI       `rv64_r_type(`RV64_OP_IMM_OP,3'b001,7'b000000?)
-  `define RV64_SLLIW      `rv64_r_type(`RV64_OP_IMM_32_OP,3'b001,7'b000000?)
+  `define RV64_SLLIW      `rv64_r_type(`RV64_OP_IMM_32_OP,3'b001,7'b0000000)
   `define RV64_SRLI       `rv64_r_type(`RV64_OP_IMM_OP,3'b101,7'b000000?)
-  `define RV64_SRLIW      `rv64_r_type(`RV64_OP_IMM_32_OP,3'b101,7'b000000?)
+  `define RV64_SRLIW      `rv64_r_type(`RV64_OP_IMM_32_OP,3'b101,7'b0000000)
   `define RV64_SRAI       `rv64_r_type(`RV64_OP_IMM_OP,3'b101,7'b010000?)
-  `define RV64_SRAIW      `rv64_r_type(`RV64_OP_IMM_32_OP,3'b101,7'b010000?)
+  `define RV64_SRAIW      `rv64_r_type(`RV64_OP_IMM_32_OP,3'b101,7'b0100000)
   `define RV64_ADD        `rv64_r_type(`RV64_OP_OP,3'b000,7'b0000000)
   `define RV64_ADDW       `rv64_r_type(`RV64_OP_32_OP,3'b000,7'b0000000)
   `define RV64_SUB        `rv64_r_type(`RV64_OP_OP,3'b000,7'b0100000)
@@ -353,7 +353,7 @@
   `define RV64_SEXTB      `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b0110000_00100)
   `define RV64_SEXTH      `rv64_fi_type(`RV64_OP_IMM_OP,3'b001,12'b0110000_00101)
   `define RV64_XNOR       `rv64_r_type(`RV64_OP_OP,3'b100,7'b0100000)
-  `define RV64_ZEXTH      `rv64_r_type(`RV64_OP_32_OP,3'b100,7'b0000100)
+  `define RV64_ZEXTH      `rv64_fi_type(`RV64_OP_32_OP,3'b100,12'b0000100_00000)
 
   // Zbc
   `define RV64_CLMUL      `rv64_r_type(`RV64_OP_OP,3'b001,7'b0000101)
