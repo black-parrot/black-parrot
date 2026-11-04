@@ -72,7 +72,7 @@ cfg_mem_base_cce_ucode = 0x8000
 
 clint_base_addr       = 0x300000
 clint_reg_mtimesel    = 0x8000
-clint_reg_debug       = 0xc000
+clint_reg_debug       = 0xd000
 
 cfg_core_offset = 24
 

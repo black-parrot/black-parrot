@@ -217,7 +217,7 @@ These addresses are per-tile. To access them on a tile N, prepend N to the addre
 |          | mtimecmp    | 30_4000         | Timer compare register. When mtime > mtimecmp, a timer irq is raised in the core                                                  |
 |          | mtimesel    | 30_8000         | Timer select register. 0=core_clk, 1=core_clk/8, 2=external RTC, 3=disable                                                        |
 |          | mtime       | 30_bff8         | A real-time counter. Currently implemented as mcycle/8                                                                            |
-|          | plic        | 30_b000         | A fake PLIC implementation. Effectively a redundant implementation of mipi                                                        |
-|          | debug       | 30_c000         | A request to take a debug interrupt to cfg.npc, and switch into debug mode                                                        |
+|          | plic        | 30_c000         | A fake PLIC implementation. Effectively a redundant implementation of mipi                                                        |
+|          | debug       | 30_d000         | A request to take a debug interrupt to cfg.npc, and switch into debug mode                                                        |
 
 * This lives outside of the unicore/tile, residing in the tethered host. Implementations must map this correctly for full software support
