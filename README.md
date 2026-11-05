@@ -28,6 +28,7 @@ Currently supported:
 - Configuration scaling up to a 16-core+ cache coherent multicore with distributed LLC
 - Configuration scaling down to an size-optimized single core with < 16 KiB total SRAM
 - Experimental micro-coded BP-BedRock cache coherence support (not fully featured)
+- Debug mode is NOT SUPPORTED
 
 Development of BlackParrot continues, and we are very excited about what we are releasing next!
 
