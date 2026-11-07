@@ -369,8 +369,8 @@ module bp_be_pipe_aux
      ,.reg_o(ird_data_lo)
      );
 
-  wire [dpath_width_gp-1:0] aux_result = decode.irf_w_v ? ird_data_lo : frd_data_lo;
-  wire [$bits(rv64_fflags_s)-1:0] aux_fflags = decode.irf_w_v ? ird_fflags : frd_fflags;
+  wire [dpath_width_gp-1:0] aux_result = decode.frf_w_v ? frd_data_lo : ird_data_lo;
+  wire [$bits(rv64_fflags_s)-1:0] aux_fflags = decode.frf_w_v ? frd_fflags : ird_fflags;
 
   wire aux_v_li = reservation.v & reservation.decode.pipe_aux_v;
   bsg_dff_chain
