@@ -528,6 +528,37 @@
     logic [0:0]                                          align;                            \
   }  bp_mepc_s;                                                                            \
                                                                                            \
+  typedef struct packed {                                                                  \
+    logic [1:0]  mxl;                                                                      \
+    logic [35:0] reserved;                                                                 \
+    logic        z;                                                                        \
+    logic        y;                                                                        \
+    logic        x;                                                                        \
+    logic        w;                                                                        \
+    logic        v;                                                                        \
+    logic        u;                                                                        \
+    logic        t;                                                                        \
+    logic        s;                                                                        \
+    logic        r;                                                                        \
+    logic        q;                                                                        \
+    logic        p;                                                                        \
+    logic        o;                                                                        \
+    logic        n;                                                                        \
+    logic        m;                                                                        \
+    logic        l;                                                                        \
+    logic        k;                                                                        \
+    logic        j;                                                                        \
+    logic        i;                                                                        \
+    logic        h;                                                                        \
+    logic        g;                                                                        \
+    logic        f;                                                                        \
+    logic        e;                                                                        \
+    logic        d;                                                                        \
+    logic        c;                                                                        \
+    logic        b;                                                                        \
+    logic        a;                                                                        \
+  }  rv64_misa_s;                                                                          \
+                                                                                           \
   typedef struct packed                                                                    \
   {                                                                                        \
     /* Locked - writes to this pmpcfg and corresponding pmpaddr are ignored */             \
