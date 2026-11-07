@@ -792,7 +792,7 @@ module bp_be_csr
   assign decode_info_cast_o.instret_en = is_m_mode
     | (is_s_mode & mcounteren_lo.ir)
     | (is_u_mode & mcounteren_lo.ir & scounteren_lo.ir);
-  assign decode_info_cast_o.frm_invalid = (fcsr_lo.frm inside {3'b101, 3'b110, 3'b111});
+  assign decode_info_cast_o.frm_dyn_en = fcsr_lo.frm inside {e_frm_rne, e_frm_rtz, e_frm_rdn, e_frm_rup, e_frm_rmm};
 
   assign frm_dyn_o = rv64_frm_e'(fcsr_lo.frm);
 

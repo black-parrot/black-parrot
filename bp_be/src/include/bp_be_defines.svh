@@ -228,7 +228,7 @@
       logic                          fpu_en;                                                       \
       logic                          cycle_en;                                                     \
       logic                          instret_en;                                                   \
-      logic                          frm_invalid;                                                  \
+      logic                          frm_dyn_en;                                                   \
     }  bp_be_decode_info_s
 
   /* Declare width macros so that clients can use structs in ports before struct declaration
