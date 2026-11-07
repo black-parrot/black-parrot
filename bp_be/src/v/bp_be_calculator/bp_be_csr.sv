@@ -94,8 +94,38 @@ module bp_be_csr
 
   `declare_csr(mstatus);
   // MISA is optionally read-write, but all fields are read-only in BlackParrot
-  //   64 bit MXLEN, IMACFDSUB extensions
-  wire [dword_width_gp-1:0] misa_lo = {2'b10, 36'b0, 26'h14112f};
+  // Enable some extensions based on parameterization (this support is not 100% extensive)
+  wire rv64_misa_s misa_lo = '{
+      mxl: 2'b10
+      ,a: 1'b1
+      ,b: (bitmanip_support_p[e_zba] & bitmanip_support_p[e_zbb] & bitmanip_support_p[e_zbs])
+      ,c: (compressed_support_p[e_compressed])
+      ,d: (fpu_support_p[e_fma] & fpu_support_p[e_fdivsqrt])
+      ,e: 1'b0
+      ,f: (fpu_support_p[e_fma] & fpu_support_p[e_fdivsqrt])
+      ,g: 1'b0
+      ,h: 1'b0
+      ,i: 1'b1
+      ,j: 1'b0
+      ,k: 1'b0
+      ,l: 1'b0
+      ,m: (muldiv_support_p[e_idiv] & muldiv_support_p[e_imul] & muldiv_support_p[e_imulh])
+      ,n: 1'b0
+      ,o: 1'b0
+      ,p: 1'b0
+      ,q: 1'b0
+      ,r: 1'b0
+      ,s: 1'b1
+      ,t: 1'b0
+      ,u: 1'b1
+      ,v: 1'b0
+      ,w: 1'b0
+      ,x: 1'b1
+      ,y: 1'b0
+      ,z: 1'b0
+      ,default: '0
+      };
+
   `declare_csr(medeleg);
   `declare_csr(mideleg);
   `declare_csr(mie);
