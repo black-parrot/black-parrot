@@ -689,7 +689,7 @@
     /*   4 : Hart single stepped (priority 0) */                                           \
     /*   5*: Hart halted out of reset due to resethaltreq (priority 2) */                  \
     /*         *Also legal to report 3 */                                                  \
-    logic [3:0]  cause;                                                                    \
+    logic [2:0]  cause;                                                                    \
     logic        reserved3;                                                                \
     /* MPRV Enable */                                                                      \
     /*   0 : MPRV is ignored in Debug Mode */                                              \
@@ -719,7 +719,7 @@
     logic       ebreaks;                                                                   \
     logic       ebreaku;                                                                   \
     logic       stepie;                                                                    \
-    logic [3:0] cause;                                                                     \
+    logic [2:0] cause;                                                                     \
     logic       prv_s_not_u;                                                               \
     logic       prv_m;                                                                     \
     logic       mprven;                                                                    \
