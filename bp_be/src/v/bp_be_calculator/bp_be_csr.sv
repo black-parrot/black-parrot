@@ -111,12 +111,7 @@ module bp_be_csr
   `declare_csr(mcycle);
   `declare_csr(minstret);
   `declare_csr(mcountinhibit);
-  // mhpmcounter3-31, mhpmevent3-31 (and hpmcounter3-31) are not implemented
-  //   A legal implementation is to make both the counter and event selector read-only 0
-  wire hpm_r_addr_li = csr_r_addr_i inside {[`CSR_ADDR_MHPMCOUNTER3:`CSR_ADDR_MHPMCOUNTER31]
-                                            ,[`CSR_ADDR_MHPMEVENT3:`CSR_ADDR_MHPMEVENT31]
-                                            ,[`CSR_ADDR_HPMCOUNTER3:`CSR_ADDR_HPMCOUNTER31]
-                                            };
+  // mhpmcounter3-31, mhpmevent3-31 and hpmcounter3-31 are implemented as hardcoded 0
 
   // Up to 16 physical PMP registers are supported
   // But if you implement one you have to implement them all
@@ -433,6 +428,35 @@ module bp_be_csr
         {`CSR_ADDR_FCSR         }: csr_data_lo = fcsr_lo;
         {`CSR_ADDR_CYCLE        }: csr_data_lo = mcycle_lo;
         {`CSR_ADDR_INSTRET      }: csr_data_lo = minstret_lo;
+        {`CSR_ADDR_HPMCOUNTER3  }
+       ,{`CSR_ADDR_HPMCOUNTER4  }
+       ,{`CSR_ADDR_HPMCOUNTER5  }
+       ,{`CSR_ADDR_HPMCOUNTER6  }
+       ,{`CSR_ADDR_HPMCOUNTER7  }
+       ,{`CSR_ADDR_HPMCOUNTER8  }
+       ,{`CSR_ADDR_HPMCOUNTER9  }
+       ,{`CSR_ADDR_HPMCOUNTER10 }
+       ,{`CSR_ADDR_HPMCOUNTER11 }
+       ,{`CSR_ADDR_HPMCOUNTER12 }
+       ,{`CSR_ADDR_HPMCOUNTER13 }
+       ,{`CSR_ADDR_HPMCOUNTER14 }
+       ,{`CSR_ADDR_HPMCOUNTER15 }
+       ,{`CSR_ADDR_HPMCOUNTER16 }
+       ,{`CSR_ADDR_HPMCOUNTER17 }
+       ,{`CSR_ADDR_HPMCOUNTER18 }
+       ,{`CSR_ADDR_HPMCOUNTER19 }
+       ,{`CSR_ADDR_HPMCOUNTER20 }
+       ,{`CSR_ADDR_HPMCOUNTER21 }
+       ,{`CSR_ADDR_HPMCOUNTER22 }
+       ,{`CSR_ADDR_HPMCOUNTER23 }
+       ,{`CSR_ADDR_HPMCOUNTER24 }
+       ,{`CSR_ADDR_HPMCOUNTER25 }
+       ,{`CSR_ADDR_HPMCOUNTER26 }
+       ,{`CSR_ADDR_HPMCOUNTER27 }
+       ,{`CSR_ADDR_HPMCOUNTER28 }
+       ,{`CSR_ADDR_HPMCOUNTER29 }
+       ,{`CSR_ADDR_HPMCOUNTER30 }
+       ,{`CSR_ADDR_HPMCOUNTER31 }: csr_data_lo = '0;
         {`CSR_ADDR_SSTATUS      }: csr_data_lo = sstatus_lo;
         {`CSR_ADDR_SEDELEG      }: csr_data_lo = sedeleg_lo;
         {`CSR_ADDR_SIDELEG      }: csr_data_lo = sideleg_lo;
@@ -463,7 +487,65 @@ module bp_be_csr
         {`CSR_ADDR_MTVAL        }: csr_data_lo = mtval_lo;
         {`CSR_ADDR_MCYCLE       }: csr_data_lo = mcycle_lo;
         {`CSR_ADDR_MINSTRET     }: csr_data_lo = minstret_lo;
+        {`CSR_ADDR_MHPMCOUNTER3 }
+       ,{`CSR_ADDR_MHPMCOUNTER4 }
+       ,{`CSR_ADDR_MHPMCOUNTER5 }
+       ,{`CSR_ADDR_MHPMCOUNTER6 }
+       ,{`CSR_ADDR_MHPMCOUNTER7 }
+       ,{`CSR_ADDR_MHPMCOUNTER8 }
+       ,{`CSR_ADDR_MHPMCOUNTER9 }
+       ,{`CSR_ADDR_MHPMCOUNTER10}
+       ,{`CSR_ADDR_MHPMCOUNTER11}
+       ,{`CSR_ADDR_MHPMCOUNTER12}
+       ,{`CSR_ADDR_MHPMCOUNTER13}
+       ,{`CSR_ADDR_MHPMCOUNTER14}
+       ,{`CSR_ADDR_MHPMCOUNTER15}
+       ,{`CSR_ADDR_MHPMCOUNTER16}
+       ,{`CSR_ADDR_MHPMCOUNTER17}
+       ,{`CSR_ADDR_MHPMCOUNTER18}
+       ,{`CSR_ADDR_MHPMCOUNTER19}
+       ,{`CSR_ADDR_MHPMCOUNTER20}
+       ,{`CSR_ADDR_MHPMCOUNTER21}
+       ,{`CSR_ADDR_MHPMCOUNTER22}
+       ,{`CSR_ADDR_MHPMCOUNTER23}
+       ,{`CSR_ADDR_MHPMCOUNTER24}
+       ,{`CSR_ADDR_MHPMCOUNTER25}
+       ,{`CSR_ADDR_MHPMCOUNTER26}
+       ,{`CSR_ADDR_MHPMCOUNTER27}
+       ,{`CSR_ADDR_MHPMCOUNTER28}
+       ,{`CSR_ADDR_MHPMCOUNTER29}
+       ,{`CSR_ADDR_MHPMCOUNTER30}
+       ,{`CSR_ADDR_MHPMCOUNTER31}: csr_data_lo = '0;
         {`CSR_ADDR_MCOUNTINHIBIT}: csr_data_lo = mcountinhibit_lo;
+        {`CSR_ADDR_MHPMEVENT3   }
+       ,{`CSR_ADDR_MHPMEVENT4   }
+       ,{`CSR_ADDR_MHPMEVENT5   }
+       ,{`CSR_ADDR_MHPMEVENT6   }
+       ,{`CSR_ADDR_MHPMEVENT7   }
+       ,{`CSR_ADDR_MHPMEVENT8   }
+       ,{`CSR_ADDR_MHPMEVENT9   }
+       ,{`CSR_ADDR_MHPMEVENT10  }
+       ,{`CSR_ADDR_MHPMEVENT11  }
+       ,{`CSR_ADDR_MHPMEVENT12  }
+       ,{`CSR_ADDR_MHPMEVENT13  }
+       ,{`CSR_ADDR_MHPMEVENT14  }
+       ,{`CSR_ADDR_MHPMEVENT15  }
+       ,{`CSR_ADDR_MHPMEVENT16  }
+       ,{`CSR_ADDR_MHPMEVENT17  }
+       ,{`CSR_ADDR_MHPMEVENT18  }
+       ,{`CSR_ADDR_MHPMEVENT19  }
+       ,{`CSR_ADDR_MHPMEVENT20  }
+       ,{`CSR_ADDR_MHPMEVENT21  }
+       ,{`CSR_ADDR_MHPMEVENT22  }
+       ,{`CSR_ADDR_MHPMEVENT23  }
+       ,{`CSR_ADDR_MHPMEVENT24  }
+       ,{`CSR_ADDR_MHPMEVENT25  }
+       ,{`CSR_ADDR_MHPMEVENT26  }
+       ,{`CSR_ADDR_MHPMEVENT27  }
+       ,{`CSR_ADDR_MHPMEVENT28  }
+       ,{`CSR_ADDR_MHPMEVENT29  }
+       ,{`CSR_ADDR_MHPMEVENT30  }
+       ,{`CSR_ADDR_MHPMEVENT31  }: csr_data_lo = '0;
         {`CSR_ADDR_PMPCFG0      }: csr_data_lo = pmpcfg_lo[0+:8];
         {`CSR_ADDR_PMPCFG2      }: csr_data_lo = pmpcfg_lo[8+:8];
         {`CSR_ADDR_PMPADDR      }: csr_data_lo = pmpaddr_lo[pmpaddr_sel_li];
@@ -474,7 +556,7 @@ module bp_be_csr
         default:
           begin
             csr_data_lo = '0;
-            csr_r_illegal_o = csr_r_v_i & ~hpm_r_addr_li;
+            csr_r_illegal_o = csr_r_v_i;
           end
       endcase
     end
@@ -621,7 +703,7 @@ module bp_be_csr
               mstatus_li.spp       = priv_mode_r;
               mstatus_li.spie      = mstatus_lo.sie;
               mstatus_li.sie       = 1'b0;
-           
+
               sepc_li              = `BSG_SIGN_EXTEND(apc_r, dword_width_gp);
               stval_li             = tval_li;
 
