@@ -57,7 +57,7 @@ module bp_be_pipe_int
 
   // Shift calculation
   logic [rv64_shamt_width_gp-1:0] shamt, shamtn;
-  wire [rv64_shamt_width_gp-1:0] shmask = {!opw_v, 5'b11111};
+  wire [rv64_shamt_width_gp-1:0] shmask = (decode.src3_sel == e_src3_is_rs2) ? {!opw_v, 5'b11111} : 6'b111111;
   assign shamt = ((decode.src3_sel == e_src3_is_rs2) ? rs2 : imm) & shmask;
   assign shamtn = (opw_v ? 32 : 64) - shamt;
 
