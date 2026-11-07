@@ -238,19 +238,23 @@
 
   typedef enum logic [2:0]
   {
-    e_rne   = 3'b000
-    ,e_rtz  = 3'b001
-    ,e_rdn  = 3'b010
-    ,e_rup  = 3'b011
-    ,e_rmm  = 3'b100
+    e_frm_rne   = 3'b000
+    ,e_frm_rtz  = 3'b001
+    ,e_frm_rdn  = 3'b010
+    ,e_frm_rup  = 3'b011
+    ,e_frm_rmm  = 3'b100
+    ,e_frm_dyn  = 3'b111
     // 3'b101, 3'b110 reserved
-    ,e_dyn  = 3'b111
+    ,e_frm_res0 = 3'b101
+    ,e_frm_res1 = 3'b110
   } rv64_frm_e;
 
-  typedef enum logic
+  typedef enum logic [1:0]
   {
-    e_fmt_single  = 1'b0
-    ,e_fmt_double = 1'b1
+    e_fmt_single  = 2'b00
+    ,e_fmt_double = 2'b01
+    ,e_fmt_half   = 2'b10
+    ,e_fmt_quad   = 2'b11
   } rv64_fmt_e;
 
   typedef enum logic [1:0]

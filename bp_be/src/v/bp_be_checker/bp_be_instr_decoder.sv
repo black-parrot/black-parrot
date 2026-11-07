@@ -55,6 +55,12 @@ module bp_be_instr_decoder
   rv64_instr_fmatype_s instr;
   assign instr = preissue_pkt_cast_i.instr;
 
+  // Reserved rounding modes: reserved rm or dynamic rm with an invalid frm
+  wire illegal_frm = (instr.rm inside {e_frm_res0, e_frm_res1})
+    || (instr.rm == e_frm_dyn & ~decode_info_cast_i.frm_dyn_en);
+  // fmt H and Q are not supported
+  wire illegal_fmt = (instr.fmt inside {e_fmt_half, e_fmt_quad});
+
   // Decode logic
   always_comb
     begin
@@ -466,14 +472,17 @@ module bp_be_instr_decoder
               `RV64_CMO_PREFETCHI:
                 begin
                   // NOP for now
+                  // Technically non-compliant as it should raise exceptions
                 end
               `RV64_CMO_PREFETCHR:
                 begin
                   // NOP for now
+                  // Technically non-compliant as it should raise exceptions
                 end
               `RV64_CMO_PREFETCHW:
                 begin
                   // NOP for now
+                  // Technically non-compliant as it should raise exceptions
                 end
               default : illegal_instr_o = 1'b1;
             endcase
@@ -570,7 +579,8 @@ module bp_be_instr_decoder
           end
         `RV64_FP_OP:
           begin
-            illegal_instr_o = ~decode_info_cast_i.fpu_en;
+            // not all FP_OP instructions use rm, but deviants only use supported rounding modes
+            illegal_instr_o = ~decode_info_cast_i.fpu_en || illegal_frm;
 
             if (instr inside {`RV64_FSGNJ_S, `RV64_FSGNJN_S, `RV64_FSGNJX_S
                               ,`RV64_FMIN_S, `RV64_FMAX_S, `RV64_FEQ_S, `RV64_FLT_S, `RV64_FLE_S, `RV64_FCLASS_S
@@ -757,8 +767,7 @@ module bp_be_instr_decoder
               default: decode_cast_o.fu_op = e_fma_op_fmadd;
             endcase
 
-            // fmt 10 (H) and 11 (Q) are not supported
-            illegal_instr_o = ~decode_info_cast_i.fpu_en | instr.fmt[1];
+            illegal_instr_o = ~decode_info_cast_i.fpu_en | illegal_frm | illegal_fmt;
           end
 
         `RV64_AMO_OP:
@@ -821,6 +830,7 @@ module bp_be_instr_decoder
           end
         default : illegal_instr_o = 1'b1;
       endcase
+
 
       // Immediate extraction
       // This may be overwritten by exception injection

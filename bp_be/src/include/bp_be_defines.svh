@@ -228,6 +228,7 @@
       logic                          fpu_en;                                                       \
       logic                          cycle_en;                                                     \
       logic                          instret_en;                                                   \
+      logic                          frm_dyn_en;                                                   \
     }  bp_be_decode_info_s
 
   /* Declare width macros so that clients can use structs in ports before struct declaration
@@ -280,7 +281,7 @@
     (rv64_priv_width_gp+paddr_width_mp-page_offset_width_gp+4+rv64_priv_width_gp)
 
   `define bp_be_decode_info_width \
-    (rv64_priv_width_gp+11)
+    (rv64_priv_width_gp+12)
 
 `endif
 
