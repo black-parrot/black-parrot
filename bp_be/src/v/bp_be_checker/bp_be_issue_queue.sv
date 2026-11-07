@@ -166,7 +166,7 @@ module bp_be_issue_queue
             preissue_pkt_cast_o.irs2_v = preissue_v;
           end
         `RV64_MISC_MEM_OP:
-          casez (preissue_pkt_cast_o.instr)
+          casez (preissue_instr[preissue_entry_sel])
             `RV64_CBO_ZERO
             ,`RV64_CBO_CLEAN
             ,`RV64_CBO_INVAL
@@ -186,7 +186,7 @@ module bp_be_issue_queue
             preissue_pkt_cast_o.frs2_v = preissue_v;
           end
         `RV64_FP_OP:
-          casez (preissue_pkt_cast_o.instr)
+          casez (preissue_instr[preissue_entry_sel])
             `RV64_FCVT_WS, `RV64_FCVT_WUS, `RV64_FCVT_LS, `RV64_FCVT_LUS
             ,`RV64_FCVT_WD, `RV64_FCVT_WUD, `RV64_FCVT_LD, `RV64_FCVT_LUD
             ,`RV64_FCVT_SD, `RV64_FCVT_DS
@@ -243,11 +243,7 @@ module bp_be_issue_queue
      ,.r_data_o(fe_queue_lo)
      );
   assign fe_queue_ready_and_o = ~full;
-
-  wire [vaddr_width_p-1:0] issue_pc = fe_queue_lo.pc + (rptr_r.entry << 1'b1);
-  wire [instr_width_gp-1:0] issue_instr = preissue_pkt_r.instr;
-  wire [fetch_ptr_p-1:0] issue_size = issue_pkt_cast_o.fetch ? preissue_pkt_r.size : entry_ptr_width_lp;
-  wire [fetch_ptr_p-1:0] issue_count = fe_queue_lo.count;
+  wire [fetch_cinstr_p-1:0][cinstr_width_gp-1:0] fe_queue_instr = fe_queue_lo.instr;
 
   // Decode the dispatched instruction
   bp_be_decode_s decoded_instr_lo;
@@ -280,6 +276,14 @@ module bp_be_issue_queue
      ,.fencei_o(fencei_lo)
      ,.csrw_o(csrw_lo)
      );
+
+  wire issue_compressed = (preissue_pkt_r.size == 2'b01);
+  wire [vaddr_width_p-1:0] issue_pc = fe_queue_lo.pc + (rptr_r.entry << 1'b1);
+  wire [instr_width_gp-1:0] issue_raw = issue_compressed ? fe_queue_instr[rptr_r.entry] : fe_queue_instr[rptr_r.entry+:2];
+  wire [instr_width_gp-1:0] issue_instr = illegal_instr_lo ? issue_raw : preissue_pkt_r.instr;
+
+  wire [fetch_ptr_p-1:0] issue_size = issue_pkt_cast_o.fetch ? preissue_pkt_r.size : entry_ptr_width_lp;
+  wire [fetch_ptr_p-1:0] issue_count = fe_queue_lo.count;
 
   always_comb
     begin
