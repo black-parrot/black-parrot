@@ -1105,7 +1105,7 @@ module bp_be_dcache
       logic load_reserved_v_r;
 
       // Set reservation on successful LR, without a cache miss or upgrade request
-      wire set_reservation = v_tv_r & decode_tv_r.lr_op & store_hit_tv;
+      wire set_reservation = v_tv_r & decode_tv_r.lr_op & store_hit_tv & ~snoop_tv_r;
       // All SCs clear the reservation (regardless of success)
       // Invalidates from other harts which match the reservation address clear the reservation
       // Also invalidate on trap
