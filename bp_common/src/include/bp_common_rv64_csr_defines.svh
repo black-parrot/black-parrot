@@ -234,7 +234,7 @@
   typedef struct packed                                                                    \
   {                                                                                        \
     logic       _interrupt;                                                                \
-    logic [3:0] ecode;                                                                     \
+    logic [4:0] ecode;                                                                     \
   }  bp_scause_s;                                                                          \
                                                                                            \
   typedef logic [63:0] rv64_stval_s;                                                       \
@@ -777,7 +777,7 @@
 
   `define compress_scause_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{_interrupt: data_cast_mp._interrupt \
-      ,ecode: data_cast_mp.ecode[0+:4]    \
+      ,ecode: data_cast_mp.ecode[0+:5]    \
       }
 
   `define decompress_scause_s(data_comp_mp) \
