@@ -1,0 +1,16 @@
+`verilator_config
+
+// Disable lint for BaseJump STL
+lint_off -file "*/bsg_async/*"
+lint_off -file "*/bsg_cache/*"
+lint_off -file "*/bsg_dataflow/*"
+lint_off -file "*/bsg_dmc/*"
+lint_off -file "*/bsg_fpu/*"
+lint_off -file "*/bsg_link/*"
+lint_off -file "*/bsg_mem/*"
+lint_off -file "*/bsg_misc/*"
+lint_off -file "*/bsg_noc/*"
+lint_off -file "*/bsg_tag/*"
+lint_off -file "*/bsg_test/*"
+lint_off -rule WIDTHCONCAT -file "*/bsg_misc/bsg_reduce.sv"
+lint_off -rule COMBDLY -file "*/bsg_misc/bsg_dlatch.sv"

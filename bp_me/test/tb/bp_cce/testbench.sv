@@ -639,7 +639,7 @@ module testbench
 
   // Tracers and binds
 
-  wire lce_trace_en_li = testbench.lce_trace_p;
+  wire lce_trace_en_li = 1'b1;
   bind bp_lce
     bp_me_nonsynth_lce_tracer
       #(.bp_params_p(bp_params_p), .trace_str_p("lce"), .plusargs_str_p("lce_trace")
@@ -655,7 +655,7 @@ module testbench
         ,.en_i(testbench.lce_trace_en_li)
         );
 
-  wire cce_trace_en_li = testbench.cce_trace_p;
+  wire cce_trace_en_li = 1'b1;
   bind bp_cce_wrapper
     bp_me_nonsynth_cce_tracer
       #(.bp_params_p(bp_params_p), .trace_str_p("cce"), .plusargs_str_p("cce_trace"))
@@ -665,7 +665,7 @@ module testbench
         ,.en_i(testbench.cce_trace_en_li)
         );
 
-  wire dram_trace_en_li = testbench.dram_trace_p;
+  wire dram_trace_en_li = 1'b1;
   bind bp_nonsynth_dram
     bp_nonsynth_dram_tracer
      #(.num_dma_p(num_dma_p)
