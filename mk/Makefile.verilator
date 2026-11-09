@@ -92,7 +92,7 @@ $(SIM_FILE): $(BUILD_FILE)
 		$< $(VV_RUN_OPTS) $(HDL_PLUSARGS) 2>&1 | $(TEE) -i $(LOG_FILE)
 	@$(call bsg_fn_fail_search,$(LOG_FILE),$(ERR_FILE))
 	@$(call bsg_fn_pass_search,$(LOG_FILE),$(ERR_FILE))
-	@$(call bsg_fn_sentinal_search,$(LOG_FILE),$(ERR_FILE),"finish called from file")
+	@$(call bsg_fn_sentinal_search,$(LOG_FILE),$(ERR_FILE),'Verilog [$$$$]finish\|finish called from file')
 	@$(call bsg_fn_stat_search,$(LOG_FILE),$(RPT_FILE))
 
 ENABLE_SURFER ?= $(if $(shell which surfer 2> /dev/null),1,0)
