@@ -206,7 +206,7 @@ class NBF:
   # initialize dram
   def init_dram(self):
     if not(self.skip_zeros):
-      for k in xrange(self.mem_size*1024*1024/8):
+      for k in range(self.mem_size*1024*1024//8):
         self.print_nbf(3, 0x80000000 + k*8, 0)
     for k in sorted(self.dram_data.keys()):
       addr = k
