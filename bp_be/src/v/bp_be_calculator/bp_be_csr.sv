@@ -839,9 +839,9 @@ module bp_be_csr
     & ((d_interrupt_icode_v_li & dgie) | (m_interrupt_icode_v_li & mgie) | (s_interrupt_icode_v_li & sgie));
 
   // The supervisor external interrupt line does not impact the supervisor software interrupt bit of MIP.
-  // However, software read operations return as if it does. bit 9 is supervisor software interrupt
+  // However, software read operations return as if it does. bit 9 is supervisor software-writeable external interrupt.
   always_comb
-    unique casez (csr_addr_li)
+    unique casez (csr_r_addr_i)
       `CSR_ADDR_SIP   : csr_r_data_o = csr_data_lo | ((s_external_irq_i & mideleg_lo.sei) << 9);
       `CSR_ADDR_MIP   : csr_r_data_o = csr_data_lo | (s_external_irq_i << 9);
       `CSR_ADDR_FFLAGS
