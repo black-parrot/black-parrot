@@ -619,8 +619,9 @@
   typedef rv64_mcounter_s rv64_mcycle_s;                                                   \
   typedef rv64_mcounter_s rv64_minstret_s;                                                 \
                                                                                            \
-  typedef bp_mcounter_s bp_mcycle_s;                                                       \
-  typedef bp_mcounter_s bp_minstret_s;                                                     \
+  /* spec requires 64b precision for mcycle and minstret */                                \
+  typedef rv64_mcounter_s bp_mcycle_s;                                                     \
+  typedef rv64_mcounter_s bp_minstret_s;                                                   \
                                                                                            \
   typedef struct packed                                                                    \
   {                                                                                        \
