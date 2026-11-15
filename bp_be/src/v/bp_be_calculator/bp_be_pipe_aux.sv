@@ -108,36 +108,36 @@ module bp_be_pipe_aux
   bp_hardfloat_raw_dp_s i2f_result;
   rv64_fflags_s i2f_fflags;
 
-  bp_hardfloat_rec_dp_s i2f_rec;
   wire irs1_unsigned = decode.fu_op inside {e_aux_op_iu2f};
-  iNToRecFN
-   #(.intWidth(dword_width_gp)
-     ,.expWidth(dp_exp_width_gp)
-     ,.sigWidth(dp_sig_width_gp)
-     )
+  localparam i2f_exp_width_lp = `BSG_SAFE_CLOG2(dword_width_gp) + 1;
+  localparam i2f_bias_adj_lp = (1 << dp_exp_width_gp) - (1 << i2f_exp_width_lp);
+  logic i2f_is_zero, i2f_sign;
+  logic signed [i2f_exp_width_lp+1:0] i2f_sexp;
+  logic [dword_width_gp:0] i2f_sig;
+  iNToRawFN
+   #(.intWidth(dword_width_gp))
    i2f
-    (.control(control_li)
-     ,.signedIn(!irs1_unsigned)
+    (.signedIn(!irs1_unsigned)
      ,.in(irs1)
-     ,.roundingMode(frm_li)
-     ,.out(i2f_rec)
-     ,.exceptionFlags(i2f_fflags)
-     );
-
-  bp_hardfloat_raw_dp_s i2f_raw;
-  logic [dp_sig_width_gp:0] i2f_sig;
-  recFNToRawFN
-   #(.expWidth(dp_exp_width_gp), .sigWidth(dp_sig_width_gp))
-   i2f_rec_to_raw
-    (.in(i2f_rec)
-     ,.isNaN(i2f_result.is_nan)
-     ,.isInf(i2f_result.is_inf)
-     ,.isZero(i2f_result.is_zero)
-     ,.sign(i2f_result.sign)
-     ,.sExp(i2f_result.sexp)
+     ,.isZero(i2f_is_zero)
+     ,.sign(i2f_sign)
+     ,.sExp(i2f_sexp)
      ,.sig(i2f_sig)
      );
-  assign i2f_result.sig = i2f_sig << 2'b10;
+  // Preserve architectural mantissa, guard and round bit
+  wire [dp_sig_width_gp+1:0] i2f_upper_mantissa = i2f_sig[dword_width_gp-:dp_sig_width_gp+2];
+  // Generate sticky bit from bits below the raw significand to track any precision loss
+  wire i2f_sticky_lsb = |i2f_sig[0+:dword_width_gp-dp_sig_width_gp-1];
+
+  assign i2f_result = '{is_zero: i2f_is_zero
+                        ,sign  : i2f_sign
+                        // Adjust the narrow i2f exponent zero-point to match DP bias
+                        ,sexp  : i2f_sexp + i2f_bias_adj_lp
+                        // Generate correctly roundable sig
+                        ,sig   : {i2f_upper_mantissa, i2f_sticky_lsb}
+                        ,default: '0
+                        };
+  assign i2f_fflags = '0;
 
   //
   // FCVT Float -> Int
