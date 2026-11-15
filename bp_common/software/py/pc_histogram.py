@@ -151,6 +151,9 @@ class PCHistogram:
         pc_list = sorted(pc_cnt.keys())
         histogram = Counter()
 
+        if not pc_list:
+            return histogram
+
         start = 0
         end = 1
 
