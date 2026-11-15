@@ -161,6 +161,7 @@ module bp_be_pipe_mem
   logic dtlb_v_lo;
   logic [ptag_width_p-1:0] dtlb_ptag_lo;
   logic dtlb_ptag_uncached_lo, dtlb_ptag_dram_lo;
+  logic dtlb_load_miss_lo, dtlb_store_miss_lo;
   wire uncached_mode_li = cfg_bus_cast_i.dcache_mode == e_lce_mode_uncached;
   wire nonspec_mode_li = cfg_bus_cast_i.dcache_mode == e_lce_mode_nonspec;
   wire [rv64_priv_width_gp-1:0] priv_mode_li = trans_info_cast_i.mprv ? trans_info_cast_i.mpp : trans_info_cast_i.priv_mode;
@@ -203,8 +204,8 @@ module bp_be_pipe_mem
      ,.r_v_o(dtlb_v_lo)
      ,.r_ptag_o(dtlb_ptag_lo)
      ,.r_instr_miss_o()
-     ,.r_load_miss_o(tlb_load_miss_v_o)
-     ,.r_store_miss_o(tlb_store_miss_v_o)
+     ,.r_load_miss_o(dtlb_load_miss_lo)
+     ,.r_store_miss_o(dtlb_store_miss_lo)
      ,.r_uncached_o(dtlb_ptag_uncached_lo)
      ,.r_nonidem_o(/* All D$ misses are non-speculative */)
      ,.r_dram_o(dtlb_ptag_dram_lo)
@@ -236,6 +237,9 @@ module bp_be_pipe_mem
 
   // D$ can't handle misaligned accesses
   wire dcache_ptag_v = dtlb_v_lo & ~load_misaligned_v_o & ~store_misaligned_v_o;
+  // only send tlb misses if there's no misaligned exception
+  assign tlb_load_miss_v_o = dtlb_load_miss_lo & ~load_misaligned_v_o;
+  assign tlb_store_miss_v_o = dtlb_store_miss_lo & ~store_misaligned_v_o;
 
   logic dcache_v;
   logic [dword_width_gp-1:0] dcache_data;
