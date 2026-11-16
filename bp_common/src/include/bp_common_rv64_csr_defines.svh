@@ -1003,11 +1003,11 @@
   `define decompress_mcounter_s(data_comp_mp) \
     rv64_mcounter_s'(data_comp_mp)
 
-  `define compress_mcycle_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)   `compress_mcounter_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
-  `define compress_minstret_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) `compress_mcounter_s(data_cast_mp, vaddr_width_mp, paddr_width_mp)
+  `define compress_mcycle_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) data_cast_mp[0+:64]
+  `define compress_minstret_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) data_cast_mp[0+:64]
 
-  `define decompress_mcycle_s(data_comp_mp) `decompress_mcounter_s(data_comp_mp)
-  `define decompress_minstret_s(data_comp_mp) `decompress_mcounter_s(data_comp_mp)
+  `define decompress_mcycle_s(data_comp_mp) 64'(data_comp_mp)
+  `define decompress_minstret_s(data_comp_mp) 64'(data_comp_mp)
 
   `define compress_mcountinhibit_s(data_cast_mp, vaddr_width_mp, paddr_width_mp) \
     '{ir : data_cast_mp.ir \
