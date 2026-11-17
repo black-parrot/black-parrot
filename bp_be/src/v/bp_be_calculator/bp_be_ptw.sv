@@ -114,7 +114,7 @@ module bp_be_ptw
   wire page_fault_v             = instr_page_fault | load_page_fault | store_page_fault;
   // A PPN which does not fit in the physical address is an access fault on
   //   the page being pointed to, leaf or not
-  wire access_fault_v           = ~page_fault_v & |(dcache_pte.ppn >> ptag_width_p);
+  wire access_fault_v           = ~page_fault_v & |dcache_pte.ppn[sv39_ppn_width_gp-1:ptag_width_p];
   wire fill_v                   = pte_is_leaf & ~page_fault_v & ~access_fault_v;
 
   wire tlb_miss_v               = commit_pkt_cast_i.itlb_miss | commit_pkt_cast_i.dtlb_store_miss | commit_pkt_cast_i.dtlb_load_miss;
