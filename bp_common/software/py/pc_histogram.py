@@ -82,7 +82,7 @@ class PCHistogram:
                 trace["operation"] = row["operation"]
                 trace["cycle"] = int(row["cycle"])
                 trace["pc"] = int(row["pc"], 16)
-                unorigin = max((trace['y'], trace['x']), unorigin)
+                unorigin = (max(trace['y'], unorigin[0]), max(trace['x'], unorigin[1]))
                 traces.append(trace)
 
         bp_dim_y = unorigin[0] + 1
