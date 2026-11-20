@@ -196,7 +196,8 @@ module bp_be_scheduler
   bp_be_decode_s fe_exc_decode_li;
   rv64_instr_fmatype_s fe_exc_instr_li;
   wire [vaddr_width_p-1:0] fe_exc_pc_li = issue_pkt_cast_o.pc;
-  wire [vaddr_width_p-1:0] fe_exc_vaddr_li = fe_exc_pc_li + (issue_pkt_cast_o.count << 1'b1);
+  wire [vaddr_width_p-1:0] fe_exc_addr_li = fe_exc_pc_li + (issue_pkt_cast_o.count << 1'b1);
+  wire [dword_width_gp-1:0] fe_exc_vaddr_li = `BSG_SIGN_EXTEND(fe_exc_addr_li, dword_width_gp);
   wire [dpath_width_gp-1:0] fe_exc_data_li = '0;
   wire [dpath_width_gp-1:0] fe_exc_imm_li = '0;
   assign fe_exc_decode_li = '0;

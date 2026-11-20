@@ -169,7 +169,7 @@ module bp_be_ptw
   assign load_page_fault_o  = walk_done & load_page_fault;
   assign store_page_fault_o = walk_done & store_page_fault;
   assign count_o            = walk_done ? count_r : '0;
-  assign addr_o             = walk_done ? vaddr_r : walk_addr;
+  assign addr_o             = walk_done ? `BSG_SIGN_EXTEND(vaddr_r, dword_width_gp) : walk_addr;
   assign pte_o              = tlb_w_entry;
 
   // Because internal dcache flushing is a possibility, we need to manually replay
