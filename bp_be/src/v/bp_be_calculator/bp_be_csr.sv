@@ -326,7 +326,7 @@ module bp_be_csr
   wire instr_fany_li = retire_pkt_cast_i.instr.t.rtype.opcode inside
   {`RV64_FLOAD_OP, `RV64_FMADD_OP, `RV64_FMSUB_OP, `RV64_FNMADD_OP, `RV64_FNMSUB_OP, `RV64_FP_OP};
 
-  wire [2:0] pmpaddr_sel_li = csr_addr_li - `CSR_ADDR_PMPCFG0;
+  wire [`BSG_SAFE_CLOG2(num_pmp_p)-1:0] pmpaddr_sel_li = csr_addr_li - `CSR_ADDR_PMPCFG0;
 
   logic enter_debug, exit_debug;
   bsg_dff_reset_set_clear
