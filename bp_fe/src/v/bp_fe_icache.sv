@@ -539,8 +539,10 @@ module bp_fe_icache
   // Tag Mem Control
   ///////////////////////////
 
-  // Tag mem is bypassed if the index is the same on consecutive reads
-  wire tag_mem_bypass = v_tl_r & decode_tl_r.fetch_op & (vaddr_index == vaddr_index_tl);
+  // Bypass tag_mem read when there is already a valid read in TL that is not
+  //   currently being flushed. We only need to disable bypass if there was
+  //   a miss at the same time, but that would create a new tag_mem->tag_mem path
+  wire tag_mem_bypass = v_tl_r & decode_tl_r.fetch_op & (vaddr_index == vaddr_index_tl) & ~tv_flush_i;
   wire tag_mem_fast_read = do_recover || yumi_o & decode_lo.fetch_op & ~tag_mem_bypass;
   wire tag_mem_fast_write = 1'b0;
   wire tag_mem_slow_read = tag_mem_pkt_yumi_o & (tag_mem_pkt_cast_i.opcode == e_cache_tag_mem_read) ;
@@ -647,7 +649,10 @@ module bp_fe_icache
      ,.o(data_mem_write_bank_mask)
      );
 
-  wire data_mem_bypass = v_tl_r & ~force_i & decode_tl_r.fetch_op & (vaddr_index == vaddr_index_tl) && (vaddr_vtag == vaddr_vtag_tl);
+  // Bypass data_mem read when we've already pre-determined the tag match
+  //   status, which we can only do if the vtag is the same as previous cycle.
+  // This logic assumes that TLB mappings stay identical between fetches.
+  wire data_mem_bypass = tag_mem_bypass && (vaddr_vtag == vaddr_vtag_tl);
 
   logic [assoc_p-1:0] data_mem_fast_read, data_mem_fast_write, data_mem_slow_read, data_mem_slow_write;
   for (genvar i = 0; i < assoc_p; i++)
