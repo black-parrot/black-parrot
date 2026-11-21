@@ -1,0 +1,24 @@
+## Testbench-specific files (appended to bp_be/flist.vcs by build system)
+# BSG test utilities
+$BP_DIR/external/basejump_stl/bsg_test/bsg_dramsim3_pkg.sv
+$BP_DIR/external/basejump_stl/bsg_test/bsg_nonsynth_test_rom.sv
+$BP_DIR/external/basejump_stl/bsg_test/bsg_trace_replay.sv
+$BP_DIR/external/basejump_stl/bsg_test/bsg_nonsynth_reset_gen.sv
+$BP_DIR/external/basejump_stl/bsg_test/bsg_nonsynth_clock_gen.sv
+$BP_DIR/external/basejump_stl/bsg_cache/bsg_cache_to_test_dram.sv
+$BP_DIR/external/basejump_stl/bsg_cache/bsg_cache_to_test_dram_rx.sv
+$BP_DIR/external/basejump_stl/bsg_cache/bsg_cache_to_test_dram_rx_reorder.sv
+$BP_DIR/external/basejump_stl/bsg_cache/bsg_cache_to_test_dram_tx.sv
+$BP_DIR/external/basejump_stl/bsg_dataflow/bsg_fifo_reorder.sv
+$BP_DIR/external/basejump_stl/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.sv
+$BP_DIR/external/basejump_stl/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.sv
+# Memory model
+$BP_DIR/bp_top/test/common/bp_nonsynth_mem.sv
+$BP_DIR/bp_top/test/common/bp_nonsynth_dram.sv
+# Non-synth utilities
+$BP_DIR/bp_top/test/common/bsg_nonsynth_waveform_tracer.sv
+$BP_DIR/bp_top/test/common/bsg_nonsynth_assert.sv
+# Testbench
+$BP_DIR/bp_be/test/tb/bp_dcache/testbench.sv
+$BP_DIR/bp_be/test/tb/bp_dcache/wrapper.sv
++incdir+$BP_DIR/bp_common/test/common
