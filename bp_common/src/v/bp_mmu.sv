@@ -42,6 +42,7 @@ module bp_mmu
    , input [dword_width_gp-1:0]                       r_eaddr_i
    , input [1:0]                                      r_size_i
    , input                                            r_cbo_i
+   , input                                            r_cbo_mgmt_i
    , input                                            r_ptw_i
 
    , output logic                                     r_v_o
@@ -75,19 +76,19 @@ module bp_mmu
       default: r_misaligned = '0;
     endcase
 
-  logic r_instr_r, r_load_r, r_store_r, r_cbo_r, r_ptw_r, r_misaligned_r, trans_r;
+  logic r_instr_r, r_load_r, r_store_r, r_cbo_r, r_cbo_mgmt_r, r_ptw_r, r_misaligned_r, trans_r;
   logic [etag_width_p-1:0] r_etag_r;
   wire [etag_width_p-1:0] r_etag_li = r_eaddr_i[dword_width_gp-1-:etag_width_p];
   wire trans_li = trans_en_i & ~r_ptw_i;
   bsg_dff_reset_en
-   #(.width_p(7+etag_width_p))
+   #(.width_p(8+etag_width_p))
    read_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(r_v_i)
 
-     ,.data_i({trans_li, r_misaligned, r_instr_i, r_load_i, r_store_i, r_cbo_i, r_ptw_i, r_etag_li})
-     ,.data_o({trans_r, r_misaligned_r, r_instr_r, r_load_r, r_store_r, r_cbo_r, r_ptw_r, r_etag_r})
+     ,.data_i({trans_li, r_misaligned, r_instr_i, r_load_i, r_store_i, r_cbo_i, r_cbo_mgmt_i, r_ptw_i, r_etag_li})
+     ,.data_o({trans_r, r_misaligned_r, r_instr_r, r_load_r, r_store_r, r_cbo_r, r_cbo_mgmt_r, r_ptw_r, r_etag_r})
      );
 
   logic r_v_r;
@@ -184,16 +185,19 @@ module bp_mmu
                                           );
   wire data_read_page_fault  = tlb_v_lo & ~(tlb_entry_lo.r | (tlb_entry_lo.x & mxr_i));
   wire data_write_page_fault = tlb_v_lo & ~(tlb_entry_lo.w & tlb_entry_lo.d);
+  // CBO management ops are permitted if a load or store would be, and ignore the dirty bit
+  //   (Zicbom, riscv-isa-manual cmo.adoc, norm:cbm_access). A legal PTE with W also has R.
+  wire data_cbo_mgmt_page_fault = data_read_page_fault;
   wire instr_page_fault_v = trans_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v | eaddr_canon_fault_v);
   wire load_page_fault_v  = trans_r & r_load_r & (data_priv_page_fault | data_read_page_fault  | eaddr_canon_fault_v);
-  wire store_page_fault_v = trans_r & r_store_r & (data_priv_page_fault | data_write_page_fault | eaddr_canon_fault_v);
+  wire store_page_fault_v = trans_r & r_store_r & (data_priv_page_fault | (r_cbo_mgmt_r ? data_cbo_mgmt_page_fault : data_write_page_fault) | eaddr_canon_fault_v);
   wire any_page_fault_v   = |{instr_page_fault_v, load_page_fault_v, store_page_fault_v};
 
   wire any_fault_v        = any_access_fault_v | any_page_fault_v;
 
   assign r_v_o                   = r_v_r &  tlb_v_lo & ~any_fault_v;
   assign r_instr_miss_o          = r_v_r & ~tlb_v_lo & ~any_fault_v & r_instr_r;
-  assign r_load_miss_o           = r_v_r & ~tlb_v_lo & ~any_fault_v & r_load_r;
+  assign r_load_miss_o           = r_v_r & ~tlb_v_lo & ~any_fault_v & (r_load_r | r_cbo_mgmt_r);
   assign r_store_miss_o          = r_v_r & ~tlb_v_lo & ~any_fault_v & r_store_r;
   assign r_instr_misaligned_o    = r_v_r & r_misaligned_r & r_instr_r;
   assign r_load_misaligned_o     = r_v_r & r_misaligned_r & r_load_r;
