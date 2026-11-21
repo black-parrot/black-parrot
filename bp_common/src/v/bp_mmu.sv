@@ -185,12 +185,11 @@ module bp_mmu
                                           );
   wire data_read_page_fault  = tlb_v_lo & ~(tlb_entry_lo.r | (tlb_entry_lo.x & mxr_i));
   wire data_write_page_fault = tlb_v_lo & ~(tlb_entry_lo.w & tlb_entry_lo.d);
-  // CBO management ops are permitted if a load or store would be, and ignore the dirty bit
-  //   (Zicbom, riscv-isa-manual cmo.adoc, norm:cbm_access). A legal PTE with W also has R.
-  wire data_cbo_mgmt_page_fault = data_read_page_fault;
   wire instr_page_fault_v = trans_r & r_instr_r & (instr_priv_page_fault_v | instr_exe_page_fault_v | eaddr_canon_fault_v);
   wire load_page_fault_v  = trans_r & r_load_r & (data_priv_page_fault | data_read_page_fault  | eaddr_canon_fault_v);
-  wire store_page_fault_v = trans_r & r_store_r & (data_priv_page_fault | (r_cbo_mgmt_r ? data_cbo_mgmt_page_fault : data_write_page_fault) | eaddr_canon_fault_v);
+  // CBO management ops are permitted if a load or store would be, and ignore the dirty bit
+  //   (Zicbom, riscv-isa-manual cmo.adoc, norm:cbm_access). A legal PTE with W also has R.
+  wire store_page_fault_v = trans_r & r_store_r & (data_priv_page_fault | (r_cbo_mgmt_r ? data_read_page_fault : data_write_page_fault) | eaddr_canon_fault_v);
   wire any_page_fault_v   = |{instr_page_fault_v, load_page_fault_v, store_page_fault_v};
 
   wire any_fault_v        = any_access_fault_v | any_page_fault_v;
