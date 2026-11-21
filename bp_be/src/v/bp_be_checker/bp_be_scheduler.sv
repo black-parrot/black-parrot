@@ -71,6 +71,7 @@ module bp_be_scheduler
   logic ptw_v_lo, ptw_walk_lo, ptw_itlb_fill_lo, ptw_dtlb_fill_lo;
   logic [fetch_ptr_p-1:0] ptw_count_lo;
   logic ptw_instr_page_fault_lo, ptw_load_page_fault_lo, ptw_store_page_fault_lo;
+  logic ptw_instr_access_fault_lo, ptw_load_access_fault_lo, ptw_store_access_fault_lo;
   logic [dword_width_gp-1:0] ptw_addr_lo, ptw_pte_lo;
   wire ptw_v_li = late_wb_yumi_o & late_wb_pkt_cast_i.ptw_w_v;
   wire [dword_width_gp-1:0] ptw_data_li = late_wb_pkt_cast_i.rd_data;
@@ -97,6 +98,9 @@ module bp_be_scheduler
      ,.instr_page_fault_o(ptw_instr_page_fault_lo)
      ,.load_page_fault_o(ptw_load_page_fault_lo)
      ,.store_page_fault_o(ptw_store_page_fault_lo)
+     ,.instr_access_fault_o(ptw_instr_access_fault_lo)
+     ,.load_access_fault_o(ptw_load_access_fault_lo)
+     ,.store_access_fault_o(ptw_store_access_fault_lo)
      ,.count_o(ptw_count_lo)
      ,.addr_o(ptw_addr_lo)
      ,.pte_o(ptw_pte_lo)
@@ -238,6 +242,9 @@ module bp_be_scheduler
       dispatch_pkt_cast_o.exception.instr_page_fault |= be_exc_not_instr_li & ptw_instr_page_fault_lo;
       dispatch_pkt_cast_o.exception.load_page_fault  |= be_exc_not_instr_li & ptw_load_page_fault_lo;
       dispatch_pkt_cast_o.exception.store_page_fault |= be_exc_not_instr_li & ptw_store_page_fault_lo;
+      dispatch_pkt_cast_o.exception.instr_access_fault |= be_exc_not_instr_li & ptw_instr_access_fault_lo;
+      dispatch_pkt_cast_o.exception.load_access_fault  |= be_exc_not_instr_li & ptw_load_access_fault_lo;
+      dispatch_pkt_cast_o.exception.store_access_fault |= be_exc_not_instr_li & ptw_store_access_fault_lo;
       dispatch_pkt_cast_o.exception.itlb_fill        |= be_exc_not_instr_li & ptw_itlb_fill_lo;
       dispatch_pkt_cast_o.exception.dtlb_fill        |= be_exc_not_instr_li & ptw_dtlb_fill_lo;
       dispatch_pkt_cast_o.exception.resume           |= be_exc_not_instr_li & resume_v;

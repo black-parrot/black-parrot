@@ -30,6 +30,9 @@ module bp_be_ptw
    , output logic                             instr_page_fault_o
    , output logic                             load_page_fault_o
    , output logic                             store_page_fault_o
+   , output logic                             instr_access_fault_o
+   , output logic                             load_access_fault_o
+   , output logic                             store_access_fault_o
    , output logic [fetch_ptr_p-1:0]           count_o
    , output logic [dword_width_gp-1:0]        addr_o
    , output logic [dword_width_gp-1:0]        pte_o
@@ -109,7 +112,10 @@ module bp_be_ptw
   wire load_page_fault          = load_r  & (common_faults | (pte_is_leaf & ~(dcache_pte.r | (dcache_pte.x & trans_info_cast_i.mxr))));
   wire store_page_fault         = store_r & (common_faults | (pte_is_leaf & ~dcache_pte.w));
   wire page_fault_v             = instr_page_fault | load_page_fault | store_page_fault;
-  wire fill_v                   = pte_is_leaf & ~page_fault_v;
+  // A PPN which does not fit in the physical address is an access fault on
+  //   the page being pointed to, leaf or not
+  wire access_fault_v           = ~page_fault_v & |dcache_pte.ppn[sv39_ppn_width_gp-1:ptag_width_p];
+  wire fill_v                   = pte_is_leaf & ~page_fault_v & ~access_fault_v;
 
   wire tlb_miss_v               = commit_pkt_cast_i.itlb_miss | commit_pkt_cast_i.dtlb_store_miss | commit_pkt_cast_i.dtlb_load_miss;
 
@@ -117,8 +123,8 @@ module bp_be_ptw
   wire walk_ready               = is_wait  & ordered_i;
   wire walk_send                = is_send;
   wire walk_replay              = commit_pkt_cast_i.dcache_replay;
-  wire walk_next                = v_i & ~(pte_is_leaf | page_fault_v);
-  wire walk_done                = v_i &  (pte_is_leaf | page_fault_v);
+  wire walk_next                = v_i & ~(pte_is_leaf | page_fault_v | access_fault_v);
+  wire walk_done                = v_i &  (pte_is_leaf | page_fault_v | access_fault_v);
 
   wire [page_offset_width_gp-1:0] walk_offset = (partial_vpn[level_n] << lg_pte_size_in_bytes_lp);
   wire [paddr_width_p-1:0] walk_addr = {ppn, walk_offset};
@@ -163,11 +169,14 @@ module bp_be_ptw
 
   assign v_o                = walk_send | walk_next | walk_done;
   assign walk_o             = walk_send | walk_next;
-  assign itlb_fill_o        = walk_done &  instr_r & ~page_fault_v;
-  assign dtlb_fill_o        = walk_done & ~instr_r & ~page_fault_v;
+  assign itlb_fill_o        = walk_done &  instr_r & fill_v;
+  assign dtlb_fill_o        = walk_done & ~instr_r & fill_v;
   assign instr_page_fault_o = walk_done & instr_page_fault;
   assign load_page_fault_o  = walk_done & load_page_fault;
   assign store_page_fault_o = walk_done & store_page_fault;
+  assign instr_access_fault_o = walk_done & instr_r & access_fault_v;
+  assign load_access_fault_o  = walk_done & load_r  & access_fault_v;
+  assign store_access_fault_o = walk_done & store_r & access_fault_v;
   assign count_o            = walk_done ? count_r : '0;
   assign addr_o             = walk_done ? vaddr_r : walk_addr;
   assign pte_o              = tlb_w_entry;
