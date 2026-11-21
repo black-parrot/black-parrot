@@ -647,7 +647,7 @@ module bp_fe_icache
      ,.o(data_mem_write_bank_mask)
      );
 
-  wire data_mem_bypass = v_tl_r & decode_tl_r.fetch_op & (vaddr_index == vaddr_index_tl) && (vaddr_vtag == vaddr_vtag_tl);
+  wire data_mem_bypass = v_tl_r & ~force_i & decode_tl_r.fetch_op & (vaddr_index == vaddr_index_tl) && (vaddr_vtag == vaddr_vtag_tl);
 
   logic [assoc_p-1:0] data_mem_fast_read, data_mem_fast_write, data_mem_slow_read, data_mem_slow_write;
   for (genvar i = 0; i < assoc_p; i++)
