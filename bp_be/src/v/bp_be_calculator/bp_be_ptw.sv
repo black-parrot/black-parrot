@@ -105,12 +105,13 @@ module bp_be_ptw
     & ((pte_is_megapage & |dcache_pte.ppn[0+:page_idx_width_p])
        | (pte_is_gigapage & |dcache_pte.ppn[0+:2*page_idx_width_p]));
 
-  wire ad_fault                 = pte_is_leaf & (~dcache_pte.a | (store_r & ~dcache_pte.d));
+  wire ad_fault                 = pte_is_leaf & (~dcache_pte.a | (store_r & ~load_r & ~dcache_pte.d));
   wire common_faults            = pte_invalid | reserved_fault | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
 
   wire instr_page_fault         = instr_r & (common_faults | (pte_is_leaf & ~dcache_pte.x));
-  wire load_page_fault          = load_r  & (common_faults | (pte_is_leaf & ~(dcache_pte.r | (dcache_pte.x & trans_info_cast_i.mxr))));
-  wire store_page_fault         = store_r & (common_faults | (pte_is_leaf & ~dcache_pte.w));
+  // A CBO management op walks as both a load and a store: it needs load or store permission, ignores D, and faults as a store
+  wire load_page_fault          = load_r  & ~store_r & (common_faults | (pte_is_leaf & ~(dcache_pte.r | (dcache_pte.x & trans_info_cast_i.mxr))));
+  wire store_page_fault         = store_r & (common_faults | (pte_is_leaf & ~(dcache_pte.w | (load_r & (dcache_pte.r | (dcache_pte.x & trans_info_cast_i.mxr))))));
   wire page_fault_v             = instr_page_fault | load_page_fault | store_page_fault;
   // A PPN which does not fit in the physical address is an access fault on
   //   the page being pointed to, leaf or not

@@ -133,6 +133,8 @@ module bp_be_pipe_mem
   wire dtlb_r_store  = is_req & (decode.dcache_w_v | decode.dcache_cbo_v);
   wire dtlb_r_load   = is_req & decode.dcache_r_v;
   wire dtlb_r_cbo    = is_req & decode.dcache_cbo_v;
+  // cbo.clean/flush/inval: permitted by load or store permission, no dirty check
+  wire dtlb_r_cbo_mgmt = dtlb_r_cbo & ~decode.dcache_w_v;
   wire dtlb_r_ptw    = is_req & decode.dcache_mmu_v;
   wire dtlb_r_v      = dtlb_r_store | dtlb_r_load | dtlb_r_cbo | dtlb_r_ptw;
 
@@ -197,6 +199,7 @@ module bp_be_pipe_mem
      ,.r_load_i(dtlb_r_load)
      ,.r_store_i(dtlb_r_store)
      ,.r_cbo_i(dtlb_r_cbo)
+     ,.r_cbo_mgmt_i(dtlb_r_cbo_mgmt)
      ,.r_ptw_i(dtlb_r_ptw)
      ,.r_eaddr_i(eaddr)
      ,.r_size_i(dtlb_r_size)
