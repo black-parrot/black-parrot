@@ -124,16 +124,30 @@ module bp_me_clint_slice
      ,.w_ptr_gray_r_o()
      ,.w_ptr_gray_r_rsync_o(mtime_gray_r)
      );
-  // Cannot write the RTC. If needed, raise an issue
-  wire unused = mtime_w_v_li;
 
-  logic [dword_width_gp-1:0] mtime_r;
+  logic [dword_width_gp-1:0] rtc_r;
   bsg_gray_to_binary
    #(.width_p(dword_width_gp))
    g2b
     (.gray_i(mtime_gray_r)
-     ,.binary_o(mtime_r)
+     ,.binary_o(rtc_r)
      );
+
+  // The RTC counter itself is free running. A write to mtime instead loads an
+  //   offset, so that mtime = rtc + offset
+  logic [dword_width_gp-1:0] mtime_offset_r;
+  wire [dword_width_gp-1:0] mtime_offset_n = data_lo - rtc_r;
+  bsg_dff_reset_en
+   #(.width_p(dword_width_gp))
+   mtime_offset_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.en_i(mtime_w_v_li)
+     ,.data_i(mtime_offset_n)
+     ,.data_o(mtime_offset_r)
+     );
+  wire [dword_width_gp-1:0] mtime_r = rtc_r + mtime_offset_r;
 
   logic [dword_width_gp-1:0] mtimecmp_r;
   wire [dword_width_gp-1:0] mtimecmp_n = data_lo;
